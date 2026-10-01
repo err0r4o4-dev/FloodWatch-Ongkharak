@@ -15,6 +15,53 @@
       }
     },
     "parameters": {
+      "BBox": {
+        "description": "WGS84 minLng,minLat,maxLng,maxLat. Required for efficient map-window queries at scale; omitted bbox still uses bounded pagination.",
+        "in": "query",
+        "name": "bbox",
+        "schema": {
+          "example": "101.0,14.0,101.1,14.1",
+          "type": "string"
+        }
+      },
+      "EventStatusFilter": {
+        "description": "Filter by raw event status, not derived effectiveStatus.",
+        "in": "query",
+        "name": "status",
+        "schema": {
+          "$ref": "#/components/schemas/EventStatus"
+        }
+      },
+      "From": {
+        "in": "query",
+        "name": "from",
+        "schema": {
+          "format": "date-time",
+          "type": "string"
+        }
+      },
+      "Limit": {
+        "description": "Default 20; maximum 100.",
+        "in": "query",
+        "name": "limit",
+        "schema": {
+          "default": 20,
+          "maximum": 100,
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "Offset": {
+        "description": "Default 0; maximum 100000.",
+        "in": "query",
+        "name": "offset",
+        "schema": {
+          "default": 0,
+          "maximum": 100000,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
       "OptionalRefreshTokenCookie": {
         "description": "Optional HttpOnly refresh-token cookie. Logout clears it whether or not it identifies an active session.",
         "in": "cookie",
@@ -32,9 +79,208 @@
         "schema": {
           "type": "string"
         }
+      },
+      "ReportedRoadStatusFilter": {
+        "description": "Filter by reportedStatus, not freshness-derived status. UNKNOWN also includes roads with no condition on the roads route.",
+        "in": "query",
+        "name": "status",
+        "schema": {
+          "$ref": "#/components/schemas/RoadStatus"
+        }
+      },
+      "ResourceID": {
+        "in": "path",
+        "name": "id",
+        "required": true,
+        "schema": {
+          "format": "uuid",
+          "type": "string"
+        }
+      },
+      "SeverityFilter": {
+        "description": "Filter by raw severity.",
+        "in": "query",
+        "name": "severity",
+        "schema": {
+          "$ref": "#/components/schemas/Severity"
+        }
+      },
+      "To": {
+        "in": "query",
+        "name": "to",
+        "schema": {
+          "format": "date-time",
+          "type": "string"
+        }
+      }
+    },
+    "responses": {
+      "DomainError": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        },
+        "description": "Invalid input (400), missing JWT (401), insufficient role (403), unknown resource (404), conflict (409), unsupported media type (415), rate limit (429), or service failure (500). The HTTP status disambiguates."
       }
     },
     "schemas": {
+      "ConditionList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RoadCondition"
+            },
+            "type": "array"
+          },
+          "limit": {
+            "type": "integer"
+          },
+          "offset": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "limit",
+          "offset"
+        ],
+        "type": "object"
+      },
+      "CreateDataSource": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$",
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "name": {
+            "maxLength": 200,
+            "type": "string"
+          },
+          "provider": {
+            "maxLength": 200,
+            "type": "string"
+          },
+          "sourceType": {
+            "$ref": "#/components/schemas/SourceType"
+          }
+        },
+        "required": [
+          "code",
+          "name",
+          "sourceType",
+          "provider",
+          "enabled"
+        ],
+        "type": "object"
+      },
+      "CreateRiskArea": {
+        "additionalProperties": false,
+        "properties": {
+          "description": {
+            "maxLength": 4000,
+            "type": "string"
+          },
+          "geometry": {
+            "$ref": "#/components/schemas/PolygonGeometry"
+          },
+          "name": {
+            "maxLength": 200,
+            "type": "string"
+          },
+          "riskLevel": {
+            "$ref": "#/components/schemas/RiskLevel"
+          },
+          "sourceId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "validFrom": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "validTo": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "sourceId",
+          "name",
+          "geometry",
+          "riskLevel"
+        ],
+        "type": "object"
+      },
+      "CreateRoadCondition": {
+        "additionalProperties": false,
+        "properties": {
+          "confidence": {
+            "maximum": 1,
+            "minimum": 0,
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "description": {
+            "maxLength": 4000,
+            "type": "string"
+          },
+          "observedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "roadId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "sourceId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/RoadStatus"
+          },
+          "validUntil": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "verificationStatus": {
+            "$ref": "#/components/schemas/VerificationStatus"
+          },
+          "waterDepthM": {
+            "minimum": 0,
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "roadId",
+          "sourceId",
+          "status",
+          "observedAt",
+          "verificationStatus"
+        ],
+        "type": "object"
+      },
       "CredentialsRequest": {
         "additionalProperties": false,
         "properties": {
@@ -52,6 +298,86 @@
         "required": [
           "email",
           "password"
+        ],
+        "type": "object"
+      },
+      "DataSource": {
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "lastFailureAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lastSuccessfulFetchAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "provider": {
+            "type": "string"
+          },
+          "sourceType": {
+            "$ref": "#/components/schemas/SourceType"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "name",
+          "sourceType",
+          "provider",
+          "enabled",
+          "lastSuccessfulFetchAt",
+          "lastFailureAt",
+          "createdAt",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
+      "DataSourceList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DataSource"
+            },
+            "type": "array"
+          },
+          "limit": {
+            "type": "integer"
+          },
+          "offset": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "limit",
+          "offset"
         ],
         "type": "object"
       },
@@ -98,6 +424,156 @@
         ],
         "type": "object"
       },
+      "EventList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/FloodEvent"
+            },
+            "type": "array"
+          },
+          "limit": {
+            "type": "integer"
+          },
+          "offset": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "limit",
+          "offset"
+        ],
+        "type": "object"
+      },
+      "EventStatus": {
+        "enum": [
+          "ACTIVE",
+          "RESOLVED",
+          "UNKNOWN"
+        ],
+        "type": "string"
+      },
+      "FloodEvent": {
+        "properties": {
+          "confidence": {
+            "maximum": 1,
+            "minimum": 0,
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "effectiveSeverity": {
+            "$ref": "#/components/schemas/Severity"
+          },
+          "effectiveStatus": {
+            "$ref": "#/components/schemas/EventStatus"
+          },
+          "endedAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "freshness": {
+            "$ref": "#/components/schemas/Freshness"
+          },
+          "geometry": {
+            "$ref": "#/components/schemas/FloodGeometry"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "observedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "receivedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "severity": {
+            "$ref": "#/components/schemas/Severity"
+          },
+          "source": {
+            "$ref": "#/components/schemas/SourceRef"
+          },
+          "startsAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/EventStatus"
+          },
+          "title": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "verificationStatus": {
+            "$ref": "#/components/schemas/VerificationStatus"
+          }
+        },
+        "required": [
+          "id",
+          "source",
+          "title",
+          "description",
+          "geometry",
+          "severity",
+          "effectiveSeverity",
+          "status",
+          "effectiveStatus",
+          "observedAt",
+          "receivedAt",
+          "startsAt",
+          "endedAt",
+          "verificationStatus",
+          "confidence",
+          "freshness",
+          "createdAt",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
+      "FloodGeometry": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/PointGeometry"
+          },
+          {
+            "$ref": "#/components/schemas/SimplePolygonGeometry"
+          },
+          {
+            "$ref": "#/components/schemas/MultiPolygonGeometry"
+          }
+        ]
+      },
+      "Freshness": {
+        "description": "Observation age is classified by domain policy. UNKNOWN never means safe.",
+        "enum": [
+          "FRESH",
+          "STALE",
+          "EXPIRED",
+          "UNKNOWN"
+        ],
+        "type": "string"
+      },
       "HealthResponse": {
         "properties": {
           "status": {
@@ -114,6 +590,120 @@
           "time"
         ],
         "type": "object"
+      },
+      "LinearRing": {
+        "description": "Closed sequence of positions.",
+        "items": {
+          "$ref": "#/components/schemas/Position"
+        },
+        "minItems": 4,
+        "type": "array"
+      },
+      "MultiLineCoordinates": {
+        "items": {
+          "items": {
+            "$ref": "#/components/schemas/Position"
+          },
+          "minItems": 2,
+          "type": "array"
+        },
+        "minItems": 1,
+        "type": "array"
+      },
+      "MultiLineGeometry": {
+        "additionalProperties": false,
+        "properties": {
+          "coordinates": {
+            "$ref": "#/components/schemas/MultiLineCoordinates"
+          },
+          "type": {
+            "const": "MultiLineString",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "coordinates"
+        ],
+        "type": "object"
+      },
+      "MultiPolygonCoordinates": {
+        "items": {
+          "$ref": "#/components/schemas/PolygonCoordinates"
+        },
+        "minItems": 1,
+        "type": "array"
+      },
+      "MultiPolygonGeometry": {
+        "additionalProperties": false,
+        "properties": {
+          "coordinates": {
+            "$ref": "#/components/schemas/MultiPolygonCoordinates"
+          },
+          "type": {
+            "const": "MultiPolygon",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "coordinates"
+        ],
+        "type": "object"
+      },
+      "PointGeometry": {
+        "additionalProperties": false,
+        "properties": {
+          "coordinates": {
+            "$ref": "#/components/schemas/Position"
+          },
+          "type": {
+            "const": "Point",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "coordinates"
+        ],
+        "type": "object"
+      },
+      "PolygonCoordinates": {
+        "description": "Exterior ring followed by optional interior rings.",
+        "items": {
+          "$ref": "#/components/schemas/LinearRing"
+        },
+        "minItems": 1,
+        "type": "array"
+      },
+      "PolygonGeometry": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/SimplePolygonGeometry"
+          },
+          {
+            "$ref": "#/components/schemas/MultiPolygonGeometry"
+          }
+        ]
+      },
+      "Position": {
+        "description": "WGS84 longitude, latitude.",
+        "items": false,
+        "maxItems": 2,
+        "minItems": 2,
+        "prefixItems": [
+          {
+            "maximum": 180,
+            "minimum": -180,
+            "type": "number"
+          },
+          {
+            "maximum": 90,
+            "minimum": -90,
+            "type": "number"
+          }
+        ],
+        "type": "array"
       },
       "ReadinessResponse": {
         "properties": {
@@ -150,6 +740,291 @@
         ],
         "type": "object"
       },
+      "ReadingList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/WaterReading"
+            },
+            "type": "array"
+          },
+          "limit": {
+            "type": "integer"
+          },
+          "offset": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "limit",
+          "offset"
+        ],
+        "type": "object"
+      },
+      "RiskArea": {
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "effectiveRiskLevel": {
+            "$ref": "#/components/schemas/RiskLevel"
+          },
+          "freshness": {
+            "$ref": "#/components/schemas/Freshness"
+          },
+          "geometry": {
+            "$ref": "#/components/schemas/MultiPolygonGeometry"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "riskLevel": {
+            "$ref": "#/components/schemas/RiskLevel"
+          },
+          "source": {
+            "$ref": "#/components/schemas/SourceRef"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "validFrom": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "validTo": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "source",
+          "name",
+          "description",
+          "geometry",
+          "riskLevel",
+          "effectiveRiskLevel",
+          "freshness",
+          "validFrom",
+          "validTo",
+          "createdAt",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
+      "RiskLevel": {
+        "enum": [
+          "LOW",
+          "MODERATE",
+          "HIGH",
+          "VERY_HIGH",
+          "UNKNOWN"
+        ],
+        "type": "string"
+      },
+      "RiskList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RiskArea"
+            },
+            "type": "array"
+          },
+          "limit": {
+            "type": "integer"
+          },
+          "offset": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "limit",
+          "offset"
+        ],
+        "type": "object"
+      },
+      "Road": {
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "currentCondition": {
+            "$ref": "#/components/schemas/RoadCondition"
+          },
+          "geometry": {
+            "$ref": "#/components/schemas/MultiLineGeometry"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "roadClass": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "name",
+          "geometry",
+          "roadClass",
+          "currentCondition",
+          "createdAt",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
+      "RoadCondition": {
+        "properties": {
+          "confidence": {
+            "maximum": 1,
+            "minimum": 0,
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "freshness": {
+            "$ref": "#/components/schemas/Freshness"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "observedAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "receivedAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "reportedStatus": {
+            "$ref": "#/components/schemas/RoadStatus"
+          },
+          "roadId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "source": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/SourceRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/RoadStatus"
+          },
+          "validUntil": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "verificationStatus": {
+            "$ref": "#/components/schemas/VerificationStatus"
+          },
+          "waterDepthM": {
+            "minimum": 0,
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "source",
+          "status",
+          "observedAt",
+          "receivedAt",
+          "validUntil",
+          "waterDepthM",
+          "confidence",
+          "freshness"
+        ],
+        "type": "object"
+      },
+      "RoadList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/Road"
+            },
+            "type": "array"
+          },
+          "limit": {
+            "type": "integer"
+          },
+          "offset": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "limit",
+          "offset"
+        ],
+        "type": "object"
+      },
+      "RoadStatus": {
+        "enum": [
+          "PASSABLE",
+          "WATCH",
+          "SMALL_VEHICLE_NOT_RECOMMENDED",
+          "CLOSED",
+          "UNKNOWN"
+        ],
+        "type": "string"
+      },
       "SessionResponse": {
         "additionalProperties": false,
         "properties": {
@@ -170,6 +1045,87 @@
           "user",
           "accessToken",
           "expiresIn"
+        ],
+        "type": "object"
+      },
+      "Severity": {
+        "enum": [
+          "INFO",
+          "WATCH",
+          "WARNING",
+          "CRITICAL",
+          "UNKNOWN"
+        ],
+        "type": "string"
+      },
+      "SimplePolygonGeometry": {
+        "additionalProperties": false,
+        "properties": {
+          "coordinates": {
+            "$ref": "#/components/schemas/PolygonCoordinates"
+          },
+          "type": {
+            "const": "Polygon",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "coordinates"
+        ],
+        "type": "object"
+      },
+      "SourceRef": {
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "sourceType": {
+            "$ref": "#/components/schemas/SourceType"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "name",
+          "sourceType"
+        ],
+        "type": "object"
+      },
+      "SourceType": {
+        "enum": [
+          "OFFICIAL",
+          "COMMUNITY",
+          "AI"
+        ],
+        "type": "string"
+      },
+      "StationList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/WaterStation"
+            },
+            "type": "array"
+          },
+          "limit": {
+            "type": "integer"
+          },
+          "offset": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "limit",
+          "offset"
         ],
         "type": "object"
       },
@@ -215,6 +1171,147 @@
           "user"
         ],
         "type": "object"
+      },
+      "VerificationStatus": {
+        "enum": [
+          "UNVERIFIED",
+          "VERIFIED",
+          "REJECTED"
+        ],
+        "type": "string"
+      },
+      "WaterReading": {
+        "properties": {
+          "confidence": {
+            "maximum": 1,
+            "minimum": 0,
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "flowRateM3s": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "freshness": {
+            "$ref": "#/components/schemas/Freshness"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "observedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "rainfallMm": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "receivedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "source": {
+            "$ref": "#/components/schemas/SourceRef"
+          },
+          "stationId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "verificationStatus": {
+            "$ref": "#/components/schemas/VerificationStatus"
+          },
+          "waterLevelM": {
+            "description": "Canonical water level in meters.",
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "stationId",
+          "source",
+          "observedAt",
+          "receivedAt",
+          "waterLevelM",
+          "flowRateM3s",
+          "rainfallMm",
+          "verificationStatus",
+          "confidence",
+          "freshness"
+        ],
+        "type": "object"
+      },
+      "WaterStation": {
+        "properties": {
+          "active": {
+            "type": "boolean"
+          },
+          "code": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "district": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "externalId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "location": {
+            "$ref": "#/components/schemas/PointGeometry"
+          },
+          "name": {
+            "type": "string"
+          },
+          "province": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "source": {
+            "$ref": "#/components/schemas/SourceRef"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "source",
+          "externalId",
+          "code",
+          "name",
+          "location",
+          "district",
+          "province",
+          "active",
+          "createdAt",
+          "updatedAt"
+        ],
+        "type": "object"
       }
     },
     "securitySchemes": {
@@ -226,9 +1323,9 @@
     }
   },
   "info": {
-    "description": "Availability data that is stale or unavailable is UNKNOWN, never SAFE.\nRefresh tokens are sent only in an HttpOnly cookie. The cookie uses the configured\nSameSite Lax or Strict policy and Secure is enabled in production; refresh tokens\nare never returned in response bodies. GUEST has no persisted role. Only USER and\nADMIN accounts exist; authentication is required for the Phase 1 demonstration routes.\nOther auth failures use the ErrorResponse envelope (including 403 origin rejection,\n415 unsupported media type, 429 rate limiting, and 500 infrastructure failure).\n",
+    "description": "Availability data that is stale or unavailable is UNKNOWN, never SAFE.\nRefresh tokens are sent only in an HttpOnly cookie. The cookie uses the configured\nSameSite Lax or Strict policy and Secure is enabled in production; refresh tokens\nare never returned in response bodies. Phase 2 flood-domain collections are empty\nuntil explicitly populated; no response implies current safe conditions. GUEST has\nno persisted role; only USER and ADMIN accounts exist. Authentication is required\nfor the Phase 1 demonstration routes.\nOther auth failures use the ErrorResponse envelope (including 403 origin rejection,\n415 unsupported media type, 429 rate limiting, and 500 infrastructure failure).\n",
     "title": "Flood Watch Ongkharak API",
-    "version": "0.1.0"
+    "version": "0.2.0"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -469,6 +1566,359 @@
         ]
       }
     },
+    "/api/v1/data-sources": {
+      "get": {
+        "operationId": "listDataSources",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Limit"
+          },
+          {
+            "$ref": "#/components/parameters/Offset"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataSourceList"
+                }
+              }
+            },
+            "description": "Sources, including their immutable provenance classification."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "summary": "List provenance sources without authentication",
+        "tags": [
+          "Data Sources"
+        ]
+      },
+      "post": {
+        "operationId": "createDataSource",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDataSource"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "dataSource": {
+                      "$ref": "#/components/schemas/DataSource"
+                    }
+                  },
+                  "required": [
+                    "dataSource"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Source created. Never send credentials or secrets."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Create a source with explicit provenance classification",
+        "tags": [
+          "Data Sources"
+        ]
+      }
+    },
+    "/api/v1/flood-events": {
+      "get": {
+        "operationId": "listFloodEvents",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Limit"
+          },
+          {
+            "$ref": "#/components/parameters/Offset"
+          },
+          {
+            "$ref": "#/components/parameters/BBox"
+          },
+          {
+            "$ref": "#/components/parameters/EventStatusFilter"
+          },
+          {
+            "$ref": "#/components/parameters/SeverityFilter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventList"
+                }
+              }
+            },
+            "description": "Raw and effective statuses are separate; stale evidence has UNKNOWN effective status."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "summary": "List source-aware flood events",
+        "tags": [
+          "Flood Domain"
+        ]
+      }
+    },
+    "/api/v1/flood-events/{id}": {
+      "get": {
+        "operationId": "getFloodEvent",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "event": {
+                      "$ref": "#/components/schemas/FloodEvent"
+                    }
+                  },
+                  "required": [
+                    "event"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Flood event found."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "summary": "Get a flood event",
+        "tags": [
+          "Flood Domain"
+        ]
+      }
+    },
+    "/api/v1/risk-areas": {
+      "get": {
+        "operationId": "listRiskAreas",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Limit"
+          },
+          {
+            "$ref": "#/components/parameters/Offset"
+          },
+          {
+            "$ref": "#/components/parameters/BBox"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RiskList"
+                }
+              }
+            },
+            "description": "Undated or expired assessment has UNKNOWN effective risk."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "summary": "List spatial risk areas",
+        "tags": [
+          "Flood Domain"
+        ]
+      },
+      "post": {
+        "operationId": "createRiskArea",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRiskArea"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "riskArea": {
+                      "$ref": "#/components/schemas/RiskArea"
+                    }
+                  },
+                  "required": [
+                    "riskArea"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Valid WGS84 Polygon or MultiPolygon stored as MultiPolygon."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Create a manually assessed risk area",
+        "tags": [
+          "Flood Domain"
+        ]
+      }
+    },
+    "/api/v1/road-conditions": {
+      "get": {
+        "operationId": "listRoadConditions",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Limit"
+          },
+          {
+            "$ref": "#/components/parameters/Offset"
+          },
+          {
+            "$ref": "#/components/parameters/ReportedRoadStatusFilter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConditionList"
+                }
+              }
+            },
+            "description": "Descending observation time with preserved reported and effective statuses."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "summary": "List road condition history",
+        "tags": [
+          "Roads"
+        ]
+      },
+      "post": {
+        "operationId": "createRoadCondition",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRoadCondition"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "roadCondition": {
+                      "$ref": "#/components/schemas/RoadCondition"
+                    }
+                  },
+                  "required": [
+                    "roadCondition"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Road condition with source type derived from the referenced source."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Record an ADMIN-reviewed condition for an existing road",
+        "tags": [
+          "Roads"
+        ]
+      }
+    },
+    "/api/v1/roads": {
+      "get": {
+        "operationId": "listRoads",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Limit"
+          },
+          {
+            "$ref": "#/components/parameters/Offset"
+          },
+          {
+            "$ref": "#/components/parameters/BBox"
+          },
+          {
+            "$ref": "#/components/parameters/ReportedRoadStatusFilter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoadList"
+                }
+              }
+            },
+            "description": "Missing, stale, or expired condition resolves to UNKNOWN, not PASSABLE."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "summary": "List roads and their most recently observed condition",
+        "tags": [
+          "Roads"
+        ]
+      }
+    },
     "/api/v1/user/ping": {
       "get": {
         "operationId": "pingUser",
@@ -495,6 +1945,119 @@
         "summary": "Verify user authentication",
         "tags": [
           "Auth"
+        ]
+      }
+    },
+    "/api/v1/water-stations": {
+      "get": {
+        "operationId": "listWaterStations",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Limit"
+          },
+          {
+            "$ref": "#/components/parameters/Offset"
+          },
+          {
+            "$ref": "#/components/parameters/BBox"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StationList"
+                }
+              }
+            },
+            "description": "Stations with GeoJSON Point coordinates ordered longitude, latitude."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "summary": "List stations; optional WGS84 bounding box",
+        "tags": [
+          "Water"
+        ]
+      }
+    },
+    "/api/v1/water-stations/{id}": {
+      "get": {
+        "operationId": "getWaterStation",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "station": {
+                      "$ref": "#/components/schemas/WaterStation"
+                    }
+                  },
+                  "required": [
+                    "station"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Station found."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "summary": "Get a station",
+        "tags": [
+          "Water"
+        ]
+      }
+    },
+    "/api/v1/water-stations/{id}/readings": {
+      "get": {
+        "operationId": "listWaterReadings",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceID"
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
+          },
+          {
+            "$ref": "#/components/parameters/Offset"
+          },
+          {
+            "$ref": "#/components/parameters/From"
+          },
+          {
+            "$ref": "#/components/parameters/To"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadingList"
+                }
+              }
+            },
+            "description": "Descending observed time; waterLevelM is meters and nullable, never guessed."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "summary": "List time-series observations for a station",
+        "tags": [
+          "Water"
         ]
       }
     },
@@ -593,6 +2156,18 @@
     },
     {
       "name": "Admin"
+    },
+    {
+      "name": "Data Sources"
+    },
+    {
+      "name": "Water"
+    },
+    {
+      "name": "Flood Domain"
+    },
+    {
+      "name": "Roads"
     }
   ]
 }

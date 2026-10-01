@@ -1,6 +1,6 @@
 # Flood Watch Ongkharak roadmap
 
-`UNKNOWN` is not `SAFE`; preserve source provenance across future phases. Phase 1 is the current authorized scope; do not begin Phase 2.
+`UNKNOWN` is not `SAFE`; preserve source provenance across future phases. Phase 2 is the current authorized scope; do not begin Phase 3.
 
 ## Phase 0 — Foundation (complete)
 
@@ -27,7 +27,12 @@ Local Phase 1 validation (2026-10-02): Go gofmt clean, vet/test/build API/worker
 
 ## Phase 2 — Core Flood Domain
 
-- [ ] Model source-aware water, flood, road, and alert data with migrations
+- [x] Model seven source-aware water, flood, risk, and road entities with migration 3 and finite-number checks in migration 4; alert engine remains later scope
+- [x] Add public paginated read APIs, ADMIN-only manual writes, GeoJSON/bbox filtering, and OpenAPI contracts
+- [x] Test canonical UNKNOWN/freshness and PostGIS bbox/intersection/duplicate behavior with synthetic fixtures
+- [x] Run Go, frontend, Python, OpenAPI, Docker, fresh-migration, rollback/reapply, and HTTP smoke checks
+
+Local Phase 2 validation (2026-10-02): gofmt clean; `go vet ./...`, `go test ./...`, and builds of API/worker/bootstrap pass. Docker Go suite passes against actual PostGIS, including source provenance, duplicate observations, geometry bbox/intersection, invalid coordinate/SRID, seven finite-number checks, 401/403 ADMIN boundaries, pagination, unknown IDs, and malformed input. Existing dev database migrated to version 4 (`dirty=false`); one disposable database applied 1→2→3→4 with seven tables and exercised 4→3→4 before deletion. OpenAPI 3.1 has 18 paths and 45 schemas, canonical/embedded equality, type-paired GeoJSON coordinates, resolved refs, and no duplicate YAML keys. Frontend typecheck, 6 Vitest tests, and build pass; Python pytest 1 passes (with cache/deprecation warnings). Compose config passes; rebuilt API readiness and OpenAPI return 200, six public collections return 200 without JWT, guest ADMIN write 401, invalid bbox 400. Earlier Phase 2 smoke also verified invalid severity. No real flood data was seeded; synthetic test readings were cleaned up. Remote GitHub Actions and browser-rendered Swagger interaction have not been verified.
 
 ## Phase 3 — External Data Ingestion
 

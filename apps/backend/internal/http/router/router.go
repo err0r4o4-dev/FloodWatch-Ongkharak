@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/floodwatch-ongkharak/backend/internal/auth"
+	"github.com/floodwatch-ongkharak/backend/internal/flood"
 	"github.com/floodwatch-ongkharak/backend/internal/health"
 	"github.com/floodwatch-ongkharak/backend/internal/http/handler"
 	"github.com/floodwatch-ongkharak/backend/internal/http/middleware"
@@ -23,6 +24,7 @@ type Dependencies struct {
 	CORSAllowedOrigins []string
 	SwaggerEnabled     bool
 	AuthService        *auth.Service
+	FloodService       *flood.Service
 	CookieOptions      handler.CookieOptions
 }
 
@@ -35,10 +37,10 @@ func New(dependencies Dependencies) http.Handler {
 
 	router.Get("/health", handler.NewHealthHandler().ServeHTTP)
 	router.Get("/ready", handler.NewReadinessHandler(dependencies.Readiness).ServeHTTP)
-	if dependencies.AuthService != nil {
-		authHandler := handler.NewAuthHandler(dependencies.AuthService, dependencies.CookieOptions)
-		limiter := middleware.NewRateLimiter()
-		router.Route("/api/v1", func(api chi.Router) {
+	router.Route("/api/v1", func(api chi.Router) {
+		if dependencies.AuthService != nil {
+			authHandler := handler.NewAuthHandler(dependencies.AuthService, dependencies.CookieOptions)
+			limiter := middleware.NewRateLimiter()
 			api.With(limiter.Limit("register", 5, time.Minute)).Post("/auth/register", authHandler.Register)
 			api.With(limiter.Limit("login", 10, time.Minute)).Post("/auth/login", authHandler.Login)
 			api.With(limiter.Limit("refresh", 30, time.Minute)).Post("/auth/refresh", authHandler.Refresh)
@@ -50,8 +52,27 @@ func New(dependencies Dependencies) http.Handler {
 			api.With(middleware.RequireAuthentication(dependencies.AuthService), middleware.RequireRole(auth.RoleAdmin)).Get("/admin/ping", func(response http.ResponseWriter, _ *http.Request) {
 				response.WriteHeader(http.StatusOK)
 			})
-		})
-	}
+		}
+		if dependencies.FloodService != nil {
+			floodHandler := handler.NewFloodHandler(dependencies.FloodService)
+			publicRead := middleware.NewRateLimiter().Limit("flood-read", 120, time.Minute)
+			api.With(publicRead).Get("/data-sources", floodHandler.Sources)
+			api.With(publicRead).Get("/water-stations", floodHandler.Stations)
+			api.With(publicRead).Get("/water-stations/{id}", floodHandler.Station)
+			api.With(publicRead).Get("/water-stations/{id}/readings", floodHandler.Readings)
+			api.With(publicRead).Get("/flood-events", floodHandler.Events)
+			api.With(publicRead).Get("/flood-events/{id}", floodHandler.Event)
+			api.With(publicRead).Get("/risk-areas", floodHandler.RiskAreas)
+			api.With(publicRead).Get("/roads", floodHandler.Roads)
+			api.With(publicRead).Get("/road-conditions", floodHandler.RoadConditions)
+			if dependencies.AuthService != nil {
+				admin := []func(http.Handler) http.Handler{middleware.RequireAuthentication(dependencies.AuthService), middleware.RequireRole(auth.RoleAdmin)}
+				api.With(admin...).Post("/data-sources", floodHandler.CreateSource)
+				api.With(admin...).Post("/risk-areas", floodHandler.CreateRiskArea)
+				api.With(admin...).Post("/road-conditions", floodHandler.CreateRoadCondition)
+			}
+		}
+	})
 	if dependencies.SwaggerEnabled {
 		router.Get("/openapi.json", openAPIHandler)
 		router.Get("/docs", func(response http.ResponseWriter, request *http.Request) {

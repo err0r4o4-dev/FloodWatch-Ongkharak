@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"math"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -23,5 +24,17 @@ func TestHealthHandlerReturnsOK(t *testing.T) {
 	}
 	if body["status"] != "ok" {
 		t.Fatalf("status body = %q, want ok", body["status"])
+	}
+}
+
+func TestWriteJSONRejectsNonFiniteNumbersWithoutSendingSuccess(t *testing.T) {
+	response := httptest.NewRecorder()
+	writeJSON(response, http.StatusOK, map[string]float64{"level": math.NaN()})
+	if response.Code != http.StatusInternalServerError {
+		t.Fatalf("status = %d, want 500", response.Code)
+	}
+	var body map[string]any
+	if err := json.Unmarshal(response.Body.Bytes(), &body); err != nil || body["error"] == nil {
+		t.Fatalf("invalid error JSON: %s (%v)", response.Body.String(), err)
 	}
 }

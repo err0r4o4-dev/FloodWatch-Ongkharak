@@ -39,7 +39,13 @@ func NewReadinessHandler(readiness readinessService) http.Handler {
 }
 
 func writeJSON(response http.ResponseWriter, status int, body any) {
+	encoded, err := json.Marshal(body)
 	response.Header().Set("Content-Type", "application/json; charset=utf-8")
+	if err != nil {
+		response.WriteHeader(http.StatusInternalServerError)
+		_, _ = response.Write([]byte(`{"error":{"code":"INTERNAL_ERROR","message":"Request could not be completed"}}`))
+		return
+	}
 	response.WriteHeader(status)
-	_ = json.NewEncoder(response).Encode(body)
+	_, _ = response.Write(append(encoded, '\n'))
 }

@@ -13,11 +13,13 @@ import (
 
 	"github.com/floodwatch-ongkharak/backend/internal/auth"
 	"github.com/floodwatch-ongkharak/backend/internal/config"
+	"github.com/floodwatch-ongkharak/backend/internal/flood"
 	"github.com/floodwatch-ongkharak/backend/internal/health"
 	"github.com/floodwatch-ongkharak/backend/internal/http/handler"
 	"github.com/floodwatch-ongkharak/backend/internal/http/router"
 	"github.com/floodwatch-ongkharak/backend/internal/infrastructure/healthcheck"
 	"github.com/floodwatch-ongkharak/backend/internal/postgres/authrepo"
+	"github.com/floodwatch-ongkharak/backend/internal/postgres/floodrepo"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
 )
@@ -44,6 +46,10 @@ func run() error {
 	if err != nil {
 		return fmt.Errorf("configure auth service: %w", err)
 	}
+	floodService, err := flood.NewService(floodrepo.New(postgresPool), flood.DefaultFreshnessPolicy())
+	if err != nil {
+		return fmt.Errorf("configure flood service: %w", err)
+	}
 	redisOptions, err := redis.ParseURL(configuration.RedisURL)
 	if err != nil {
 		return fmt.Errorf("configure Redis client: %w", err)
@@ -65,6 +71,7 @@ func run() error {
 		Handler: router.New(router.Dependencies{
 			Logger: logger, Readiness: readiness, CORSAllowedOrigins: configuration.CORSAllowedOrigins,
 			SwaggerEnabled: configuration.SwaggerEnabled, AuthService: authService,
+			FloodService:  floodService,
 			CookieOptions: handler.CookieOptions{Name: configuration.CookieName, Secure: configuration.CookieSecure, SameSite: configuration.CookieSameSite, RefreshTTL: configuration.RefreshTokenTTL, AllowedOrigins: configuration.CORSAllowedOrigins},
 		}),
 		ReadHeaderTimeout: 5 * time.Second,

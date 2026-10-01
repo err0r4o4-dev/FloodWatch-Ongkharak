@@ -1,0 +1,3 @@
+ALTER TABLE road_conditions DROP CONSTRAINT road_conditions_finite_measurements;
+ALTER TABLE flood_events DROP CONSTRAINT flood_events_finite_confidence;
+ALTER TABLE water_readings DROP CONSTRAINT water_readings_finite_measurements;
