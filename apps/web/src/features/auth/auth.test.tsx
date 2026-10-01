@@ -1,0 +1,189 @@
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { MemoryRouter } from "react-router";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { AuthProvider, useAuth } from "./AuthProvider";
+import { ApiClient, createAuthApi } from "./api";
+import { RequireAdmin, RequireAuth } from "./RequireAuth";
+
+const account = {
+  id: "account-1",
+  email: "user@example.com",
+  role: "USER" as const,
+  createdAt: "2026-10-02T00:00:00Z"
+};
+
+function response(body: unknown, status = 200): Response {
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    statusText: "Request failed",
+    json: vi.fn().mockResolvedValue(body)
+  } as unknown as Response;
+}
+
+function createTestAuthApi() {
+  return createAuthApi(new ApiClient());
+}
+
+function AccountSummary() {
+  const { account: currentAccount, logout, status } = useAuth();
+
+  return (
+    <>
+      <p>{status}</p>
+      {currentAccount ? <p>{currentAccount.email}</p> : null}
+      <button type="button" onClick={() => void logout()}>
+        Sign out
+      </button>
+    </>
+  );
+}
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+});
+
+describe("AuthProvider", () => {
+  it("bootstraps by refreshing the session before loading the account", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(response({ user: account, accessToken: "access-token", expiresIn: 900 }))
+      .mockResolvedValueOnce(response({ user: account }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(
+      <AuthProvider api={createTestAuthApi()}>
+        <AccountSummary />
+      </AuthProvider>
+    );
+
+    expect(await screen.findByText(account.email)).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      "/api/v1/auth/refresh",
+      expect.objectContaining({ credentials: "include", method: "POST" })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      "/api/v1/auth/me",
+      expect.objectContaining({ headers: expect.any(Headers) })
+    );
+    expect((fetchMock.mock.calls[1][1] as RequestInit).headers).toEqual(
+      expect.objectContaining({ get: expect.any(Function) })
+    );
+    expect(((fetchMock.mock.calls[1][1] as RequestInit).headers as Headers).get("Authorization")).toBe(
+      "Bearer access-token"
+    );
+  });
+
+  it("clears the in-memory session after logout", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(response({ user: account, accessToken: "access-token", expiresIn: 900 }))
+      .mockResolvedValueOnce(response({ user: account }))
+      .mockResolvedValueOnce(response(undefined, 204));
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(
+      <AuthProvider api={createTestAuthApi()}>
+        <AccountSummary />
+      </AuthProvider>
+    );
+
+    await screen.findByText(account.email);
+    fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
+
+    await waitFor(() => expect(screen.getByText("anonymous")).toBeInTheDocument());
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      "/api/v1/auth/logout",
+      expect.objectContaining({ credentials: "include", method: "POST" })
+    );
+  });
+});
+
+describe("ApiClient", () => {
+  it("shares one refresh and retries each unauthorized request once", async () => {
+    const fetchMock = vi.fn((path: string, options: RequestInit) => {
+      const authorized = (options.headers as Headers).get("Authorization") === "Bearer renewed-token";
+      const requestedPath = path.replace("/api/v1", "");
+      return Promise.resolve(authorized ? response({ path: requestedPath }) : response({ error: { code: "UNAUTHORIZED", message: "Expired" } }, 401));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const client = new ApiClient();
+    let releaseRefresh: (() => void) | undefined;
+    const refreshStarted = new Promise<void>((resolve) => {
+      releaseRefresh = resolve;
+    });
+    const refresh = vi.fn(async () => {
+      await refreshStarted;
+      client.setAccessToken("renewed-token");
+      return true;
+    });
+    client.setUnauthorizedHandler(refresh);
+
+    const first = client.request<{ path: string }>("/protected/first");
+    const second = client.request<{ path: string }>("/protected/second");
+
+    await waitFor(() => expect(refresh).toHaveBeenCalledTimes(1));
+    releaseRefresh?.();
+
+    await expect(Promise.all([first, second])).resolves.toEqual([
+      { path: "/protected/first" },
+      { path: "/protected/second" }
+    ]);
+    expect(fetchMock).toHaveBeenCalledTimes(4);
+  });
+});
+
+describe("auth route guards", () => {
+  it("shows a loading state while session bootstrap is pending", () => {
+    vi.stubGlobal("fetch", vi.fn(() => new Promise<Response>(() => undefined)));
+
+    render(
+      <MemoryRouter>
+        <AuthProvider api={createTestAuthApi()}>
+          <RequireAuth>
+            <p>Private content</p>
+          </RequireAuth>
+        </AuthProvider>
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole("status")).toHaveTextContent("Checking your session");
+  });
+
+  it("shows anonymous and forbidden states before protected content", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(response({ error: { code: "UNAUTHORIZED", message: "Missing" } }, 401));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const anonymousView = render(
+      <MemoryRouter>
+        <AuthProvider api={createTestAuthApi()}>
+          <RequireAuth>
+            <p>Private content</p>
+          </RequireAuth>
+        </AuthProvider>
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Sign in is required");
+    anonymousView.unmount();
+
+    fetchMock.mockReset()
+      .mockResolvedValueOnce(response({ user: account, accessToken: "access-token", expiresIn: 900 }))
+      .mockResolvedValueOnce(response({ user: account }));
+
+    render(
+      <MemoryRouter>
+        <AuthProvider api={createTestAuthApi()}>
+          <RequireAdmin>
+            <p>Admin content</p>
+          </RequireAdmin>
+        </AuthProvider>
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("do not have permission");
+    expect(screen.queryByText("Admin content")).not.toBeInTheDocument();
+  });
+});

@@ -1,0 +1,5 @@
+*.exe
+*.test
+*.out
+*.log
+.git

@@ -1,0 +1,60 @@
+name: Foundation
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  compose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose config --quiet
+      - run: docker compose up -d postgres
+      - run: docker compose --profile tools run --rm migrate
+      - run: docker compose --profile tools run --rm --build go-test go test ./internal/postgres/authrepo -count=1
+
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm install --global corepack@0.34.0
+      - run: corepack pnpm@10.18.2 install --frozen-lockfile
+      - run: corepack pnpm@10.18.2 typecheck
+      - run: corepack pnpm@10.18.2 test
+      - run: corepack pnpm@10.18.2 build
+
+  go:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: apps/backend/go.mod
+          cache-dependency-path: apps/backend/go.sum
+      - run: test -z "$(gofmt -l .)"
+      - run: go vet ./...
+      - run: go test ./...
+      - run: go build ./cmd/api ./cmd/worker ./cmd/bootstrap-admin
+
+  python:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/ai-python
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: apps/ai-python/requirements-dev.txt
+      - run: python -m pip install -r requirements-dev.txt
+      - run: python -m pytest
+      - run: python -c "from app.main import app; assert app is not None"

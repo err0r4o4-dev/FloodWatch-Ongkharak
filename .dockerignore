@@ -1,0 +1,15 @@
+.git
+.env
+.env.*
+!.env.example
+**/node_modules
+**/.venv
+**/.test-venv
+**/__pycache__
+**/.pytest_cache
+**/dist
+**/coverage
+**/*.exe
+**/*.log
+data
+runtime

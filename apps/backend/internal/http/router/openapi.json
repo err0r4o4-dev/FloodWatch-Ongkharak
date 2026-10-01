@@ -1,0 +1,598 @@
+{
+  "components": {
+    "headers": {
+      "ClearedRefreshTokenCookie": {
+        "description": "Expired refresh-token cookie with HttpOnly, configured SameSite Lax or Strict, and Secure in production.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "RefreshTokenCookie": {
+        "description": "Refresh-token cookie with HttpOnly, configured SameSite Lax or Strict, and Secure in production. The refresh token is never included in the response body.",
+        "schema": {
+          "type": "string"
+        }
+      }
+    },
+    "parameters": {
+      "OptionalRefreshTokenCookie": {
+        "description": "Optional HttpOnly refresh-token cookie. Logout clears it whether or not it identifies an active session.",
+        "in": "cookie",
+        "name": "fw_refresh",
+        "required": false,
+        "schema": {
+          "type": "string"
+        }
+      },
+      "RefreshTokenCookie": {
+        "description": "HttpOnly refresh-token cookie. It uses the configured SameSite Lax or Strict policy and Secure is enabled in production.",
+        "in": "cookie",
+        "name": "fw_refresh",
+        "required": true,
+        "schema": {
+          "type": "string"
+        }
+      }
+    },
+    "schemas": {
+      "CredentialsRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "email": {
+            "format": "email",
+            "type": "string"
+          },
+          "password": {
+            "format": "password",
+            "maxLength": 128,
+            "minLength": 12,
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ],
+        "type": "object"
+      },
+      "DependencyStatus": {
+        "properties": {
+          "status": {
+            "enum": [
+              "ok",
+              "unavailable"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "type": "object"
+      },
+      "ErrorDetail": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "type": "object"
+      },
+      "ErrorResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ErrorDetail"
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "type": "object"
+      },
+      "HealthResponse": {
+        "properties": {
+          "status": {
+            "const": "ok",
+            "type": "string"
+          },
+          "time": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "time"
+        ],
+        "type": "object"
+      },
+      "ReadinessResponse": {
+        "properties": {
+          "dependencies": {
+            "properties": {
+              "minio": {
+                "$ref": "#/components/schemas/DependencyStatus"
+              },
+              "postgres": {
+                "$ref": "#/components/schemas/DependencyStatus"
+              },
+              "redis": {
+                "$ref": "#/components/schemas/DependencyStatus"
+              }
+            },
+            "required": [
+              "postgres",
+              "redis",
+              "minio"
+            ],
+            "type": "object"
+          },
+          "status": {
+            "enum": [
+              "ready",
+              "not_ready"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "dependencies"
+        ],
+        "type": "object"
+      },
+      "SessionResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "accessToken": {
+            "description": "Short-lived bearer access token.",
+            "type": "string"
+          },
+          "expiresIn": {
+            "description": "Seconds until the access token expires.",
+            "minimum": 1,
+            "type": "integer"
+          },
+          "user": {
+            "$ref": "#/components/schemas/User"
+          }
+        },
+        "required": [
+          "user",
+          "accessToken",
+          "expiresIn"
+        ],
+        "type": "object"
+      },
+      "User": {
+        "additionalProperties": false,
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "email": {
+            "format": "email",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "role": {
+            "enum": [
+              "USER",
+              "ADMIN"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "role",
+          "createdAt"
+        ],
+        "type": "object"
+      },
+      "UserResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/User"
+          }
+        },
+        "required": [
+          "user"
+        ],
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "bearerFormat": "JWT",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "description": "Availability data that is stale or unavailable is UNKNOWN, never SAFE.\nRefresh tokens are sent only in an HttpOnly cookie. The cookie uses the configured\nSameSite Lax or Strict policy and Secure is enabled in production; refresh tokens\nare never returned in response bodies. GUEST has no persisted role. Only USER and\nADMIN accounts exist; authentication is required for the Phase 1 demonstration routes.\nOther auth failures use the ErrorResponse envelope (including 403 origin rejection,\n415 unsupported media type, 429 rate limiting, and 500 infrastructure failure).\n",
+    "title": "Flood Watch Ongkharak API",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/admin/ping": {
+      "get": {
+        "operationId": "pingAdmin",
+        "responses": {
+          "200": {
+            "description": "Bearer authentication and administrator authorization succeeded. This response has no body."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Authentication is required or the bearer token is invalid."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The authenticated user does not have the ADMIN role."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Verify administrator authorization",
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "operationId": "login",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CredentialsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponse"
+                }
+              }
+            },
+            "description": "A session was created. The refresh token is sent only in the HttpOnly cookie.",
+            "headers": {
+              "Set-Cookie": {
+                "$ref": "#/components/headers/RefreshTokenCookie"
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid credentials. This response is intentionally generic for unknown, disabled, and incorrect-password accounts."
+          }
+        },
+        "summary": "Start an authenticated session",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "operationId": "logout",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/OptionalRefreshTokenCookie"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The session is revoked when present and the refresh cookie is cleared. This operation is idempotent and has no response body.",
+            "headers": {
+              "Set-Cookie": {
+                "$ref": "#/components/headers/ClearedRefreshTokenCookie"
+              }
+            }
+          }
+        },
+        "summary": "End the current refresh session",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "operationId": "getCurrentUser",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            },
+            "description": "The authenticated user."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Authentication is required or the bearer token is invalid."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get the current user",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "operationId": "refresh",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RefreshTokenCookie"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponse"
+                }
+              }
+            },
+            "description": "The refresh token was rotated and the replacement is sent only in the HttpOnly cookie.",
+            "headers": {
+              "Set-Cookie": {
+                "$ref": "#/components/headers/RefreshTokenCookie"
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The refresh token is missing, invalid, expired, revoked, or has already been used."
+          }
+        },
+        "summary": "Rotate the refresh session",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "operationId": "register",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CredentialsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            },
+            "description": "The user account was created with the USER role."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Registration data is invalid or an impermissible role was requested."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "An account already exists for the email address."
+          }
+        },
+        "summary": "Register a user account",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/user/ping": {
+      "get": {
+        "operationId": "pingUser",
+        "responses": {
+          "200": {
+            "description": "Bearer authentication succeeded. This response has no body."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Authentication is required or the bearer token is invalid."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Verify user authentication",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "getHealth",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            },
+            "description": "The API process is accepting requests."
+          }
+        },
+        "summary": "Report API process liveness",
+        "tags": [
+          "System"
+        ]
+      }
+    },
+    "/ready": {
+      "get": {
+        "operationId": "getReadiness",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadinessResponse"
+                }
+              }
+            },
+            "description": "PostgreSQL, Redis, and MinIO liveness checks pass."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadinessResponse"
+                }
+              }
+            },
+            "description": "At least one required dependency is unavailable or not configured."
+          }
+        },
+        "summary": "Report API dependency readiness",
+        "tags": [
+          "System"
+        ]
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "/"
+    }
+  ],
+  "tags": [
+    {
+      "description": "Service liveness and dependency readiness.",
+      "name": "System"
+    },
+    {
+      "name": "Auth"
+    },
+    {
+      "name": "Overview"
+    },
+    {
+      "name": "Alerts"
+    },
+    {
+      "name": "Water"
+    },
+    {
+      "name": "Flood"
+    },
+    {
+      "name": "Map"
+    },
+    {
+      "name": "Roads"
+    },
+    {
+      "name": "CCTV"
+    },
+    {
+      "name": "Reports"
+    },
+    {
+      "name": "Realtime"
+    },
+    {
+      "name": "Admin"
+    }
+  ]
+}

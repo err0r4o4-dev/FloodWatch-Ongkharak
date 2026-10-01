@@ -1,0 +1,342 @@
+openapi: 3.1.0
+info:
+  title: Flood Watch Ongkharak API
+  version: 0.1.0
+  description: |
+    Availability data that is stale or unavailable is UNKNOWN, never SAFE.
+    Refresh tokens are sent only in an HttpOnly cookie. The cookie uses the configured
+    SameSite Lax or Strict policy and Secure is enabled in production; refresh tokens
+    are never returned in response bodies. GUEST has no persisted role. Only USER and
+    ADMIN accounts exist; authentication is required for the Phase 1 demonstration routes.
+    Other auth failures use the ErrorResponse envelope (including 403 origin rejection,
+    415 unsupported media type, 429 rate limiting, and 500 infrastructure failure).
+servers:
+  - url: /
+tags:
+  - name: System
+    description: Service liveness and dependency readiness.
+  - name: Auth
+  - name: Overview
+  - name: Alerts
+  - name: Water
+  - name: Flood
+  - name: Map
+  - name: Roads
+  - name: CCTV
+  - name: Reports
+  - name: Realtime
+  - name: Admin
+paths:
+  /health:
+    get:
+      tags: [System]
+      summary: Report API process liveness
+      operationId: getHealth
+      responses:
+        '200':
+          description: The API process is accepting requests.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+  /ready:
+    get:
+      tags: [System]
+      summary: Report API dependency readiness
+      operationId: getReadiness
+      responses:
+        '200':
+          description: PostgreSQL, Redis, and MinIO liveness checks pass.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadinessResponse'
+        '503':
+          description: At least one required dependency is unavailable or not configured.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadinessResponse'
+  /api/v1/auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a user account
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CredentialsRequest'
+      responses:
+        '201':
+          description: The user account was created with the USER role.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          description: Registration data is invalid or an impermissible role was requested.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: An account already exists for the email address.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/auth/login:
+    post:
+      tags: [Auth]
+      summary: Start an authenticated session
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CredentialsRequest'
+      responses:
+        '200':
+          description: A session was created. The refresh token is sent only in the HttpOnly cookie.
+          headers:
+            Set-Cookie:
+              $ref: '#/components/headers/RefreshTokenCookie'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+        '401':
+          description: Invalid credentials. This response is intentionally generic for unknown, disabled, and incorrect-password accounts.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Rotate the refresh session
+      operationId: refresh
+      parameters:
+        - $ref: '#/components/parameters/RefreshTokenCookie'
+      responses:
+        '200':
+          description: The refresh token was rotated and the replacement is sent only in the HttpOnly cookie.
+          headers:
+            Set-Cookie:
+              $ref: '#/components/headers/RefreshTokenCookie'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+        '401':
+          description: The refresh token is missing, invalid, expired, revoked, or has already been used.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/auth/logout:
+    post:
+      tags: [Auth]
+      summary: End the current refresh session
+      operationId: logout
+      parameters:
+        - $ref: '#/components/parameters/OptionalRefreshTokenCookie'
+      responses:
+        '204':
+          description: The session is revoked when present and the refresh cookie is cleared. This operation is idempotent and has no response body.
+          headers:
+            Set-Cookie:
+              $ref: '#/components/headers/ClearedRefreshTokenCookie'
+  /api/v1/auth/me:
+    get:
+      tags: [Auth]
+      summary: Get the current user
+      operationId: getCurrentUser
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The authenticated user.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          description: Authentication is required or the bearer token is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/user/ping:
+    get:
+      tags: [Auth]
+      summary: Verify user authentication
+      operationId: pingUser
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Bearer authentication succeeded. This response has no body.
+        '401':
+          description: Authentication is required or the bearer token is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/admin/ping:
+    get:
+      tags: [Admin]
+      summary: Verify administrator authorization
+      operationId: pingAdmin
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Bearer authentication and administrator authorization succeeded. This response has no body.
+        '401':
+          description: Authentication is required or the bearer token is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: The authenticated user does not have the ADMIN role.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    RefreshTokenCookie:
+      name: fw_refresh
+      in: cookie
+      required: true
+      description: HttpOnly refresh-token cookie. It uses the configured SameSite Lax or Strict policy and Secure is enabled in production.
+      schema:
+        type: string
+    OptionalRefreshTokenCookie:
+      name: fw_refresh
+      in: cookie
+      required: false
+      description: Optional HttpOnly refresh-token cookie. Logout clears it whether or not it identifies an active session.
+      schema:
+        type: string
+  headers:
+    RefreshTokenCookie:
+      description: Refresh-token cookie with HttpOnly, configured SameSite Lax or Strict, and Secure in production. The refresh token is never included in the response body.
+      schema:
+        type: string
+    ClearedRefreshTokenCookie:
+      description: Expired refresh-token cookie with HttpOnly, configured SameSite Lax or Strict, and Secure in production.
+      schema:
+        type: string
+  schemas:
+    CredentialsRequest:
+      type: object
+      additionalProperties: false
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+          minLength: 12
+          maxLength: 128
+    User:
+      type: object
+      additionalProperties: false
+      required: [id, email, role, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [USER, ADMIN]
+        createdAt:
+          type: string
+          format: date-time
+    UserResponse:
+      type: object
+      additionalProperties: false
+      required: [user]
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+    SessionResponse:
+      type: object
+      additionalProperties: false
+      required: [user, accessToken, expiresIn]
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        accessToken:
+          type: string
+          description: Short-lived bearer access token.
+        expiresIn:
+          type: integer
+          minimum: 1
+          description: Seconds until the access token expires.
+    ErrorResponse:
+      type: object
+      additionalProperties: false
+      required: [error]
+      properties:
+        error:
+          $ref: '#/components/schemas/ErrorDetail'
+    ErrorDetail:
+      type: object
+      additionalProperties: false
+      required: [code, message]
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+    HealthResponse:
+      type: object
+      required: [status, time]
+      properties:
+        status:
+          type: string
+          const: ok
+        time:
+          type: string
+          format: date-time
+    DependencyStatus:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ok, unavailable]
+    ReadinessResponse:
+      type: object
+      required: [status, dependencies]
+      properties:
+        status:
+          type: string
+          enum: [ready, not_ready]
+        dependencies:
+          type: object
+          required: [postgres, redis, minio]
+          properties:
+            postgres:
+              $ref: '#/components/schemas/DependencyStatus'
+            redis:
+              $ref: '#/components/schemas/DependencyStatus'
+            minio:
+              $ref: '#/components/schemas/DependencyStatus'
