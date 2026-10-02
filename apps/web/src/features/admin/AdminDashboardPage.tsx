@@ -52,6 +52,18 @@ export function AdminDashboardPage() {
           <h2>รายงานจากชุมชน</h2>
           <p className="muted">ตรวจสอบและอนุมัติรายงานสถานการณ์จากชุมชน</p>
           <NavLink to="/admin/reports" className="button button--primary">
+            ตรวจสอบรายงาน
+          </NavLink>
+        </section>
+
+        <section className="panel admin-card">
+          <h2>หลักฐานจาก AI</h2>
+          <p className="muted">ตรวจสอบและยืนยันข้อมูลที่ประมวลผลโดย AI</p>
+          <NavLink to="/admin/ai-evidence" className="button button--primary">
+            ตรวจสอบหลักฐาน AI
+          </NavLink>
+        </section>
+      </div>
             เปิดรายงาน
           </NavLink>
         </section>

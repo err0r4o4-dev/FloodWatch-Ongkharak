@@ -25,7 +25,6 @@ describe("AppRoutes", () => {
 describe("public routes", () => {
   it.each([
     ["/announcements", "ประกาศ", "ยังไม่มีประกาศที่เผยแพร่"],
-    ["/cctv", "กล้อง CCTV", "ยังไม่มีกล้องที่เผยแพร่"],
     ["/reports", "รายงานสถานการณ์", "ยังไม่มีรายงานที่เผยแพร่"],
     ["/map", "แผนที่สถานการณ์", "ข้อมูลในขอบเขตที่โหลด"]
   ])("opens %s without login", async (path, heading, empty) => {

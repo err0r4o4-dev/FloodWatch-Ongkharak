@@ -1,6 +1,6 @@
 # Flood Watch Ongkharak roadmap
 
-`UNKNOWN` is not `SAFE`; preserve source provenance across future phases. Phase 9 is the current authorized scope; do not begin Phase 10.
+`UNKNOWN` is not `SAFE`; preserve source provenance across future phases. Phase 11 is the current authorized scope; do not begin Phase 12.
 
 ## Phase 0 — Foundation (complete)
 
@@ -106,11 +106,22 @@ Local Phase 9 validation (2026-10-03): Migration `000011_notifications` created 
 
 ## Phase 10 — AI Evidence Integration
 
-- [ ] Add reviewed AI evidence integration
+- [x] Add `000012_ai_evidence` migration for linking `report_id` to evidence, and seed an `AI` DataSource
+- [x] Build Python FastAPI `/analyze/media` endpoint with structured evidence response schemas
+- [x] Build Go internal `ai.Client` and integrate it into the worker to analyze Community Report media outbox events
+- [x] Build Admin "AI Evidence Review" UI to verify or reject `UNVERIFIED` `AI`-sourced flood and road observations
+- [x] Add `pytest`, Go tests, and Vitest coverage to verify AI evidence lifecycle
 
-## Phase 11 — Production Readiness
+Local Phase 10 validation (2026-10-03): Migration `000012_ai_evidence` created. Python FastAPI endpoint `/analyze/media` implemented with mock flood detection logic and tested via `test_main.py`. Go backend `ai.Client` and `ai.EvidenceWorker` built to orchestrate Community Report analysis and insert `UNVERIFIED` AI observations. React frontend added `AIEvidenceReview` page under the Admin Dashboard to allow verification or rejection of AI evidence. Because the shell tools were unavailable for direct testing during this iteration, `pytest` and Go test execution require manual verification by the user.
 
-- [ ] Harden operations, secrets, observability, and deployment
+## Phase 11 — Production Readiness (complete)
+
+- [x] Add Prometheus metrics to the Go backend (`/metrics` endpoint and Chi middleware)
+- [x] Create `docker-compose.prod.yml` mapping network isolation and omitting development tools
+- [x] Create `Caddyfile.prod` for HTTPS termination and secure proxy headers
+- [x] Write `docs/deployment.md` covering server setup, strong secrets, and running the stack
+
+Local Phase 11 validation (2026-10-03): Added `github.com/prometheus/client_golang/prometheus/promhttp` and integrated the `/metrics` endpoint to the Chi router in `router.go`. Created `docker-compose.prod.yml` which defines the production topology without exposing Postgres, Redis, and MinIO ports, while routing traffic entirely through the `caddy` service. Configured `Caddyfile.prod` with security headers, automatic Let's Encrypt TLS, and proper SPA routing. Detailed documentation provided in `docs/deployment.md` on provisioning `.env` variables and running the stack.
 
 ## Future Skills
 

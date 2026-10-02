@@ -1,0 +1,33 @@
+{$DOMAIN_NAME} {
+	# Enforce security headers
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		X-XSS-Protection "1; mode=block"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*; connect-src 'self' https://*; font-src 'self'; worker-src 'self';"
+	}
+
+	# Proxy API requests to Go backend
+	handle_path /api/* {
+		reverse_proxy api:8080
+	}
+
+	# Proxy SSE event stream
+	handle_path /events/* {
+		reverse_proxy api:8080 {
+			flush_interval -1
+		}
+	}
+
+	# Serve built React frontend
+	handle {
+		root * /srv/web
+		try_files {path} {path}/ /index.html
+		file_server
+	}
+
+	# Compress responses
+	encode gzip zstd
+}

@@ -7,7 +7,6 @@ const links = [
   { to: "/", label: "ภาพรวม", symbol: "◉" },
   { to: "/announcements", label: "ประกาศ", symbol: "◇" },
   { to: "/map", label: "แผนที่", symbol: "▤" },
-  { to: "/cctv", label: "กล้อง CCTV", symbol: "▣" },
   { to: "/reports", label: "รายงาน", symbol: "▦" }
 ];
 

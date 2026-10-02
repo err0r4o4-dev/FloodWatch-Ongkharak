@@ -16,6 +16,7 @@ import (
 	"github.com/floodwatch-ongkharak/backend/internal/report"
 	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -46,6 +47,7 @@ func New(dependencies Dependencies) http.Handler {
 
 	router.Get("/health", handler.NewHealthHandler().ServeHTTP)
 	router.Get("/ready", handler.NewReadinessHandler(dependencies.Readiness).ServeHTTP)
+	router.Get("/metrics", promhttp.Handler().ServeHTTP)
 	router.Route("/api/v1", func(api chi.Router) {
 		if dependencies.RedisClient != nil {
 			api.Get("/events/stream", handler.NewEventStreamHandler(dependencies.RedisClient).ServeHTTP)
