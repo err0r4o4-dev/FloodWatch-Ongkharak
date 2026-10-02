@@ -18,9 +18,10 @@ function Icon({ name }: { name: string }) {
     pin: <><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z" /><circle cx="12" cy="10" r="2.5" /></>,
     map: <><path d="m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2z" /><path d="M9 3v16M15 5v16" /></>,
     report: <><rect x="5" y="3" width="14" height="18" rx="2" /><path d="M9 8h6M9 12h6M9 16h4" /></>,
+    settings: <><path d="M3 7h4m4 0h10M3 17h10m4 0h4" /><circle cx="9" cy="7" r="2" /><circle cx="15" cy="17" r="2" /></>,
     user: <><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></>
   };
-  return <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>;
+  return <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>;
 }
 
 function Navigation({ mobile = false }: { mobile?: boolean }) {
@@ -32,7 +33,7 @@ function Navigation({ mobile = false }: { mobile?: boolean }) {
       <span className="shell-nav-symbol" aria-hidden="true"><Icon name={symbol} /></span><span>{label}</span>
     </NavLink></li>)}
       {isAdmin && !mobile && <li className="admin-nav-divider"><NavLink to="/admin" className={({ isActive }) => `shell-nav-link admin-nav-link${isActive ? " is-active" : ""}`}>
-      <span className="shell-nav-symbol" aria-hidden="true">⚙</span><span>จัดการระบบ</span>
+      <span className="shell-nav-symbol" aria-hidden="true"><Icon name="settings" /></span><span>จัดการระบบ</span>
     </NavLink></li>}
     </ul>
   </nav>;
@@ -48,10 +49,12 @@ export function AppShell({ children }: { children: ReactNode }) {
     <aside className="desktop-sidebar">
       <NavLink to="/" className="brand" aria-label="Flood Watch Ongkharak หน้าหลัก"><img className="brand__image" src="/flood-watch-mark.svg" alt="" /><span><strong>Flood Watch</strong><small>Ongkharak</small></span></NavLink>
       <Navigation />
-      <div className="sidebar-status"><span className="sidebar-status__dot" />ข้อมูลไม่พร้อมใช้งานไม่ได้หมายถึงปลอดภัย</div>
+      <aside className="sidebar-status" aria-labelledby="sidebar-status-title"><span className="sidebar-status__dot" aria-hidden="true" /><div><strong id="sidebar-status-title">ข้อควรทราบ</strong><p>ข้อมูลไม่พร้อมใช้งานไม่ได้หมายถึงพื้นที่ปลอดภัย</p></div></aside>
     </aside>
-    <div className="shell-main"><header className="institution-header"><span className="institution-header__name">ศูนย์ติดตามสถานการณ์น้ำ อำเภอองครักษ์ จังหวัดนครนายก</span><div className="institution-header__actions"><div className="locale-toggle" aria-label="ภาษา"><span aria-current="true">TH</span><button type="button" disabled title="ภาษาอังกฤษยังไม่พร้อมใช้งาน">EN</button></div><NavLink className="header-icon" to="/#notification-settings" aria-label="ตั้งค่าการแจ้งเตือน"><Icon name="bell" /></NavLink><details className="account-menu" onKeyDown={(event) => { if (event.key === "Escape") event.currentTarget.open = false; }}><summary aria-label="เมนูบัญชี"><Icon name="user" /> <span aria-hidden="true">⌄</span></summary><div className="account-menu__content">{account ? <><span>{account.email}</span>{account.role === "ADMIN" && <NavLink to="/admin">จัดการระบบ</NavLink>}<button type="button" onClick={() => void logout()}>ออกจากระบบ</button></> : <><NavLink to="/login">เข้าสู่ระบบ</NavLink><NavLink to="/register">สมัครสมาชิก</NavLink></>}</div></details></div></header>
+    <div className="shell-main"><div className="shell-top">
+      <header className="institution-header"><span className="institution-header__name">ศูนย์ติดตามสถานการณ์น้ำ อำเภอองครักษ์ จังหวัดนครนายก</span><div className="institution-header__actions"><div className="locale-toggle" aria-label="ภาษา"><span aria-current="true">TH</span><button type="button" disabled title="ภาษาอังกฤษยังไม่พร้อมใช้งาน">EN</button></div><NavLink className="header-icon" to="/#notification-settings" aria-label="ตั้งค่าการแจ้งเตือน"><Icon name="bell" /></NavLink><details className="account-menu" onKeyDown={(event) => { if (event.key === "Escape") event.currentTarget.open = false; }}><summary aria-label="เมนูบัญชี"><Icon name="user" /> <span aria-hidden="true">⌄</span></summary><div className="account-menu__content">{account ? <><span>{account.email}</span>{account.role === "ADMIN" && <NavLink to="/admin">จัดการระบบ</NavLink>}<button type="button" onClick={() => void logout()}>ออกจากระบบ</button></> : <><NavLink to="/login">เข้าสู่ระบบ</NavLink><NavLink to="/register">สมัครสมาชิก</NavLink></>}</div></details></div></header>
       <header className="mobile-header"><NavLink to="/" className="brand" aria-label="Flood Watch Ongkharak หน้าหลัก"><img className="brand__image" src="/flood-watch-mark.svg" alt="" /><span><strong>Flood Watch</strong><small>Ongkharak</small></span></NavLink></header>
+    </div>
       <main id="main-content" className="page-content" tabIndex={-1}>{children}</main>
       <footer className="site-footer"><p>Flood Watch Ongkharak · ข้อมูลสาธารณะ</p><span role="status" className="realtime-indicator">{realtimeStatus === "CONNECTED" ? "อัปเดตอัตโนมัติพร้อมใช้งาน" : realtimeStatus === "RECONNECTING" ? "กำลังเชื่อมต่อการอัปเดต · ข้อมูลยังโหลดผ่าน API ได้" : "การอัปเดตอัตโนมัติไม่พร้อม · ข้อมูลยังโหลดผ่าน API ได้"}</span><NavLink to="/system-status">สถานะระบบ</NavLink></footer>
     </div>

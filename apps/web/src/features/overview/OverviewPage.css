@@ -14,7 +14,7 @@
 .overview-hero__copy h1 { margin: .15rem 0 0; color: #0a225a; font-size: clamp(1.75rem, 3vw, 2.75rem); line-height: 1.25; font-weight: 800; }
 .overview-hero__copy p:not(.eyebrow) { margin: .15rem 0; font-size: 1.2rem; font-weight: 700; }
 .overview-hero__copy small { display: block; max-width: 29rem; color: #52709f; font-size: .78rem; }
-.overview-hero__notification { max-width: 14rem; padding: .9rem; border: 1px solid #e8f4ff; border-radius: .95rem; background: rgb(255 255 255 / 82%); backdrop-filter: blur(12px); font-size: .78rem; }
+.overview-hero__notification { max-width: 14rem; padding: .9rem; border: 1px solid #e8f4ff; border-radius: .95rem; background: rgb(255 255 255 / 82%); backdrop-filter: blur(12px); font-size: .78rem; scroll-margin-top: 6rem; }
 .overview-hero__notification label { line-height: 1.35; }
 .overview-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .75rem; margin-top: -1.8rem; padding-inline: .7rem; z-index: 1; }
 .overview-metric { display: flex; align-items: center; gap: .75rem; min-width: 0; min-height: 7.15rem; padding: 1rem; border: 1px solid #e4effc; border-radius: .95rem; background: rgb(255 255 255 / 94%); box-shadow: 0 8px 24px rgb(62 113 166 / 8%); color: #1b3569; font-size: .82rem; font-weight: 700; text-decoration: none; }
@@ -50,5 +50,6 @@
 .overview-page .data-list { gap: .55rem; }
 .overview-page .data-card { padding: .8rem; }
 @media (max-width: 75rem) { .overview-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 0; padding: 0; } .overview-page .overview-sections { grid-template-columns: repeat(2, minmax(0, 1fr)); } .overview-map { grid-column: 1 / -1; } .overview-events { grid-column: 1 / -1; grid-row: auto; } .overview-page .overview-sections > .data-section:not(.overview-map):not(.overview-events) { grid-row: auto; } }
+@media (max-width: 55rem) { .overview-hero__notification { scroll-margin-top: 8.75rem; } }
 @media (max-width: 45rem) { .overview-hero { min-height: 15rem; flex-direction: column; } .overview-hero__notification { max-width: 100%; } .overview-page .overview-sections { grid-template-columns: minmax(0, 1fr); } .overview-map, .overview-events { grid-column: 1; } .overview-map__canvas .situation-map { height: 18rem; } }
 @media (max-width: 25rem) { .overview-metrics { gap: .4rem; } .overview-metric { min-height: 6rem; flex-direction: column; align-items: flex-start; gap: .25rem; padding: .65rem; } .overview-metric__icon { width: 2rem; height: 2rem; font-size: 1.2rem; } .overview-metric strong { font-size: 1.2rem; } }

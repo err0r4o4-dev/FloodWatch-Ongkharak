@@ -48,6 +48,17 @@ describe("public routes", () => {
     expect(screen.queryByRole("link", { name: /CCTV/ })).not.toBeInTheDocument();
   });
 
+  it("uses consistent navigation icons and keeps the data caution in a sidebar card", () => {
+    render(<MemoryRouter initialEntries={["/system-status"]}><AppRoutes /></MemoryRouter>);
+    const navigation = screen.getByRole("navigation", { name: "การนำทางหลัก" });
+    for (const link of within(navigation).getAllByRole("link")) {
+      expect(link.querySelector("svg")).toHaveAttribute("width", "20");
+      expect(link.querySelector("svg")).toHaveAttribute("stroke-width", "2");
+    }
+    const caution = screen.getByRole("complementary", { name: "ข้อควรทราบ" });
+    expect(within(caution).getByText("ข้อมูลไม่พร้อมใช้งานไม่ได้หมายถึงพื้นที่ปลอดภัย")).toBeInTheDocument();
+  });
+
   it("keeps five mobile destinations for an admin and exposes admin from the account menu", async () => {
     const account = { id: "admin-1", email: "admin@example.com", role: "ADMIN" as const, createdAt: "2026-10-02T00:00:00Z" };
     const api = { refresh: vi.fn().mockResolvedValue(undefined), me: vi.fn().mockResolvedValue(account), logout: vi.fn(), login: vi.fn(), register: vi.fn() };
