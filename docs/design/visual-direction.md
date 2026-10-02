@@ -3,7 +3,11 @@
 Reference images under:
 docs/design/references/
 
-The images define visual direction, not pixel-perfect requirements.
+The public redesign targets the visible composition of `01-overview.png`, `02-alerts.png`, `03-risk.png`, `04-map.png`, and `06-reports.png`. `05-cctv.png` is excluded; no camera navigation, fake stream, or camera layer is part of this redesign.
+
+Use the separately supplied institutional utility-header and centered login references for those surfaces. Brand the login as Flood Watch, not the sample LostLink product. TH/EN and Google authentication remain visibly unavailable until implemented; password recovery has an informational UI but sends no request. Do not prefill example credentials.
+
+Self-host Inter Variable for Latin text and numerals and Noto Sans Thai Variable for Thai. Use original code-native artwork only as illustration; it must not imply a live flood observation. Verified event photos and metrics must come from the API, never from the reference mockups.
 
 ## Style
 

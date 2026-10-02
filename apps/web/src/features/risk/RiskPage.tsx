@@ -1,0 +1,144 @@
+import type { ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { DataTimestamp, EmptyState, ErrorState, FreshnessBadge, LoadingState, SourceBadge, StatusBadge } from "../../shared/components/DataStates";
+import { FeatureDetails } from "../map/components/FeatureDetails";
+import { MapLegend } from "../map/components/MapLegend";
+import { SituationMap } from "../map/components/SituationMap";
+import { useMapData } from "../map/hooks/useMapData";
+import type { LayerVisibility, MapBounds, MapSelection } from "../map/types";
+import { loadCollection } from "../overview/api";
+import type { RiskArea } from "../overview/api";
+import "./RiskPage.css";
+
+type RiskFilter = "ALL" | "VERY_HIGH" | "HIGH" | "MODERATE" | "LOW" | "UNKNOWN";
+const riskMapVisibility: LayerVisibility = { flood: false, water: false, risk: true, roads: false, reports: false };
+const emptyPoint = { longitude: "", latitude: "" };
+
+const filters: { key: RiskFilter; label: string }[] = [
+  { key: "ALL", label: "ทั้งหมด" },
+  { key: "VERY_HIGH", label: "ความเสี่ยงสูงมาก" },
+  { key: "HIGH", label: "ความเสี่ยงสูง" },
+  { key: "MODERATE", label: "ความเสี่ยงปานกลาง" },
+  { key: "LOW", label: "ความเสี่ยงต่ำ" },
+  { key: "UNKNOWN", label: "ไม่ทราบสถานะ" }
+];
+
+function effectiveLevel(item: Pick<RiskArea, "effectiveRiskLevel" | "freshness">): string {
+  return item.freshness === "FRESH" ? item.effectiveRiskLevel : "UNKNOWN";
+}
+
+function levelCount(items: RiskArea[], level: string) {
+  return items.filter((item) => effectiveLevel(item) === level).length;
+}
+
+function RiskSummary({ items }: { items: RiskArea[] | null }) {
+  const unavailable = !items?.length;
+  const cards = [
+    { level: "VERY_HIGH", label: "ความเสี่ยงสูงมาก", description: "ตรวจสอบประกาศและหลีกเลี่ยงพื้นที่ที่ได้รับผลกระทบ" },
+    { level: "HIGH", label: "ความเสี่ยงสูง", description: "ต้องตรวจสอบหลักฐานล่าสุดก่อนเดินทาง" },
+    { level: "MODERATE", label: "ความเสี่ยงปานกลาง", description: "ควรติดตามสถานการณ์และประกาศ" },
+    { level: "LOW", label: "ความเสี่ยงต่ำ", description: "ไม่ใช่การยืนยันว่าพื้นที่ปลอดภัย" },
+    { level: "UNKNOWN", label: "ไม่ทราบสถานะ", description: "ข้อมูลเก่าหรือไม่พร้อมใช้งาน" }
+  ];
+
+  return <section className="risk-summary" aria-label="สรุประดับความเสี่ยงจากรายการที่เรียกดู">
+    {cards.map((card) => <article className={`risk-summary__card risk-summary__card--${card.level.toLowerCase()}`} key={card.level}>
+      <StatusBadge status={card.level} />
+      <strong>{unavailable ? "—" : levelCount(items, card.level)}</strong>
+      <span>รายการที่เรียกดู</span>
+      <p>{card.description}</p>
+    </article>)}
+  </section>;
+}
+
+function RiskCard({ item }: { item: RiskArea }) {
+  const level = effectiveLevel(item);
+  const stale = item.freshness !== "FRESH";
+
+  return <li className="risk-card">
+    <div className="risk-card__heading">
+      <div><h3>{item.name}</h3><p>{item.description || "ไม่มีคำอธิบายจากแหล่งข้อมูล"}</p></div>
+      <StatusBadge status={level} />
+    </div>
+    <div className="badge-row"><SourceBadge type={item.source.sourceType} /><FreshnessBadge freshness={item.freshness} /></div>
+    <p className="risk-card__source">{item.source.name}</p>
+    <div className="risk-card__times"><DataTimestamp label="เริ่มมีผล" value={item.validFrom} /><DataTimestamp label="สิ้นสุด" value={item.validTo} /></div>
+    {stale && <p className="risk-card__uncertainty">ข้อมูลเก่าหรือไม่พร้อมใช้งาน จึงแสดงเป็นไม่ทราบสถานะและไม่ยืนยันว่าพื้นที่ปลอดภัย</p>}
+  </li>;
+}
+
+function RiskMapPanel() {
+  const [bounds, setBounds] = useState<MapBounds | null>(null);
+  const [selection, setSelection] = useState<MapSelection | null>(null);
+  const [retry, setRetry] = useState(0);
+  const data = useMapData(bounds, riskMapVisibility, retry);
+  const onBoundsChange = useCallback((next: MapBounds) => { setBounds(next); setSelection(null); }, []);
+
+  return <section className="risk-map-panel" aria-labelledby="risk-map-title">
+    <div className="risk-map-panel__heading"><div><h2 id="risk-map-title">แผนที่พื้นที่เสี่ยง</h2><p>ขอบเขตพื้นที่เสี่ยงจาก API ตามบริเวณที่กำลังดู</p></div><a className="risk-map-panel__link" href="/map">เปิดแผนที่พื้นที่เสี่ยง <span aria-hidden="true">→</span></a></div>
+    <div className="risk-map-panel__canvas">
+      <SituationMap items={data.items} visible={riskMapVisibility} mode="SITUATION" points={{ origin: emptyPoint, destination: emptyPoint }} picking={null} onBoundsChange={onBoundsChange} onMapPoint={() => undefined} onSelect={setSelection} />
+      {data.loading && <p className="risk-map-panel__status" role="status">กำลังโหลดขอบเขตพื้นที่เสี่ยง</p>}
+      {!data.loading && data.failed.length > 0 && <div className="risk-map-panel__status risk-map-panel__status--error" role="status">ไม่สามารถโหลดพื้นที่เสี่ยงบนแผนที่ได้ · สถานะไม่ทราบ <button type="button" onClick={() => setRetry((previous) => previous + 1)}>ลองโหลดแผนที่อีกครั้ง</button></div>}
+    </div>
+    <MapLegend visible={riskMapVisibility} />
+    {selection && <FeatureDetails selection={selection} onClose={() => setSelection(null)} />}
+    {data.truncated.length > 0 && <p className="risk-map-panel__note">ขอบเขตที่โหลดมีรายการเกินกำหนด โปรดขยายแผนที่เพื่อตรวจสอบพื้นที่ย่อย</p>}
+    <p className="risk-map-panel__note">พื้นที่ที่ไม่มีข้อมูลหรือข้อมูลเก่าไม่ใช่การยืนยันว่าปลอดภัย</p>
+  </section>;
+}
+
+export function RiskPage() {
+  const [items, setItems] = useState<RiskArea[] | null>(null);
+  const [failed, setFailed] = useState(false);
+  const [retry, setRetry] = useState(0);
+  const [filter, setFilter] = useState<RiskFilter>("ALL");
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setItems(null);
+    setFailed(false);
+    void loadCollection("risks", controller.signal)
+      .then((nextItems) => { if (!controller.signal.aborted) setItems(nextItems); })
+      .catch(() => { if (!controller.signal.aborted) setFailed(true); });
+    return () => controller.abort();
+  }, [retry]);
+
+  const visibleItems = useMemo(() => items?.filter((item) => filter === "ALL" || effectiveLevel(item) === filter) ?? [], [filter, items]);
+  const retryLoad = () => setRetry((value) => value + 1);
+  const hasItems = items !== null && items.length > 0;
+  let directoryContent: ReactNode;
+
+  if (items === null) {
+    directoryContent = failed ? <ErrorState onRetry={retryLoad} /> : <LoadingState />;
+  } else if (items.length === 0) {
+    directoryContent = <EmptyState title="ยังไม่มีพื้นที่เสี่ยงที่เผยแพร่">ยังไม่มีผลประเมินในรายการที่เรียกดู การไม่มีข้อมูลไม่ได้หมายความว่าไม่มีความเสี่ยงหรือปลอดภัย</EmptyState>;
+  } else {
+    directoryContent = visibleItems.length ? <ul className="risk-list">{visibleItems.map((item) => <RiskCard item={item} key={item.id} />)}</ul> : <p className="risk-directory__empty">ไม่มีรายการ {filters.find((option) => option.key === filter)?.label} ในข้อมูลที่เรียกดู</p>;
+  }
+
+  return <div className="risk-page">
+    <header className="risk-page__heading">
+      <div>
+        <p className="eyebrow">RISK AREAS · ONGKHARAK</p>
+        <h1>พื้นที่เสี่ยงน้ำท่วม</h1>
+        <p>ประเมินพื้นที่จากข้อมูลที่เผยแพร่พร้อมแหล่งที่มาและช่วงเวลาที่มีผล ข้อมูลที่ขาดหายหรือเก่าไม่ใช่หลักฐานว่าปลอดภัย</p>
+      </div>
+      <p className="risk-page__scope">แสดงสูงสุด 20 รายการล่าสุดจาก API สาธารณะ</p>
+    </header>
+    <RiskSummary items={items} />
+    <div className="risk-dashboard">
+      <section className="risk-directory" aria-labelledby="risk-directory-title">
+        <div className="risk-directory__heading">
+          <div><h2 id="risk-directory-title">รายการพื้นที่ประเมิน</h2><p>เลือกดูตามสถานะที่มีผลจากความใหม่ของข้อมูล</p></div>
+          <p className="risk-directory__count" aria-live="polite">{hasItems ? `พบ ${visibleItems.length} รายการจากข้อมูลที่โหลด` : "—"}</p>
+        </div>
+        <div className="risk-filter" role="group" aria-label="กรองระดับความเสี่ยง">
+          {filters.map((option) => <button className={filter === option.key ? "is-selected" : ""} type="button" key={option.key} aria-pressed={filter === option.key} disabled={!hasItems} onClick={() => setFilter(option.key)}>{option.label}</button>)}
+        </div>
+        {directoryContent}
+      </section>
+      <RiskMapPanel />
+    </div>
+  </div>;
+}

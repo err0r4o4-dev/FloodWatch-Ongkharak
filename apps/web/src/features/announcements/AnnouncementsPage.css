@@ -1,0 +1,288 @@
+.announcements-page {
+  max-width: 80rem;
+}
+
+.announcements-page__header {
+  margin-bottom: var(--space-6);
+}
+
+.announcements-page__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(17rem, 21rem);
+  gap: var(--space-6);
+  align-items: start;
+}
+
+.announcements-page__main,
+.announcements-page__sidebar,
+.announcements-list,
+.announcement-sidebar-card,
+.announcement-summary {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.announcement-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.announcement-filter {
+  min-height: var(--touch-target);
+  padding: var(--space-2) var(--space-4);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-ink-muted);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.announcement-filter[aria-pressed="true"] {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-surface);
+}
+
+.announcement-feature {
+  overflow: hidden;
+  padding: clamp(var(--space-4), 4vw, var(--space-8));
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(125deg, var(--color-danger-soft), var(--color-surface) 67%);
+  box-shadow: var(--shadow-surface);
+}
+
+.announcement-state {
+  display: grid;
+  min-height: 15rem;
+  align-content: center;
+  gap: var(--space-3);
+  padding: clamp(var(--space-6), 5vw, var(--space-12));
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(125deg, var(--color-canvas-soft), var(--color-surface));
+  box-shadow: var(--shadow-surface);
+}
+
+.announcement-state--error {
+  border-color: var(--color-status-danger);
+  background: linear-gradient(125deg, var(--color-danger-soft), var(--color-surface));
+}
+
+.announcement-state h2,
+.announcement-state p {
+  max-width: 38rem;
+  margin: 0;
+}
+
+.announcement-state h2 {
+  color: var(--color-primary-strong);
+}
+
+.announcement-state p {
+  color: var(--color-ink-muted);
+}
+
+.announcement-state .action-button {
+  justify-self: start;
+  margin-top: var(--space-2);
+}
+
+.announcement-feature--watch {
+  background: linear-gradient(125deg, var(--color-warning-soft), var(--color-surface) 67%);
+}
+
+.announcement-feature--info {
+  background: linear-gradient(125deg, var(--color-source-official), var(--color-surface) 67%);
+}
+
+.announcement-feature__content {
+  display: grid;
+  max-width: 42rem;
+  gap: var(--space-3);
+}
+
+.announcement-feature__heading,
+.announcement-feature__metadata,
+.announcements-list__heading,
+.announcement-summary__heading,
+.announcement-source-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.announcement-feature__label,
+.announcements-list__heading > span,
+.announcement-summary__heading > span {
+  color: var(--color-ink-muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.announcement-feature h2,
+.announcements-list h2,
+.announcement-sidebar-card h2,
+.announcement-summary h2 {
+  margin: 0;
+  color: var(--color-primary-strong);
+}
+
+.announcement-feature h2 {
+  font-size: clamp(1.35rem, 3vw, 2.1rem);
+}
+
+.announcement-feature p,
+.announcement-sidebar-card p {
+  margin: 0;
+  color: var(--color-ink-muted);
+}
+
+.announcement-feature__metadata {
+  justify-content: flex-start;
+  margin-top: var(--space-2);
+  font-size: 0.86rem;
+}
+
+.announcements-list,
+.announcement-sidebar-card,
+.announcement-summary {
+  padding: var(--space-4);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-surface);
+}
+
+.announcements-list ul,
+.announcement-source-list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  gap: var(--space-2);
+}
+
+.announcement-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) minmax(10rem, 12rem);
+  gap: var(--space-3);
+  align-items: start;
+  padding: var(--space-3);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-canvas-soft);
+}
+
+.announcement-row__content h3,
+.announcement-row__content p,
+.announcement-row__meta {
+  margin: 0;
+}
+
+.announcement-row__content h3 {
+  overflow-wrap: anywhere;
+}
+
+.announcement-row__content p,
+.announcement-row__meta {
+  margin-top: var(--space-1);
+  color: var(--color-ink-muted);
+  font-size: 0.86rem;
+}
+
+.announcement-row__meta {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: 0;
+}
+
+.announcement-row .badge-row {
+  margin-top: var(--space-2);
+}
+
+.announcement-summary__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.announcement-summary__state {
+  min-height: 6.5rem;
+  margin: 0;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-canvas-soft);
+  color: var(--color-ink-muted);
+  font-weight: 700;
+}
+
+.announcement-summary__grid > div {
+  display: grid;
+  min-height: 6.5rem;
+  align-content: center;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-canvas-soft);
+}
+
+.announcement-summary__grid strong {
+  color: var(--color-primary-strong);
+  font-size: 1.65rem;
+}
+
+.announcement-summary__grid span {
+  color: var(--color-ink-muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.announcement-source-list li {
+  padding-bottom: var(--space-2);
+  border-bottom: var(--border-width) solid var(--color-border);
+  color: var(--color-ink-muted);
+  font-size: 0.85rem;
+}
+
+.announcement-source-list li:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+@media (max-width: 60rem) {
+  .announcements-page__layout {
+    grid-template-columns: 1fr;
+  }
+
+  .announcements-page__sidebar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .announcement-sidebar-card:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 42rem) {
+  .announcement-row {
+    grid-template-columns: 1fr;
+  }
+
+  .announcement-row__severity {
+    justify-self: start;
+  }
+
+  .announcements-page__sidebar {
+    grid-template-columns: 1fr;
+  }
+
+  .announcement-sidebar-card:last-child {
+    grid-column: auto;
+  }
+}

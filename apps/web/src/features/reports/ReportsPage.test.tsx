@@ -98,7 +98,7 @@ describe("ReportsPage public list", () => {
 
     renderReports();
 
-    expect(await screen.findByText(verifiedReport.description)).toBeInTheDocument();
+    expect(await screen.findAllByText(verifiedReport.description)).not.toHaveLength(0);
     expect(screen.queryByText("ไม่สามารถโหลดรายงานได้")).not.toBeInTheDocument();
   });
 
@@ -109,8 +109,8 @@ describe("ReportsPage public list", () => {
     renderReports();
 
     expect(screen.getByRole("status")).toHaveTextContent("กำลังโหลดข้อมูล");
-    expect(await screen.findByText(verifiedReport.description)).toBeInTheDocument();
-    expect(screen.getByText("ยืนยันแล้ว")).toBeInTheDocument();
+    expect(await screen.findAllByText(verifiedReport.description)).not.toHaveLength(0);
+    expect(screen.getAllByText("ยืนยันแล้ว")).not.toHaveLength(0);
     expect(screen.getByRole("link", { name: "เข้าสู่ระบบเพื่อส่งรายงาน" })).toHaveAttribute("href", "/login?returnTo=%2Freports");
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/v1/reports?limit=20&offset=0",
@@ -127,8 +127,33 @@ describe("ReportsPage public list", () => {
 
     renderReports();
 
-    expect(await screen.findByText(verifiedReport.description)).toBeInTheDocument();
+    expect(await screen.findAllByText(verifiedReport.description)).not.toHaveLength(0);
     expect(screen.queryByText("pending")).not.toBeInTheDocument();
+  });
+
+  it("filters the verified list and shows details for the selected real report", async () => {
+    const roadReport = {
+      ...verifiedReport,
+      id: "report-2",
+      type: "ROAD" as const,
+      description: "รถผ่านถนนสายหลักได้ช้า"
+    };
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response({
+      items: [verifiedReport, roadReport],
+      limit: 20,
+      offset: 0
+    })));
+
+    renderReports();
+
+    await screen.findAllByText(verifiedReport.description);
+    fireEvent.click(screen.getByRole("button", { name: `ดูรายละเอียด: น้ำท่วม · ${verifiedReport.description}` }));
+    expect(screen.getByRole("heading", { name: verifiedReport.description })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "สภาพถนน" }));
+    await waitFor(() => expect(screen.getByRole("heading", { name: roadReport.description })).toBeInTheDocument());
+    expect(screen.getAllByText(roadReport.description)).not.toHaveLength(0);
+    expect(screen.queryByText(verifiedReport.description)).not.toBeInTheDocument();
   });
 
   it("does not let an older public reload overwrite a newer realtime result", async () => {
@@ -146,22 +171,25 @@ describe("ReportsPage public list", () => {
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
 
     second.resolve(response({ items: [verifiedReport], limit: 20, offset: 0 }));
-    expect(await screen.findByText(verifiedReport.description)).toBeInTheDocument();
+    expect(await screen.findAllByText(verifiedReport.description)).not.toHaveLength(0);
     first.resolve(response({ items: [], limit: 20, offset: 0 }));
-    await waitFor(() => expect(screen.getByText(verifiedReport.description)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getAllByText(verifiedReport.description)).not.toHaveLength(0));
     expect(screen.queryByText("ยังไม่มีรายงานที่เผยแพร่")).not.toBeInTheDocument();
   });
 
-  it("shows retryable empty and unavailable states honestly", async () => {
+  it("keeps the list and detail scaffold for empty and unavailable states", async () => {
     const fetchMock = vi.fn().mockResolvedValueOnce(response({ items: [], limit: 20, offset: 0 }));
     vi.stubGlobal("fetch", fetchMock);
 
     const emptyView = renderReports();
     expect(await screen.findByText("ยังไม่มีรายงานที่เผยแพร่")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "ยังไม่มีรายละเอียดรายงาน" })).toBeInTheDocument();
     emptyView.unmount();
     fetchMock.mockResolvedValueOnce(response({ error: { message: "Offline" } }, 503));
     renderReports();
     expect(await screen.findByRole("alert")).toHaveTextContent("ไม่สามารถโหลดรายงานได้");
+    expect(screen.getByRole("heading", { name: "รายละเอียดไม่พร้อมใช้งาน" })).toBeInTheDocument();
+    expect(screen.getByText("ไม่สามารถแสดงรายละเอียดได้จนกว่าจะโหลดรายงานสำเร็จ")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "โหลดรายงานอีกครั้ง" }));
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
   });
@@ -188,6 +216,7 @@ describe("ReportsPage authenticated workflow", () => {
 
     await screen.findByRole("heading", { name: "ส่งรายงานชุมชน" });
     fireEvent.change(screen.getByLabelText("รายละเอียด"), { target: { value: "น้ำท่วมขังหน้าตลาด" } });
+    expect(screen.getByLabelText("รายละเอียด")).toHaveValue("น้ำท่วมขังหน้าตลาด");
     fireEvent.click(screen.getByRole("button", { name: "ส่งรายงาน" }));
     expect(screen.getByRole("alert")).toHaveTextContent("เลือกตำแหน่งบนแผนที่");
 

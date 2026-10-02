@@ -1,0 +1,54 @@
+.overview-page { display: grid; gap: 1rem; }
+.overview-hero {
+  display: flex;
+  min-height: 15.2rem;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: clamp(1.15rem, 2vw, 1.8rem);
+  border-radius: 1.15rem;
+  background: linear-gradient(90deg, rgb(242 250 255 / 53%), rgb(214 236 255 / 17%)), url("/ongkharak-landscape.svg") center 52% / cover;
+  box-shadow: 0 8px 22px rgb(81 139 192 / 9%);
+}
+.overview-hero__copy { max-width: 37rem; padding: .55rem .65rem; color: #173972; text-shadow: 0 1px 18px white; }
+.overview-hero__copy h1 { margin: .15rem 0 0; color: #0a225a; font-size: clamp(1.75rem, 3vw, 2.75rem); line-height: 1.25; font-weight: 800; }
+.overview-hero__copy p:not(.eyebrow) { margin: .15rem 0; font-size: 1.2rem; font-weight: 700; }
+.overview-hero__copy small { display: block; max-width: 29rem; color: #52709f; font-size: .78rem; }
+.overview-hero__notification { max-width: 14rem; padding: .9rem; border: 1px solid #e8f4ff; border-radius: .95rem; background: rgb(255 255 255 / 82%); backdrop-filter: blur(12px); font-size: .78rem; }
+.overview-hero__notification label { line-height: 1.35; }
+.overview-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .75rem; margin-top: -1.8rem; padding-inline: .7rem; z-index: 1; }
+.overview-metric { display: flex; align-items: center; gap: .75rem; min-width: 0; min-height: 7.15rem; padding: 1rem; border: 1px solid #e4effc; border-radius: .95rem; background: rgb(255 255 255 / 94%); box-shadow: 0 8px 24px rgb(62 113 166 / 8%); color: #1b3569; font-size: .82rem; font-weight: 700; text-decoration: none; }
+.overview-metric:hover { border-color: #80b7ff; }
+.overview-metric strong { display: block; margin-top: .12rem; color: #06194f; font-family: Inter, "Noto Sans Thai", sans-serif; font-size: 1.55rem; line-height: 1.25; }
+.overview-metric small { display: block; margin-top: .15rem; color: #4f6486; font-size: .68rem; font-weight: 400; }
+.overview-metric__icon { display: grid; width: 3.4rem; height: 3.4rem; flex: none; place-items: center; border-radius: 50%; background: #e6f8ff; color: #08b7eb; font-size: 1.75rem; font-weight: 800; }
+.overview-metric__icon--danger { background: #ffeaf0; color: #ef3449; }
+.overview-metric__icon--sky { background: #e8faff; color: #0bc7d8; }
+.overview-metric__icon--road { background: #e9f1ff; color: #194c96; }
+.overview-page .overview-sections { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: stretch; gap: .8rem; }
+.overview-page .overview-sections > .data-section { min-width: 0; padding: 1.15rem; }
+.overview-map { grid-column: span 2; }
+.overview-events { grid-column: 3; grid-row: 1; }
+.overview-page .overview-sections > .data-section:not(.overview-map):not(.overview-events) { grid-row: 2; }
+.overview-trend__plot { display: grid; min-height: 9.5rem; place-items: center; padding: 1rem; border: 1px dashed #d3e4f6; border-radius: .75rem; background: repeating-linear-gradient(to bottom, #f9fcff 0 31px, #e2ecf8 32px 33px); color: #6880a4; font-size: .79rem; text-align: center; }
+.overview-trend__plot p { max-width: 21rem; margin: 0; padding: .5rem; background: rgb(255 255 255 / 88%); }
+.overview-section-header { display: flex; align-items: flex-start; justify-content: space-between; gap: .6rem; }
+.overview-section-header a { color: #0677f2; font-size: .75rem; font-weight: 750; text-decoration: none; white-space: nowrap; }
+.overview-section-header a:hover { text-decoration: underline; }
+.overview-map__layers { display: flex; flex-wrap: wrap; gap: .35rem; margin-bottom: .7rem; }
+.overview-map__layers button { min-height: 2.75rem; padding: .45rem .7rem; border: 1px solid #d8e9fb; border-radius: .8rem; background: white; color: #304976; font: inherit; font-size: .75rem; font-weight: 700; cursor: pointer; }
+.overview-map__layers button[aria-pressed="true"] { border-color: #86beff; background: #e9f4ff; color: #0875ed; }
+.overview-map__canvas { position: relative; min-width: 0; overflow: hidden; border-radius: .9rem; }
+.overview-map__canvas .situation-map { height: 18rem; min-height: 18rem; }
+.overview-map__canvas .map-zoom-controls { top: .45rem; right: .45rem; max-width: 10rem; gap: .25rem; padding: .3rem; }
+.overview-map__canvas .map-zoom-controls button { min-height: 2.75rem; padding: .2rem .4rem; font-size: .7rem; }
+.overview-map__status { position: absolute; z-index: 500; right: .5rem; bottom: .5rem; left: .5rem; margin: 0; padding: .5rem .7rem; border-radius: .65rem; background: rgb(255 255 255 / 92%); color: #284672; font-size: .78rem; }
+.overview-map__status--error { background: rgb(255 244 228 / 95%); color: #814a0c; }
+.overview-map__status button { margin-left: .5rem; border: 0; background: none; color: #075cd1; font: inherit; font-weight: 700; cursor: pointer; }
+.overview-map .map-legend { margin: .55rem 0 0; padding: 0; border: 0; background: none; color: #62799e; font-size: .72rem; }
+.overview-map .map-selection { margin-top: .7rem; }
+.overview-page .data-list { gap: .55rem; }
+.overview-page .data-card { padding: .8rem; }
+@media (max-width: 75rem) { .overview-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 0; padding: 0; } .overview-page .overview-sections { grid-template-columns: repeat(2, minmax(0, 1fr)); } .overview-map { grid-column: 1 / -1; } .overview-events { grid-column: 1 / -1; grid-row: auto; } .overview-page .overview-sections > .data-section:not(.overview-map):not(.overview-events) { grid-row: auto; } }
+@media (max-width: 45rem) { .overview-hero { min-height: 15rem; flex-direction: column; } .overview-hero__notification { max-width: 100%; } .overview-page .overview-sections { grid-template-columns: minmax(0, 1fr); } .overview-map, .overview-events { grid-column: 1; } .overview-map__canvas .situation-map { height: 18rem; } }
+@media (max-width: 25rem) { .overview-metrics { gap: .4rem; } .overview-metric { min-height: 6rem; flex-direction: column; align-items: flex-start; gap: .25rem; padding: .65rem; } .overview-metric__icon { width: 2rem; height: 2rem; font-size: 1.2rem; } .overview-metric strong { font-size: 1.2rem; } }

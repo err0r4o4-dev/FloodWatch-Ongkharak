@@ -31,6 +31,9 @@ importers:
       react-router:
         specifier: ^8.0.0
         version: 8.4.0(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      tailwindcss:
+        specifier: 4.3.3
+        version: 4.3.3
     devDependencies:
       '@testing-library/jest-dom':
         specifier: ^7.0.0

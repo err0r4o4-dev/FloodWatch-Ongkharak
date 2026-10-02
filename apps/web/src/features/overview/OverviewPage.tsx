@@ -5,6 +5,10 @@ import type { CollectionKey, Collections } from "./api";
 import type { Freshness } from "../../shared/types/flood";
 import { useRealtimeRevision } from "../realtime/RealtimeProvider";
 import { NotificationToggle } from "../notifications/NotificationToggle";
+import { useOptionalAuth } from "../auth/AuthProvider";
+import { Link, useLocation } from "react-router";
+import { OverviewMapPreview } from "./OverviewMapPreview";
+import "./OverviewPage.css";
 
 const overviewEvents = ["water_level.updated", "flood_event.created", "flood_event.updated", "road.status.changed"] as const;
 
@@ -18,10 +22,31 @@ function effectiveStatus(value: string, freshness: Freshness, verification?: str
   return freshness === "FRESH" && (!verification || verification === "VERIFIED") ? value : "UNKNOWN";
 }
 
+function WaterTrendPlaceholder() {
+  return <section className="data-section overview-trend" aria-labelledby="overview-trend-title"><div className="overview-section-header"><h2 id="overview-trend-title">กราฟระดับน้ำ (จุดสำคัญ)</h2><Link to="/map">ดูสถานีบนแผนที่ →</Link></div><p className="section-caption">แนวโน้มย้อนหลังต้องใช้ชุดข้อมูลเวลาที่สังเกตครบถ้วน</p><div className="overview-trend__plot"><p>ยังไม่มีข้อมูลย้อนหลังสำหรับแสดงกราฟ · ตรวจสอบค่าล่าสุดในรายการสถานีด้านล่าง</p></div></section>;
+}
+
+function UnavailableOverview() {
+  return <><div className="overview-metrics" aria-label="ข้อมูลสรุปยังไม่พร้อมใช้งาน">{[
+    ["พื้นที่เสี่ยง", "/risk", "!"], ["สถานีวัดน้ำ", "/map", "≋"], ["เหตุการณ์น้ำ", "/announcements", "☂"], ["สภาพถนน", "/map", "▥"]
+  ].map(([label, path, icon]) => <Link className="overview-metric" to={path} key={label}><span className="overview-metric__icon">{icon}</span><span>{label}<strong>—</strong><small>ข้อมูลยังไม่พร้อมใช้งาน</small></span></Link>)}</div>
+    <div className="overview-sections"><OverviewMapPreview /><section className="data-section overview-events"><div className="overview-section-header"><h2>เหตุการณ์สำคัญ</h2><Link to="/announcements">ดูทั้งหมด →</Link></div><p className="section-empty">ยังไม่สามารถโหลดเหตุการณ์ล่าสุดได้ กรุณาลองอีกครั้ง</p></section><WaterTrendPlaceholder /></div>
+  </>;
+}
+
 export function OverviewPage() {
+  const { status } = useOptionalAuth();
+  const location = useLocation();
   const [result, setResult] = useState<Result | null>(null);
   const [revision, setRevision] = useState(0);
   const realtimeRevision = useRealtimeRevision(overviewEvents);
+
+  useEffect(() => {
+    if (location.hash !== "#notification-settings") return;
+    const target = document.getElementById("notification-settings");
+    target?.focus();
+    target?.scrollIntoView?.({ block: "start" });
+  }, [location.hash]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -47,29 +72,23 @@ export function OverviewPage() {
   const hasItems = result && Object.values(result.collections).some((items) => items.length > 0);
 
   return <div className="overview-page">
-    <div className="page-heading">
-      <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', alignItems: 'flex-start' }}>
-        <div>
-          <p className="eyebrow">FLOOD WATCH · ONGKHARAK</p><h1>ภาพรวมสถานการณ์น้ำ</h1>
-          <p>ข้อมูลจาก API สาธารณะพร้อมแหล่งที่มาและเวลา ไม่ใช่การยืนยันว่าพื้นที่ปลอดภัย</p>
-        </div>
-        <div style={{ padding: '0.75rem', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--surface-raised, #fff)' }}>
-          <NotificationToggle />
-        </div>
-      </div>
-    </div>
-    {!result ? <LoadingState /> : result.failed.length === keys.length ? <ErrorState onRetry={retry} /> : <>
+    <div className="overview-hero"><div className="overview-hero__copy"><p className="eyebrow">FLOOD WATCH · ONGKHARAK</p><h1>ภาพรวมสถานการณ์น้ำ</h1><p>อำเภอองครักษ์ จังหวัดนครนายก</p><small>ข้อมูลจาก API สาธารณะพร้อมแหล่งที่มาและเวลา ไม่ใช่การยืนยันว่าพื้นที่ปลอดภัย</small></div><div id="notification-settings" tabIndex={-1} className="overview-hero__notification">{status === "authenticated" ? <NotificationToggle /> : <Link to="/login?returnTo=%2F%23notification-settings">เข้าสู่ระบบเพื่อตั้งค่าการแจ้งเตือน</Link>}</div></div>
+    {!result ? <><UnavailableOverview /><LoadingState /></> : result.failed.length === keys.length ? <><UnavailableOverview /><ErrorState onRetry={retry} /></> : <>
       {result.failed.length > 0 && <div className="notice" role="status"><strong>ข้อมูลบางส่วนไม่พร้อมใช้งาน</strong><span>โหลดไม่ได้: {result.failed.map((key) => headings[key]).join(", ")} · ไม่ควรใช้ข้อมูลที่ขาดหายยืนยันความปลอดภัย</span><button type="button" onClick={retry}>ลองอีกครั้ง</button></div>}
-      {!hasItems ? <EmptyState title="ยังไม่มีข้อมูลสถานการณ์ที่เผยแพร่">ยังไม่มีรายการในชุดข้อมูลที่เรียกดู หรือข้อมูลบางส่วนไม่พร้อมใช้งาน กรุณาตรวจสอบแหล่งข้อมูลอีกครั้งก่อนตัดสินใจเดินทาง</EmptyState> : <div className="overview-sections">
+      <div className="overview-metrics" aria-label="สรุปข้อมูลที่โหลดได้"><Link to="/risk" className="overview-metric"><span className="overview-metric__icon overview-metric__icon--danger">!</span><span>พื้นที่เสี่ยงในรายการ<strong>{result.collections.risks ? result.collections.risks.length : "—"}</strong><small>เฉพาะข้อมูลที่โหลดได้</small></span></Link><Link to="/map" className="overview-metric"><span className="overview-metric__icon">≋</span><span>สถานีวัดน้ำในรายการ<strong>{result.collections.water ? result.collections.water.length : "—"}</strong><small>ดูรายละเอียดบนแผนที่</small></span></Link><Link to="/announcements" className="overview-metric"><span className="overview-metric__icon overview-metric__icon--sky">☂</span><span>เหตุการณ์น้ำในรายการ<strong>{result.collections.events ? result.collections.events.length : "—"}</strong><small>ตรวจสอบสถานะล่าสุด</small></span></Link><Link to="/map" className="overview-metric"><span className="overview-metric__icon overview-metric__icon--road">▥</span><span>ถนนในรายการ<strong>{result.collections.roads ? result.collections.roads.length : "—"}</strong><small>ดูสถานะและแหล่งที่มา</small></span></Link></div>
+      {!hasItems && <EmptyState title="ยังไม่มีข้อมูลสถานการณ์ที่เผยแพร่">ยังไม่มีรายการในชุดข้อมูลที่เรียกดู หรือข้อมูลบางส่วนไม่พร้อมใช้งาน กรุณาตรวจสอบแหล่งข้อมูลอีกครั้งก่อนตัดสินใจเดินทาง</EmptyState>}
+      <div className="overview-sections">
+        <OverviewMapPreview />
+        <WaterTrendPlaceholder />
         {result.collections.water && <section className="data-section" aria-labelledby="water-title"><h2 id="water-title">สถานีวัดน้ำ</h2><p className="section-caption">สูงสุด 5 สถานี · ค่าที่รายงานไม่ใช่การรับรองความปลอดภัย</p>
           {result.collections.water.length ? <ul className="data-list">{result.collections.water.map((station) => <li className="data-card" key={station.id}><div className="data-card__heading"><h3>{station.name}</h3><StatusBadge status={station.latestReading && station.latestReading.freshness === "FRESH" && station.latestReading.verificationStatus === "VERIFIED" ? "INFO" : "UNKNOWN"} /></div><div className="badge-row"><SourceBadge type={station.latestReading?.source.sourceType ?? station.source.sourceType} /><FreshnessBadge freshness={station.latestReading?.freshness ?? "UNKNOWN"} /></div><p className="data-card__meta">{station.latestReading?.source.name ?? station.source.name} · <DataTimestamp value={station.latestReading?.observedAt ?? null} /></p>{station.latestReading ? <p className="reading-values">{station.latestReading.waterLevelM !== null && <span>ระดับน้ำ {station.latestReading.waterLevelM} ม.</span>}{station.latestReading.flowRateM3s !== null && <span>อัตราการไหล {station.latestReading.flowRateM3s} ลบ.ม./วินาที</span>}{station.latestReading.rainfallMm !== null && <span>ฝน {station.latestReading.rainfallMm} มม.</span>}</p> : <p className="uncertainty">ยังไม่มีค่าที่สังเกตได้</p>}{station.latestReading && (station.latestReading.freshness !== "FRESH" || station.latestReading.verificationStatus !== "VERIFIED") && <p className="uncertainty">ค่าที่แสดงเป็นหลักฐานเก่าหรือยังไม่ผ่านการยืนยัน</p>}</li>)}</ul> : <p className="section-empty">ยังไม่มีสถานีในรายการที่เรียกดู</p>}</section>}
-        {result.collections.events && <section className="data-section" aria-labelledby="events-title"><h2 id="events-title">เหตุการณ์น้ำ</h2><p className="section-caption">รายการล่าสุดสูงสุด 20 รายการ · สถานะมีผลยึดตามความใหม่และการตรวจสอบ</p>
+        {result.collections.events && <section className="data-section overview-events" aria-labelledby="events-title"><div className="overview-section-header"><h2 id="events-title">เหตุการณ์สำคัญ</h2><Link to="/announcements">ดูทั้งหมด →</Link></div><p className="section-caption">รายการล่าสุดสูงสุด 20 รายการ · สถานะมีผลยึดตามความใหม่และการตรวจสอบ</p>
           {result.collections.events.length ? <ul className="data-list">{result.collections.events.map((item) => <li className="data-card" key={item.id}><div className="data-card__heading"><h3>{item.title}</h3><StatusBadge status={effectiveStatus(item.effectiveSeverity, item.freshness, item.verificationStatus)} /></div><div className="badge-row"><SourceBadge type={item.source.sourceType} /><FreshnessBadge freshness={item.freshness} /><StatusBadge status={effectiveStatus(item.effectiveStatus, item.freshness, item.verificationStatus)} /></div><p className="data-card__meta">{item.source.name} · <DataTimestamp value={item.observedAt} /></p>{item.freshness !== "FRESH" || item.verificationStatus !== "VERIFIED" ? <p className="uncertainty">หลักฐานเก่าหรือยังไม่ผ่านการยืนยัน — ไม่ใช้สถานะเดิมยืนยันความปลอดภัย</p> : null}</li>)}</ul> : <p className="section-empty">ไม่มีเหตุการณ์ในรายการที่เรียกดู ไม่ได้แปลว่าไม่มีน้ำท่วมหรือปลอดภัย</p>}</section>}
         {result.collections.risks && <section className="data-section" aria-labelledby="risks-title"><h2 id="risks-title">พื้นที่ประเมินความเสี่ยง</h2><p className="section-caption">รายการล่าสุดสูงสุด 20 รายการ</p>
           {result.collections.risks.length ? <ul className="data-list">{result.collections.risks.map((item) => <li className="data-card" key={item.id}><div className="data-card__heading"><h3>{item.name}</h3><StatusBadge status={effectiveStatus(item.effectiveRiskLevel, item.freshness)} /></div><div className="badge-row"><SourceBadge type={item.source.sourceType} /><FreshnessBadge freshness={item.freshness} /></div><p className="data-card__meta">{item.source.name} · <DataTimestamp label="เริ่มมีผล" value={item.validFrom} /></p></li>)}</ul> : <p className="section-empty">ยังไม่มีผลประเมินพื้นที่ในรายการที่เรียกดู</p>}</section>}
         {result.collections.roads && <section className="data-section" aria-labelledby="roads-title"><h2 id="roads-title">สภาพถนน</h2><p className="section-caption">รายการล่าสุดสูงสุด 20 รายการ · ไม่แนะนำเส้นทางในระยะนี้</p>
           {result.collections.roads.length ? <ul className="data-list">{result.collections.roads.map((item) => <li className="data-card" key={item.id}><div className="data-card__heading"><h3>{item.name}</h3><StatusBadge status={effectiveStatus(item.currentCondition.status, item.currentCondition.freshness, item.currentCondition.verificationStatus)} /></div><div className="badge-row">{item.currentCondition.source && <SourceBadge type={item.currentCondition.source.sourceType} />}<FreshnessBadge freshness={item.currentCondition.freshness} /></div><p className="data-card__meta">{item.currentCondition.source?.name ?? "ไม่มีข้อมูลแหล่งที่มา"} · <DataTimestamp value={item.currentCondition.observedAt} /></p></li>)}</ul> : <p className="section-empty">ยังไม่มีข้อมูลถนนในรายการที่เรียกดู</p>}</section>}
-      </div>}
+      </div>
     </>}
   </div>;
 }

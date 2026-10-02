@@ -1,6 +1,13 @@
-import { render, screen } from "@testing-library/react";
+import { render as renderUI, screen } from "@testing-library/react";
+import { MemoryRouter } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { OverviewPage } from "./OverviewPage";
+
+vi.mock("./OverviewMapPreview", () => ({ OverviewMapPreview: () => <div aria-label="แผนที่ภาพรวม" /> }));
+
+function render(ui: Parameters<typeof renderUI>[0]) {
+  return renderUI(<MemoryRouter>{ui}</MemoryRouter>);
+}
 
 const source = (sourceType: string) => ({ id: "source-1", name: "หน่วยงานตัวอย่าง", code: "sample", sourceType });
 const event = (overrides: Record<string, unknown> = {}) => ({

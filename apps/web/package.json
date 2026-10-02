@@ -11,13 +11,14 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@vitejs/plugin-react": "^6.0.0",
     "@tailwindcss/vite": "^4.0.0",
+    "@vitejs/plugin-react": "^6.0.0",
     "leaflet": "^1.9.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-leaflet": "^5.0.0",
-    "react-router": "^8.0.0"
+    "react-router": "^8.0.0",
+    "tailwindcss": "4.3.3"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^7.0.0",

@@ -2,6 +2,9 @@ import { act, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { RealtimeProvider, useRealtimeRevision, useRealtimeStatus } from "./RealtimeProvider";
 import { OverviewPage } from "../overview/OverviewPage";
+import { MemoryRouter } from "react-router";
+
+vi.mock("../overview/OverviewMapPreview", () => ({ OverviewMapPreview: () => <div aria-label="แผนที่ภาพรวม" /> }));
 
 class FakeEventSource {
   static connections: FakeEventSource[] = [];
@@ -129,7 +132,7 @@ describe("public realtime subscription", () => {
     vi.stubGlobal("EventSource", FakeEventSource);
     const request = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ items: [], limit: 20, offset: 0 }) });
     vi.stubGlobal("fetch", request);
-    const view = render(<RealtimeProvider><OverviewPage /></RealtimeProvider>);
+    const view = render(<MemoryRouter><RealtimeProvider><OverviewPage /></RealtimeProvider></MemoryRouter>);
     expect(await screen.findByText("ยังไม่มีข้อมูลสถานการณ์ที่เผยแพร่")).toBeInTheDocument();
     expect(request).toHaveBeenCalledTimes(4);
     act(() => FakeEventSource.connections[0].onopen?.());

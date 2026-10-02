@@ -11,6 +11,7 @@ vi.mock('./api');
 describe('NotificationToggle', () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    vi.mocked(useAuth).mockReturnValue({ account: null } as ReturnType<typeof useAuth>);
 
     // Mock navigator.serviceWorker and window.PushManager
     Object.defineProperty(navigator, 'serviceWorker', {
@@ -33,10 +34,6 @@ describe('NotificationToggle', () => {
       configurable: true
     });
 
-    Object.defineProperty(window, 'atob', {
-      value: (str: string) => Buffer.from(str, 'base64').toString('binary'),
-      configurable: true
-    });
   });
 
   it('shows unsupported message if push manager is missing', () => {

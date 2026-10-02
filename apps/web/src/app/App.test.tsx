@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { afterEach, vi } from "vitest";
 import { AuthProvider } from "../features/auth/AuthProvider";
@@ -23,10 +23,57 @@ describe("AppRoutes", () => {
 });
 
 describe("public routes", () => {
+  it.each(["/login", "/register", "/forgot-password"])("keeps a main landmark on %s", async (path) => {
+    const api = {
+      refresh: vi.fn().mockRejectedValue(new Error("anonymous")),
+      me: vi.fn(), logout: vi.fn(), login: vi.fn(), register: vi.fn()
+    };
+    render(<MemoryRouter initialEntries={[path]}><AuthProvider api={api}><AppRoutes /></AuthProvider></MemoryRouter>);
+    await act(async () => { await api.refresh.mock.results[0]?.value.catch(() => undefined); });
+    expect(screen.getByRole("main")).toBeInTheDocument();
+  });
+
+  it("shows the institutional header and marks the pending language action unavailable", () => {
+    render(<MemoryRouter initialEntries={["/system-status"]}><AppRoutes /></MemoryRouter>);
+    expect(screen.getByText("ศูนย์ติดตามสถานการณ์น้ำ อำเภอองครักษ์ จังหวัดนครนายก")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "EN" })).toBeDisabled();
+    expect(screen.getByRole("link", { name: "ตั้งค่าการแจ้งเตือน" })).toHaveAttribute("href", "/#notification-settings");
+    fireEvent.click(screen.getByLabelText("เมนูบัญชี"));
+    expect(screen.getByRole("link", { name: "เข้าสู่ระบบ" })).toHaveAttribute("href", "/login");
+  });
+
+  it("links to risk areas from both navigation surfaces without CCTV", () => {
+    render(<MemoryRouter initialEntries={["/system-status"]}><AppRoutes /></MemoryRouter>);
+    expect(screen.getAllByRole("link", { name: "พื้นที่เสี่ยง" })).toHaveLength(2);
+    expect(screen.queryByRole("link", { name: /CCTV/ })).not.toBeInTheDocument();
+  });
+
+  it("keeps five mobile destinations for an admin and exposes admin from the account menu", async () => {
+    const account = { id: "admin-1", email: "admin@example.com", role: "ADMIN" as const, createdAt: "2026-10-02T00:00:00Z" };
+    const api = { refresh: vi.fn().mockResolvedValue(undefined), me: vi.fn().mockResolvedValue(account), logout: vi.fn(), login: vi.fn(), register: vi.fn() };
+    render(<MemoryRouter initialEntries={["/system-status"]}><AuthProvider api={api}><AppRoutes /></AuthProvider></MemoryRouter>);
+    await waitFor(() => expect(within(screen.getByRole("navigation", { name: "การนำทางหลัก" })).getByRole("link", { name: "จัดการระบบ" })).toBeInTheDocument());
+    expect(within(screen.getByRole("navigation", { name: "การนำทางมือถือ" })).getAllByRole("link")).toHaveLength(5);
+    fireEvent.click(screen.getByLabelText("เมนูบัญชี"));
+    expect(screen.getAllByRole("link", { name: "จัดการระบบ" })).toHaveLength(2);
+  });
+
+  it("moves focus to notification settings after following the header link", async () => {
+    render(<MemoryRouter initialEntries={["/system-status"]}><AppRoutes /></MemoryRouter>);
+    fireEvent.click(screen.getByRole("link", { name: "ตั้งค่าการแจ้งเตือน" }));
+    expect(await screen.findByRole("heading", { name: "ภาพรวมสถานการณ์น้ำ" })).toBeInTheDocument();
+    await waitFor(() => expect(document.getElementById("notification-settings")).toHaveFocus());
+  });
+
+  it("keeps the situation map free of camera controls", () => {
+    render(<MemoryRouter initialEntries={["/map"]}><AppRoutes /></MemoryRouter>);
+    expect(screen.queryByText(/CCTV/i)).not.toBeInTheDocument();
+  });
+
   it.each([
-    ["/announcements", "ประกาศ", "ยังไม่มีประกาศที่เผยแพร่"],
+    ["/announcements", "ประกาศและแจ้งเตือน", "ยังไม่มีประกาศที่เผยแพร่"],
     ["/reports", "รายงานสถานการณ์", "ยังไม่มีรายงานที่เผยแพร่"],
-    ["/map", "แผนที่สถานการณ์", "ข้อมูลในขอบเขตที่โหลด"]
+    ["/map", "แผนที่สถานการณ์น้ำ", "ข้อมูลในขอบเขตที่โหลด"]
   ])("opens %s without login", async (path, heading, empty) => {
     if (path === "/reports" || path === "/announcements") {
       vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, status: 200, json: () => Promise.resolve({ items: [], limit: 20, offset: 0 }) }));
@@ -42,7 +89,7 @@ describe("public routes", () => {
       me: vi.fn(), logout: vi.fn(), login: vi.fn(), register: vi.fn()
     };
     render(<MemoryRouter initialEntries={["/announcements"]}><AuthProvider api={api}><AppRoutes /></AuthProvider></MemoryRouter>);
-    expect(await screen.findByRole("heading", { level: 1, name: "ประกาศ" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 1, name: "ประกาศและแจ้งเตือน" })).toBeInTheDocument();
     expect(api.me).not.toHaveBeenCalled();
   });
 

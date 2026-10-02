@@ -9,6 +9,7 @@ import { useRealtimeRevision } from "../realtime/RealtimeProvider";
 import { layerKeys } from "./types";
 import type { LayerKey, LayerVisibility, MapBounds, MapMode, MapSelection, Position } from "./types";
 import type { Picking, RoutePoint, RoutePoints } from "./components/RoutePanel";
+import "./MapPage.css";
 
 const defaultVisibility: LayerVisibility = { flood: true, water: true, risk: true, roads: true, reports: true };
 const emptyPoint: RoutePoint = { longitude: "", latitude: "" };
@@ -37,11 +38,17 @@ export function MapPage() {
     if (selection?.layer === key) setSelection(null);
   };
 
-  return <section className="feature-page map-page"><div className="page-heading"><p className="eyebrow">SITUATION MAP · ONGKHARAK</p><h1>แผนที่สถานการณ์</h1><p>ข้อมูลเชิงพื้นที่จาก API สาธารณะตามขอบเขตที่เห็น · ไม่ใช่การยืนยันว่าพื้นที่ปลอดภัย</p></div>
-    <div className="map-primary-controls"><MapToolbar mode={mode} onModeChange={(next) => { setMode(next); setPicking(null); setSelection(null); }} /><LayerControl visible={visible} onToggle={toggle} /></div>
-    <div className="map-layout"><div className="map-workspace">
-      <SituationMap items={data.items} visible={visible} mode={mode} points={points} picking={picking} onBoundsChange={onBoundsChange} onMapPoint={onMapPoint} onSelect={setSelection} />
-      <MapLegend visible={visible} />
-    </div><MapSidePanel mode={mode} items={data.items} visible={visible} loading={data.loading} failed={allFailed} failedLayers={data.failed} truncated={data.truncated} onRetry={() => setRetry((previous) => previous + 1)} selection={selection} onSelect={setSelection} onClose={() => setSelection(null)} points={points} onPointChange={(key, point) => setPoints((previous) => ({ ...previous, [key]: point }))} picking={picking} onPickingChange={setPicking} /></div>
+  return <section className="feature-page map-page">
+    <header className="map-page__hero">
+      <div className="page-heading"><p className="eyebrow">SITUATION MAP · ONGKHARAK</p><h1>แผนที่สถานการณ์น้ำ</h1><p>ข้อมูลเชิงพื้นที่จาก API สาธารณะตามขอบเขตที่เห็น พร้อมแหล่งที่มาและความใหม่ของหลักฐาน</p></div>
+      <p className="map-page__caution">ข้อมูลที่ไม่พร้อมใช้งานหรือเก่าไม่ใช่การยืนยันว่าพื้นที่ปลอดภัย</p>
+    </header>
+    <div className="map-page__workspace">
+      <div className="map-primary-controls map-page__controls"><MapToolbar mode={mode} onModeChange={(next) => { setMode(next); setPicking(null); setSelection(null); }} /><LayerControl visible={visible} onToggle={toggle} /></div>
+      <div className="map-layout map-page__layout"><div className="map-workspace">
+        <SituationMap items={data.items} visible={visible} mode={mode} points={points} picking={picking} onBoundsChange={onBoundsChange} onMapPoint={onMapPoint} onSelect={setSelection} />
+        <MapLegend visible={visible} />
+      </div><MapSidePanel mode={mode} items={data.items} visible={visible} loading={data.loading} failed={allFailed} failedLayers={data.failed} truncated={data.truncated} onRetry={() => setRetry((previous) => previous + 1)} selection={selection} onSelect={setSelection} onClose={() => setSelection(null)} points={points} onPointChange={(key, point) => setPoints((previous) => ({ ...previous, [key]: point }))} picking={picking} onPickingChange={setPicking} /></div>
+    </div>
   </section>;
 }

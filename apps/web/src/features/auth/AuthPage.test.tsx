@@ -3,12 +3,14 @@ import { MemoryRouter, Route, Routes } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AuthPage } from "./AuthPage";
 import { AuthProvider } from "./AuthProvider";
+import { ForgotPasswordPage } from "./ForgotPasswordPage";
 
 const account = { id: "user-1", email: "user@example.com", role: "USER" as const, createdAt: "2026-10-02T00:00:00Z" };
 
 function renderAuth(mode: "login" | "register", api: { refresh: () => Promise<never>; me: () => Promise<typeof account>; login: (input: { email: string; password: string }) => Promise<{ user: typeof account; accessToken: string; expiresIn: number }>; register: (input: { email: string; password: string }) => Promise<typeof account>; logout: () => Promise<void> }) {
   render(<MemoryRouter initialEntries={[`/${mode}?returnTo=%2Freports`]}><AuthProvider api={api}><Routes>
     <Route path="/login" element={<AuthPage mode="login" />} /><Route path="/register" element={<AuthPage mode="register" />} />
+    <Route path="/forgot-password" element={<ForgotPasswordPage />} />
     <Route path="/reports" element={<p>Reports destination</p>} />
   </Routes></AuthProvider></MemoryRouter>);
 }
@@ -16,6 +18,23 @@ function renderAuth(mode: "login" | "register", api: { refresh: () => Promise<ne
 afterEach(() => vi.restoreAllMocks());
 
 describe("AuthPage", () => {
+  it("keeps pending integrations visibly unavailable while allowing password visibility", async () => {
+    const api = {
+      refresh: vi.fn().mockRejectedValue(new Error("anonymous")),
+      me: vi.fn().mockResolvedValue(account), login: vi.fn(), register: vi.fn(), logout: vi.fn()
+    };
+    renderAuth("login", api);
+    const password = await screen.findByLabelText("รหัสผ่าน");
+    fireEvent.change(password, { target: { value: "secret" } });
+    fireEvent.click(screen.getByRole("checkbox", { name: "แสดงรหัสผ่าน" }));
+    expect(password).toHaveAttribute("type", "text");
+    expect(screen.getByRole("button", { name: /Continue with Google/ })).toBeDisabled();
+    expect(screen.getByText(/ลืมรหัสผ่าน/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("link", { name: /ลืมรหัสผ่าน/ }));
+    expect(await screen.findByRole("heading", { name: "ลืมรหัสผ่าน?" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /ส่งลิงก์ตั้งรหัสผ่านใหม่/ })).toBeDisabled();
+  });
+
   it("logs in and returns to the requested reports route", async () => {
     const api = {
       refresh: vi.fn().mockRejectedValue(new Error("anonymous")),

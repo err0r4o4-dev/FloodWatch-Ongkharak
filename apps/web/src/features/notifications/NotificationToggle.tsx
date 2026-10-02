@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../auth/AuthProvider';
 import { notificationApi } from './api';
 
@@ -10,7 +10,7 @@ export function NotificationToggle() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if ('serviceWorker' in navigator && 'PushManager' in window) {
+    if ('serviceWorker' in navigator && typeof window.PushManager !== 'undefined') {
       setSupported(true);
       checkSubscription();
     }
