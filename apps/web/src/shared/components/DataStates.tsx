@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { Freshness, SourceType } from "../../features/overview/api";
+import type { Freshness, SourceType } from "../types/flood";
 
 const sourceLabels: Record<SourceType, string> = {
   OFFICIAL: "แหล่งทางการ", COMMUNITY: "รายงานชุมชน", AI: "หลักฐาน AI"

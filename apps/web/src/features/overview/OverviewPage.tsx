@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { DataTimestamp, EmptyState, ErrorState, FreshnessBadge, LoadingState, SourceBadge, StatusBadge } from "../../shared/components/DataStates";
 import { loadCollection } from "./api";
-import type { CollectionKey, Collections, Freshness } from "./api";
+import type { CollectionKey, Collections } from "./api";
+import type { Freshness } from "../../shared/types/flood";
 
 const keys: CollectionKey[] = ["events", "risks", "roads", "water"];
 const headings: Record<CollectionKey, string> = {

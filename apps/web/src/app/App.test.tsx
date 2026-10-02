@@ -27,7 +27,7 @@ describe("public routes", () => {
     ["/announcements", "ประกาศ", "ยังไม่มีประกาศที่เผยแพร่"],
     ["/cctv", "กล้อง CCTV", "ยังไม่มีกล้องที่เผยแพร่"],
     ["/reports", "รายงานสถานการณ์", "ยังไม่มีรายงานที่เผยแพร่"],
-    ["/map", "แผนที่สถานการณ์", "ยังไม่มีแผนที่สถานการณ์"]
+    ["/map", "แผนที่สถานการณ์", "ข้อมูลในขอบเขตที่โหลด"]
   ])("opens %s without login", (path, heading, empty) => {
     render(<MemoryRouter initialEntries={[path]}><AppRoutes /></MemoryRouter>);
     expect(screen.getByRole("heading", { level: 1, name: heading })).toBeInTheDocument();
@@ -51,7 +51,7 @@ describe("public routes", () => {
     expect(screen.getAllByRole("link", { name: "แผนที่" })).toHaveLength(2);
     expect(screen.getAllByRole("link", { name: "แผนที่" })[0]).toHaveAttribute("aria-current", "page");
     fireEvent.click(screen.getByRole("button", { name: "เส้นทาง" }));
-    expect(screen.getByText("ยังไม่สามารถค้นหาเส้นทาง")).toBeInTheDocument();
+    expect(screen.getByText(/ยังไม่มีบริการคำนวณเส้นทาง/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "เส้นทาง" })).toHaveAttribute("aria-pressed", "true");
   });
 });

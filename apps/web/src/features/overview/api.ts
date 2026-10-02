@@ -1,8 +1,6 @@
 import { apiConfig } from "../../shared/config/api";
+import type { Freshness, SourceRef } from "../../shared/types/flood";
 
-export type SourceType = "OFFICIAL" | "COMMUNITY" | "AI";
-export type Freshness = "FRESH" | "STALE" | "EXPIRED" | "UNKNOWN";
-export type SourceRef = { id: string; code: string; name: string; sourceType: SourceType };
 export type Event = {
   id: string; title: string; description: string; source: SourceRef;
   severity: string; effectiveSeverity: string; status: string; effectiveStatus: string;

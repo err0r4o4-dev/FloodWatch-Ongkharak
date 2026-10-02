@@ -420,12 +420,6 @@ code {
 .map-workspace { position: relative; display: flex; min-height: 30rem; flex-direction: column; padding: var(--space-4); border: var(--border-width) solid var(--color-border); border-radius: var(--radius-lg); background: linear-gradient(140deg, var(--color-canvas-soft), var(--color-canvas-strong)); }
 .map-toolbar { display: flex; flex-wrap: wrap; align-self: start; gap: var(--space-2); padding: var(--space-2); border: var(--border-width) solid var(--color-border); border-radius: var(--radius-md); background: var(--color-glass-fallback); background: var(--color-glass); backdrop-filter: blur(var(--blur-glass)); }
 .map-toolbar button[aria-pressed="true"] { background: var(--color-primary); color: white; }
-.map-placeholder { display: grid; flex: 1; place-content: center; padding: var(--space-6); text-align: center; }
-.map-placeholder__symbol { color: var(--color-primary-strong); font-size: 3rem; }
-.map-placeholder h2 { margin: 0; }
-.map-placeholder p, .map-side-panel > p { color: var(--color-ink-muted); }
-.layer-list { display: grid; gap: var(--space-2); }
-.layer-list button { min-height: var(--touch-target); padding: var(--space-2); border: var(--border-width) solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-canvas); color: var(--color-ink-muted); font: inherit; text-align: left; }
 .map-side-panel .state-panel { margin-top: var(--space-6); padding: var(--space-4); box-shadow: none; }
 
 @media (max-width: 55rem) {
@@ -447,4 +441,72 @@ code {
 
 @supports not (backdrop-filter: blur(1px)) {
   .desktop-sidebar, .bottom-navigation, .map-toolbar { background: var(--color-glass-fallback); }
+}
+
+.map-page .page-heading { margin-bottom: var(--space-6); }
+.map-primary-controls { display: flex; flex-wrap: wrap; align-items: start; gap: var(--space-3); margin-bottom: var(--space-4); }
+.map-primary-controls .map-toolbar { flex: 0 0 auto; }
+.map-layer-control { min-width: 0; flex: 1 1 23rem; margin: 0; padding: var(--space-2) var(--space-3); border: var(--border-width) solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); }
+.map-layer-control legend { padding-inline: var(--space-2); font-weight: 700; }
+.map-layer-options { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.map-layer-options label { display: inline-flex; min-height: var(--touch-target); align-items: center; gap: var(--space-2); padding: var(--space-1) var(--space-3); border-radius: var(--radius-sm); background: var(--color-canvas-soft); font-weight: 650; cursor: pointer; }
+.map-layer-options input { width: 1.15rem; height: 1.15rem; accent-color: var(--color-primary-strong); }
+.map-layer-control p { margin: var(--space-2) 0 0; color: var(--color-ink-muted); font-size: 0.75rem; }
+.map-page .map-layout { grid-template-columns: minmax(0, 1fr) minmax(18rem, 21rem); }
+.map-page .map-workspace { min-width: 0; min-height: 0; padding: 0; overflow: hidden; background: var(--color-canvas-soft); }
+.situation-map { position: relative; z-index: 0; height: clamp(27rem, 62vh, 44rem); min-width: 0; }
+.leaflet-map { width: 100%; height: 100%; background: var(--color-canvas-soft); }
+.situation-map.is-picking .leaflet-map { cursor: crosshair; }
+.map-zoom-controls { position: absolute; z-index: 900; top: var(--space-4); right: var(--space-4); display: grid; max-width: min(11.5rem, calc(100% - 2rem)); gap: var(--space-2); padding: var(--space-2); border: var(--border-width) solid var(--color-border); border-radius: var(--radius-md); background: var(--color-glass-fallback); background: var(--color-glass); backdrop-filter: blur(var(--blur-glass)); }
+.map-zoom-controls button { min-height: var(--touch-target); padding: var(--space-2); border: var(--border-width) solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); color: var(--color-primary-strong); font: inherit; font-weight: 700; cursor: pointer; }
+.map-zoom-controls button:disabled { color: var(--color-ink-muted); cursor: not-allowed; }
+.map-legend { margin: 0; padding: var(--space-3) var(--space-4); border-top: var(--border-width) solid var(--color-border); background: var(--color-surface); font-size: 0.8rem; }
+.map-page .map-side-panel { max-height: min(76vh, 48rem); overflow-y: auto; }
+.map-side-panel > section + section { margin-top: var(--space-6); padding-top: var(--space-4); border-top: var(--border-width) solid var(--color-border); }
+.map-side-panel p { color: var(--color-ink-muted); font-size: 0.85rem; }
+.map-feature-list { display: grid; max-height: 25rem; margin: var(--space-4) 0 0; padding: 0; overflow-y: auto; list-style: none; gap: var(--space-2); }
+.map-feature-list button { display: flex; width: 100%; min-height: var(--touch-target); align-items: center; justify-content: space-between; gap: var(--space-2); padding: var(--space-2); border: var(--border-width) solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); color: var(--color-ink); font: inherit; text-align: left; cursor: pointer; }
+.map-feature-list button:hover { background: var(--color-canvas-soft); }
+.map-feature-list small { display: block; color: var(--color-ink-muted); }
+.map-layer-summary { overflow-wrap: anywhere; }
+.map-selection { padding: var(--space-4); border: var(--border-width) solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); }
+.map-selection__heading { display: flex; align-items: start; justify-content: space-between; gap: var(--space-2); }
+.map-selection h3 { margin: 0; overflow-wrap: anywhere; }
+.map-selection__heading button { min-width: var(--touch-target); min-height: var(--touch-target); border: 0; border-radius: var(--radius-sm); background: var(--color-canvas-soft); color: var(--color-ink); font: inherit; font-size: 1.4rem; cursor: pointer; }
+.map-selection .badge-row { margin-block: var(--space-3); }
+.map-reading { margin-top: var(--space-3); padding-top: var(--space-3); border-top: var(--border-width) solid var(--color-border); }
+.route-unavailable { padding: var(--space-3); border-radius: var(--radius-sm); background: var(--color-warning-soft); color: var(--color-warning-ink) !important; }
+.route-point { display: grid; margin: var(--space-4) 0; padding: var(--space-3); border: var(--border-width) solid var(--color-border); border-radius: var(--radius-sm); gap: var(--space-2); }
+.route-point legend { font-weight: 700; }
+.route-point label { display: grid; gap: var(--space-1); }
+.route-point input { width: 100%; min-height: var(--touch-target); padding: var(--space-2); border: var(--border-width) solid var(--color-border); border-radius: var(--radius-sm); font: inherit; }
+.route-point button { min-height: var(--touch-target); border: var(--border-width) solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-canvas-soft); color: var(--color-primary-strong); font: inherit; cursor: pointer; }
+.route-point button[aria-pressed="true"] { background: var(--color-primary); color: white; }
+.route-evidence { padding-top: var(--space-3); border-top: var(--border-width) solid var(--color-border); }
+.route-evidence h3 { margin: 0; font-size: 1rem; }
+.route-evidence ul { padding-left: var(--space-6); }
+.route-evidence li { margin-block: var(--space-2); }
+
+@media (max-width: 72rem) {
+  .map-page .map-layout { grid-template-columns: minmax(0, 1fr) minmax(16rem, 18rem); }
+}
+
+@media (max-width: 55rem) {
+  .map-page .map-layout { grid-template-columns: minmax(0, 1fr); }
+  .map-page .map-side-panel { max-height: none; overflow: visible; }
+  .map-selection { position: fixed; z-index: calc(var(--z-bottom-nav) + 1); right: var(--space-3); bottom: calc(5rem + env(safe-area-inset-bottom)); left: var(--space-3); max-height: 47vh; overflow-y: auto; box-shadow: var(--shadow-surface); }
+  .situation-map { height: min(62vh, 35rem); min-height: 22rem; }
+  .map-zoom-controls { width: min(15rem, calc(100% - 1rem)); grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .map-zoom-controls button { font-size: 0.8rem; }
+}
+
+@media (max-width: 25rem) {
+  .map-primary-controls .map-toolbar { width: 100%; }
+  .map-toolbar button { flex: 1; }
+  .map-zoom-controls { top: var(--space-2); right: var(--space-2); }
+  .map-zoom-controls button { font-size: 0.8rem; }
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .map-zoom-controls { background: var(--color-glass-fallback); }
 }

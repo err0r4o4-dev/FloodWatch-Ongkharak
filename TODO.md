@@ -1,6 +1,6 @@
 # Flood Watch Ongkharak roadmap
 
-`UNKNOWN` is not `SAFE`; preserve source provenance across future phases. Phase 4 is the current authorized scope; do not begin Phase 5.
+`UNKNOWN` is not `SAFE`; preserve source provenance across future phases. Phase 5 is the current authorized scope; do not begin Phase 6.
 
 ## Phase 0 — Foundation (complete)
 
@@ -55,7 +55,12 @@ Local Phase 4 validation (2026-10-02): frontend typecheck, 18 Vitest tests, and 
 
 ## Phase 5 — Map & Routes
 
-- [ ] Add map layers, road statuses, and route-mode safeguards
+- [x] Add viewport-bounded, paginated GeoJSON reads and independently toggled flood, water, risk, and road layers
+- [x] Show source, freshness, verification, confidence, and canonical UNKNOWN through selected-feature panel and keyboard list
+- [x] Add map pan/zoom, fit/reset controls, responsive legend, and Route mode with user-selected points but no fabricated path
+- [x] Verify API errors, empty/degraded/truncated states, route safeguards, responsive layouts, and cross-stack regression
+
+Local Phase 5 validation (2026-10-02): frontend typecheck, 31 Vitest tests, and build pass; `go vet ./...` and `go test ./...` pass from `apps/backend`; Python pytest 1 passes with existing deprecation/cache warnings; `docker compose config --quiet` passes. Edge headless rendered 1440/500/390/320px: no horizontal overflow, five mobile navigation links, and minimum measured map/bottom-nav/route-control target height of 44px at 320px. Route mode rendered no path. Local map API was unavailable during browser inspection, so live feature styling/selection and a routing engine are not verified; synthetic evidence exists only in tests. OpenStreetMap tiles require external availability. No Phase 6 work started.
 
 ## Phase 6 — Community Reports
 
