@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { NavLink } from "react-router";
+import { useOptionalAuth } from "../features/auth/AuthProvider";
 import { useRealtimeStatus } from "../features/realtime/RealtimeProvider";
 
 const links = [
@@ -11,10 +12,17 @@ const links = [
 ];
 
 function Navigation({ mobile = false }: { mobile?: boolean }) {
+  const { account } = useOptionalAuth();
+  const isAdmin = account?.role === "ADMIN";
+
   return <nav aria-label={mobile ? "การนำทางมือถือ" : "การนำทางหลัก"} className={mobile ? "bottom-navigation" : "sidebar-navigation"}>
     <ul>{links.map(({ to, label, symbol }) => <li key={to}><NavLink to={to} end={to === "/"} className={({ isActive }) => `shell-nav-link${isActive ? " is-active" : ""}`}>
       <span className="shell-nav-symbol" aria-hidden="true">{symbol}</span><span>{label}</span>
-    </NavLink></li>)}</ul>
+    </NavLink></li>)}
+    {isAdmin && <li className="admin-nav-divider"><NavLink to="/admin" className={({ isActive }) => `shell-nav-link admin-nav-link${isActive ? " is-active" : ""}`}>
+      <span className="shell-nav-symbol" aria-hidden="true">⚙</span><span>จัดการระบบ</span>
+    </NavLink></li>}
+    </ul>
   </nav>;
 }
 

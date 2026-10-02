@@ -57,3 +57,13 @@ From the repository root, run `corepack pnpm typecheck`, `corepack pnpm test`, a
 ## Contract and future work
 
 The OpenAPI contract documents health, Phase 1 authentication, and Phase 2 public read/ADMIN write routes. Future tags do not imply other live endpoints. `PUBLIC READ` / `AUTHENTICATED WRITE` governs the implemented boundary; authoritative flood-domain writes require ADMIN. Do not expose this foundation as a production disaster-information service.
+
+
+## Admin Panel (Phase 8)
+
+ADMIN users access `/admin` for centralized management:
+- **User Management** (`/admin/users`): List/search/filter users, view activity stats, change roles (USER↔ADMIN), enable/disable accounts
+- **System Settings** (`/admin/settings`): Configure rate limits, alert defaults, ingestion parameters, and feature flags with category grouping and JSON validation
+- **Audit Logs** (`/admin/audit-logs`): Searchable history of admin actions, auth events, setting changes, and report reviews with full metadata and IP tracking
+
+All admin actions are logged to `audit_logs` (migration 000010). Settings are stored in `system_settings` with read-only protection. The admin panel enforces ADMIN role via `RequireAdmin` component and backend middleware. Audit context captures actor, target, IP address, and user agent for security review.

@@ -6,6 +6,12 @@ import { HealthPage } from "../features/health/HealthPage";
 import { MapPage } from "../features/map/MapPage";
 import { OverviewPage } from "../features/overview/OverviewPage";
 import { ReportsPage } from "../features/reports/ReportsPage";
+import { AdminDashboardPage } from "../features/admin/AdminDashboardPage";
+import { UsersPage } from "../features/admin/UsersPage";
+import { UserDetailPage } from "../features/admin/UserDetailPage";
+import { SettingsPage } from "../features/admin/SettingsPage";
+import { AuditLogsPage } from "../features/admin/AuditLogsPage";
+import { RequireAdmin } from "../features/admin/RequireAdmin";
 import { AppShell } from "./AppShell";
 
 export function AppRoutes() {
@@ -18,6 +24,14 @@ export function AppRoutes() {
     <Route path="/login" element={<AuthPage mode="login" />} />
     <Route path="/register" element={<AuthPage mode="register" />} />
     <Route path="/system-status" element={<HealthPage />} />
+    <Route path="/admin/*" element={<RequireAdmin><Routes>
+      <Route index element={<AdminDashboardPage />} />
+      <Route path="users" element={<UsersPage />} />
+      <Route path="users/:id" element={<UserDetailPage />} />
+      <Route path="settings" element={<SettingsPage />} />
+      <Route path="audit-logs" element={<AuditLogsPage />} />
+      <Route path="*" element={<Navigate to="/admin" replace />} />
+    </Routes></RequireAdmin>} />
     <Route path="*" element={<Navigate to="/" replace />} />
   </Routes></AppShell>;
 }

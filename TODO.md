@@ -1,6 +1,6 @@
 # Flood Watch Ongkharak roadmap
 
-`UNKNOWN` is not `SAFE`; preserve source provenance across future phases. Phase 7 is the current authorized scope; do not begin Phase 8.
+`UNKNOWN` is not `SAFE`; preserve source provenance across future phases. Phase 8 is the current authorized scope; do not begin Phase 9.
 
 ## Phase 0 — Foundation (complete)
 
@@ -81,9 +81,18 @@ Local Phase 6 validation (2026-10-02): frontend typecheck, 49 Vitest tests, and 
 
 Local Phase 7 validation (2026-10-02): frontend typecheck, 55 Vitest tests, and build pass; Go vet/tests/command builds pass; Python pytest 1 passes with an existing Starlette deprecation warning; Compose config passes. Migrations 7 and 8 applied to local development PostGIS. Docker/PostGIS integration passes for canonical triggers, configured alert dedupe, UNKNOWN road transition, persisted outbox retry, and guest/USER/ADMIN rule authorization; Redis-backed SSE replay and guest visibility pass with client disconnect completing in about one second. Live Caddy GET `/api/v1/alerts` returned an empty list and `/api/v1/events/stream` returned text/event-stream and a connection frame. Production-build 500px mobile and 1440px desktop empty/realtime states rendered; 320px rendered emulation and an authenticated live browser lifecycle were not verified. No official thresholds or synthetic live incidents were added. Delivery is at-least-once and bounded by Redis retention; public edge rate limiting, operational outbox monitoring, and a deployed end-to-end event-to-browser smoke remain deferred. No Phase 8 work started.
 
-## Phase 8 — Admin
+## Phase 8 — Admin (complete)
 
-- [ ] Add authorized management and audit views
+- [x] Design admin domain models and PostgreSQL schema (migration 000010)
+- [x] Implement audit logging middleware, service, and repository layer
+- [x] Build ADMIN-only API endpoints for user management, settings, and audit logs
+- [x] Add comprehensive backend tests (integration, handler, service)
+- [x] Build frontend admin dashboard with navigation and role protection
+- [x] Create user management, settings, and audit log viewer interfaces
+- [x] Add frontend tests and accessibility validation
+- [x] Update documentation with Phase 8 features
+
+Local Phase 8 validation (2026-10-02): Migration 000010 adds audit_logs (9 columns, 4 indexes) and system_settings (9 columns, 2 indexes, 11 default rows). Backend: Go gofmt clean, go vet, go test with 3 new integration tests (audit log CRUD, user management with role/disable/enable, settings with category filter and read-only protection), 13 handler unit tests (all admin endpoints with mocks), and 8 service tests (audit logging, type validation, limits); API/worker/bootstrap build pass. Frontend: pnpm typecheck passes, 62 Vitest tests pass (added 7 admin tests: dashboard rendering, RequireAdmin protection, accessibility checks for ARIA labels/heading hierarchy/pagination), production build succeeds. Admin routes wired in router.go with ADMIN role requirement and rate limiting; AdminService initialized in cmd/api/main.go. Frontend: AdminDashboardPage with 6 navigation cards, UsersPage with search/filter/pagination, UserDetailPage with stats and role/status management, SettingsPage with category grouping and inline JSON editing, AuditLogsPage with expandable details and filters. All admin pages include loading/error states, confirmation dialogs, and Thai localization. Admin navigation link (⚙ จัดการระบบ) appears in AppShell for ADMIN users only. RequireAdmin component protects /admin/* routes. Responsive CSS added for dashboard grid, tables, badges, toolbar, and mobile layouts. README.md updated with Phase 8 admin panel documentation. No live ADMIN account was created or browser-tested; migration/API/frontend structure verified through code inspection and unit tests. No Phase 9 work started.
 
 ## Phase 9 — Notifications
 

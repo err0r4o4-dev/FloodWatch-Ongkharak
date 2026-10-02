@@ -30,6 +30,7 @@ type Dependencies struct {
 	FloodService       *flood.Service
 	ReportService      *report.Service
 	AlertService       *alert.Service
+	AdminService       handler.AdminService
 	RedisClient        redis.UniversalClient
 	CookieOptions      handler.CookieOptions
 }
@@ -106,6 +107,28 @@ func New(dependencies Dependencies) http.Handler {
 			api.With(admin...).Get("/admin/reports/{id}", reportHandler.GetAdmin)
 			api.With(authenticated, middleware.RequireRole(auth.RoleAdmin), writeLimiter.LimitAuthenticated("report-review", 30, time.Hour)).Post("/admin/reports/{id}/verify", reportHandler.Verify)
 			api.With(authenticated, middleware.RequireRole(auth.RoleAdmin), writeLimiter.LimitAuthenticated("report-review", 30, time.Hour)).Post("/admin/reports/{id}/reject", reportHandler.Reject)
+		}
+		if dependencies.AdminService != nil && dependencies.AuthService != nil {
+			adminHandler := handler.NewAdminHandler(dependencies.AdminService, dependencies.AdminService)
+			adminLimiter := middleware.NewRateLimiter()
+			authenticated := middleware.RequireAuthentication(dependencies.AuthService)
+			adminOnly := []func(http.Handler) http.Handler{authenticated, middleware.RequireRole(auth.RoleAdmin)}
+			
+			// User management
+			api.With(adminOnly...).Get("/admin/users", adminHandler.ListUsers)
+			api.With(adminOnly...).Get("/admin/users/{id}", adminHandler.GetUser)
+			api.With(adminOnly...).Patch("/admin/users/{id}/role", adminHandler.UpdateUserRole)
+			api.With(adminOnly..., adminLimiter.LimitAuthenticated("admin-user-disable", 20, time.Hour)).Post("/admin/users/{id}/disable", adminHandler.DisableUser)
+			api.With(adminOnly..., adminLimiter.LimitAuthenticated("admin-user-enable", 20, time.Hour)).Post("/admin/users/{id}/enable", adminHandler.EnableUser)
+			
+			// System settings
+			api.With(adminOnly...).Get("/admin/settings", adminHandler.ListSettings)
+			api.With(adminOnly...).Get("/admin/settings/{key}", adminHandler.GetSetting)
+			api.With(adminOnly..., adminLimiter.LimitAuthenticated("admin-setting-update", 50, time.Hour)).Put("/admin/settings/{key}", adminHandler.UpdateSetting)
+			
+			// Audit logs
+			api.With(adminOnly...).Get("/admin/audit-logs", adminHandler.ListAuditLogs)
+			api.With(adminOnly...).Get("/admin/audit-logs/{id}", adminHandler.GetAuditLog)
 		}
 	})
 	if dependencies.SwaggerEnabled {

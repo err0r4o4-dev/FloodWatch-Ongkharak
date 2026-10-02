@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/floodwatch-ongkharak/backend/internal/admin"
 	"github.com/floodwatch-ongkharak/backend/internal/alert"
 	"github.com/floodwatch-ongkharak/backend/internal/auth"
 	"github.com/floodwatch-ongkharak/backend/internal/config"
@@ -20,6 +21,7 @@ import (
 	"github.com/floodwatch-ongkharak/backend/internal/http/router"
 	"github.com/floodwatch-ongkharak/backend/internal/infrastructure/healthcheck"
 	"github.com/floodwatch-ongkharak/backend/internal/objectstore"
+	"github.com/floodwatch-ongkharak/backend/internal/postgres/adminrepo"
 	"github.com/floodwatch-ongkharak/backend/internal/postgres/alertrepo"
 	"github.com/floodwatch-ongkharak/backend/internal/postgres/authrepo"
 	"github.com/floodwatch-ongkharak/backend/internal/postgres/floodrepo"
@@ -74,6 +76,7 @@ func run() error {
 	if err != nil {
 		return fmt.Errorf("configure alert service: %w", err)
 	}
+	adminService := admin.NewService(adminrepo.New(postgresPool))
 	redisOptions, err := redis.ParseURL(configuration.RedisURL)
 	if err != nil {
 		return fmt.Errorf("configure Redis client: %w", err)
@@ -107,6 +110,7 @@ func run() error {
 			FloodService:  floodService,
 			ReportService: reportService,
 			AlertService:  alertService,
+			AdminService:  adminService,
 			RedisClient:   redisClient,
 			CookieOptions: handler.CookieOptions{Name: configuration.CookieName, Secure: configuration.CookieSecure, SameSite: configuration.CookieSameSite, RefreshTTL: configuration.RefreshTokenTTL, AllowedOrigins: configuration.CORSAllowedOrigins},
 		}),
