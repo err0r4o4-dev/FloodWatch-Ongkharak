@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { fetchClient } from "../../shared/api/client";
+import { apiConfig } from "../../shared/config/api";
 import { StatusBadge } from "../../shared/components/DataStates";
 import type { FloodEvent } from "../../shared/types/flood";
 
@@ -14,10 +14,11 @@ export function AIEvidenceReview() {
   const loadAIEvidence = async () => {
     setLoading(true);
     try {
-      // In a real app we'd have a specific endpoint or filter by source_type='AI' and verification_status='UNVERIFIED'
-      // Mocking fetch for Phase 10 structure
-      const data = await fetchClient("/api/v1/flood-events?source=AI_VISION_V1");
-      setEvents(data.items || []);
+      const response = await fetch(`${apiConfig.baseUrl}/flood-events?source=AI_VISION_V1`);
+      if (response.ok) {
+         const data = await response.json();
+         setEvents(data.items || []);
+      }
     } catch (e) {
       console.error(e);
     } finally {
@@ -27,10 +28,14 @@ export function AIEvidenceReview() {
 
   const verifyEvidence = async (id: string, accept: boolean) => {
     try {
-      await fetchClient(`/api/v1/admin/flood-events/${id}/${accept ? 'verify' : 'reject'}`, {
+      const response = await fetch(`${apiConfig.baseUrl}/admin/flood-events/${id}/${accept ? 'verify' : 'reject'}`, {
         method: "POST",
       });
-      setEvents(events.filter(e => e.id !== id));
+      if (response.ok) {
+         setEvents(events.filter(e => e.id !== id));
+      } else {
+         alert("Failed to review evidence");
+      }
     } catch (e) {
       console.error(e);
       alert("Failed to review evidence");

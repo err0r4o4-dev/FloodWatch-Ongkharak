@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/floodwatch-ongkharak/backend/internal/auth"
+	"github.com/floodwatch-ongkharak/backend/internal/http/middleware"
 	"github.com/floodwatch-ongkharak/backend/internal/notification"
 )
 
@@ -35,7 +35,7 @@ type SubscribeRequest struct {
 }
 
 func (h *NotificationHandler) Subscribe(w http.ResponseWriter, r *http.Request) {
-	user, ok := auth.UserFromContext(r.Context())
+	principal, ok := middleware.PrincipalFromContext(r.Context())
 	if !ok {
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return
@@ -48,7 +48,7 @@ func (h *NotificationHandler) Subscribe(w http.ResponseWriter, r *http.Request) 
 	}
 
 	sub := notification.Subscription{
-		UserID:   user.ID,
+		UserID:   principal.UserID,
 		Endpoint: req.Endpoint,
 		P256dh:   req.Keys.P256dh,
 		Auth:     req.Keys.Auth,
@@ -67,7 +67,7 @@ func (h *NotificationHandler) Subscribe(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *NotificationHandler) Unsubscribe(w http.ResponseWriter, r *http.Request) {
-	user, ok := auth.UserFromContext(r.Context())
+	principal, ok := middleware.PrincipalFromContext(r.Context())
 	if !ok {
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return
@@ -79,7 +79,7 @@ func (h *NotificationHandler) Unsubscribe(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	if err := h.service.Unsubscribe(r.Context(), endpoint, user.ID); err != nil {
+	if err := h.service.Unsubscribe(r.Context(), endpoint, principal.UserID); err != nil {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}

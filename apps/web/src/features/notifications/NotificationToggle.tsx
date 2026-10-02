@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../auth/AuthContext';
+import { useAuth } from '../auth/AuthProvider';
 import { notificationApi } from './api';
 
 export function NotificationToggle() {
-  const { user } = useAuth();
+  const { account } = useAuth();
   const [supported, setSupported] = useState(false);
   const [subscribed, setSubscribed] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -38,7 +38,7 @@ export function NotificationToggle() {
   };
 
   const handleToggle = async () => {
-    if (!user) {
+    if (!account) {
       setError('You must be logged in to manage notifications.');
       return;
     }
@@ -89,7 +89,7 @@ export function NotificationToggle() {
             className="sr-only peer"
             checked={subscribed}
             onChange={handleToggle}
-            disabled={loading || !user}
+            disabled={loading || !account}
           />
           <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
           <span className="ml-3 text-sm font-medium text-gray-900 dark:text-gray-300">
@@ -99,7 +99,7 @@ export function NotificationToggle() {
         {loading && <span className="text-sm text-gray-500">Processing...</span>}
       </div>
       {error && <p className="text-sm text-red-600">{error}</p>}
-      {!user && <p className="text-sm text-gray-500">Log in to receive push notifications.</p>}
+      {!account && <p className="text-sm text-gray-500">Log in to receive push notifications.</p>}
     </div>
   );
 }

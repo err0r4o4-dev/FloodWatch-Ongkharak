@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { NotificationToggle } from './NotificationToggle';
-import { useAuth } from '../auth/AuthContext';
+import { useAuth } from '../auth/AuthProvider';
 import { notificationApi } from './api';
 
 // Mock dependencies
-vi.mock('../auth/AuthContext');
+vi.mock('../auth/AuthProvider');
 vi.mock('./api');
 
 describe('NotificationToggle', () => {
@@ -47,7 +47,7 @@ describe('NotificationToggle', () => {
   });
 
   it('renders enable notifications when supported and logged in', async () => {
-    vi.mocked(useAuth).mockReturnValue({ user: { id: '1', role: 'USER' } } as any);
+    vi.mocked(useAuth).mockReturnValue({ account: { id: '1', role: 'USER' } } as any);
 
     render(<NotificationToggle />);
 
@@ -60,7 +60,7 @@ describe('NotificationToggle', () => {
   });
 
   it('toggles subscription on click', async () => {
-    vi.mocked(useAuth).mockReturnValue({ user: { id: '1', role: 'USER' } } as any);
+    vi.mocked(useAuth).mockReturnValue({ account: { id: '1', role: 'USER' } } as any);
     vi.mocked(notificationApi.getPublicKey).mockResolvedValue({ publicKey: 'dGVzdA==' }); // "test" in base64
     vi.mocked(notificationApi.subscribe).mockResolvedValue(undefined);
 
