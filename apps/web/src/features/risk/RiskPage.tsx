@@ -41,13 +41,18 @@ function RiskSummary({ items }: { items: RiskArea[] | null }) {
     { level: "UNKNOWN", label: "ไม่ทราบสถานะ", description: "ข้อมูลเก่าหรือไม่พร้อมใช้งาน" }
   ];
 
-  return <section className="risk-summary" aria-label="สรุประดับความเสี่ยงจากรายการที่เรียกดู">
-    {cards.map((card) => <article className={`risk-summary__card risk-summary__card--${card.level.toLowerCase()}`} key={card.level}>
-      <StatusBadge status={card.level} />
-      <strong>{unavailable ? "—" : levelCount(items, card.level)}</strong>
-      <span>รายการที่เรียกดู</span>
-      <p>{card.description}</p>
-    </article>)}
+  return <section className="summary-metrics" aria-label="สรุประดับความเสี่ยงจากรายการที่เรียกดู">
+    {cards.map((card) => {
+      let iconClass = "summary-metric__icon--sky";
+      if (card.level === "VERY_HIGH" || card.level === "HIGH") iconClass = "summary-metric__icon--danger";
+      else if (card.level === "MODERATE") iconClass = "summary-metric__icon--warning";
+      else if (card.level === "LOW") iconClass = "summary-metric__icon--success";
+
+      return <article className="summary-metric" key={card.level}>
+        <span className={`summary-metric__icon ${iconClass}`}>{card.level === "VERY_HIGH" ? "!" : card.level === "HIGH" ? "!" : card.level === "MODERATE" ? "≈" : card.level === "LOW" ? "✓" : "?"}</span>
+        <span>{card.label}<strong>{unavailable ? "—" : levelCount(items, card.level)}</strong><small>{card.description}</small></span>
+      </article>;
+    })}
   </section>;
 }
 
@@ -55,15 +60,15 @@ function RiskCard({ item }: { item: RiskArea }) {
   const level = effectiveLevel(item);
   const stale = item.freshness !== "FRESH";
 
-  return <li className="risk-card">
-    <div className="risk-card__heading">
-      <div><h3>{item.name}</h3><p>{item.description || "ไม่มีคำอธิบายจากแหล่งข้อมูล"}</p></div>
+  return <li className="data-card risk-card">
+    <div className="data-card__heading risk-card__heading">
+      <div><h3>{item.name}</h3><p className="section-caption">{item.description || "ไม่มีคำอธิบายจากแหล่งข้อมูล"}</p></div>
       <StatusBadge status={level} />
     </div>
     <div className="badge-row"><SourceBadge type={item.source.sourceType} /><FreshnessBadge freshness={item.freshness} /></div>
-    <p className="risk-card__source">{item.source.name}</p>
+    <p className="data-card__meta risk-card__source">{item.source.name}</p>
     <div className="risk-card__times"><DataTimestamp label="เริ่มมีผล" value={item.validFrom} /><DataTimestamp label="สิ้นสุด" value={item.validTo} /></div>
-    {stale && <p className="risk-card__uncertainty">ข้อมูลเก่าหรือไม่พร้อมใช้งาน จึงแสดงเป็นไม่ทราบสถานะและไม่ยืนยันว่าพื้นที่ปลอดภัย</p>}
+    {stale && <p className="uncertainty risk-card__uncertainty">ข้อมูลเก่าหรือไม่พร้อมใช้งาน จึงแสดงเป็นไม่ทราบสถานะและไม่ยืนยันว่าพื้นที่ปลอดภัย</p>}
   </li>;
 }
 
@@ -74,17 +79,17 @@ function RiskMapPanel() {
   const data = useMapData(bounds, riskMapVisibility, retry);
   const onBoundsChange = useCallback((next: MapBounds) => { setBounds(next); setSelection(null); }, []);
 
-  return <section className="risk-map-panel" aria-labelledby="risk-map-title">
-    <div className="risk-map-panel__heading"><div><h2 id="risk-map-title">แผนที่พื้นที่เสี่ยง</h2><p>ขอบเขตพื้นที่เสี่ยงจาก API ตามบริเวณที่กำลังดู</p></div><a className="risk-map-panel__link" href="/map">เปิดแผนที่พื้นที่เสี่ยง <span aria-hidden="true">→</span></a></div>
-    <div className="risk-map-panel__canvas">
+  return <section className="data-section risk-map-panel overview-map" aria-labelledby="risk-map-title">
+    <div className="overview-section-header risk-map-panel__heading"><div><h2 id="risk-map-title">แผนที่พื้นที่เสี่ยง</h2><p className="section-caption">ขอบเขตพื้นที่เสี่ยงจาก API ตามบริเวณที่กำลังดู</p></div><a className="risk-map-panel__link" href="/map">เปิดแผนที่พื้นที่เสี่ยง <span aria-hidden="true">→</span></a></div>
+    <div className="overview-map__canvas risk-map-panel__canvas">
       <SituationMap items={data.items} visible={riskMapVisibility} mode="SITUATION" points={{ origin: emptyPoint, destination: emptyPoint }} picking={null} onBoundsChange={onBoundsChange} onMapPoint={() => undefined} onSelect={setSelection} />
-      {data.loading && <p className="risk-map-panel__status" role="status">กำลังโหลดขอบเขตพื้นที่เสี่ยง</p>}
-      {!data.loading && data.failed.length > 0 && <div className="risk-map-panel__status risk-map-panel__status--error" role="status">ไม่สามารถโหลดพื้นที่เสี่ยงบนแผนที่ได้ · สถานะไม่ทราบ <button type="button" onClick={() => setRetry((previous) => previous + 1)}>ลองโหลดแผนที่อีกครั้ง</button></div>}
+      {data.loading && <p className="overview-map__status risk-map-panel__status" role="status">กำลังโหลดขอบเขตพื้นที่เสี่ยง</p>}
+      {!data.loading && data.failed.length > 0 && <div className="overview-map__status overview-map__status--error risk-map-panel__status risk-map-panel__status--error" role="status">ไม่สามารถโหลดพื้นที่เสี่ยงบนแผนที่ได้ · สถานะไม่ทราบ <button type="button" onClick={() => setRetry((previous) => previous + 1)}>ลองโหลดแผนที่อีกครั้ง</button></div>}
     </div>
     <MapLegend visible={riskMapVisibility} />
     {selection && <FeatureDetails selection={selection} onClose={() => setSelection(null)} />}
-    {data.truncated.length > 0 && <p className="risk-map-panel__note">ขอบเขตที่โหลดมีรายการเกินกำหนด โปรดขยายแผนที่เพื่อตรวจสอบพื้นที่ย่อย</p>}
-    <p className="risk-map-panel__note">พื้นที่ที่ไม่มีข้อมูลหรือข้อมูลเก่าไม่ใช่การยืนยันว่าปลอดภัย</p>
+    {data.truncated.length > 0 && <p className="risk-map-panel__note section-caption">ขอบเขตที่โหลดมีรายการเกินกำหนด โปรดขยายแผนที่เพื่อตรวจสอบพื้นที่ย่อย</p>}
+    <p className="risk-map-panel__note section-caption">พื้นที่ที่ไม่มีข้อมูลหรือข้อมูลเก่าไม่ใช่การยืนยันว่าปลอดภัย</p>
   </section>;
 }
 
@@ -114,27 +119,27 @@ export function RiskPage() {
   } else if (items.length === 0) {
     directoryContent = <EmptyState title="ยังไม่มีพื้นที่เสี่ยงที่เผยแพร่">ยังไม่มีผลประเมินในรายการที่เรียกดู การไม่มีข้อมูลไม่ได้หมายความว่าไม่มีความเสี่ยงหรือปลอดภัย</EmptyState>;
   } else {
-    directoryContent = visibleItems.length ? <ul className="risk-list">{visibleItems.map((item) => <RiskCard item={item} key={item.id} />)}</ul> : <p className="risk-directory__empty">ไม่มีรายการ {filters.find((option) => option.key === filter)?.label} ในข้อมูลที่เรียกดู</p>;
+    directoryContent = visibleItems.length ? <ul className="data-list risk-list">{visibleItems.map((item) => <RiskCard item={item} key={item.id} />)}</ul> : <p className="section-empty risk-directory__empty">ไม่มีรายการ {filters.find((option) => option.key === filter)?.label} ในข้อมูลที่เรียกดู</p>;
   }
 
   return <div className="risk-page">
-    <header className="risk-page__heading">
-      <div>
+    <header className="page-hero">
+      <div className="page-hero__copy">
         <p className="eyebrow">RISK AREAS · ONGKHARAK</p>
         <h1>พื้นที่เสี่ยงน้ำท่วม</h1>
-        <p>ประเมินพื้นที่จากข้อมูลที่เผยแพร่พร้อมแหล่งที่มาและช่วงเวลาที่มีผล ข้อมูลที่ขาดหายหรือเก่าไม่ใช่หลักฐานว่าปลอดภัย</p>
+        <p>ประเมินพื้นที่จากข้อมูลที่เผยแพร่พร้อมแหล่งที่มาและช่วงเวลาที่มีผล</p>
+        <small>ข้อมูลที่ขาดหายหรือเก่าไม่ใช่หลักฐานว่าปลอดภัย แสดงสูงสุด 20 รายการล่าสุดจาก API สาธารณะ</small>
       </div>
-      <p className="risk-page__scope">แสดงสูงสุด 20 รายการล่าสุดจาก API สาธารณะ</p>
     </header>
     <RiskSummary items={items} />
-    <div className="risk-dashboard">
-      <section className="risk-directory" aria-labelledby="risk-directory-title">
-        <div className="risk-directory__heading">
-          <div><h2 id="risk-directory-title">รายการพื้นที่ประเมิน</h2><p>เลือกดูตามสถานะที่มีผลจากความใหม่ของข้อมูล</p></div>
+    <div className="overview-sections risk-dashboard">
+      <section className="data-section risk-directory" aria-labelledby="risk-directory-title">
+        <div className="overview-section-header risk-directory__heading">
+          <div><h2 id="risk-directory-title">รายการพื้นที่ประเมิน</h2><p className="section-caption">เลือกดูตามสถานะที่มีผลจากความใหม่ของข้อมูล</p></div>
           <p className="risk-directory__count" aria-live="polite">{hasItems ? `พบ ${visibleItems.length} รายการจากข้อมูลที่โหลด` : "—"}</p>
         </div>
-        <div className="risk-filter" role="group" aria-label="กรองระดับความเสี่ยง">
-          {filters.map((option) => <button className={filter === option.key ? "is-selected" : ""} type="button" key={option.key} aria-pressed={filter === option.key} disabled={!hasItems} onClick={() => setFilter(option.key)}>{option.label}</button>)}
+        <div className="overview-map__layers risk-filter" role="group" aria-label="กรองระดับความเสี่ยง">
+          {filters.map((option) => <button type="button" key={option.key} aria-pressed={filter === option.key} disabled={!hasItems} onClick={() => setFilter(option.key)}>{option.label}</button>)}
         </div>
         {directoryContent}
       </section>

@@ -145,11 +145,13 @@ export function ReportsPage() {
   const selectedReport = visibleReports.find((report) => report.id === selectedReportId) ?? visibleReports[0] ?? null;
 
   return <section className="feature-page reports-page">
-    <div className="page-heading reports-page__heading">
-      <p className="eyebrow">COMMUNITY EVIDENCE</p>
-      <h1>รายงานสถานการณ์</h1>
-      <p>รายงานจากชุมชนจะแสดงต่อสาธารณะเมื่อผ่านการตรวจสอบแล้วเท่านั้น</p>
-    </div>
+    <header className="page-hero reports-page__heading">
+      <div className="page-hero__copy">
+        <p className="eyebrow">COMMUNITY EVIDENCE</p>
+        <h1>รายงานสถานการณ์</h1>
+        <p>รายงานจากชุมชนจะแสดงต่อสาธารณะเมื่อผ่านการตรวจสอบแล้วเท่านั้น</p>
+      </div>
+    </header>
     {status !== "authenticated" && <aside className="notice reports-page__notice">
       <span>มีข้อมูลพื้นที่ที่ต้องการแจ้งหรือไม่? เข้าสู่ระบบเพื่อส่งรายงานพร้อมตำแหน่งและหลักฐาน</span>
       <Link className="action-button" to="/login?returnTo=%2Freports">เข้าสู่ระบบเพื่อส่งรายงาน</Link>

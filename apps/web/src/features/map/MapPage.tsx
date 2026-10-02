@@ -39,9 +39,13 @@ export function MapPage() {
   };
 
   return <section className="feature-page map-page">
-    <header className="map-page__hero">
-      <div className="page-heading"><p className="eyebrow">SITUATION MAP · ONGKHARAK</p><h1>แผนที่สถานการณ์น้ำ</h1><p>ข้อมูลเชิงพื้นที่จาก API สาธารณะตามขอบเขตที่เห็น พร้อมแหล่งที่มาและความใหม่ของหลักฐาน</p></div>
-      <p className="map-page__caution">ข้อมูลที่ไม่พร้อมใช้งานหรือเก่าไม่ใช่การยืนยันว่าพื้นที่ปลอดภัย</p>
+    <header className="page-hero">
+      <div className="page-hero__copy">
+        <p className="eyebrow">SITUATION MAP · ONGKHARAK</p>
+        <h1>แผนที่สถานการณ์น้ำ</h1>
+        <p>ข้อมูลเชิงพื้นที่จาก API สาธารณะตามขอบเขตที่เห็น พร้อมแหล่งที่มาและความใหม่ของหลักฐาน</p>
+        <small className="map-page__caution">ข้อมูลที่ไม่พร้อมใช้งานหรือเก่าไม่ใช่การยืนยันว่าพื้นที่ปลอดภัย</small>
+      </div>
     </header>
     <div className="map-page__workspace">
       <div className="map-primary-controls map-page__controls"><MapToolbar mode={mode} onModeChange={(next) => { setMode(next); setPicking(null); setSelection(null); }} /><LayerControl visible={visible} onToggle={toggle} /></div>

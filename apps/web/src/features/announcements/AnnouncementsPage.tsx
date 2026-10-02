@@ -47,13 +47,13 @@ export function AnnouncementsPage() {
   }, { OFFICIAL: 0, COMMUNITY: 0, AI: 0 });
 
   return <section className="feature-page announcements-page">
-    <div className="announcements-page__header">
-      <div className="page-heading">
+    <header className="page-hero">
+      <div className="page-hero__copy">
         <p className="eyebrow">PUBLIC INFORMATION</p>
         <h1>ประกาศและแจ้งเตือน</h1>
         <p>ติดตามประกาศที่เผยแพร่ พร้อมระดับความรุนแรง แหล่งข้อมูล และเวลาที่แจ้งเตือน</p>
       </div>
-    </div>
+    </header>
     <div className="announcements-page__layout">
         <div className="announcements-page__main">
           <div className="announcement-filters" aria-label="กรองประกาศตามระดับความรุนแรง">
@@ -77,19 +77,19 @@ export function AnnouncementsPage() {
             </div>
           </article> : <section className="announcement-state"><h2>ไม่พบประกาศในระดับนี้</h2><p>เลือกตัวกรองอื่นเพื่อดูประกาศที่เผยแพร่ทั้งหมด</p></section>}
 
-          {!showLoading && !showError && visibleAlerts.length > 0 && <section className="announcements-list" aria-labelledby="published-alerts-heading">
-            <div className="announcements-list__heading"><div><h2 id="published-alerts-heading">รายการประกาศทั้งหมด</h2><p className="section-caption">ข้อมูลที่แสดงอ้างอิงรายการจาก API สาธารณะ</p></div><span>{visibleAlerts.length} รายการ</span></div>
-            <ul>{visibleAlerts.map((alert) => <li key={alert.id}>
-              <article className="announcement-row">
+          {!showLoading && !showError && visibleAlerts.length > 0 && <section className="data-section announcements-list" aria-labelledby="published-alerts-heading">
+            <div className="overview-section-header announcements-list__heading"><div><h2 id="published-alerts-heading">รายการประกาศทั้งหมด</h2><p className="section-caption">ข้อมูลที่แสดงอ้างอิงรายการจาก API สาธารณะ</p></div><span>{visibleAlerts.length} รายการ</span></div>
+            <ul className="data-list">{visibleAlerts.map((alert) => <li key={alert.id}>
+              <article className="data-card announcement-row">
                 <div className="announcement-row__severity"><StatusBadge status={alert.severity} /></div>
-                <div className="announcement-row__content"><h3>{alert.title}</h3><p>{alert.message}</p><div className="badge-row"><SourceBadge type={alert.sourceType} /><FreshnessBadge freshness="UNKNOWN" /><span className="badge">{alert.resourceType}</span></div></div>
-                <div className="announcement-row__meta"><DataTimestamp label="เริ่มแจ้งเตือน" value={alert.triggeredAt} /><span>หลักฐานปัจจุบัน: ไม่ทราบความสด</span></div>
+                <div className="announcement-row__content"><h3>{alert.title}</h3><p className="section-caption">{alert.message}</p><div className="badge-row"><SourceBadge type={alert.sourceType} /><FreshnessBadge freshness="UNKNOWN" /><span className="badge">{alert.resourceType}</span></div></div>
+                <div className="data-card__meta announcement-row__meta"><DataTimestamp label="เริ่มแจ้งเตือน" value={alert.triggeredAt} /><span>หลักฐานปัจจุบัน: ไม่ทราบความสด</span></div>
               </article>
             </li>)}</ul>
           </section>}
         </div>
         <aside className="announcements-page__sidebar" aria-label="สรุปประกาศ">
-          <section className="announcement-summary"><div className="announcement-summary__heading"><h2>สถานะประกาศ</h2><span>ข้อมูลที่เผยแพร่</span></div><div className="announcement-summary__grid">
+          <section className="data-section announcement-summary"><div className="overview-section-header announcement-summary__heading"><h2>สถานะประกาศ</h2><span>ข้อมูลที่เผยแพร่</span></div><div className="announcement-summary__grid">
             {summaryState ? <p className="announcement-summary__state">{summaryState}</p> : <>
             <div><strong>{result.items.length}</strong><span>ทั้งหมด</span></div>
             <div><strong>{result.items.filter((alert) => alert.severity === "CRITICAL" || alert.severity === "WARNING").length}</strong><span>ต้องระวัง</span></div>
@@ -97,10 +97,10 @@ export function AnnouncementsPage() {
             <div><strong>{result.items.filter((alert) => alert.severity === "INFO").length}</strong><span>ข้อมูลทั่วไป</span></div>
             </>}
           </div></section>
-          <section className="announcement-sidebar-card"><h2>แหล่งข้อมูลประกาศ</h2><p className="section-caption">{showError ? "ไม่สามารถสรุปแหล่งข้อมูลได้ในขณะนี้" : showLoading ? "กำลังตรวจสอบแหล่งข้อมูล" : !hasAlerts ? "ยังไม่มีแหล่งข้อมูลในรายการที่เผยแพร่" : "แหล่งที่มาแสดงตามข้อมูลของแต่ละประกาศ"}</p>
+          <section className="data-section announcement-sidebar-card"><h2>แหล่งข้อมูลประกาศ</h2><p className="section-caption">{showError ? "ไม่สามารถสรุปแหล่งข้อมูลได้ในขณะนี้" : showLoading ? "กำลังตรวจสอบแหล่งข้อมูล" : !hasAlerts ? "ยังไม่มีแหล่งข้อมูลในรายการที่เผยแพร่" : "แหล่งที่มาแสดงตามข้อมูลของแต่ละประกาศ"}</p>
             {hasAlerts && !showError && !showLoading && <ul className="announcement-source-list">{(Object.entries(sourceCounts) as Array<[PublicAlert["sourceType"], number]>).map(([sourceType, count]) => <li key={sourceType}><SourceBadge type={sourceType} /><strong>{count} รายการ</strong></li>)}</ul>}
           </section>
-          <section className="announcement-sidebar-card"><h2>ข้อควรทราบ</h2><p>ความสดของหลักฐานสำหรับ alert ยังไม่ระบุ จึงไม่ควรใช้รายการเดิมยืนยันว่าพื้นที่ปลอดภัย</p></section>
+          <section className="data-section announcement-sidebar-card"><h2>ข้อควรทราบ</h2><p className="section-caption">ความสดของหลักฐานสำหรับ alert ยังไม่ระบุ จึงไม่ควรใช้รายการเดิมยืนยันว่าพื้นที่ปลอดภัย</p></section>
         </aside>
       </div>
   </section>;
