@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Flood Watch Ongkharak API
-  version: 0.3.0
+  version: 0.4.0
   description: |
     Availability data that is stale or unavailable is UNKNOWN, never SAFE.
     Refresh tokens are sent only in an HttpOnly cookie. The cookie uses the configured
@@ -14,6 +14,9 @@ info:
     and their images are public; an empty list never means SAFE. Submission time is
     not a measured observation time. Pending reports are owner-editable, rejected
     and verified reports are immutable, and an ADMIN cannot verify their own report.
+    Phase 7 alerts are created only by explicit structured rules; no threshold is
+    preconfigured. Public SSE transports versioned change notifications, not canonical
+    resource state. Redis outages do not roll back committed PostgreSQL data.
     Other auth failures use the ErrorResponse envelope (including 403 origin rejection,
     415 unsupported media type, 429 rate limiting, and 500 infrastructure failure).
 servers:
@@ -517,10 +520,73 @@ paths:
           description: Rejected report remains private and COMMUNITY.
           content: { application/json: { schema: { $ref: '#/components/schemas/ReportResponse' } } }
         default: { $ref: '#/components/responses/DomainError' }
+  /api/v1/events/stream:
+    get:
+      tags: [Realtime]
+      summary: Subscribe to public change notifications over SSE
+      operationId: streamPublicEvents
+      description: |
+        Guest-accessible. `id` is a Redis stream cursor distinct from envelope `eventId`.
+        Reconnect with Last-Event-ID (or cursor query in browsers that cannot set headers).
+        `replay.reset` requires a full canonical REST refetch after an expired cursor or
+        bounded replay; initial subscription begins at the current stream tail.
+        Heartbeats are SSE comments. Delivery can be duplicated and has bounded retention.
+        Pending/private reports never appear; `report.verified` is the public signal.
+      parameters:
+        - { name: Last-Event-ID, in: header, schema: { type: string, pattern: '^[0-9]+-[0-9]+$' } }
+        - { name: cursor, in: query, schema: { type: string, pattern: '^[0-9]+-[0-9]+$' } }
+      responses:
+        '200':
+          description: SSE events with `event`, `id` and JSON `data`; heartbeat comments and replay.reset are control frames.
+          content: { text/event-stream: { schema: { type: string } } }
+        default: { $ref: '#/components/responses/DomainError' }
+  /api/v1/alerts:
+    get:
+      tags: [Alerts]
+      summary: List persisted public alerts from configured rules
+      operationId: listPublicAlerts
+      description: No alerts does not mean safe. Alert severity is a rule decision, not current resource status; clients must refetch canonical evidence.
+      parameters:
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 50, default: 20 } }
+        - { name: offset, in: query, schema: { type: integer, minimum: 0, maximum: 1000, default: 0 } }
+      responses:
+        '200':
+          description: Alert list in descending triggered order.
+          content: { application/json: { schema: { $ref: '#/components/schemas/AlertList' } } }
+        default: { $ref: '#/components/responses/DomainError' }
+  /api/v1/admin/alert-rules:
+    post:
+      tags: [Admin, Alerts]
+      summary: Create a structured alert rule (ADMIN only)
+      operationId: createAlertRule
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/AlertRuleInput' } } }
+      responses:
+        '201':
+          description: Stored rule; source provenance is supplied by evidence, not by this configuration.
+          content: { application/json: { schema: { $ref: '#/components/schemas/AlertRuleResponse' } } }
+        default: { $ref: '#/components/responses/DomainError' }
+  /api/v1/admin/alert-rules/{id}:
+    put:
+      tags: [Admin, Alerts]
+      summary: Replace a structured alert rule (ADMIN only)
+      operationId: updateAlertRule
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/ResourceID' }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/AlertRuleInput' } } }
+      responses:
+        '200':
+          description: Updated rule. Past alerts retain their recorded decision and provenance.
+          content: { application/json: { schema: { $ref: '#/components/schemas/AlertRuleResponse' } } }
+        default: { $ref: '#/components/responses/DomainError' }
 components:
   responses:
     DomainError:
-      description: Invalid input (400), missing JWT (401), insufficient role (403), unknown resource (404), conflict (409), oversized upload (413), unsupported media type (415), rate limit (429), or service failure (500). The HTTP status disambiguates.
+      description: Invalid input (400), missing JWT (401), insufficient role (403), unknown resource (404), conflict (409), oversized upload (413), unsupported media type (415), rate limit (429), or service failure/capacity (500/503). The HTTP status disambiguates.
       content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
   parameters:
     ResourceID:
@@ -595,6 +661,70 @@ components:
       schema:
         type: string
   schemas:
+    PublicEventEnvelope:
+      type: object
+      additionalProperties: false
+      required: [eventId, eventType, occurredAt, publishedAt, sourceType, resourceType, resourceId, payloadVersion, payload]
+      properties:
+        eventId: { type: string, format: uuid }
+        eventType: { type: string, enum: [water_level.updated, flood_event.created, flood_event.updated, road.status.changed, report.verified, alert.created] }
+        occurredAt: { type: string, format: date-time }
+        publishedAt: { type: string, format: date-time }
+        sourceType: { $ref: '#/components/schemas/SourceType' }
+        resourceType: { type: string, enum: [WATER_STATION, FLOOD_EVENT, ROAD, COMMUNITY_REPORT, ALERT] }
+        resourceId: { type: string, format: uuid }
+        payloadVersion: { type: integer, enum: [1] }
+        payload: { type: object, description: Minimal change hint; refetch the canonical API. }
+    Alert:
+      type: object
+      additionalProperties: false
+      required: [id, ruleId, severity, title, message, sourceType, resourceType, resourceId, triggeredAt, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        ruleId: { type: string, format: uuid }
+        severity: { type: string, enum: [INFO, WATCH, WARNING, CRITICAL] }
+        title: { type: string }
+        message: { type: string }
+        sourceType: { $ref: '#/components/schemas/SourceType' }
+        resourceType: { type: string, enum: [WATER_STATION, ROAD, FLOOD_EVENT] }
+        resourceId: { type: string, format: uuid }
+        triggeredAt: { type: string, format: date-time }
+        createdAt: { type: string, format: date-time }
+    AlertList:
+      type: object
+      additionalProperties: false
+      required: [items, limit, offset]
+      properties:
+        items: { type: array, items: { $ref: '#/components/schemas/Alert' } }
+        limit: { type: integer }
+        offset: { type: integer }
+    AlertRuleInput:
+      type: object
+      additionalProperties: false
+      required: [name, type, enabled, severity, title, message]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 200 }
+        type: { type: string, enum: [WATER_LEVEL_THRESHOLD, ROAD_CLOSED, FLOOD_CRITICAL] }
+        enabled: { type: boolean }
+        severity: { type: string, enum: [INFO, WATCH, WARNING, CRITICAL] }
+        title: { type: string, minLength: 1, maxLength: 200 }
+        message: { type: string, minLength: 1, maxLength: 1000 }
+        waterLevelThresholdM: { type: [number, 'null'], minimum: 0, description: Required for WATER_LEVEL_THRESHOLD; absent/null for other rule types. Configured rule, not an official default. }
+    AlertRule:
+      allOf:
+        - { $ref: '#/components/schemas/AlertRuleInput' }
+        - type: object
+          required: [id, createdAt, updatedAt]
+          properties:
+            id: { type: string, format: uuid }
+            createdAt: { type: string, format: date-time }
+            updatedAt: { type: string, format: date-time }
+    AlertRuleResponse:
+      type: object
+      additionalProperties: false
+      required: [rule]
+      properties:
+        rule: { $ref: '#/components/schemas/AlertRule' }
     ReportStatus:
       type: string
       enum: [PENDING, VERIFIED, REJECTED]

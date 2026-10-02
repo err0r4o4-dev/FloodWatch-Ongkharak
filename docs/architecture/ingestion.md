@@ -1,5 +1,7 @@
 # Phase 3 ingestion boundary
 
+Phase 7 adds a PostgreSQL trigger/outbox after persisted water readings. Duplicate source/station/observation timestamps still resolve at the existing ingestion uniqueness boundary; no external provider or official threshold is added. The worker evaluates new outbox evidence against explicitly configured alert rules independently of Redis delivery. See `realtime.md`.
+
 The Go worker loads enabled `DataSource` rows, selects only exact source codes registered by server configuration, and runs a capability-specific `WaterObservationProvider`. `DataSource.provider` is display metadata, **not** an adapter selector or URL. No external live provider is registered in this phase. A synthetic fixture adapter is available only when explicitly configured in development/test; production rejects that configuration. The worker never creates a source automatically.
 
 ```mermaid

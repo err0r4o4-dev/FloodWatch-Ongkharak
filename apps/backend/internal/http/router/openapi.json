@@ -123,10 +123,196 @@
             }
           }
         },
-        "description": "Invalid input (400), missing JWT (401), insufficient role (403), unknown resource (404), conflict (409), oversized upload (413), unsupported media type (415), rate limit (429), or service failure (500). The HTTP status disambiguates."
+        "description": "Invalid input (400), missing JWT (401), insufficient role (403), unknown resource (404), conflict (409), oversized upload (413), unsupported media type (415), rate limit (429), or service failure/capacity (500/503). The HTTP status disambiguates."
       }
     },
     "schemas": {
+      "Alert": {
+        "additionalProperties": false,
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "resourceId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "resourceType": {
+            "enum": [
+              "WATER_STATION",
+              "ROAD",
+              "FLOOD_EVENT"
+            ],
+            "type": "string"
+          },
+          "ruleId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "severity": {
+            "enum": [
+              "INFO",
+              "WATCH",
+              "WARNING",
+              "CRITICAL"
+            ],
+            "type": "string"
+          },
+          "sourceType": {
+            "$ref": "#/components/schemas/SourceType"
+          },
+          "title": {
+            "type": "string"
+          },
+          "triggeredAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "ruleId",
+          "severity",
+          "title",
+          "message",
+          "sourceType",
+          "resourceType",
+          "resourceId",
+          "triggeredAt",
+          "createdAt"
+        ],
+        "type": "object"
+      },
+      "AlertList": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/Alert"
+            },
+            "type": "array"
+          },
+          "limit": {
+            "type": "integer"
+          },
+          "offset": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "limit",
+          "offset"
+        ],
+        "type": "object"
+      },
+      "AlertRule": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/AlertRuleInput"
+          },
+          {
+            "properties": {
+              "createdAt": {
+                "format": "date-time",
+                "type": "string"
+              },
+              "id": {
+                "format": "uuid",
+                "type": "string"
+              },
+              "updatedAt": {
+                "format": "date-time",
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "createdAt",
+              "updatedAt"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "AlertRuleInput": {
+        "additionalProperties": false,
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "message": {
+            "maxLength": 1000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "severity": {
+            "enum": [
+              "INFO",
+              "WATCH",
+              "WARNING",
+              "CRITICAL"
+            ],
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "WATER_LEVEL_THRESHOLD",
+              "ROAD_CLOSED",
+              "FLOOD_CRITICAL"
+            ],
+            "type": "string"
+          },
+          "waterLevelThresholdM": {
+            "description": "Required for WATER_LEVEL_THRESHOLD; absent/null for other rule types. Configured rule",
+            "minimum": 0,
+            "not an official default.": null,
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "name",
+          "type",
+          "enabled",
+          "severity",
+          "title",
+          "message"
+        ],
+        "type": "object"
+      },
+      "AlertRuleResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "rule": {
+            "$ref": "#/components/schemas/AlertRule"
+          }
+        },
+        "required": [
+          "rule"
+        ],
+        "type": "object"
+      },
       "ConditionList": {
         "properties": {
           "items": {
@@ -704,6 +890,73 @@
           }
         ],
         "type": "array"
+      },
+      "PublicEventEnvelope": {
+        "additionalProperties": false,
+        "properties": {
+          "eventId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "eventType": {
+            "enum": [
+              "water_level.updated",
+              "flood_event.created",
+              "flood_event.updated",
+              "road.status.changed",
+              "report.verified",
+              "alert.created"
+            ],
+            "type": "string"
+          },
+          "occurredAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "payload": {
+            "description": "Minimal change hint; refetch the canonical API.",
+            "type": "object"
+          },
+          "payloadVersion": {
+            "enum": [
+              1
+            ],
+            "type": "integer"
+          },
+          "publishedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "resourceId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "resourceType": {
+            "enum": [
+              "WATER_STATION",
+              "FLOOD_EVENT",
+              "ROAD",
+              "COMMUNITY_REPORT",
+              "ALERT"
+            ],
+            "type": "string"
+          },
+          "sourceType": {
+            "$ref": "#/components/schemas/SourceType"
+          }
+        },
+        "required": [
+          "eventId",
+          "eventType",
+          "occurredAt",
+          "publishedAt",
+          "sourceType",
+          "resourceType",
+          "resourceId",
+          "payloadVersion",
+          "payload"
+        ],
+        "type": "object"
       },
       "ReadinessResponse": {
         "properties": {
@@ -1582,12 +1835,97 @@
     }
   },
   "info": {
-    "description": "Availability data that is stale or unavailable is UNKNOWN, never SAFE.\nRefresh tokens are sent only in an HttpOnly cookie. The cookie uses the configured\nSameSite Lax or Strict policy and Secure is enabled in production; refresh tokens\nare never returned in response bodies. Phase 2 flood-domain collections are empty\nuntil explicitly populated; no response implies current safe conditions. GUEST has\nno persisted role; only USER and ADMIN accounts exist. Authentication is required\nfor the Phase 1 demonstration routes.\nPhase 6 community reports are always COMMUNITY evidence. Only VERIFIED reports\nand their images are public; an empty list never means SAFE. Submission time is\nnot a measured observation time. Pending reports are owner-editable, rejected\nand verified reports are immutable, and an ADMIN cannot verify their own report.\nOther auth failures use the ErrorResponse envelope (including 403 origin rejection,\n415 unsupported media type, 429 rate limiting, and 500 infrastructure failure).\n",
+    "description": "Availability data that is stale or unavailable is UNKNOWN, never SAFE.\nRefresh tokens are sent only in an HttpOnly cookie. The cookie uses the configured\nSameSite Lax or Strict policy and Secure is enabled in production; refresh tokens\nare never returned in response bodies. Phase 2 flood-domain collections are empty\nuntil explicitly populated; no response implies current safe conditions. GUEST has\nno persisted role; only USER and ADMIN accounts exist. Authentication is required\nfor the Phase 1 demonstration routes.\nPhase 6 community reports are always COMMUNITY evidence. Only VERIFIED reports\nand their images are public; an empty list never means SAFE. Submission time is\nnot a measured observation time. Pending reports are owner-editable, rejected\nand verified reports are immutable, and an ADMIN cannot verify their own report.\nPhase 7 alerts are created only by explicit structured rules; no threshold is\npreconfigured. Public SSE transports versioned change notifications, not canonical\nresource state. Redis outages do not roll back committed PostgreSQL data.\nOther auth failures use the ErrorResponse envelope (including 403 origin rejection,\n415 unsupported media type, 429 rate limiting, and 500 infrastructure failure).\n",
     "title": "Flood Watch Ongkharak API",
-    "version": "0.3.0"
+    "version": "0.4.0"
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/admin/alert-rules": {
+      "post": {
+        "operationId": "createAlertRule",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlertRuleInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertRuleResponse"
+                }
+              }
+            },
+            "description": "Stored rule; source provenance is supplied by evidence, not by this configuration."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Create a structured alert rule (ADMIN only)",
+        "tags": [
+          "Admin",
+          "Alerts"
+        ]
+      }
+    },
+    "/api/v1/admin/alert-rules/{id}": {
+      "put": {
+        "operationId": "updateAlertRule",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceID"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlertRuleInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertRuleResponse"
+                }
+              }
+            },
+            "description": "Updated rule. Past alerts retain their recorded decision and provenance."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Replace a structured alert rule (ADMIN only)",
+        "tags": [
+          "Admin",
+          "Alerts"
+        ]
+      }
+    },
     "/api/v1/admin/ping": {
       "get": {
         "operationId": "pingAdmin",
@@ -1796,6 +2134,53 @@
         "tags": [
           "Admin",
           "Reports"
+        ]
+      }
+    },
+    "/api/v1/alerts": {
+      "get": {
+        "description": "No alerts does not mean safe. Alert severity is a rule decision, not current resource status; clients must refetch canonical evidence.",
+        "operationId": "listPublicAlerts",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "default": 20,
+              "maximum": 50,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "schema": {
+              "default": 0,
+              "maximum": 1000,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertList"
+                }
+              }
+            },
+            "description": "Alert list in descending triggered order."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "summary": "List persisted public alerts from configured rules",
+        "tags": [
+          "Alerts"
         ]
       }
     },
@@ -2071,6 +2456,49 @@
         "summary": "Create a source with explicit provenance classification",
         "tags": [
           "Data Sources"
+        ]
+      }
+    },
+    "/api/v1/events/stream": {
+      "get": {
+        "description": "Guest-accessible. `id` is a Redis stream cursor distinct from envelope `eventId`.\nReconnect with Last-Event-ID (or cursor query in browsers that cannot set headers).\n`replay.reset` requires a full canonical REST refetch after an expired cursor or\nbounded replay; initial subscription begins at the current stream tail.\nHeartbeats are SSE comments. Delivery can be duplicated and has bounded retention.\nPending/private reports never appear; `report.verified` is the public signal.\n",
+        "operationId": "streamPublicEvents",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Last-Event-ID",
+            "schema": {
+              "pattern": "^[0-9]+-[0-9]+$",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "schema": {
+              "pattern": "^[0-9]+-[0-9]+$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "SSE events with `event`, `id` and JSON `data`; heartbeat comments and replay.reset are control frames."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "summary": "Subscribe to public change notifications over SSE",
+        "tags": [
+          "Realtime"
         ]
       }
     },

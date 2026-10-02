@@ -4,6 +4,12 @@ The selected migration system is `golang-migrate/migrate` `v4.18.3`. Migrations 
 
 Migration 6 adds community reports and media metadata. Its PostGIS `Point` column is constrained to SRID 4326, valid non-empty longitude/latitude coordinates, and has a GiST index for bounding-box reads. Rolling migration 6 down permanently deletes report records and media metadata; it does not delete S3-compatible objects, which must be removed separately under an approved retention procedure.
 
+Migration 7 adds structured alert rules, deduplicated alerts, public event outbox, and canonical-write triggers. No rules or official water thresholds are seeded. Down migration 7 destroys alert history and queued events and must not be used against populated environments without an approved backup and recovery plan.
+
+Migration 8 refines the road event trigger to notify clients when the current effective status changes to or from `UNKNOWN`, including unverified evidence. It replaces the trigger function without rewriting prior records; its down migration restores the migration 7 behavior.
+
+Migration 9 restores per-road serialization for concurrent road-condition inserts. It uses `FOR NO KEY UPDATE` to avoid conflicting with the foreign-key key-share locks held by concurrent inserts; its down migration restores the migration 8 function. It does not rewrite prior records.
+
 Run migrations from the repository root after the PostgreSQL Compose service is ready:
 
 ```powershell

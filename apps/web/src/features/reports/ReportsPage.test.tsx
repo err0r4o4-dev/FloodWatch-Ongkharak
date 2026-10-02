@@ -1,7 +1,8 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AuthProvider } from "../auth/AuthProvider";
+import { RealtimeProvider } from "../realtime/RealtimeProvider";
 import { reportsApi } from "./api";
 import { ReportsPage } from "./ReportsPage";
 
@@ -44,6 +45,25 @@ function response(body: unknown, status = 200): Response {
   return { ok: status >= 200 && status < 300, status, statusText: "Request failed", json: vi.fn().mockResolvedValue(body) } as unknown as Response;
 }
 
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((next) => { resolve = next; });
+  return { promise, resolve };
+}
+
+class ReportsEventSource {
+  static connections: ReportsEventSource[] = [];
+  onopen: (() => void) | null = null;
+  onerror: (() => void) | null = null;
+
+  constructor(readonly url: string) {
+    ReportsEventSource.connections.push(this);
+  }
+
+  addEventListener() {}
+  close() {}
+}
+
 function renderReports() {
   return render(<MemoryRouter><ReportsPage /></MemoryRouter>);
 }
@@ -51,6 +71,7 @@ function renderReports() {
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
+  ReportsEventSource.connections = [];
 });
 
 describe("report review API", () => {
@@ -108,6 +129,27 @@ describe("ReportsPage public list", () => {
 
     expect(await screen.findByText(verifiedReport.description)).toBeInTheDocument();
     expect(screen.queryByText("pending")).not.toBeInTheDocument();
+  });
+
+  it("does not let an older public reload overwrite a newer realtime result", async () => {
+    const first = deferred<Response>();
+    const second = deferred<Response>();
+    const fetchMock = vi.fn()
+      .mockImplementationOnce(() => first.promise)
+      .mockImplementationOnce(() => second.promise);
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("EventSource", ReportsEventSource);
+
+    render(<MemoryRouter><RealtimeProvider><ReportsPage /></RealtimeProvider></MemoryRouter>);
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    act(() => ReportsEventSource.connections[0].onopen?.());
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+
+    second.resolve(response({ items: [verifiedReport], limit: 20, offset: 0 }));
+    expect(await screen.findByText(verifiedReport.description)).toBeInTheDocument();
+    first.resolve(response({ items: [], limit: 20, offset: 0 }));
+    await waitFor(() => expect(screen.getByText(verifiedReport.description)).toBeInTheDocument());
+    expect(screen.queryByText("ยังไม่มีรายงานที่เผยแพร่")).not.toBeInTheDocument();
   });
 
   it("shows retryable empty and unavailable states honestly", async () => {

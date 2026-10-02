@@ -5,12 +5,14 @@ import { MapToolbar } from "./components/MapToolbar";
 import { MapLegend } from "./components/MapLegend";
 import { SituationMap } from "./components/SituationMap";
 import { useMapData } from "./hooks/useMapData";
+import { useRealtimeRevision } from "../realtime/RealtimeProvider";
 import { layerKeys } from "./types";
 import type { LayerKey, LayerVisibility, MapBounds, MapMode, MapSelection, Position } from "./types";
 import type { Picking, RoutePoint, RoutePoints } from "./components/RoutePanel";
 
 const defaultVisibility: LayerVisibility = { flood: true, water: true, risk: true, roads: true, reports: true };
 const emptyPoint: RoutePoint = { longitude: "", latitude: "" };
+const mapEvents = ["water_level.updated", "flood_event.created", "flood_event.updated", "road.status.changed", "report.verified"] as const;
 
 export function MapPage() {
   const [mode, setMode] = useState<MapMode>("SITUATION");
@@ -18,9 +20,10 @@ export function MapPage() {
   const [bounds, setBounds] = useState<MapBounds | null>(null);
   const [selection, setSelection] = useState<MapSelection | null>(null);
   const [retry, setRetry] = useState(0);
+  const realtimeRevision = useRealtimeRevision(mapEvents);
   const [points, setPoints] = useState<RoutePoints>({ origin: emptyPoint, destination: emptyPoint });
   const [picking, setPicking] = useState<Picking>(null);
-  const data = useMapData(bounds, visible, retry);
+  const data = useMapData(bounds, visible, retry + realtimeRevision);
   const enabled = layerKeys.filter((key) => visible[key]);
   const allFailed = !data.loading && enabled.length > 0 && data.failed.length === enabled.length;
   const onBoundsChange = useCallback((next: MapBounds) => { setBounds(next); setSelection(null); }, []);

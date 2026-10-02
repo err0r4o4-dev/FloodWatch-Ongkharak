@@ -5,14 +5,18 @@ import { AdminReviewPanel } from "./AdminReviewPanel";
 import { reportsApi } from "./api";
 import { ReportCard } from "./ReportCard";
 import { ReportForm } from "./ReportForm";
+import { useRealtimeRevision } from "../realtime/RealtimeProvider";
 import type { CommunityReport } from "./types";
 
 type LoadState = "loading" | "ready" | "error";
+const reportEvents = ["report.verified"] as const;
 
 export function ReportsPage() {
   const { account, status } = useOptionalAuth();
+  const realtimeRevision = useRealtimeRevision(reportEvents);
   const [publicReports, setPublicReports] = useState<CommunityReport[]>([]);
   const [publicState, setPublicState] = useState<LoadState>("loading");
+  const publicRequest = useRef(0);
   const [mine, setMine] = useState<CommunityReport[]>([]);
   const [mineOwnerId, setMineOwnerId] = useState<string | null>(null);
   const mineRequest = useRef(0);
@@ -20,13 +24,15 @@ export function ReportsPage() {
   const [editing, setEditing] = useState<CommunityReport | null>(null);
 
   const loadPublic = async () => {
+    const requestId = ++publicRequest.current;
     setPublicState("loading");
     try {
       const page = await reportsApi.listPublic();
+      if (requestId !== publicRequest.current) return;
       setPublicReports(page.items.filter((report) => report.status === "VERIFIED" && report.verificationStatus === "VERIFIED" && report.sourceType === "COMMUNITY"));
       setPublicState("ready");
     } catch {
-      setPublicState("error");
+      if (requestId === publicRequest.current) setPublicState("error");
     }
   };
 
@@ -45,7 +51,10 @@ export function ReportsPage() {
     }
   };
 
-  useEffect(() => { void loadPublic(); }, []);
+  useEffect(() => {
+    void loadPublic();
+    return () => { publicRequest.current += 1; };
+  }, [realtimeRevision]);
   useEffect(() => {
     if (status === "authenticated") void loadMine();
     return () => { mineRequest.current += 1; };

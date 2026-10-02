@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/floodwatch-ongkharak/backend/internal/alert"
 	"github.com/floodwatch-ongkharak/backend/internal/auth"
 	"github.com/floodwatch-ongkharak/backend/internal/flood"
 	"github.com/floodwatch-ongkharak/backend/internal/health"
@@ -14,6 +15,7 @@ import (
 	"github.com/floodwatch-ongkharak/backend/internal/report"
 	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
+	"github.com/redis/go-redis/v9"
 )
 
 //go:embed openapi.json
@@ -27,6 +29,8 @@ type Dependencies struct {
 	AuthService        *auth.Service
 	FloodService       *flood.Service
 	ReportService      *report.Service
+	AlertService       *alert.Service
+	RedisClient        redis.UniversalClient
 	CookieOptions      handler.CookieOptions
 }
 
@@ -40,6 +44,18 @@ func New(dependencies Dependencies) http.Handler {
 	router.Get("/health", handler.NewHealthHandler().ServeHTTP)
 	router.Get("/ready", handler.NewReadinessHandler(dependencies.Readiness).ServeHTTP)
 	router.Route("/api/v1", func(api chi.Router) {
+		if dependencies.RedisClient != nil {
+			api.Get("/events/stream", handler.NewEventStreamHandler(dependencies.RedisClient).ServeHTTP)
+		}
+		if dependencies.AlertService != nil {
+			alertHandler := handler.NewAlertHandler(dependencies.AlertService)
+			ruleLimiter := middleware.NewRateLimiter()
+			api.Get("/alerts", alertHandler.List)
+			if dependencies.AuthService != nil {
+				api.With(middleware.RequireAuthentication(dependencies.AuthService), middleware.RequireRole(auth.RoleAdmin), ruleLimiter.LimitAuthenticated("alert-rule-create", 10, time.Hour)).Post("/admin/alert-rules", alertHandler.CreateRule)
+				api.With(middleware.RequireAuthentication(dependencies.AuthService), middleware.RequireRole(auth.RoleAdmin), ruleLimiter.LimitAuthenticated("alert-rule-update", 30, time.Hour)).Put("/admin/alert-rules/{id}", alertHandler.UpdateRule)
+			}
+		}
 		if dependencies.AuthService != nil {
 			authHandler := handler.NewAuthHandler(dependencies.AuthService, dependencies.CookieOptions)
 			limiter := middleware.NewRateLimiter()
@@ -128,7 +144,7 @@ func cors(allowedOrigins []string) func(http.Handler) http.Handler {
 			if _, ok := allowed[origin]; ok {
 				response.Header().Set("Access-Control-Allow-Origin", origin)
 				response.Header().Set("Vary", "Origin")
-				response.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS")
+				response.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, OPTIONS")
 				response.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
 				response.Header().Set("Access-Control-Allow-Credentials", "true")
 			}

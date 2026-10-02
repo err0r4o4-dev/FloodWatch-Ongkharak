@@ -3,6 +3,9 @@ import { DataTimestamp, EmptyState, ErrorState, FreshnessBadge, LoadingState, So
 import { loadCollection } from "./api";
 import type { CollectionKey, Collections } from "./api";
 import type { Freshness } from "../../shared/types/flood";
+import { useRealtimeRevision } from "../realtime/RealtimeProvider";
+
+const overviewEvents = ["water_level.updated", "flood_event.created", "flood_event.updated", "road.status.changed"] as const;
 
 const keys: CollectionKey[] = ["events", "risks", "roads", "water"];
 const headings: Record<CollectionKey, string> = {
@@ -17,6 +20,7 @@ function effectiveStatus(value: string, freshness: Freshness, verification?: str
 export function OverviewPage() {
   const [result, setResult] = useState<Result | null>(null);
   const [revision, setRevision] = useState(0);
+  const realtimeRevision = useRealtimeRevision(overviewEvents);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -36,7 +40,7 @@ export function OverviewPage() {
       setResult({ collections, failed });
     });
     return () => controller.abort();
-  }, [revision]);
+  }, [revision, realtimeRevision]);
 
   const retry = () => setRevision((previous) => previous + 1);
   const hasItems = result && Object.values(result.collections).some((items) => items.length > 0);

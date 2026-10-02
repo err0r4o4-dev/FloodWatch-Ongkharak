@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/floodwatch-ongkharak/backend/internal/alert"
 	"github.com/floodwatch-ongkharak/backend/internal/auth"
 	"github.com/floodwatch-ongkharak/backend/internal/config"
 	"github.com/floodwatch-ongkharak/backend/internal/flood"
@@ -19,9 +20,12 @@ import (
 	"github.com/floodwatch-ongkharak/backend/internal/http/router"
 	"github.com/floodwatch-ongkharak/backend/internal/infrastructure/healthcheck"
 	"github.com/floodwatch-ongkharak/backend/internal/objectstore"
+	"github.com/floodwatch-ongkharak/backend/internal/postgres/alertrepo"
 	"github.com/floodwatch-ongkharak/backend/internal/postgres/authrepo"
 	"github.com/floodwatch-ongkharak/backend/internal/postgres/floodrepo"
+	"github.com/floodwatch-ongkharak/backend/internal/postgres/outbox"
 	"github.com/floodwatch-ongkharak/backend/internal/postgres/reportrepo"
+	"github.com/floodwatch-ongkharak/backend/internal/realtime"
 	"github.com/floodwatch-ongkharak/backend/internal/report"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
@@ -66,12 +70,25 @@ func run() error {
 	if err != nil {
 		return fmt.Errorf("configure report service: %w", err)
 	}
+	alertService, err := alert.NewService(alertrepo.New(postgresPool))
+	if err != nil {
+		return fmt.Errorf("configure alert service: %w", err)
+	}
 	redisOptions, err := redis.ParseURL(configuration.RedisURL)
 	if err != nil {
 		return fmt.Errorf("configure Redis client: %w", err)
 	}
 	redisClient := redis.NewClient(redisOptions)
 	defer redisClient.Close()
+	publisher := realtime.NewPublisher(redisClient)
+	dispatcher := outbox.New(postgresPool, func(ctx context.Context, record outbox.Record) error {
+		return publisher.Publish(ctx, realtime.Event{
+			EventID: record.ID, EventType: realtime.EventType(record.EventType), OccurredAt: record.OccurredAt,
+			PublishedAt: time.Now().UTC(), SourceType: realtime.SourceType(record.SourceType),
+			ResourceType: realtime.ResourceType(record.ResourceType), ResourceID: record.ResourceID,
+			PayloadVersion: record.PayloadVersion, Payload: record.Payload,
+		})
+	})
 
 	readiness := health.NewService([]health.Checker{
 		healthcheck.Postgres{Pool: postgresPool, Timeout: configuration.ReadinessTimeout},
@@ -89,6 +106,8 @@ func run() error {
 			SwaggerEnabled: configuration.SwaggerEnabled, AuthService: authService,
 			FloodService:  floodService,
 			ReportService: reportService,
+			AlertService:  alertService,
+			RedisClient:   redisClient,
 			CookieOptions: handler.CookieOptions{Name: configuration.CookieName, Secure: configuration.CookieSecure, SameSite: configuration.CookieSameSite, RefreshTTL: configuration.RefreshTokenTTL, AllowedOrigins: configuration.CORSAllowedOrigins},
 		}),
 		ReadHeaderTimeout: 5 * time.Second,
@@ -96,6 +115,44 @@ func run() error {
 
 	runContext, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+	dispatchDone := make(chan struct{})
+	go func() {
+		defer close(dispatchDone)
+		ticker := time.NewTicker(3 * time.Second)
+		defer ticker.Stop()
+		for {
+			attemptContext, cancel := context.WithTimeout(runContext, 2*time.Second)
+			_, err := dispatcher.Dispatch(attemptContext)
+			cancel()
+			if err != nil && runContext.Err() == nil {
+				logger.Warn("event delivery deferred; canonical data remains persisted", "error", err)
+			}
+			select {
+			case <-runContext.Done():
+				return
+			case <-ticker.C:
+			}
+		}
+	}()
+	pruneDone := make(chan struct{})
+	go func() {
+		defer close(pruneDone)
+		ticker := time.NewTicker(24 * time.Hour)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-runContext.Done():
+				return
+			case <-ticker.C:
+				attemptContext, cancel := context.WithTimeout(runContext, 10*time.Second)
+				err := dispatcher.Prune(attemptContext)
+				cancel()
+				if err != nil && runContext.Err() == nil {
+					logger.Warn("event outbox pruning deferred", "error", err)
+				}
+			}
+		}
+	}()
 	serverErrors := make(chan error, 1)
 	go func() {
 		logger.Info("API starting", slog.String("environment", configuration.Environment), slog.Int("port", configuration.APIPort))
@@ -110,6 +167,8 @@ func run() error {
 		return fmt.Errorf("serve HTTP: %w", err)
 	case <-runContext.Done():
 		logger.Info("API shutdown requested")
+		<-dispatchDone
+		<-pruneDone
 		shutdownContext, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 		return server.Shutdown(shutdownContext)

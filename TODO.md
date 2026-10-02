@@ -1,6 +1,6 @@
 # Flood Watch Ongkharak roadmap
 
-`UNKNOWN` is not `SAFE`; preserve source provenance across future phases. Phase 6 is the current authorized scope; do not begin Phase 7.
+`UNKNOWN` is not `SAFE`; preserve source provenance across future phases. Phase 7 is the current authorized scope; do not begin Phase 8.
 
 ## Phase 0 — Foundation (complete)
 
@@ -73,7 +73,13 @@ Local Phase 6 validation (2026-10-02): frontend typecheck, 49 Vitest tests, and 
 
 ## Phase 7 — Realtime & Alert Engine
 
-- [ ] Implement Redis Streams, SSE, and alert evaluation
+- [x] Add versioned public event envelope, bounded Redis Stream, durable PostgreSQL outbox/retry, and canonical change triggers
+- [x] Provide guest SSE with validated replay cursors, reset/heartbeat, cancellation, public-only events, and backpressure bounds
+- [x] Persist configured structured alert rules and evidence-based deduplicated decisions; publish alert.created separately from transport
+- [x] Refetch canonical REST data from one reconnecting frontend subscription and surface degraded realtime state
+- [x] Add focused backend/frontend/security/reliability coverage and update OpenAPI/architecture docs
+
+Local Phase 7 validation (2026-10-02): frontend typecheck, 55 Vitest tests, and build pass; Go vet/tests/command builds pass; Python pytest 1 passes with an existing Starlette deprecation warning; Compose config passes. Migrations 7 and 8 applied to local development PostGIS. Docker/PostGIS integration passes for canonical triggers, configured alert dedupe, UNKNOWN road transition, persisted outbox retry, and guest/USER/ADMIN rule authorization; Redis-backed SSE replay and guest visibility pass with client disconnect completing in about one second. Live Caddy GET `/api/v1/alerts` returned an empty list and `/api/v1/events/stream` returned text/event-stream and a connection frame. Production-build 500px mobile and 1440px desktop empty/realtime states rendered; 320px rendered emulation and an authenticated live browser lifecycle were not verified. No official thresholds or synthetic live incidents were added. Delivery is at-least-once and bounded by Redis retention; public edge rate limiting, operational outbox monitoring, and a deployed end-to-end event-to-browser smoke remain deferred. No Phase 8 work started.
 
 ## Phase 8 — Admin
 

@@ -9,11 +9,14 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/floodwatch-ongkharak/backend/internal/alert"
 	"github.com/floodwatch-ongkharak/backend/internal/config"
 	"github.com/floodwatch-ongkharak/backend/internal/flood"
 	"github.com/floodwatch-ongkharak/backend/internal/ingestion"
 	"github.com/floodwatch-ongkharak/backend/internal/ingestion/fixture"
+	"github.com/floodwatch-ongkharak/backend/internal/postgres/alertrepo"
 	"github.com/floodwatch-ongkharak/backend/internal/postgres/ingestionrepo"
+	"github.com/floodwatch-ongkharak/backend/internal/postgres/outbox"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -96,11 +99,35 @@ func run() error {
 		logger:            logger,
 	}
 	engine := &ingestion.Engine{Store: store, Providers: providers, RunTimeout: workerRunTimeout, Logger: logger}
+	alertService, err := alert.NewService(alertrepo.New(postgresPool))
+	if err != nil {
+		return fmt.Errorf("configure alert service: %w", err)
+	}
+	evaluator := outbox.NewEvaluator(postgresPool, alertService)
 	scheduler := ingestion.NewScheduler(engine, workerConcurrency)
 	logger.Info("worker starting", slog.String("environment", configuration.Environment), slog.Int("registered_sources", len(providers)))
 
 	runContext, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+	evaluationDone := make(chan struct{})
+	go func() {
+		defer close(evaluationDone)
+		ticker := time.NewTicker(5 * time.Second)
+		defer ticker.Stop()
+		for {
+			attemptContext, cancel := context.WithTimeout(runContext, 4*time.Second)
+			_, err := evaluator.EvaluatePending(attemptContext)
+			cancel()
+			if err != nil && runContext.Err() == nil {
+				logger.Warn("alert evaluation deferred", "error", err)
+			}
+			select {
+			case <-runContext.Done():
+				return
+			case <-ticker.C:
+			}
+		}
+	}()
 	ticker := time.NewTicker(workerPollInterval)
 	defer ticker.Stop()
 	for {
@@ -111,6 +138,7 @@ func run() error {
 		case <-runContext.Done():
 			logger.Info("worker shutdown requested")
 			scheduler.Wait()
+			<-evaluationDone
 			return nil
 		case <-ticker.C:
 		}

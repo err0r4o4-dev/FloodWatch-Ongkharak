@@ -377,8 +377,9 @@ code {
 .shell-nav-symbol { width: 1.4rem; color: var(--color-primary-strong); font-size: 1.3rem; text-align: center; }
 .shell-nav-link:hover, .shell-nav-link.is-active { color: var(--color-primary-strong); background: var(--color-source-official); }
 .public-shell .page-content { display: block; min-width: 0; padding-block: var(--space-8) var(--space-12); }
-.public-shell .site-footer { border-top: var(--border-width) solid var(--color-border); }
+.public-shell .site-footer { flex-wrap: wrap; border-top: var(--border-width) solid var(--color-border); }
 .public-shell .site-footer a { color: var(--color-primary-strong); }
+.realtime-indicator { min-width: 0; overflow-wrap: anywhere; }
 .page-heading { max-width: 54rem; margin-bottom: var(--space-8); }
 .page-heading h1 { max-width: none; font-size: clamp(1.85rem, 4vw, 3rem); }
 .page-heading > p:last-child { margin: var(--space-3) 0 0; color: var(--color-ink-muted); }

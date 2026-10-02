@@ -29,7 +29,7 @@ describe("public routes", () => {
     ["/reports", "รายงานสถานการณ์", "ยังไม่มีรายงานที่เผยแพร่"],
     ["/map", "แผนที่สถานการณ์", "ข้อมูลในขอบเขตที่โหลด"]
   ])("opens %s without login", async (path, heading, empty) => {
-    if (path === "/reports") {
+    if (path === "/reports" || path === "/announcements") {
       vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, status: 200, json: () => Promise.resolve({ items: [], limit: 20, offset: 0 }) }));
     }
     render(<MemoryRouter initialEntries={[path]}><AppRoutes /></MemoryRouter>);
