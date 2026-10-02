@@ -63,11 +63,6 @@ export function AdminDashboardPage() {
             ตรวจสอบหลักฐาน AI
           </NavLink>
         </section>
-      </div>
-            เปิดรายงาน
-          </NavLink>
-        </section>
-
         <section className="panel admin-card">
           <h2>กฎการแจ้งเตือน</h2>
           <p className="muted">สร้างและจัดการกฎการแจ้งเตือนอัตโนมัติ</p>

@@ -79,7 +79,10 @@ func run() error {
 	if err != nil {
 		return fmt.Errorf("configure alert service: %w", err)
 	}
-	notificationService := notification.NewService(logger, notificationrepo.New(postgresPool), configuration.VAPIDPublicKey, configuration.VAPIDPrivateKey, configuration.VAPIDSubscriber)
+	var notificationService *notification.Service
+	if configuration.VAPIDPublicKey != "" {
+		notificationService = notification.NewService(logger, notificationrepo.New(postgresPool), configuration.VAPIDPublicKey, configuration.VAPIDPrivateKey, configuration.VAPIDSubscriber)
+	}
 	adminService := admin.NewService(adminrepo.New(postgresPool))
 	redisOptions, err := redis.ParseURL(configuration.RedisURL)
 	if err != nil {
@@ -99,7 +102,7 @@ func run() error {
 			return err
 		}
 
-		if record.EventType == "alert.created" {
+		if notificationService != nil && record.EventType == "alert.created" {
 			var payload notification.Payload
 			if err := json.Unmarshal(record.Payload, &payload); err == nil {
 				// Broadcast in the background to avoid blocking the outbox dispatcher
@@ -125,13 +128,13 @@ func run() error {
 		Handler: router.New(router.Dependencies{
 			Logger: logger, Readiness: readiness, CORSAllowedOrigins: configuration.CORSAllowedOrigins,
 			SwaggerEnabled: configuration.SwaggerEnabled, AuthService: authService,
-			FloodService:  floodService,
-			ReportService: reportService,
-			AlertService:  alertService,
-			AdminService:  adminService,
+			FloodService:        floodService,
+			ReportService:       reportService,
+			AlertService:        alertService,
+			AdminService:        adminService,
 			NotificationService: notificationService,
-			RedisClient:   redisClient,
-			CookieOptions: handler.CookieOptions{Name: configuration.CookieName, Secure: configuration.CookieSecure, SameSite: configuration.CookieSameSite, RefreshTTL: configuration.RefreshTokenTTL, AllowedOrigins: configuration.CORSAllowedOrigins},
+			RedisClient:         redisClient,
+			CookieOptions:       handler.CookieOptions{Name: configuration.CookieName, Secure: configuration.CookieSecure, SameSite: configuration.CookieSameSite, RefreshTTL: configuration.RefreshTokenTTL, AllowedOrigins: configuration.CORSAllowedOrigins},
 		}),
 		ReadHeaderTimeout: 5 * time.Second,
 	}

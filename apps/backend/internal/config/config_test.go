@@ -15,6 +15,48 @@ func TestLoadRequiresValidAppEnvironment(t *testing.T) {
 	}
 }
 
+func TestLoadAllowsUnconfiguredDevelopmentPush(t *testing.T) {
+	setValidEnvironment(t)
+	t.Setenv("VAPID_PUBLIC_KEY", "")
+	t.Setenv("VAPID_PRIVATE_KEY", "")
+	t.Setenv("VAPID_SUBSCRIBER", "")
+
+	configuration, err := Load()
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	if configuration.VAPIDPublicKey != "" || configuration.VAPIDPrivateKey != "" || configuration.VAPIDSubscriber != "" {
+		t.Fatal("unconfigured push must remain disabled")
+	}
+}
+
+func TestLoadRejectsPartialPushConfiguration(t *testing.T) {
+	setValidEnvironment(t)
+	t.Setenv("VAPID_PUBLIC_KEY", "public-key")
+	t.Setenv("VAPID_PRIVATE_KEY", "")
+	t.Setenv("VAPID_SUBSCRIBER", "")
+
+	_, err := Load()
+	if err == nil || !strings.Contains(err.Error(), "VAPID_PRIVATE_KEY") {
+		t.Fatalf("Load() error = %v, want VAPID_PRIVATE_KEY validation error", err)
+	}
+}
+
+func TestLoadRequiresPushConfigurationInProduction(t *testing.T) {
+	setValidEnvironment(t)
+	t.Setenv("APP_ENV", "production")
+	t.Setenv("JWT_SECRET", "strong-production-example-secret-for-tests-only-42")
+	t.Setenv("COOKIE_SECURE", "true")
+	t.Setenv("VAPID_PUBLIC_KEY", "")
+	t.Setenv("VAPID_PRIVATE_KEY", "")
+	t.Setenv("VAPID_SUBSCRIBER", "")
+
+	_, err := Load()
+	if err == nil || !strings.Contains(err.Error(), "VAPID_PUBLIC_KEY") {
+		t.Fatalf("Load() error = %v, want VAPID_PUBLIC_KEY validation error", err)
+	}
+}
+
 func TestLoadDisablesSwaggerInProduction(t *testing.T) {
 	setValidEnvironment(t)
 	t.Setenv("APP_ENV", "production")
@@ -168,6 +210,9 @@ func setValidEnvironment(t *testing.T) {
 	t.Setenv("COOKIE_SECURE", "false")
 	t.Setenv("COOKIE_SAMESITE", "Lax")
 	t.Setenv("AI_SERVICE_URL", "http://localhost:8001")
+	t.Setenv("VAPID_PUBLIC_KEY", "test-public-key")
+	t.Setenv("VAPID_PRIVATE_KEY", "test-private-key")
+	t.Setenv("VAPID_SUBSCRIBER", "mailto:admin@example.test")
 	t.Setenv("SWAGGER_ENABLED", "true")
 	t.Setenv("INGESTION_FIXTURE_URL", "")
 	t.Setenv("INGESTION_FIXTURE_SOURCE_CODE", "")

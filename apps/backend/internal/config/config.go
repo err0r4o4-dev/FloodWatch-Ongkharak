@@ -147,17 +147,19 @@ func Load() (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
-	vapidPublicKey, err := required("VAPID_PUBLIC_KEY")
-	if err != nil {
-		return Config{}, err
-	}
-	vapidPrivateKey, err := required("VAPID_PRIVATE_KEY")
-	if err != nil {
-		return Config{}, err
-	}
-	vapidSubscriber, err := required("VAPID_SUBSCRIBER")
-	if err != nil {
-		return Config{}, err
+	vapidPublicKey := strings.TrimSpace(os.Getenv("VAPID_PUBLIC_KEY"))
+	vapidPrivateKey := strings.TrimSpace(os.Getenv("VAPID_PRIVATE_KEY"))
+	vapidSubscriber := strings.TrimSpace(os.Getenv("VAPID_SUBSCRIBER"))
+	if environment == "production" || vapidPublicKey != "" || vapidPrivateKey != "" || vapidSubscriber != "" {
+		for _, entry := range []struct{ name, value string }{
+			{"VAPID_PUBLIC_KEY", vapidPublicKey},
+			{"VAPID_PRIVATE_KEY", vapidPrivateKey},
+			{"VAPID_SUBSCRIBER", vapidSubscriber},
+		} {
+			if entry.value == "" {
+				return Config{}, fmt.Errorf("%s is required", entry.name)
+			}
+		}
 	}
 
 	return Config{
