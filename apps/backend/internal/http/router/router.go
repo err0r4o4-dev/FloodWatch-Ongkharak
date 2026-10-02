@@ -118,13 +118,13 @@ func New(dependencies Dependencies) http.Handler {
 			api.With(adminOnly...).Get("/admin/users", adminHandler.ListUsers)
 			api.With(adminOnly...).Get("/admin/users/{id}", adminHandler.GetUser)
 			api.With(adminOnly...).Patch("/admin/users/{id}/role", adminHandler.UpdateUserRole)
-			api.With(adminOnly..., adminLimiter.LimitAuthenticated("admin-user-disable", 20, time.Hour)).Post("/admin/users/{id}/disable", adminHandler.DisableUser)
-			api.With(adminOnly..., adminLimiter.LimitAuthenticated("admin-user-enable", 20, time.Hour)).Post("/admin/users/{id}/enable", adminHandler.EnableUser)
+			api.With(append(adminOnly, adminLimiter.LimitAuthenticated("admin-user-disable", 20, time.Hour))...).Post("/admin/users/{id}/disable", adminHandler.DisableUser)
+			api.With(append(adminOnly, adminLimiter.LimitAuthenticated("admin-user-enable", 20, time.Hour))...).Post("/admin/users/{id}/enable", adminHandler.EnableUser)
 			
 			// System settings
 			api.With(adminOnly...).Get("/admin/settings", adminHandler.ListSettings)
 			api.With(adminOnly...).Get("/admin/settings/{key}", adminHandler.GetSetting)
-			api.With(adminOnly..., adminLimiter.LimitAuthenticated("admin-setting-update", 50, time.Hour)).Put("/admin/settings/{key}", adminHandler.UpdateSetting)
+			api.With(append(adminOnly, adminLimiter.LimitAuthenticated("admin-setting-update", 50, time.Hour))...).Put("/admin/settings/{key}", adminHandler.UpdateSetting)
 			
 			// Audit logs
 			api.With(adminOnly...).Get("/admin/audit-logs", adminHandler.ListAuditLogs)
