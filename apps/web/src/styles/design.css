@@ -69,16 +69,13 @@ body {
 .sidebar-status__dot { width: .6rem; height: .6rem; flex: none; margin-top: .3rem; border-radius: 50%; background: var(--color-status-info); }
 .sidebar-status strong { display: block; color: var(--color-ink); font-size: .75rem; font-weight: 700; letter-spacing: .08em; line-height: 1.25rem; }
 .sidebar-status p { margin: .5rem 0 0; font-size: .75rem; line-height: 1.25rem; }
-.shell-main { --shell-gutter: clamp(.9rem, 1.35vw, 1.5rem); padding-inline: var(--shell-gutter); }
 .public-shell .skip-link { z-index: calc(var(--z-shell-top) + 1); }
-.shell-top { position: sticky; z-index: var(--z-shell-top); top: 0; margin-inline: calc(-1 * var(--shell-gutter)); background: var(--shell-chrome-surface); }
+.shell-top { position: sticky; z-index: var(--z-shell-top); top: 0; background: var(--shell-chrome-surface); }
 .institution-header {
   display: flex;
-  min-height: 4.7rem;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: .6rem var(--shell-gutter);
+  min-height: 4.7rem;
+  padding: .6rem 0;
   border: 0;
   border-bottom: 1px solid var(--color-border);
   border-radius: 0;
@@ -149,17 +146,14 @@ body {
 
 @media (max-width: 55rem) {
   .public-shell { display: block; }
-  .shell-main { --shell-gutter: var(--space-4); padding-bottom: calc(5rem + env(safe-area-inset-bottom)); }
+  .shell-main { padding-bottom: calc(5rem + env(safe-area-inset-bottom)); }
   .institution-header { min-height: 3.8rem; border-bottom: 0; }
-  .mobile-header { display: flex; min-height: 3.8rem; padding-inline: var(--shell-gutter); border-color: var(--color-border); background: var(--shell-chrome-surface); }
+  .mobile-header { display: flex; align-items: center; min-height: 3.8rem; border-color: var(--color-border); background: var(--shell-chrome-surface); }
   .bottom-navigation { padding-inline: 0; background: var(--shell-chrome-surface); }
   .bottom-navigation ul { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; }
 }
 @media (min-width: 90rem) {
   .desktop-sidebar { padding: 1.5rem; }
-}
-@media (max-width: 25rem) {
-  .shell-main { --shell-gutter: var(--space-3); padding-inline: var(--shell-gutter); }
 }
 @media (max-width: 35rem) {
   .institution-header__actions { gap: .25rem; }
