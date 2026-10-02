@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -20,11 +21,13 @@ import (
 	"github.com/floodwatch-ongkharak/backend/internal/http/handler"
 	"github.com/floodwatch-ongkharak/backend/internal/http/router"
 	"github.com/floodwatch-ongkharak/backend/internal/infrastructure/healthcheck"
+	"github.com/floodwatch-ongkharak/backend/internal/notification"
 	"github.com/floodwatch-ongkharak/backend/internal/objectstore"
 	"github.com/floodwatch-ongkharak/backend/internal/postgres/adminrepo"
 	"github.com/floodwatch-ongkharak/backend/internal/postgres/alertrepo"
 	"github.com/floodwatch-ongkharak/backend/internal/postgres/authrepo"
 	"github.com/floodwatch-ongkharak/backend/internal/postgres/floodrepo"
+	"github.com/floodwatch-ongkharak/backend/internal/postgres/notificationrepo"
 	"github.com/floodwatch-ongkharak/backend/internal/postgres/outbox"
 	"github.com/floodwatch-ongkharak/backend/internal/postgres/reportrepo"
 	"github.com/floodwatch-ongkharak/backend/internal/realtime"
@@ -76,6 +79,7 @@ func run() error {
 	if err != nil {
 		return fmt.Errorf("configure alert service: %w", err)
 	}
+	notificationService := notification.NewService(logger, notificationrepo.New(postgresPool), configuration.VAPIDPublicKey, configuration.VAPIDPrivateKey, configuration.VAPIDSubscriber)
 	adminService := admin.NewService(adminrepo.New(postgresPool))
 	redisOptions, err := redis.ParseURL(configuration.RedisURL)
 	if err != nil {
@@ -85,12 +89,26 @@ func run() error {
 	defer redisClient.Close()
 	publisher := realtime.NewPublisher(redisClient)
 	dispatcher := outbox.New(postgresPool, func(ctx context.Context, record outbox.Record) error {
-		return publisher.Publish(ctx, realtime.Event{
+		err := publisher.Publish(ctx, realtime.Event{
 			EventID: record.ID, EventType: realtime.EventType(record.EventType), OccurredAt: record.OccurredAt,
 			PublishedAt: time.Now().UTC(), SourceType: realtime.SourceType(record.SourceType),
 			ResourceType: realtime.ResourceType(record.ResourceType), ResourceID: record.ResourceID,
 			PayloadVersion: record.PayloadVersion, Payload: record.Payload,
 		})
+		if err != nil {
+			return err
+		}
+
+		if record.EventType == "alert.created" {
+			var payload notification.Payload
+			if err := json.Unmarshal(record.Payload, &payload); err == nil {
+				// Broadcast in the background to avoid blocking the outbox dispatcher
+				go notificationService.BroadcastAlert(context.Background(), payload)
+			} else {
+				logger.Error("failed to unmarshal alert payload", slog.String("error", err.Error()))
+			}
+		}
+		return nil
 	})
 
 	readiness := health.NewService([]health.Checker{
@@ -111,6 +129,7 @@ func run() error {
 			ReportService: reportService,
 			AlertService:  alertService,
 			AdminService:  adminService,
+			NotificationService: notificationService,
 			RedisClient:   redisClient,
 			CookieOptions: handler.CookieOptions{Name: configuration.CookieName, Secure: configuration.CookieSecure, SameSite: configuration.CookieSameSite, RefreshTTL: configuration.RefreshTokenTTL, AllowedOrigins: configuration.CORSAllowedOrigins},
 		}),

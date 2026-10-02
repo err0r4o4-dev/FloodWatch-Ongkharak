@@ -12,6 +12,7 @@ import (
 	"github.com/floodwatch-ongkharak/backend/internal/health"
 	"github.com/floodwatch-ongkharak/backend/internal/http/handler"
 	"github.com/floodwatch-ongkharak/backend/internal/http/middleware"
+	"github.com/floodwatch-ongkharak/backend/internal/notification"
 	"github.com/floodwatch-ongkharak/backend/internal/report"
 	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
@@ -31,6 +32,7 @@ type Dependencies struct {
 	ReportService      *report.Service
 	AlertService       *alert.Service
 	AdminService       handler.AdminService
+	NotificationService *notification.Service
 	RedisClient        redis.UniversalClient
 	CookieOptions      handler.CookieOptions
 }
@@ -108,24 +110,33 @@ func New(dependencies Dependencies) http.Handler {
 			api.With(authenticated, middleware.RequireRole(auth.RoleAdmin), writeLimiter.LimitAuthenticated("report-review", 30, time.Hour)).Post("/admin/reports/{id}/verify", reportHandler.Verify)
 			api.With(authenticated, middleware.RequireRole(auth.RoleAdmin), writeLimiter.LimitAuthenticated("report-review", 30, time.Hour)).Post("/admin/reports/{id}/reject", reportHandler.Reject)
 		}
+		if dependencies.NotificationService != nil {
+			notificationHandler := handler.NewNotificationHandler(dependencies.NotificationService)
+			api.Get("/notifications/public-key", notificationHandler.PublicKey)
+			if dependencies.AuthService != nil {
+				authenticated := middleware.RequireAuthentication(dependencies.AuthService)
+				api.With(authenticated).Post("/notifications/subscribe", notificationHandler.Subscribe)
+				api.With(authenticated).Delete("/notifications/unsubscribe", notificationHandler.Unsubscribe)
+			}
+		}
 		if dependencies.AdminService != nil && dependencies.AuthService != nil {
 			adminHandler := handler.NewAdminHandler(dependencies.AdminService, dependencies.AdminService)
 			adminLimiter := middleware.NewRateLimiter()
 			authenticated := middleware.RequireAuthentication(dependencies.AuthService)
 			adminOnly := []func(http.Handler) http.Handler{authenticated, middleware.RequireRole(auth.RoleAdmin)}
-			
+
 			// User management
 			api.With(adminOnly...).Get("/admin/users", adminHandler.ListUsers)
 			api.With(adminOnly...).Get("/admin/users/{id}", adminHandler.GetUser)
 			api.With(adminOnly...).Patch("/admin/users/{id}/role", adminHandler.UpdateUserRole)
 			api.With(append(adminOnly, adminLimiter.LimitAuthenticated("admin-user-disable", 20, time.Hour))...).Post("/admin/users/{id}/disable", adminHandler.DisableUser)
 			api.With(append(adminOnly, adminLimiter.LimitAuthenticated("admin-user-enable", 20, time.Hour))...).Post("/admin/users/{id}/enable", adminHandler.EnableUser)
-			
+
 			// System settings
 			api.With(adminOnly...).Get("/admin/settings", adminHandler.ListSettings)
 			api.With(adminOnly...).Get("/admin/settings/{key}", adminHandler.GetSetting)
 			api.With(append(adminOnly, adminLimiter.LimitAuthenticated("admin-setting-update", 50, time.Hour))...).Put("/admin/settings/{key}", adminHandler.UpdateSetting)
-			
+
 			// Audit logs
 			api.With(adminOnly...).Get("/admin/audit-logs", adminHandler.ListAuditLogs)
 			api.With(adminOnly...).Get("/admin/audit-logs/{id}", adminHandler.GetAuditLog)

@@ -4,6 +4,7 @@ import { loadCollection } from "./api";
 import type { CollectionKey, Collections } from "./api";
 import type { Freshness } from "../../shared/types/flood";
 import { useRealtimeRevision } from "../realtime/RealtimeProvider";
+import { NotificationToggle } from "../notifications/NotificationToggle";
 
 const overviewEvents = ["water_level.updated", "flood_event.created", "flood_event.updated", "road.status.changed"] as const;
 
@@ -46,8 +47,17 @@ export function OverviewPage() {
   const hasItems = result && Object.values(result.collections).some((items) => items.length > 0);
 
   return <div className="overview-page">
-    <div className="page-heading"><p className="eyebrow">FLOOD WATCH · ONGKHARAK</p><h1>ภาพรวมสถานการณ์น้ำ</h1>
-      <p>ข้อมูลจาก API สาธารณะพร้อมแหล่งที่มาและเวลา ไม่ใช่การยืนยันว่าพื้นที่ปลอดภัย</p></div>
+    <div className="page-heading">
+      <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', alignItems: 'flex-start' }}>
+        <div>
+          <p className="eyebrow">FLOOD WATCH · ONGKHARAK</p><h1>ภาพรวมสถานการณ์น้ำ</h1>
+          <p>ข้อมูลจาก API สาธารณะพร้อมแหล่งที่มาและเวลา ไม่ใช่การยืนยันว่าพื้นที่ปลอดภัย</p>
+        </div>
+        <div style={{ padding: '0.75rem', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--surface-raised, #fff)' }}>
+          <NotificationToggle />
+        </div>
+      </div>
+    </div>
     {!result ? <LoadingState /> : result.failed.length === keys.length ? <ErrorState onRetry={retry} /> : <>
       {result.failed.length > 0 && <div className="notice" role="status"><strong>ข้อมูลบางส่วนไม่พร้อมใช้งาน</strong><span>โหลดไม่ได้: {result.failed.map((key) => headings[key]).join(", ")} · ไม่ควรใช้ข้อมูลที่ขาดหายยืนยันความปลอดภัย</span><button type="button" onClick={retry}>ลองอีกครั้ง</button></div>}
       {!hasItems ? <EmptyState title="ยังไม่มีข้อมูลสถานการณ์ที่เผยแพร่">ยังไม่มีรายการในชุดข้อมูลที่เรียกดู หรือข้อมูลบางส่วนไม่พร้อมใช้งาน กรุณาตรวจสอบแหล่งข้อมูลอีกครั้งก่อนตัดสินใจเดินทาง</EmptyState> : <div className="overview-sections">

@@ -36,6 +36,9 @@ type Config struct {
 	ReadinessTimeout           time.Duration
 	IngestionFixtureURL        string
 	IngestionFixtureSourceCode string
+	VAPIDPublicKey             string
+	VAPIDPrivateKey            string
+	VAPIDSubscriber            string
 }
 
 func Load() (Config, error) {
@@ -144,6 +147,18 @@ func Load() (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
+	vapidPublicKey, err := required("VAPID_PUBLIC_KEY")
+	if err != nil {
+		return Config{}, err
+	}
+	vapidPrivateKey, err := required("VAPID_PRIVATE_KEY")
+	if err != nil {
+		return Config{}, err
+	}
+	vapidSubscriber, err := required("VAPID_SUBSCRIBER")
+	if err != nil {
+		return Config{}, err
+	}
 
 	return Config{
 		Environment:                environment,
@@ -167,6 +182,9 @@ func Load() (Config, error) {
 		ReadinessTimeout:           defaultReadinessTimeout,
 		IngestionFixtureURL:        fixtureURL,
 		IngestionFixtureSourceCode: fixtureSourceCode,
+		VAPIDPublicKey:             vapidPublicKey,
+		VAPIDPrivateKey:            vapidPrivateKey,
+		VAPIDSubscriber:            vapidSubscriber,
 	}, nil
 }
 

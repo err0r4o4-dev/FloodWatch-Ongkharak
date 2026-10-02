@@ -97,8 +97,9 @@ func (repository *Repository) CreateAlert(ctx context.Context, item alert.Alert)
 		return alert.Alert{}, false, fmt.Errorf("create alert: %w", err)
 	}
 	if _, err := transaction.Exec(ctx, `
-		INSERT INTO event_outbox (id, event_type, occurred_at, source_type, resource_type, resource_id, evaluated_at)
-		VALUES ($1,'alert.created',$2,$3,'ALERT',$4,CURRENT_TIMESTAMP)`, uuid.NewString(), item.TriggeredAt, item.SourceType, item.ID); err != nil {
+		INSERT INTO event_outbox (id, event_type, occurred_at, source_type, resource_type, resource_id, evaluated_at, payload)
+		VALUES ($1,'alert.created',$2,$3,'ALERT',$4,CURRENT_TIMESTAMP, jsonb_build_object('title', $5::text, 'message', $6::text))`,
+		uuid.NewString(), item.TriggeredAt, item.SourceType, item.ID, item.Title, item.Message); err != nil {
 		return alert.Alert{}, false, fmt.Errorf("queue alert event: %w", err)
 	}
 	if err := transaction.Commit(ctx); err != nil {
