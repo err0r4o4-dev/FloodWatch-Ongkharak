@@ -1,6 +1,6 @@
 # Phase 2 flood domain
 
-The Phase 2 database and public read API are a canonical **empty** domain, not a live situation feed. There is no scheduled ingestion, production seed, map UI, alert engine, routing engine, or claim that a road is safe. Synthetic geometries in integration tests are removed after each test and are not Ongkharak observations.
+The Phase 2 database and public read API began as a canonical **empty** domain, not a live situation feed. Phase 3 adds an opt-in synthetic-only ingestion worker but no live external provider, production seed, map UI, alert engine, routing engine, or claim that a road is safe. Synthetic geometries in integration tests are removed after each test and are not Ongkharak observations. See `ingestion.md` for the worker boundary.
 
 ```mermaid
 erDiagram

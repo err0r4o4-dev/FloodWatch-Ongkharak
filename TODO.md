@@ -1,6 +1,6 @@
 # Flood Watch Ongkharak roadmap
 
-`UNKNOWN` is not `SAFE`; preserve source provenance across future phases. Phase 2 is the current authorized scope; do not begin Phase 3.
+`UNKNOWN` is not `SAFE`; preserve source provenance across future phases. Phase 3 is the current authorized scope; do not begin Phase 4.
 
 ## Phase 0 — Foundation (complete)
 
@@ -36,7 +36,13 @@ Local Phase 2 validation (2026-10-02): gofmt clean; `go vet ./...`, `go test ./.
 
 ## Phase 3 — External Data Ingestion
 
-- [ ] Integrate vetted providers through fetch/validate/normalize/deduplicate/persist adapters
+- [x] Add provider-neutral water ingestion engine, explicit unit/time/coordinate validation, bounded HTTP client, and synthetic-only fixture adapter
+- [x] Add ingestion-run and source-health migration 5, transactional dedupe, bounded scheduler, and graceful worker shutdown
+- [x] Verify PostGIS/fixture integration, fresh migration/rollback, worker startup, Go/frontend/Python, Compose, and API readiness
+
+Local Phase 3 validation (2026-10-02): Go gofmt clean (46 files), `go test ./... -count=1`, `go vet ./...`, and API/worker/bootstrap builds pass. Docker full Go suite passes against PostGIS, including six ingestion repository integration tests, one error-code unit test, and a controlled `httptest.Server` fixture pipeline exercising partial/NUL rows, 429/503 retry, malformed/oversized/slow responses, duplicate polls, provenance, health degradation/recovery, and cleanup. Additional unit tests cover station-field controls, special-use IP denial, and persistence fallback. Existing dev DB is version 5 (`dirty=false`), with no synthetic source/run records left; a disposable database applied 1→2→3→4→5 (eight tables), rolled back 5→4, reapplied 4→5, then was dropped. Frontend typecheck, 6 Vitest tests and build pass; Python pytest 1 passes with existing deprecation/cache warnings; Compose config passes. Rebuilt worker runs with no fixture configured and API readiness remains 200. No live provider was called, and no ingestion UI or future-phase feature was added. Remote GitHub Actions and browser-rendered Swagger interaction remain unverified.
+
+Future Provider Integration (not implemented): ThaiWater, DDPM, Google Flood Forecasting, and weather sources require verified API contracts, access terms, units, timestamp rules, and identifiers. No synthetic fixture is a live source.
 
 ## Phase 4 — Public Frontend
 

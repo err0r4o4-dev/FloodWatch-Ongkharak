@@ -83,6 +83,72 @@ func TestLoadRejectsInvalidTokenLifetimeAndSameSite(t *testing.T) {
 	}
 }
 
+func TestLoadConfiguresDevelopmentFixture(t *testing.T) {
+	setValidEnvironment(t)
+	t.Setenv("INGESTION_FIXTURE_URL", "http://127.0.0.1:8090")
+	t.Setenv("INGESTION_FIXTURE_SOURCE_CODE", "SYNTH_FIXTURE")
+
+	configuration, err := Load()
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	if configuration.IngestionFixtureURL != "http://127.0.0.1:8090" || configuration.IngestionFixtureSourceCode != "SYNTH_FIXTURE" {
+		t.Fatalf("fixture configuration = %+v, want configured fixture", configuration)
+	}
+}
+
+func TestLoadRejectsUnsafeFixtureConfiguration(t *testing.T) {
+	for _, test := range []struct {
+		name string
+		set  func(*testing.T)
+		want string
+	}{
+		{
+			name: "missing source code",
+			set: func(t *testing.T) {
+				t.Setenv("INGESTION_FIXTURE_URL", "http://127.0.0.1:8090")
+			},
+			want: "INGESTION_FIXTURE_SOURCE_CODE",
+		},
+		{
+			name: "source code without URL",
+			set: func(t *testing.T) {
+				t.Setenv("INGESTION_FIXTURE_SOURCE_CODE", "SYNTH_FIXTURE")
+			},
+			want: "INGESTION_FIXTURE_URL",
+		},
+		{
+			name: "non-synthetic source code",
+			set: func(t *testing.T) {
+				t.Setenv("INGESTION_FIXTURE_URL", "http://127.0.0.1:8090")
+				t.Setenv("INGESTION_FIXTURE_SOURCE_CODE", "COMMUNITY_FIXTURE")
+			},
+			want: "INGESTION_FIXTURE_SOURCE_CODE",
+		},
+		{
+			name: "production fixture",
+			set: func(t *testing.T) {
+				t.Setenv("APP_ENV", "production")
+				t.Setenv("JWT_SECRET", "strong-production-example-secret-for-tests-only-42")
+				t.Setenv("COOKIE_SECURE", "true")
+				t.Setenv("INGESTION_FIXTURE_URL", "https://fixture.example.test")
+				t.Setenv("INGESTION_FIXTURE_SOURCE_CODE", "SYNTH_FIXTURE")
+			},
+			want: "INGESTION_FIXTURE_URL",
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			setValidEnvironment(t)
+			test.set(t)
+
+			_, err := Load()
+			if err == nil || !strings.Contains(err.Error(), test.want) {
+				t.Fatalf("Load() error = %v, want %s validation error", err, test.want)
+			}
+		})
+	}
+}
+
 func setValidEnvironment(t *testing.T) {
 	t.Helper()
 	t.Setenv("APP_ENV", "development")
@@ -103,4 +169,6 @@ func setValidEnvironment(t *testing.T) {
 	t.Setenv("COOKIE_SAMESITE", "Lax")
 	t.Setenv("AI_SERVICE_URL", "http://localhost:8001")
 	t.Setenv("SWAGGER_ENABLED", "true")
+	t.Setenv("INGESTION_FIXTURE_URL", "")
+	t.Setenv("INGESTION_FIXTURE_SOURCE_CODE", "")
 }

@@ -12,26 +12,30 @@ import (
 
 const defaultReadinessTimeout = 2 * time.Second
 
+const maxFixtureSourceCodeLength = 64
+
 type Config struct {
-	Environment        string
-	APIPort            int
-	DatabaseURL        string
-	RedisURL           string
-	MinIOEndpoint      string
-	MinIOAccessKey     string
-	MinIOSecretKey     string
-	MinIOBucket        string
-	CORSAllowedOrigins []string
-	JWTIssuer          string
-	JWTSecret          string
-	JWTAccessTTL       time.Duration
-	RefreshTokenTTL    time.Duration
-	CookieName         string
-	CookieSecure       bool
-	CookieSameSite     http.SameSite
-	AIServiceURL       string
-	SwaggerEnabled     bool
-	ReadinessTimeout   time.Duration
+	Environment                string
+	APIPort                    int
+	DatabaseURL                string
+	RedisURL                   string
+	MinIOEndpoint              string
+	MinIOAccessKey             string
+	MinIOSecretKey             string
+	MinIOBucket                string
+	CORSAllowedOrigins         []string
+	JWTIssuer                  string
+	JWTSecret                  string
+	JWTAccessTTL               time.Duration
+	RefreshTokenTTL            time.Duration
+	CookieName                 string
+	CookieSecure               bool
+	CookieSameSite             http.SameSite
+	AIServiceURL               string
+	SwaggerEnabled             bool
+	ReadinessTimeout           time.Duration
+	IngestionFixtureURL        string
+	IngestionFixtureSourceCode string
 }
 
 func Load() (Config, error) {
@@ -136,28 +140,75 @@ func Load() (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
+	fixtureURL, fixtureSourceCode, err := ingestionFixture(environment)
+	if err != nil {
+		return Config{}, err
+	}
 
 	return Config{
-		Environment:        environment,
-		APIPort:            apiPort,
-		DatabaseURL:        databaseURL.String(),
-		RedisURL:           redisURL.String(),
-		MinIOEndpoint:      strings.TrimRight(minioEndpoint.String(), "/"),
-		MinIOAccessKey:     minioAccessKey,
-		MinIOSecretKey:     minioSecretKey,
-		MinIOBucket:        minioBucket,
-		CORSAllowedOrigins: corsOrigins,
-		JWTIssuer:          jwtIssuer,
-		JWTSecret:          jwtSecret,
-		JWTAccessTTL:       accessTTL,
-		RefreshTokenTTL:    refreshTTL,
-		CookieName:         cookieName,
-		CookieSecure:       cookieSecure,
-		CookieSameSite:     cookieSameSite,
-		AIServiceURL:       aiServiceURL.String(),
-		SwaggerEnabled:     swaggerEnabled,
-		ReadinessTimeout:   defaultReadinessTimeout,
+		Environment:                environment,
+		APIPort:                    apiPort,
+		DatabaseURL:                databaseURL.String(),
+		RedisURL:                   redisURL.String(),
+		MinIOEndpoint:              strings.TrimRight(minioEndpoint.String(), "/"),
+		MinIOAccessKey:             minioAccessKey,
+		MinIOSecretKey:             minioSecretKey,
+		MinIOBucket:                minioBucket,
+		CORSAllowedOrigins:         corsOrigins,
+		JWTIssuer:                  jwtIssuer,
+		JWTSecret:                  jwtSecret,
+		JWTAccessTTL:               accessTTL,
+		RefreshTokenTTL:            refreshTTL,
+		CookieName:                 cookieName,
+		CookieSecure:               cookieSecure,
+		CookieSameSite:             cookieSameSite,
+		AIServiceURL:               aiServiceURL.String(),
+		SwaggerEnabled:             swaggerEnabled,
+		ReadinessTimeout:           defaultReadinessTimeout,
+		IngestionFixtureURL:        fixtureURL,
+		IngestionFixtureSourceCode: fixtureSourceCode,
 	}, nil
+}
+
+func ingestionFixture(environment string) (string, string, error) {
+	fixtureURL := strings.TrimSpace(os.Getenv("INGESTION_FIXTURE_URL"))
+	fixtureSourceCode := strings.TrimSpace(os.Getenv("INGESTION_FIXTURE_SOURCE_CODE"))
+	if fixtureURL == "" && fixtureSourceCode == "" {
+		return "", "", nil
+	}
+	if environment == "production" {
+		return "", "", fmt.Errorf("INGESTION_FIXTURE_URL is only allowed in development or test")
+	}
+	if fixtureURL == "" {
+		return "", "", fmt.Errorf("INGESTION_FIXTURE_URL is required when INGESTION_FIXTURE_SOURCE_CODE is set")
+	}
+	if fixtureSourceCode == "" {
+		return "", "", fmt.Errorf("INGESTION_FIXTURE_SOURCE_CODE is required when INGESTION_FIXTURE_URL is set")
+	}
+	parsed, err := requiredURLValue("INGESTION_FIXTURE_URL", fixtureURL, "http", "https")
+	if err != nil {
+		return "", "", err
+	}
+	if parsed.Path != "" && parsed.Path != "/" || parsed.User != nil || parsed.Fragment != "" || parsed.RawQuery != "" {
+		return "", "", fmt.Errorf("INGESTION_FIXTURE_URL must be an origin URL")
+	}
+	if !validFixtureSourceCode(fixtureSourceCode) {
+		return "", "", fmt.Errorf("INGESTION_FIXTURE_SOURCE_CODE must be a SYNTH_* source code")
+	}
+	return strings.TrimRight(parsed.String(), "/"), fixtureSourceCode, nil
+}
+
+func validFixtureSourceCode(value string) bool {
+	if !strings.HasPrefix(value, "SYNTH_") || len(value) > maxFixtureSourceCodeLength {
+		return false
+	}
+	for _, character := range value {
+		if character >= 'A' && character <= 'Z' || character >= '0' && character <= '9' || character == '_' || character == '-' {
+			continue
+		}
+		return false
+	}
+	return true
 }
 
 func duration(name string, minimum, maximum time.Duration) (time.Duration, error) {
@@ -195,6 +246,10 @@ func requiredURL(name string, schemes ...string) (*url.URL, error) {
 	if err != nil {
 		return nil, err
 	}
+	return requiredURLValue(name, value, schemes...)
+}
+
+func requiredURLValue(name, value string, schemes ...string) (*url.URL, error) {
 	parsed, err := url.Parse(value)
 	if err != nil || parsed.Host == "" {
 		return nil, fmt.Errorf("%s must be an absolute URL", name)

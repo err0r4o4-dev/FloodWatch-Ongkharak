@@ -2,7 +2,7 @@
 
 ระบบติดตามและแจ้งเตือนสถานการณ์น้ำ อำเภอองครักษ์ จังหวัดนครนายก
 
-Phase 2 adds an empty canonical PostGIS flood domain and public read/admin management APIs to the development foundation, **not a live flood-warning service**. No live observations, ingestion, frontend map, CCTV feeds, alerts, or AI models are implemented. Unavailable conditions must never be presented as safe.
+Phase 3 adds a provider-neutral ingestion worker, persistent run/source health tracking, and an opt-in synthetic fixture adapter to the canonical PostGIS flood domain. **No real external provider is integrated and this is not a live flood-warning service.** No frontend map, CCTV feeds, alerts, or AI models are implemented. Unavailable conditions must never be presented as safe.
 
 ## Layout
 
@@ -26,7 +26,7 @@ Node.js 24, Corepack/pnpm 10, Go (version in `apps/backend/go.mod`), Python 3.12
 1. Copy `.env.example` to `.env` and replace its development passwords if the stack is reachable beyond your computer. Keep `POSTGRES_PASSWORD` consistent with the password inside `DATABASE_URL`.
 2. Run `docker compose up --build -d`. Compose waits for Postgres, Redis, and MinIO health before the API; API readiness checks dependencies.
 3. Open `http://localhost/` (Caddy), `http://localhost:8080/health`, `http://localhost:8080/ready`, and—only when enabled—`http://localhost:8080/docs` and `http://localhost:8080/openapi.json`.
-4. Apply PostGIS, auth, and flood-domain migrations with `docker compose --profile tools run --rm migrate` (or `docker-compose --profile tools run --rm migrate` if the standalone Compose binary is installed). This uses `golang-migrate` and its version-tracking table. Apply migrations before calling Phase 2 APIs.
+4. Apply PostGIS, auth, flood-domain, and ingestion migrations with `docker compose --profile tools run --rm migrate` (or `docker-compose --profile tools run --rm migrate` if the standalone Compose binary is installed). This uses `golang-migrate` and its version-tracking table. Apply migrations before starting the worker or calling Phase 2 APIs.
 
 ## Authentication
 
@@ -36,9 +36,13 @@ To create an administrator, set `BOOTSTRAP_ADMIN_EMAIL` and `BOOTSTRAP_ADMIN_PAS
 
 ## Flood domain API
 
-Public, paginated GET routes list data sources, water stations and readings, flood events, risk areas, roads, and road condition history under `/api/v1/`. Spatial collections support an optional WGS84 `bbox=minLng,minLat,maxLng,maxLat`; geometry uses GeoJSON longitude/latitude order. Only ADMIN can POST a data source, assessed risk area, or condition for an existing road. USER receives 403 and GUEST 401. The database is intentionally empty until a future authorized ingestion or manual operation adds data; tests use isolated synthetic fixtures and clean them up. See `docs/architecture/flood-domain.md` and `docs/api/openapi.yaml` for exact fields and freshness/UNKNOWN semantics. No route or risk value is a travel-safety guarantee.
+Public, paginated GET routes list data sources, water stations and readings, flood events, risk areas, roads, and road condition history under `/api/v1/`. Spatial collections support an optional WGS84 `bbox=minLng,minLat,maxLng,maxLat`; geometry uses GeoJSON longitude/latitude order. Only ADMIN can POST a data source, assessed risk area, or condition for an existing road. USER receives 403 and GUEST 401. No live source is configured or seeded; tests use isolated synthetic fixtures and clean them up. See `docs/architecture/flood-domain.md` and `docs/api/openapi.yaml` for exact fields and freshness/UNKNOWN semantics. No route or risk value is a travel-safety guarantee.
 
 The web dev server is also bound to localhost port 5173 and the API to localhost port 8080 for debugging. Python AI, Postgres, Redis, and MinIO have **no published host ports**; access them from the Compose network or with `docker compose exec`. Caddy exposes localhost port 80, not public HTTPS. Production must set strong credentials, TLS, restricted ingress, and `SWAGGER_ENABLED=false`; this Compose file is not a deployment template.
+
+## Ingestion worker
+
+The worker polls only source codes with server-registered adapters; no real provider is registered by default. To exercise the synthetic fixture in development, configure `INGESTION_FIXTURE_URL` as the origin of a controlled HTTP test server and `INGESTION_FIXTURE_SOURCE_CODE` as an exact `SYNTH_*` source code, then create an enabled `COMMUNITY` data source with that code. The server must serve `/observations` using the documented `SYNTHETIC_TEST_ONLY` fixture contract; never point this at a live provider. Production rejects fixture configuration. The worker does not seed sources or observations, and public API readiness does not depend on external provider availability. See `docs/architecture/ingestion.md` for run status, polling, retry, provenance, and cleanup boundaries.
 
 If those host ports are busy, override `WEB_PORT`, `API_HOST_PORT`, and `CADDY_HTTP_PORT` without changing the Compose-internal `API_PORT=8080` and `AI_PORT=8001`; for example, PowerShell can set `$env:WEB_PORT='15173'; $env:API_HOST_PORT='18080'; $env:CADDY_HTTP_PORT='18081'` before Compose. This leaves other projects untouched. The UI development route is `/system-status`; `/health` and `/ready` are API routes.
 
