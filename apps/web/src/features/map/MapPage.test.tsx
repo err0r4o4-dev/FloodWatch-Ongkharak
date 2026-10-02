@@ -27,12 +27,12 @@ function mockApi(collections: Record<string, unknown[]> = {}, failed: string[] =
 afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 
 describe("MapPage", () => {
-  it("loads four visible collections and shows an honest empty state", async () => {
+  it("loads five visible collections and shows an honest empty state", async () => {
     const request = mockApi();
     render(<MapPage />);
     expect(screen.getByText("กำลังโหลดข้อมูลตามขอบเขตแผนที่")).toBeInTheDocument();
     expect(await screen.findByText(/ไม่มีรายการจากชั้นข้อมูลที่โหลดสำเร็จ/)).toBeInTheDocument();
-    expect(request).toHaveBeenCalledTimes(4);
+    expect(request).toHaveBeenCalledTimes(5);
     expect(request.mock.calls.every(([url]) => new URL(url, "http://localhost").searchParams.get("bbox") === "100.9,14,101.2,14.3")).toBe(true);
   });
 
@@ -52,7 +52,7 @@ describe("MapPage", () => {
     await screen.findByText(/ไม่มีรายการจากชั้นข้อมูลที่โหลดสำเร็จ/);
     request.mockClear();
     fireEvent.click(screen.getByRole("checkbox", { name: "สถานีวัดน้ำ" }));
-    await waitFor(() => expect(request).toHaveBeenCalledTimes(3));
+    await waitFor(() => expect(request).toHaveBeenCalledTimes(4));
     expect(request.mock.calls.some(([url]) => url.includes("water-stations"))).toBe(false);
     expect(screen.getByText(/คำอธิบาย:/)).not.toHaveTextContent("◯ สถานีวัดน้ำ");
   });

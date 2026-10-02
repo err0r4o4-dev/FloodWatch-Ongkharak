@@ -7,7 +7,7 @@ export type MultiPolygonGeometry = { type: "MultiPolygon"; coordinates: Position
 export type MultiLineGeometry = { type: "MultiLineString"; coordinates: Position[][] };
 export type MapGeometry = PointGeometry | PolygonGeometry | MultiPolygonGeometry | MultiLineGeometry;
 export type MapBounds = { west: number; south: number; east: number; north: number };
-export type LayerKey = "flood" | "water" | "risk" | "roads";
+export type LayerKey = "flood" | "water" | "risk" | "roads" | "reports";
 export type LayerVisibility = Record<LayerKey, boolean>;
 export type MapMode = "SITUATION" | "ROUTE";
 
@@ -33,21 +33,28 @@ export type RoadCondition = {
 export type RoadFeature = {
   id: string; name: string; geometry: MultiLineGeometry; currentCondition: RoadCondition;
 };
+export type CommunityReportFeature = {
+  id: string; type: "FLOOD" | "ROAD" | "OTHER"; description: string; location: PointGeometry;
+  estimatedWaterDepthM: number | null; status: "VERIFIED"; verificationStatus: "VERIFIED";
+  sourceType: "COMMUNITY"; createdAt: string; updatedAt: string; verifiedAt: string | null; verifiedBy: string | null;
+  media: { id: string; url: string }[];
+};
 export type WaterReading = {
   source: SourceRef; observedAt: string; freshness: Freshness;
   verificationStatus: VerificationStatus; confidence: number | null;
   waterLevelM: number | null; flowRateM3s: number | null; rainfallMm: number | null;
 };
 export type LayerItems = {
-  flood: FloodFeature[]; water: WaterFeature[]; risk: RiskFeature[]; roads: RoadFeature[];
+  flood: FloodFeature[]; water: WaterFeature[]; risk: RiskFeature[]; roads: RoadFeature[]; reports: CommunityReportFeature[];
 };
 export type MapSelection =
   | { layer: "flood"; feature: FloodFeature }
   | { layer: "water"; feature: WaterFeature }
   | { layer: "risk"; feature: RiskFeature }
-  | { layer: "roads"; feature: RoadFeature };
+  | { layer: "roads"; feature: RoadFeature }
+  | { layer: "reports"; feature: CommunityReportFeature };
 
-export const layerKeys: LayerKey[] = ["flood", "water", "risk", "roads"];
+export const layerKeys: LayerKey[] = ["flood", "water", "risk", "roads", "reports"];
 export const layerLabels: Record<LayerKey, string> = {
-  flood: "เหตุการณ์น้ำ", water: "สถานีวัดน้ำ", risk: "พื้นที่เสี่ยง", roads: "สภาพถนน"
+  flood: "เหตุการณ์น้ำ", water: "สถานีวัดน้ำ", risk: "พื้นที่เสี่ยง", roads: "สภาพถนน", reports: "รายงานชุมชนที่ยืนยันแล้ว"
 };

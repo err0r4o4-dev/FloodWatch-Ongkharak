@@ -24,11 +24,32 @@ func NewRateLimiter() *RateLimiter {
 }
 
 func (limiter *RateLimiter) Limit(route string, maximum int, window time.Duration) func(http.Handler) http.Handler {
+	return limiter.limit(route, maximum, window, func(request *http.Request) string {
+		address, _, err := net.SplitHostPort(request.RemoteAddr)
+		if err != nil {
+			address = request.RemoteAddr
+		}
+		return address
+	})
+}
+
+func (limiter *RateLimiter) LimitAuthenticated(route string, maximum int, window time.Duration) func(http.Handler) http.Handler {
+	return limiter.limit(route, maximum, window, func(request *http.Request) string {
+		principal, ok := PrincipalFromContext(request.Context())
+		if !ok {
+			return ""
+		}
+		return principal.UserID
+	})
+}
+
+func (limiter *RateLimiter) limit(route string, maximum int, window time.Duration, identity func(*http.Request) string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
-			address, _, err := net.SplitHostPort(request.RemoteAddr)
-			if err != nil {
-				address = request.RemoteAddr
+			address := identity(request)
+			if address == "" {
+				writeAuthorizationError(response, http.StatusUnauthorized, "UNAUTHENTICATED", "Authentication required")
+				return
 			}
 			key := route + ":" + address
 			now := time.Now()

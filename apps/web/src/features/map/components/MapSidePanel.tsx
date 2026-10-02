@@ -27,7 +27,8 @@ export function MapSidePanel({ mode, items, visible, loading, failed, failedLaye
     ...items.flood.map((feature) => ({ layer: "flood" as const, feature })),
     ...items.water.map((feature) => ({ layer: "water" as const, feature })),
     ...items.risk.map((feature) => ({ layer: "risk" as const, feature })),
-    ...items.roads.map((feature) => ({ layer: "roads" as const, feature }))
+    ...items.roads.map((feature) => ({ layer: "roads" as const, feature })),
+    ...items.reports.map((feature) => ({ layer: "reports" as const, feature }))
   ];
   return <aside className="map-side-panel" aria-label="ข้อมูลแผนที่และเส้นทาง">
     {selection && <FeatureDetails selection={selection} onClose={onClose} />}
@@ -37,8 +38,8 @@ export function MapSidePanel({ mode, items, visible, loading, failed, failedLaye
       {!failed && failedLayers.length > 0 && <p className="map-partial" role="status">ข้อมูลบางส่วนไม่พร้อมใช้งาน: {failedLayers.map((key) => layerLabels[key]).join(", ")} <button type="button" onClick={onRetry}>ลองอีกครั้ง</button></p>}
       {truncated.length > 0 && <p role="status">ข้อมูลเกิน 100 รายการสำหรับ {truncated.map((key) => layerLabels[key]).join(", ")} · ซูมเข้าเพื่อดูขอบเขตย่อย</p>}
       {loading ? <p role="status">กำลังโหลดข้อมูลตามขอบเขตแผนที่</p> : failed ? <div role="alert"><p>ไม่สามารถโหลดข้อมูลแผนที่ได้ · สถานะพื้นที่ไม่ทราบ</p><button type="button" className="action-button" onClick={onRetry}>ลองอีกครั้ง</button></div> : selections.length ? <ul className="map-feature-list">{selections.map((item) => {
-        const name = item.layer === "flood" ? item.feature.title : item.feature.name;
-        const status = item.layer === "roads" ? effectiveRoadStatus(item.feature.currentCondition) : item.layer === "flood" ? effectiveFloodSeverity(item.feature) : item.layer === "risk" ? effectiveRiskLevel(item.feature) : "UNKNOWN";
+        const name = item.layer === "flood" ? item.feature.title : item.layer === "reports" ? item.feature.description : item.feature.name;
+        const status = item.layer === "roads" ? effectiveRoadStatus(item.feature.currentCondition) : item.layer === "flood" ? effectiveFloodSeverity(item.feature) : item.layer === "risk" ? effectiveRiskLevel(item.feature) : item.layer === "reports" ? "INFO" : "UNKNOWN";
         return <li key={`${item.layer}-${item.feature.id}`}><button type="button" onClick={() => onSelect(item)}><span>{name}<small>{layerLabels[item.layer]}</small></span><StatusBadge status={status} /></button></li>;
       })}</ul> : <EmptyState title="ไม่มีข้อมูลในขอบเขตที่โหลด">ไม่มีรายการจากชั้นข้อมูลที่โหลดสำเร็จ ไม่ได้หมายความว่าพื้นที่ปลอดภัย</EmptyState>}
       <p className="map-layer-summary">{layerKeys.filter((key) => visible[key]).map((key) => `${layerLabels[key]} ${items[key].length}`).join(" · ") || "ปิดทุกชั้นข้อมูล"}</p>

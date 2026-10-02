@@ -6,6 +6,7 @@ import { FloodLayer } from "./layers/FloodLayer";
 import { RiskAreaLayer } from "./layers/RiskAreaLayer";
 import { RoadLayer } from "./layers/RoadLayer";
 import { WaterStationLayer } from "./layers/WaterStationLayer";
+import { CommunityReportLayer } from "./layers/CommunityReportLayer";
 import type { LayerItems, LayerVisibility, MapBounds, MapSelection, Position } from "../types";
 import { validBounds } from "../utils";
 import { parseRoutePoint } from "../utils";
@@ -45,6 +46,7 @@ function MapControls({ items }: { items: LayerItems }) {
   const fitFeatures = () => {
     const bounds = latLngBounds([]);
     items.water.forEach((station) => bounds.extend([station.location.coordinates[1], station.location.coordinates[0]]));
+    items.reports.forEach((report) => bounds.extend([report.location.coordinates[1], report.location.coordinates[0]]));
     [...items.flood, ...items.risk, ...items.roads].forEach((item) => {
       const layer = geoJSON(item.geometry as Parameters<typeof geoJSON>[0]);
       bounds.extend(layer.getBounds());
@@ -78,6 +80,7 @@ export function SituationMap({ items, visible, mode, points, picking, onBoundsCh
       {visible.flood && <FloodLayer items={items.flood} onSelect={onSelect} />}
       {visible.roads && <RoadLayer items={items.roads} onSelect={onSelect} />}
       {visible.water && <WaterStationLayer items={items.water} onSelect={onSelect} />}
+      {visible.reports && <CommunityReportLayer items={items.reports} onSelect={onSelect} />}
       {mode === "ROUTE" && (["origin", "destination"] as const).map((key) => {
         const position = parseRoutePoint(points[key]);
         return position ? <CircleMarker key={key} center={[position[1], position[0]]} radius={9} pathOptions={{ color: "var(--color-primary-strong)", fillColor: "var(--color-surface)", fillOpacity: 1, weight: 3 }}><Tooltip permanent direction="top">{key === "origin" ? "จุดเริ่มต้น" : "จุดหมาย"}</Tooltip></CircleMarker> : null;

@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router";
 import { AnnouncementsPage } from "../features/announcements/AnnouncementsPage";
 import { CCTVPage } from "../features/cctv/CCTVPage";
+import { AuthPage } from "../features/auth/AuthPage";
 import { HealthPage } from "../features/health/HealthPage";
 import { MapPage } from "../features/map/MapPage";
 import { OverviewPage } from "../features/overview/OverviewPage";
@@ -14,6 +15,8 @@ export function AppRoutes() {
     <Route path="/map" element={<MapPage />} />
     <Route path="/cctv" element={<CCTVPage />} />
     <Route path="/reports" element={<ReportsPage />} />
+    <Route path="/login" element={<AuthPage mode="login" />} />
+    <Route path="/register" element={<AuthPage mode="register" />} />
     <Route path="/system-status" element={<HealthPage />} />
     <Route path="*" element={<Navigate to="/" replace />} />
   </Routes></AppShell>;

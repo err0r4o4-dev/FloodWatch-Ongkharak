@@ -5,6 +5,7 @@ export function MapLegend({ visible }: { visible: LayerVisibility }) {
     visible.flood && "● เหตุการณ์น้ำ",
     visible.water && "◯ สถานีวัดน้ำ",
     visible.risk && "▧ พื้นที่เสี่ยง",
-    visible.roads && "━ สภาพถนน · เส้นประ/เทา = ไม่ทราบสถานะ"
+    visible.roads && "━ สภาพถนน · เส้นประ/เทา = ไม่ทราบสถานะ",
+    visible.reports && "● รายงานชุมชนที่ยืนยันแล้ว"
   ].filter(Boolean).join(" · ") || "ปิดทุกชั้นข้อมูล"}</p>;
 }

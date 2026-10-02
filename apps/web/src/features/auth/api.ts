@@ -83,13 +83,30 @@ export class ApiClient {
     return (await response.json()) as ResponseBody;
   }
 
+  async requestBlob(path: string, init: RequestInit = {}, options: RequestOptions = {}): Promise<Blob> {
+    const response = await this.send(path, init, options.authenticate ?? true);
+
+    if (response.status === 401 && options.retryUnauthorized !== false) {
+      const refreshed = await this.refreshOnce();
+      if (refreshed) {
+        return this.requestBlob(path, init, { ...options, retryUnauthorized: false });
+      }
+    }
+
+    if (!response.ok) {
+      throw await ApiClient.toError(response);
+    }
+    return response.blob();
+  }
+
   private async send(path: string, init: RequestInit, authenticate: boolean) {
     const headers = new Headers(init.headers);
     if (authenticate && this.accessToken) {
       headers.set("Authorization", `Bearer ${this.accessToken}`);
     }
 
-    return fetch(`${apiConfig.baseUrl}${path}`, {
+    const url = path.startsWith("/api/") ? path : `${apiConfig.baseUrl}${path}`;
+    return fetch(url, {
       ...init,
       credentials: init.credentials ?? "same-origin",
       headers

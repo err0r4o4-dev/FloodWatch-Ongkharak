@@ -9,7 +9,7 @@ import { layerKeys } from "./types";
 import type { LayerKey, LayerVisibility, MapBounds, MapMode, MapSelection, Position } from "./types";
 import type { Picking, RoutePoint, RoutePoints } from "./components/RoutePanel";
 
-const defaultVisibility: LayerVisibility = { flood: true, water: true, risk: true, roads: true };
+const defaultVisibility: LayerVisibility = { flood: true, water: true, risk: true, roads: true, reports: true };
 const emptyPoint: RoutePoint = { longitude: "", latitude: "" };
 
 export function MapPage() {

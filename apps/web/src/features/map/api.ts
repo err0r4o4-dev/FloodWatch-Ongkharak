@@ -3,7 +3,7 @@ import type { LayerItems, LayerKey, MapBounds, WaterReading } from "./types";
 import { validBounds, validGeometry } from "./utils";
 
 const paths: Record<LayerKey, string> = {
-  flood: "/flood-events", water: "/water-stations", risk: "/risk-areas", roads: "/roads"
+  flood: "/flood-events", water: "/water-stations", risk: "/risk-areas", roads: "/roads", reports: "/reports"
 };
 const pageLimit = 100;
 const freshnessValues = ["FRESH", "STALE", "EXPIRED", "UNKNOWN"];
@@ -24,7 +24,7 @@ function confidence(value: unknown): boolean {
 
 function validItem(key: LayerKey, value: unknown): boolean {
   if (!record(value) || typeof value.id !== "string") return false;
-  const geometry = key === "water" ? value.location : value.geometry;
+  const geometry = key === "water" || key === "reports" ? value.location : value.geometry;
   if (!validGeometry(geometry)) return false;
   if (key === "water") return geometry.type === "Point" && typeof value.name === "string" && source(value.source);
   if (key === "flood") return ["Point", "Polygon", "MultiPolygon"].includes(geometry.type) &&
@@ -33,6 +33,12 @@ function validItem(key: LayerKey, value: unknown): boolean {
     typeof value.verificationStatus === "string" && confidence(value.confidence);
   if (key === "risk") return geometry.type === "MultiPolygon" && typeof value.name === "string" && source(value.source) &&
     typeof value.effectiveRiskLevel === "string" && freshnessValues.includes(String(value.freshness));
+  if (key === "reports") return geometry.type === "Point" && ["FLOOD", "ROAD", "OTHER"].includes(String(value.type)) &&
+    typeof value.description === "string" && (value.estimatedWaterDepthM === null || typeof value.estimatedWaterDepthM === "number") &&
+    value.status === "VERIFIED" && value.verificationStatus === "VERIFIED" && value.sourceType === "COMMUNITY" &&
+    typeof value.createdAt === "string" && typeof value.updatedAt === "string" && (value.verifiedAt === null || typeof value.verifiedAt === "string") &&
+    (value.verifiedBy === undefined || value.verifiedBy === null || typeof value.verifiedBy === "string") && Array.isArray(value.media) &&
+    value.media.every((media) => record(media) && typeof media.id === "string" && typeof media.url === "string");
   if (geometry.type !== "MultiLineString" || typeof value.name !== "string" || !record(value.currentCondition)) return false;
   const condition = value.currentCondition;
   return roadValues.includes(String(condition.status)) && freshnessValues.includes(String(condition.freshness)) &&

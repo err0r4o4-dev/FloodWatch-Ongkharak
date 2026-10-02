@@ -18,8 +18,11 @@ import (
 	"github.com/floodwatch-ongkharak/backend/internal/http/handler"
 	"github.com/floodwatch-ongkharak/backend/internal/http/router"
 	"github.com/floodwatch-ongkharak/backend/internal/infrastructure/healthcheck"
+	"github.com/floodwatch-ongkharak/backend/internal/objectstore"
 	"github.com/floodwatch-ongkharak/backend/internal/postgres/authrepo"
 	"github.com/floodwatch-ongkharak/backend/internal/postgres/floodrepo"
+	"github.com/floodwatch-ongkharak/backend/internal/postgres/reportrepo"
+	"github.com/floodwatch-ongkharak/backend/internal/report"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
 )
@@ -50,6 +53,19 @@ func run() error {
 	if err != nil {
 		return fmt.Errorf("configure flood service: %w", err)
 	}
+	mediaStorage, err := objectstore.NewMinIO(configuration.MinIOEndpoint, configuration.MinIOAccessKey, configuration.MinIOSecretKey, configuration.MinIOBucket)
+	if err != nil {
+		return fmt.Errorf("configure report media storage: %w", err)
+	}
+	storageContext, cancelStorage := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancelStorage()
+	if err := mediaStorage.EnsureBucket(storageContext); err != nil {
+		return fmt.Errorf("initialize report media bucket: %w", err)
+	}
+	reportService, err := report.NewService(reportrepo.New(postgresPool), mediaStorage)
+	if err != nil {
+		return fmt.Errorf("configure report service: %w", err)
+	}
 	redisOptions, err := redis.ParseURL(configuration.RedisURL)
 	if err != nil {
 		return fmt.Errorf("configure Redis client: %w", err)
@@ -72,6 +88,7 @@ func run() error {
 			Logger: logger, Readiness: readiness, CORSAllowedOrigins: configuration.CORSAllowedOrigins,
 			SwaggerEnabled: configuration.SwaggerEnabled, AuthService: authService,
 			FloodService:  floodService,
+			ReportService: reportService,
 			CookieOptions: handler.CookieOptions{Name: configuration.CookieName, Secure: configuration.CookieSecure, SameSite: configuration.CookieSameSite, RefreshTTL: configuration.RefreshTokenTTL, AllowedOrigins: configuration.CORSAllowedOrigins},
 		}),
 		ReadHeaderTimeout: 5 * time.Second,

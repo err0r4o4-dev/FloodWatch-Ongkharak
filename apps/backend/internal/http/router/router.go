@@ -11,6 +11,7 @@ import (
 	"github.com/floodwatch-ongkharak/backend/internal/health"
 	"github.com/floodwatch-ongkharak/backend/internal/http/handler"
 	"github.com/floodwatch-ongkharak/backend/internal/http/middleware"
+	"github.com/floodwatch-ongkharak/backend/internal/report"
 	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 )
@@ -25,6 +26,7 @@ type Dependencies struct {
 	SwaggerEnabled     bool
 	AuthService        *auth.Service
 	FloodService       *flood.Service
+	ReportService      *report.Service
 	CookieOptions      handler.CookieOptions
 }
 
@@ -72,6 +74,23 @@ func New(dependencies Dependencies) http.Handler {
 				api.With(admin...).Post("/road-conditions", floodHandler.CreateRoadCondition)
 			}
 		}
+		if dependencies.ReportService != nil && dependencies.AuthService != nil {
+			reportHandler := handler.NewReportHandler(dependencies.ReportService)
+			writeLimiter := middleware.NewRateLimiter()
+			authenticated := middleware.RequireAuthentication(dependencies.AuthService)
+			admin := []func(http.Handler) http.Handler{authenticated, middleware.RequireRole(auth.RoleAdmin)}
+			api.Get("/reports", reportHandler.List)
+			api.Get("/reports/{id}", reportHandler.Get)
+			api.With(middleware.OptionalAuthentication(dependencies.AuthService)).Get("/reports/{id}/media/{mediaId}", reportHandler.Media)
+			api.With(authenticated).Get("/reports/mine", reportHandler.ListMine)
+			api.With(authenticated, writeLimiter.LimitAuthenticated("report-create", 10, time.Hour)).Post("/reports", reportHandler.Create)
+			api.With(authenticated, writeLimiter.LimitAuthenticated("report-edit", 30, time.Hour)).Patch("/reports/{id}", reportHandler.Update)
+			api.With(authenticated, writeLimiter.LimitAuthenticated("report-upload", 30, time.Hour)).Post("/reports/{id}/media", reportHandler.UploadMedia)
+			api.With(admin...).Get("/admin/reports", reportHandler.ListAdmin)
+			api.With(admin...).Get("/admin/reports/{id}", reportHandler.GetAdmin)
+			api.With(authenticated, middleware.RequireRole(auth.RoleAdmin), writeLimiter.LimitAuthenticated("report-review", 30, time.Hour)).Post("/admin/reports/{id}/verify", reportHandler.Verify)
+			api.With(authenticated, middleware.RequireRole(auth.RoleAdmin), writeLimiter.LimitAuthenticated("report-review", 30, time.Hour)).Post("/admin/reports/{id}/reject", reportHandler.Reject)
+		}
 	})
 	if dependencies.SwaggerEnabled {
 		router.Get("/openapi.json", openAPIHandler)
@@ -109,7 +128,7 @@ func cors(allowedOrigins []string) func(http.Handler) http.Handler {
 			if _, ok := allowed[origin]; ok {
 				response.Header().Set("Access-Control-Allow-Origin", origin)
 				response.Header().Set("Vary", "Origin")
-				response.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+				response.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS")
 				response.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
 				response.Header().Set("Access-Control-Allow-Credentials", "true")
 			}

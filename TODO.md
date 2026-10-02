@@ -1,6 +1,6 @@
 # Flood Watch Ongkharak roadmap
 
-`UNKNOWN` is not `SAFE`; preserve source provenance across future phases. Phase 5 is the current authorized scope; do not begin Phase 6.
+`UNKNOWN` is not `SAFE`; preserve source provenance across future phases. Phase 6 is the current authorized scope; do not begin Phase 7.
 
 ## Phase 0 — Foundation (complete)
 
@@ -64,7 +64,12 @@ Local Phase 5 validation (2026-10-02): frontend typecheck, 31 Vitest tests, and 
 
 ## Phase 6 — Community Reports
 
-- [ ] Add authenticated submissions, media, and verification workflow
+- [x] Add canonical COMMUNITY reports with PostGIS Point 4326, server-owned pending status, bounded validation, and owner-only pending edits
+- [x] Store validated images in private MinIO through an API-controlled media boundary; enforce owner/public visibility and a three-image limit
+- [x] Add ADMIN review with self-verification guard, private review trail, verified-only guest reads, and a distinct community map layer
+- [x] Build guest, user, and minimal ADMIN report UI with location selection, media feedback, accessible states, and focused regression coverage
+
+Local Phase 6 validation (2026-10-02): frontend typecheck, 49 Vitest tests, and build pass; Go vet/tests/build pass; Python pytest 1 passes with existing Starlette deprecation warning; Compose config passes. Migration 6 applied to local development PostGIS; fresh Docker synthetic repository and HTTP create/upload/stale-review/verify/guest-read integration tests pass, with a private MinIO bucket/object put/open/delete test. Review uses the latest `updatedAt` revision (including media changes), authenticated report writes are per-account rate-limited, and failed frontend uploads retry only remaining files against the saved report. Production-build guest/error pages rendered at 1440/500/390/320px; CDP mobile emulation confirms no horizontal overflow, five navigation links, and minimum mobile nav height above 44px at 320px. Authenticated UI and a single deployed API+MinIO end-to-end lifecycle were not visually verified; public/auth traffic still needs a trusted edge limiter behind Caddy; automatic route/realtime evaluation remains deferred. No Phase 7 work started.
 
 ## Phase 7 — Realtime & Alert Engine
 

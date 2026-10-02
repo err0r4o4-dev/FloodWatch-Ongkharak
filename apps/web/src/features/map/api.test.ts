@@ -7,6 +7,13 @@ const station = {
   id: "station-1", name: "สถานีทดสอบ", source, active: true,
   location: { type: "Point", coordinates: [101.02, 14.1] }
 };
+const report = {
+  id: "report-1", type: "FLOOD", description: "รายงานน้ำท่วมที่ยืนยันแล้ว",
+  location: { type: "Point", coordinates: [101.02, 14.1] }, estimatedWaterDepthM: null,
+  status: "VERIFIED", verificationStatus: "VERIFIED", sourceType: "COMMUNITY",
+  createdAt: "2026-10-02T00:00:00Z", updatedAt: "2026-10-02T00:00:00Z",
+  verifiedAt: "2026-10-02T01:00:00Z", media: []
+};
 
 afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 
@@ -24,6 +31,17 @@ describe("map API boundary", () => {
     expect(url.searchParams.get("bbox")).toBe("100.9,14,101.2,14.3");
     expect(url.searchParams.get("limit")).toBe("100");
     expect(url.searchParams.get("offset")).toBe("0");
+  });
+
+  it("requests only verified COMMUNITY report points within the viewport", async () => {
+    const request = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({ items: [report], limit: 100, offset: 0 }) });
+    vi.stubGlobal("fetch", request);
+
+    await expect(fetchMapLayer("reports", { west: 100.9, south: 14, east: 101.2, north: 14.3 }, new AbortController().signal)).resolves.toEqual({ items: [report], hasMore: false });
+    const url = new URL(request.mock.calls[0][0], "http://localhost");
+    expect(url.pathname).toBe("/api/v1/reports");
+    expect(url.searchParams.get("bbox")).toBe("100.9,14,101.2,14.3");
+    expect(url.searchParams.get("limit")).toBe("100");
   });
 
   it("rejects malformed geometry instead of drawing misleading features", async () => {

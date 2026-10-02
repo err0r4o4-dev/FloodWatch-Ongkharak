@@ -28,10 +28,13 @@ describe("public routes", () => {
     ["/cctv", "กล้อง CCTV", "ยังไม่มีกล้องที่เผยแพร่"],
     ["/reports", "รายงานสถานการณ์", "ยังไม่มีรายงานที่เผยแพร่"],
     ["/map", "แผนที่สถานการณ์", "ข้อมูลในขอบเขตที่โหลด"]
-  ])("opens %s without login", (path, heading, empty) => {
+  ])("opens %s without login", async (path, heading, empty) => {
+    if (path === "/reports") {
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, status: 200, json: () => Promise.resolve({ items: [], limit: 20, offset: 0 }) }));
+    }
     render(<MemoryRouter initialEntries={[path]}><AppRoutes /></MemoryRouter>);
     expect(screen.getByRole("heading", { level: 1, name: heading })).toBeInTheDocument();
-    expect(screen.getByText(empty)).toBeInTheDocument();
+    expect(await screen.findByText(empty)).toBeInTheDocument();
   });
 
   it("retains guest access while auth refresh fails", async () => {

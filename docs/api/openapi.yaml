@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Flood Watch Ongkharak API
-  version: 0.2.0
+  version: 0.3.0
   description: |
     Availability data that is stale or unavailable is UNKNOWN, never SAFE.
     Refresh tokens are sent only in an HttpOnly cookie. The cookie uses the configured
@@ -10,6 +10,10 @@ info:
     until explicitly populated; no response implies current safe conditions. GUEST has
     no persisted role; only USER and ADMIN accounts exist. Authentication is required
     for the Phase 1 demonstration routes.
+    Phase 6 community reports are always COMMUNITY evidence. Only VERIFIED reports
+    and their images are public; an empty list never means SAFE. Submission time is
+    not a measured observation time. Pending reports are owner-editable, rejected
+    and verified reports are immutable, and an ADMIN cannot verify their own report.
     Other auth failures use the ErrorResponse envelope (including 403 origin rejection,
     415 unsupported media type, 429 rate limiting, and 500 infrastructure failure).
 servers:
@@ -352,10 +356,171 @@ paths:
           description: Road condition with source type derived from the referenced source.
           content: { application/json: { schema: { type: object, required: [roadCondition], properties: { roadCondition: { $ref: '#/components/schemas/RoadCondition' } } } } }
         default: { $ref: '#/components/responses/DomainError' }
+  /api/v1/reports:
+    get:
+      tags: [Reports]
+      summary: List only published verified community reports
+      operationId: listPublicReports
+      parameters:
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Offset' }
+        - { $ref: '#/components/parameters/BBox' }
+      responses:
+        '200':
+          description: Bounded published reports; an empty collection does not imply safe conditions.
+          content: { application/json: { schema: { $ref: '#/components/schemas/ReportList' } } }
+        default: { $ref: '#/components/responses/DomainError' }
+    post:
+      tags: [Reports]
+      summary: Submit a pending community report
+      operationId: createReport
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/ReportInput' } } }
+      responses:
+        '201':
+          description: Created as PENDING and COMMUNITY regardless of client intent.
+          content: { application/json: { schema: { $ref: '#/components/schemas/ReportResponse' } } }
+        default: { $ref: '#/components/responses/DomainError' }
+  /api/v1/reports/mine:
+    get:
+      tags: [Reports]
+      summary: List the authenticated user's reports including unpublished states
+      operationId: listMyReports
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Offset' }
+      responses:
+        '200':
+          description: Owner-visible reports.
+          content: { application/json: { schema: { $ref: '#/components/schemas/ReportList' } } }
+        default: { $ref: '#/components/responses/DomainError' }
+  /api/v1/reports/{id}:
+    get:
+      tags: [Reports]
+      summary: Read a published verified community report
+      operationId: getPublicReport
+      parameters: [{ $ref: '#/components/parameters/ResourceID' }]
+      responses:
+        '200':
+          description: Verified public report only; unpublished reports are not disclosed.
+          content: { application/json: { schema: { $ref: '#/components/schemas/ReportResponse' } } }
+        default: { $ref: '#/components/responses/DomainError' }
+    patch:
+      tags: [Reports]
+      summary: Edit an owned pending report only
+      operationId: updatePendingReport
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/ResourceID' }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/ReportInput' } } }
+      responses:
+        '200':
+          description: Updated pending report.
+          content: { application/json: { schema: { $ref: '#/components/schemas/ReportResponse' } } }
+        default: { $ref: '#/components/responses/DomainError' }
+  /api/v1/reports/{id}/media:
+    post:
+      tags: [Reports]
+      summary: Upload an image to an owned pending report
+      operationId: uploadReportImage
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/ResourceID' }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [file]
+              properties: { file: { type: string, format: binary, description: 'JPEG, PNG or WebP; maximum 5 MiB per file and three images per report.' } }
+      responses:
+        '201':
+          description: Image stored privately; metadata references a guarded API URL.
+          content: { application/json: { schema: { $ref: '#/components/schemas/ReportMediaResponse' } } }
+        default: { $ref: '#/components/responses/DomainError' }
+  /api/v1/reports/{id}/media/{mediaId}:
+    get:
+      tags: [Reports]
+      summary: Retrieve a report image subject to report visibility
+      operationId: getReportImage
+      security: [{}, { bearerAuth: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/ResourceID' }
+        - { name: mediaId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: Published images are public; unpublished images require owner or ADMIN authorization.
+          content:
+            image/jpeg: { schema: { type: string, format: binary } }
+            image/png: { schema: { type: string, format: binary } }
+            image/webp: { schema: { type: string, format: binary } }
+        default: { $ref: '#/components/responses/DomainError' }
+  /api/v1/admin/reports:
+    get:
+      tags: [Admin, Reports]
+      summary: List reports for ADMIN review
+      operationId: listReviewReports
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Offset' }
+        - { name: status, in: query, required: true, schema: { $ref: '#/components/schemas/ReportStatus' }, description: 'Explicit review status; UI requests PENDING.' }
+      responses:
+        '200':
+          description: Review queue.
+          content: { application/json: { schema: { $ref: '#/components/schemas/ReportList' } } }
+        default: { $ref: '#/components/responses/DomainError' }
+  /api/v1/admin/reports/{id}:
+    get:
+      tags: [Admin, Reports]
+      summary: Read a report for ADMIN review, regardless of publication state
+      operationId: getReviewReport
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/ResourceID' }]
+      responses:
+        '200':
+          description: Review detail.
+          content: { application/json: { schema: { $ref: '#/components/schemas/ReportResponse' } } }
+        default: { $ref: '#/components/responses/DomainError' }
+  /api/v1/admin/reports/{id}/verify:
+    post:
+      tags: [Admin, Reports]
+      summary: Verify and publish a pending report (not one's own)
+      operationId: verifyReport
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/ResourceID' }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/ReviewReportInput' } } }
+      responses:
+        '200':
+          description: Verified COMMUNITY report with reviewer and verification timestamp.
+          content: { application/json: { schema: { $ref: '#/components/schemas/ReportResponse' } } }
+        default: { $ref: '#/components/responses/DomainError' }
+  /api/v1/admin/reports/{id}/reject:
+    post:
+      tags: [Admin, Reports]
+      summary: Reject a pending report
+      operationId: rejectReport
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/ResourceID' }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/RejectReportInput' } } }
+      responses:
+        '200':
+          description: Rejected report remains private and COMMUNITY.
+          content: { application/json: { schema: { $ref: '#/components/schemas/ReportResponse' } } }
+        default: { $ref: '#/components/responses/DomainError' }
 components:
   responses:
     DomainError:
-      description: Invalid input (400), missing JWT (401), insufficient role (403), unknown resource (404), conflict (409), unsupported media type (415), rate limit (429), or service failure (500). The HTTP status disambiguates.
+      description: Invalid input (400), missing JWT (401), insufficient role (403), unknown resource (404), conflict (409), oversized upload (413), unsupported media type (415), rate limit (429), or service failure (500). The HTTP status disambiguates.
       content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
   parameters:
     ResourceID:
@@ -430,6 +595,85 @@ components:
       schema:
         type: string
   schemas:
+    ReportStatus:
+      type: string
+      enum: [PENDING, VERIFIED, REJECTED]
+    ReportType:
+      type: string
+      enum: [FLOOD, ROAD, OTHER]
+    ReportInput:
+      type: object
+      additionalProperties: false
+      required: [type, description, location]
+      description: Client cannot assign owner, status, reviewer, provenance, or media metadata.
+      properties:
+        type: { $ref: '#/components/schemas/ReportType' }
+        description: { type: string, minLength: 1, maxLength: 2000 }
+        location: { $ref: '#/components/schemas/PointGeometry' }
+        estimatedWaterDepthM: { type: [number, 'null'], minimum: 0, maximum: 100 }
+    ReviewReportInput:
+      type: object
+      additionalProperties: false
+      required: [expectedUpdatedAt]
+      properties:
+        expectedUpdatedAt: { type: string, format: date-time, description: 'Revision from the latest report detail; a concurrent edit or upload returns 409.' }
+    RejectReportInput:
+      type: object
+      additionalProperties: false
+      required: [expectedUpdatedAt]
+      properties:
+        expectedUpdatedAt: { type: string, format: date-time, description: 'Revision from the latest report detail; a concurrent edit or upload returns 409.' }
+        reason: { type: string, minLength: 1, maxLength: 500 }
+    ReportMedia:
+      type: object
+      additionalProperties: false
+      required: [id, url]
+      properties:
+        id: { type: string, format: uuid }
+        url: { type: string, description: 'Guarded API path, not a public MinIO object URL.' }
+    Report:
+      type: object
+      additionalProperties: false
+      required: [id, type, description, location, estimatedWaterDepthM, status, verificationStatus, sourceType, createdAt, updatedAt, verifiedAt, media]
+      description: COMMUNITY evidence; verification permits publication but does not make it OFFICIAL or prove safety. createdAt is submission time rather than a measured observation timestamp.
+      properties:
+        id: { type: string, format: uuid }
+        userId: { type: string, format: uuid, description: 'Only exposed in owner and ADMIN responses.' }
+        type: { $ref: '#/components/schemas/ReportType' }
+        description: { type: string }
+        location: { $ref: '#/components/schemas/PointGeometry' }
+        estimatedWaterDepthM: { type: [number, 'null'], minimum: 0, maximum: 100 }
+        status: { $ref: '#/components/schemas/ReportStatus' }
+        verificationStatus: { $ref: '#/components/schemas/ReportStatus' }
+        sourceType: { type: string, const: COMMUNITY }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        verifiedAt: { type: [string, 'null'], format: date-time }
+        verifiedBy: { type: [string, 'null'], format: uuid, description: 'Owner/ADMIN only; omitted in public responses.' }
+        reviewedAt: { type: [string, 'null'], format: date-time, description: 'Owner/ADMIN only; time of verification or rejection.' }
+        reviewedBy: { type: [string, 'null'], format: uuid, description: 'Owner/ADMIN only; reviewer of verification or rejection.' }
+        rejectionReason: { type: [string, 'null'], maxLength: 500, description: 'Only shown to owner and ADMIN; null in public responses.' }
+        media: { type: array, maxItems: 3, items: { $ref: '#/components/schemas/ReportMedia' } }
+    ReportList:
+      type: object
+      additionalProperties: false
+      required: [items, limit, offset]
+      properties:
+        items: { type: array, items: { $ref: '#/components/schemas/Report' } }
+        limit: { type: integer, minimum: 1, maximum: 100 }
+        offset: { type: integer, minimum: 0 }
+    ReportResponse:
+      type: object
+      additionalProperties: false
+      required: [report]
+      properties:
+        report: { $ref: '#/components/schemas/Report' }
+    ReportMediaResponse:
+      type: object
+      additionalProperties: false
+      required: [media]
+      properties:
+        media: { $ref: '#/components/schemas/ReportMedia' }
     SourceType:
       type: string
       enum: [OFFICIAL, COMMUNITY, AI]

@@ -10,7 +10,7 @@ type MapData = {
   loading: boolean;
 };
 
-const emptyItems = (): LayerItems => ({ flood: [], water: [], risk: [], roads: [] });
+const emptyItems = (): LayerItems => ({ flood: [], water: [], risk: [], roads: [], reports: [] });
 
 export function useMapData(bounds: MapBounds | null, visible: LayerVisibility, retry: number): MapData {
   const [data, setData] = useState<MapData>({ items: emptyItems(), failed: [], truncated: [], loading: true });
@@ -36,6 +36,7 @@ export function useMapData(bounds: MapBounds | null, visible: LayerVisibility, r
             if (key === "water") items.water = result.value.items as LayerItems["water"];
             if (key === "risk") items.risk = result.value.items as LayerItems["risk"];
             if (key === "roads") items.roads = result.value.items as LayerItems["roads"];
+            if (key === "reports") items.reports = result.value.items as LayerItems["reports"];
             if (result.value.hasMore) truncated.push(key);
           }
         });
@@ -44,7 +45,7 @@ export function useMapData(bounds: MapBounds | null, visible: LayerVisibility, r
     }, 250);
 
     return () => { window.clearTimeout(timer); controller.abort(); };
-  }, [bounds?.west, bounds?.south, bounds?.east, bounds?.north, visible.flood, visible.water, visible.risk, visible.roads, retry]);
+  }, [bounds?.west, bounds?.south, bounds?.east, bounds?.north, visible.flood, visible.water, visible.risk, visible.roads, visible.reports, retry]);
 
   return data;
 }

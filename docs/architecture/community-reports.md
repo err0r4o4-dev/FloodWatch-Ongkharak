@@ -1,0 +1,13 @@
+# Community reports (Phase 6)
+
+Community reports are user-submitted evidence, not official flood or road classifications. Their `sourceType` is always `COMMUNITY`, including after ADMIN verification. Verification permits publication but never certifies roads as passable or areas as safe. An empty public list is not `SAFE`. `createdAt` is submission time, not an independently verified observation time.
+
+The server assigns the authenticated creator, `PENDING` status, and source; clients supply only type, description, a manually selectable WGS84 Point (`[longitude, latitude]`), and optional estimated depth in metres. Pending reports are editable only by their owner. Verified and rejected reports are immutable; rejected submissions require a new report. ADMIN cannot verify their own report; each review records actor and time, with separate verification fields only for verified reports. Rejection reasons are bounded and private to the owner and ADMIN.
+
+Review actions require the `expectedUpdatedAt` revision from the latest detail response. Owner edits and successful media uploads advance this revision; a stale review returns 409 and must be reloaded before deciding. The UI retains the report ID when a media upload fails, retries only failed files, and never creates a second report for that retry. Uploads are not atomic across multiple files; skipping failed files leaves the already stored report and successful images intact.
+
+Guests can list and read only `VERIFIED` reports. Owners can read their own pending and rejected reports; ADMIN can review all statuses. Pending and rejected reports and media never enter public lists or map layers. Public images are served via an API visibility check; private images require owner or ADMIN authorization. MinIO object keys are generated server-side, credentials stay on the backend, and binary data is not stored in PostgreSQL. List pagination and WGS84 viewport queries are bounded.
+
+The API refuses to start with a report-media bucket that has an anonymous bucket policy. The in-memory per-account limiter allows 10 creates, 30 edits, 30 uploads, and 30 review actions per hour. Public report reads are not limited by the API because all guests share the reverse proxy's peer address; a trusted edge limiter is required for public traffic. API limits are not shared between replicas.
+
+The public UI and map markers label both `COMMUNITY` and verification status; they are distinct from official flood and road-condition layers. No route safety, automatic flood classification, realtime delivery, or broad ADMIN dashboard is implied by Phase 6.
