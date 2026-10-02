@@ -1,6 +1,6 @@
 # Flood Watch Ongkharak roadmap
 
-`UNKNOWN` is not `SAFE`; preserve source provenance across future phases. Phase 3 is the current authorized scope; do not begin Phase 4.
+`UNKNOWN` is not `SAFE`; preserve source provenance across future phases. Phase 4 is the current authorized scope; do not begin Phase 5.
 
 ## Phase 0 — Foundation (complete)
 
@@ -46,7 +46,12 @@ Future Provider Integration (not implemented): ThaiWater, DDPM, Google Flood For
 
 ## Phase 4 — Public Frontend
 
-- [ ] Build public information and alert experiences without fabricated readings
+- [x] Build guest overview from existing public water, flood, risk, and road APIs with loading, partial failure, empty, stale, and UNKNOWN treatments
+- [x] Add announcements, CCTV, and reports page shells with honest empty states; map UI shell only, with no routing or Leaflet interaction
+- [x] Add desktop sidebar, mobile bottom navigation, accessibility/guest/auth regression tests, and responsive visual review
+- [x] Run frontend, Go, Python, and Compose validation
+
+Local Phase 4 validation (2026-10-02): frontend typecheck, 18 Vitest tests, and production build pass; Go vet and full Go tests pass from `apps/backend` (outside sandbox after Go cache access denial); Python pytest 1 passes via `.test-venv` with existing deprecation/cache warnings; Docker Compose config passes outside sandbox after Docker config access denial. Edge headless rendered desktop 1440px overview error state and mobile 500px map shell; 320px viewport, full browser interaction, and live API data were not verified. No live flood data was added and no Phase 5 spatial functionality was started.
 
 ## Phase 5 — Map & Routes
 
