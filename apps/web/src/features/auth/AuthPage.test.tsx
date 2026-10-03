@@ -7,7 +7,7 @@ import { ForgotPasswordPage } from "./ForgotPasswordPage";
 
 const account = { id: "user-1", email: "user@example.com", role: "USER" as const, createdAt: "2026-10-02T00:00:00Z" };
 
-function renderAuth(mode: "login" | "register", api: { refresh: () => Promise<never>; me: () => Promise<typeof account>; login: (input: { email: string; password: string }) => Promise<{ user: typeof account; accessToken: string; expiresIn: number }>; register: (input: { email: string; password: string }) => Promise<typeof account>; logout: () => Promise<void> }) {
+function renderAuth(mode: "login" | "register", api: { refresh: () => Promise<never>; me: () => Promise<typeof account>; login: (input: { email: string; password: string }) => Promise<{ user: typeof account; accessToken: string; expiresIn: number }>; register: (input: { email: string; username: string; password: string }) => Promise<typeof account>; logout: () => Promise<void> }) {
   render(<MemoryRouter initialEntries={[`/${mode}?returnTo=%2Freports`]}><AuthProvider api={api}><Routes>
     <Route path="/login" element={<AuthPage mode="login" />} /><Route path="/register" element={<AuthPage mode="register" />} />
     <Route path="/forgot-password" element={<ForgotPasswordPage />} />
@@ -32,7 +32,7 @@ describe("AuthPage", () => {
     expect(screen.getByText(/ลืมรหัสผ่าน/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("link", { name: /ลืมรหัสผ่าน/ }));
     expect(await screen.findByRole("heading", { name: "ลืมรหัสผ่าน?" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /ส่งลิงก์ตั้งรหัสผ่านใหม่/ })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /ส่งรหัส OTP/ })).toBeInTheDocument();
   });
 
   it("logs in and returns to the requested reports route", async () => {
@@ -45,9 +45,9 @@ describe("AuthPage", () => {
     };
     renderAuth("login", api);
 
-    fireEvent.change(await screen.findByLabelText("อีเมล"), { target: { value: account.email } });
+    fireEvent.change(await screen.findByLabelText("อีเมล หรือ ชื่อผู้ใช้งาน"), { target: { value: account.email } });
     fireEvent.change(screen.getByLabelText("รหัสผ่าน"), { target: { value: "password" } });
-    fireEvent.click(screen.getByRole("button", { name: "เข้าสู่ระบบ" }));
+    fireEvent.click(screen.getByRole("button", { name: /เข้าสู่ระบบ/ }));
 
     expect(await screen.findByText("Reports destination")).toBeInTheDocument();
     expect(api.login).toHaveBeenCalledWith({ email: account.email, password: "password" });
@@ -64,11 +64,12 @@ describe("AuthPage", () => {
     renderAuth("register", api);
 
     fireEvent.change(await screen.findByLabelText("อีเมล"), { target: { value: account.email } });
+    fireEvent.change(screen.getByLabelText("ชื่อผู้ใช้งาน"), { target: { value: "testuser" } });
     fireEvent.change(screen.getByLabelText("รหัสผ่าน"), { target: { value: "password" } });
-    fireEvent.click(screen.getByRole("button", { name: "สมัครสมาชิกและเข้าสู่ระบบ" }));
+    fireEvent.click(screen.getByRole("button", { name: /สมัครสมาชิก/ }));
 
     expect(await screen.findByText("Reports destination")).toBeInTheDocument();
-    expect(api.register).toHaveBeenCalledWith({ email: account.email, password: "password" });
+    expect(api.register).toHaveBeenCalledWith({ email: account.email, username: "testuser", password: "password" });
     expect(api.login).toHaveBeenCalledWith({ email: account.email, password: "password" });
   });
 });

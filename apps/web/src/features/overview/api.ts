@@ -10,6 +10,7 @@ export type RiskArea = {
   id: string; name: string; description: string; source: SourceRef;
   riskLevel: string; effectiveRiskLevel: string; freshness: Freshness;
   validFrom: string | null; validTo: string | null;
+  geometry?: unknown;
 };
 export type Road = {
   id: string; name: string; currentCondition: {

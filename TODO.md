@@ -123,6 +123,37 @@ Local Phase 10 validation (2026-10-03): Migration `000012_ai_evidence` created. 
 
 Local Phase 11 validation (2026-10-03): Added `github.com/prometheus/client_golang/prometheus/promhttp` and integrated the `/metrics` endpoint to the Chi router in `router.go`. Created `docker-compose.prod.yml` which defines the production topology without exposing Postgres, Redis, and MinIO ports, while routing traffic entirely through the `caddy` service. Configured `Caddyfile.prod` with security headers, automatic Let's Encrypt TLS, and proper SPA routing. Detailed documentation provided in `docs/deployment.md` on provisioning `.env` variables and running the stack.
 
+## Approved feature — Auth Flow Updates (2026-10-03)
+
+- [x] Update types: Add `username` to `RegisterInput`
+- [x] Update AuthPage: Modify login label and add `username` field for registration mode
+- [x] Update ForgotPasswordPage: Implement 3-step UI flow (Email -> OTP -> New Password)
+- [x] Verify UI components render correctly and handle simulated API calls
+
+## Approved feature — Google Login (2026-10-03)
+
+Specification: `docs/superpowers/specs/2026-10-03-google-login-design.md`. Implementation plan: `docs/superpowers/plans/2026-10-03-google-login.md`. User approved implementation; unrelated phases remain unchanged.
+
+- [x] Implement verified Google OIDC provider and PostgreSQL single-use identity/linking flow.
+- [x] Add secure routes/configuration and React login/link/completion UI while preserving password login.
+- [x] Document OAuth setup, verify migration on disposable data, run focused/broad checks, and review security inline.
+- [x] Record live Google/browser/database validation performed or unavailable without claiming unrun checks.
+- [ ] Release gate: securely configure the Google client, apply migration 000013 to the intended application database, deploy/reload the changed services, and verify a real Google round trip.
+
+Google Login validation (2026-10-03): All feature execution remained inline after the runtime rejected the allowed `cx/gpt-6-luna` worker model; no fallback or independent review was claimed. Focused Go auth/provider/config/PostgreSQL/router tests passed on disposable PostGIS, including concurrent identity creation, single-use state, five-attempt password linking, rollback refusal, and new/collision HTTP refresh/me/logout. Google handler tests passed separately using the production handler sources plus `google_test.go` because the existing `admin_test.go` has an unused import. Migration 13 down/up passed after cleanup; the temporary database was stopped. Relevant `go vet` and `go build ./cmd/api` passed. Frontend auth Vitest: 16 passed; focused auth TypeScript passed. Isolated mock-only headless Edge checks and inspected screenshots passed at 1280px/390px, including Google enabled/disabled/unavailable, keyboard linking/error, completion-bootstrap failure, touch target and overflow checks. Browser plugin kernels failed, so an approved temporary Playwright installation was used without changing project dependencies. Development/production Compose and Caddy configurations validated; a separate real Caddy 502 log test confirmed callback code/state/error_description redaction. Validation tools/logs/screenshots remain local under `.tmp/google-login-*`, not application sources.
+
+Broad checks were attempted, not reported as passing: frontend suite had 104 passed and 5 failed in existing App/Reports tests (including pre-existing duplicate main landmarks); project typecheck/build fail on the existing missing `FloodEvent` export in `AIEvidenceReview.tsx`; full Go checks fail on existing AI references to absent flood types and unused imports in admin/notification tests. Those unrelated failures were not modified. Live Google consent/login, production deployment, migration of the actual app database and service reloads were not performed; credentials were not read, printed or added to tracked files. Existing concurrent auth/map/style/documentation changes were preserved.
+
+## Approved feature — Mobile and iPad Floating Navigation (2026-10-03)
+
+- [x] Apply the approved capsule/glass/wave reference in the existing blue theme, preserving all five destinations and desktop sidebar at 1280px/1440px with a fine pointer.
+- [x] Support compact layouts through 1200px and touch-only tablet layouts through 1366px; reserve safe-area and floating-navigation clearance for content and mobile map panels.
+- [x] Verify rendered navigation, active routes, real touch/keyboard input, visible focus, reduced motion, and the navigation itself at 200% root text size; review the scoped diff without changing unrelated work.
+
+Local validation: `node .tmp/navbar-ui-check.cjs` passed nine Chrome-emulated viewports (320, 390, 768, 820, 1024, 1180, 1366 touch; 1280 and 1440 desktop), five touch destinations, keyboard/Enter navigation, map-panel clearance/Escape dismissal, and 200% navigation text sizing with no browser runtime exceptions. Screenshots/results are in `.tmp/navbar-*`; API responses were intercepted in the isolated test tab, not seeded as live flood data. Real iOS/iPadOS Safari and device safe-area behavior are not verified. Existing page/header reflow at 200% root text size remains outside this navbar-only scope.
+
+`corepack pnpm -C apps/web test src/app/App.test.tsx -t 'navigation|mobile|icons|risk areas|institutional'`: 5 passed, 11 unrelated tests skipped. Full Vitest: 104/109 passed; five failures remain outside the CSS-only change (development-status link, three auth-page main-landmark tests, and the guest report-list test). Typecheck and full build are blocked by existing TS2305 in `src/features/admin/AIEvidenceReview.tsx:4` importing the unexported `FloodEvent` type. Standalone `corepack pnpm -C apps/web exec vite build` passed with the existing large-chunk warning; this does not replace a passing typecheck/full build. Scoped `git diff --check` passed. No dependencies, routes, backend behavior, or later roadmap phases were added.
+
 ## Future Skills
 
 - [ ] Add narrower skills only when a later phase exposes meaningful recurring practices not covered by the Phase 0 core.

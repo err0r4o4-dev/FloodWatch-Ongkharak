@@ -39,6 +39,10 @@ type Config struct {
 	VAPIDPublicKey             string
 	VAPIDPrivateKey            string
 	VAPIDSubscriber            string
+	GoogleClientID             string
+	GoogleClientSecret         string
+	GoogleRedirectURI          string
+	AuthFrontendOrigin         string
 }
 
 func Load() (Config, error) {
@@ -82,6 +86,10 @@ func Load() (Config, error) {
 		return Config{}, err
 	}
 	corsOrigins, err := origins("CORS_ALLOWED_ORIGINS")
+	if err != nil {
+		return Config{}, err
+	}
+	googleSettings, err := loadGoogle(environment, corsOrigins)
 	if err != nil {
 		return Config{}, err
 	}
@@ -187,6 +195,10 @@ func Load() (Config, error) {
 		VAPIDPublicKey:             vapidPublicKey,
 		VAPIDPrivateKey:            vapidPrivateKey,
 		VAPIDSubscriber:            vapidSubscriber,
+		GoogleClientID:             googleSettings.clientID,
+		GoogleClientSecret:         googleSettings.clientSecret,
+		GoogleRedirectURI:          googleSettings.redirectURI,
+		AuthFrontendOrigin:         googleSettings.frontendOrigin,
 	}, nil
 }
 

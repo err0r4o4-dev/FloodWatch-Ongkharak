@@ -1,3 +1,21 @@
+{
+    log default {
+        format filter {
+            wrap json
+            fields {
+                request>uri query {
+                    delete code
+                    delete state
+                    delete error_description
+                }
+                request>headers>Cookie delete
+                request>headers>Authorization delete
+                resp_headers>Set-Cookie delete
+            }
+        }
+    }
+}
+
 :80 {
     @backend path /api/* /events/* /docs /docs/* /openapi.json /health /ready
     handle @backend {

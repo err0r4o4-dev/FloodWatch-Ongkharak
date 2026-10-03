@@ -1,3 +1,21 @@
+{
+	log default {
+		format filter {
+			wrap json
+			fields {
+				request>uri query {
+					delete code
+					delete state
+					delete error_description
+				}
+				request>headers>Cookie delete
+				request>headers>Authorization delete
+				resp_headers>Set-Cookie delete
+			}
+		}
+	}
+}
+
 {$DOMAIN_NAME} {
 	# Enforce security headers
 	header {
@@ -10,7 +28,7 @@
 	}
 
 	# Proxy API requests to Go backend
-	handle_path /api/* {
+	handle /api/* {
 		reverse_proxy api:8080
 	}
 

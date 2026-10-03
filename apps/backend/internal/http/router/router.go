@@ -24,18 +24,20 @@ import (
 var staticFiles embed.FS
 
 type Dependencies struct {
-	Logger             *slog.Logger
-	Readiness          *health.Service
-	CORSAllowedOrigins []string
-	SwaggerEnabled     bool
-	AuthService        *auth.Service
-	FloodService       *flood.Service
-	ReportService      *report.Service
-	AlertService       *alert.Service
-	AdminService       handler.AdminService
+	Logger              *slog.Logger
+	Readiness           *health.Service
+	CORSAllowedOrigins  []string
+	SwaggerEnabled      bool
+	AuthService         *auth.Service
+	GoogleService       *auth.GoogleService
+	AuthFrontendOrigin  string
+	FloodService        *flood.Service
+	ReportService       *report.Service
+	AlertService        *alert.Service
+	AdminService        handler.AdminService
 	NotificationService *notification.Service
-	RedisClient        redis.UniversalClient
-	CookieOptions      handler.CookieOptions
+	RedisClient         redis.UniversalClient
+	CookieOptions       handler.CookieOptions
 }
 
 func New(dependencies Dependencies) http.Handler {
@@ -49,6 +51,16 @@ func New(dependencies Dependencies) http.Handler {
 	router.Get("/ready", handler.NewReadinessHandler(dependencies.Readiness).ServeHTTP)
 	router.Get("/metrics", promhttp.Handler().ServeHTTP)
 	router.Route("/api/v1", func(api chi.Router) {
+		var googleService handler.GoogleAuthentication
+		if dependencies.GoogleService != nil {
+			googleService = dependencies.GoogleService
+		}
+		googleHandler := handler.NewGoogleHandler(googleService, dependencies.AuthFrontendOrigin, dependencies.CookieOptions)
+		googleLimiter := middleware.NewRateLimiter()
+		api.Get("/auth/google/config", googleHandler.Config)
+		api.With(googleLimiter.Limit("google-start", 10, time.Minute)).Get("/auth/google/start", googleHandler.Start)
+		api.With(googleLimiter.Limit("google-callback", 30, time.Minute)).Get("/auth/google/callback", googleHandler.Callback)
+		api.With(googleLimiter.Limit("google-link", 10, time.Minute)).Post("/auth/google/link", googleHandler.Link)
 		if dependencies.RedisClient != nil {
 			api.Get("/events/stream", handler.NewEventStreamHandler(dependencies.RedisClient).ServeHTTP)
 		}

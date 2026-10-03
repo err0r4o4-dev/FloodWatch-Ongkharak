@@ -27,10 +27,16 @@ export function WaterDetails({ stationId, compact = false }: { stationId: string
   if (result.state === "error") return <p role="alert">ไม่สามารถโหลดค่าที่สังเกตได้ · สถานะไม่ทราบ</p>;
   if (!result.reading) return <p>ยังไม่มีค่าที่สังเกตได้ · ไม่ทราบสถานะ</p>;
   const reading = result.reading;
+  if (compact) return <div className="map-reading">
+    <p className="map-reading__value">{reading.waterLevelM != null ? `ระดับน้ำ ${reading.waterLevelM} ม.` : "ไม่ระบุระดับน้ำ"}</p>
+    <div className="badge-row"><SourceBadge type={reading.source.sourceType} /><FreshnessBadge freshness={reading.freshness} /><StatusBadge status="UNKNOWN" /></div>
+    <p>แหล่งค่าที่สังเกต: {reading.source.name}</p><DataTimestamp value={reading.observedAt} />
+    <small>ค่าที่รายงาน ไม่ใช่ระดับความปลอดภัย</small>
+  </div>;
   return <div className="map-reading"><p>ค่าที่รายงาน ไม่ใช่ระดับความปลอดภัย</p>
     <div className="badge-row"><SourceBadge type={reading.source.sourceType} /><FreshnessBadge freshness={reading.freshness} /><StatusBadge status="UNKNOWN" /></div>
     <p>แหล่งค่าที่สังเกต: {reading.source.name}</p><DataTimestamp value={reading.observedAt} />
-    {!compact && <Verification value={reading.verificationStatus} confidence={reading.confidence} />}
+    <Verification value={reading.verificationStatus} confidence={reading.confidence} />
     <p>{reading.waterLevelM != null ? `ระดับน้ำ ${reading.waterLevelM} ม.` : "ไม่ระบุระดับน้ำ"} · {reading.rainfallMm != null ? `ฝน ${reading.rainfallMm} มม.` : "ไม่ระบุปริมาณฝน"}</p>
   </div>;
 }
@@ -48,7 +54,7 @@ export function FeatureDetails({ selection, onClose }: { selection: MapSelection
   const status = selection.layer === "flood" ? effectiveFloodSeverity(selection.feature)
     : selection.layer === "risk" ? effectiveRiskLevel(selection.feature)
       : selection.layer === "roads" ? effectiveRoadStatus(selection.feature.currentCondition) : selection.layer === "reports" ? "INFO" : "UNKNOWN";
-  return <section className="map-selection" aria-label="ข้อมูลตำแหน่งที่เลือก" onKeyDown={(event) => { if (event.key === "Escape") onClose(); }}><div className="map-selection__heading"><h3>{title}</h3><button ref={closeButton} type="button" aria-label="ปิดข้อมูลตำแหน่ง" onClick={onClose}>×</button></div>
+  return <section className="map-selection" aria-label="ข้อมูลตำแหน่งที่เลือก" onKeyDown={(event) => { if (event.key === "Escape") { event.stopPropagation(); onClose(); } }}><div className="map-selection__heading"><h3>{title}</h3><button ref={closeButton} type="button" aria-label="ปิดข้อมูลตำแหน่ง" onClick={onClose}>×</button></div>
     <div className="badge-row"><StatusBadge status={status} /><FreshnessBadge freshness={freshness} />{selection.layer === "reports" ? <SourceBadge type="COMMUNITY" /> : source && <SourceBadge type={source.sourceType} />}</div>
     <p>แหล่งข้อมูล: {selection.layer === "reports" ? "รายงานจากชุมชน" : source?.name ?? "ไม่ระบุ"}</p>
     {selection.layer === "flood" && <><DataTimestamp value={selection.feature.observedAt} /><Verification value={selection.feature.verificationStatus} confidence={selection.feature.confidence} /><p>{selection.feature.description}</p></>}

@@ -6,6 +6,7 @@ import { MapLegend } from "../map/components/MapLegend";
 import { SituationMap } from "../map/components/SituationMap";
 import { useMapData } from "../map/hooks/useMapData";
 import type { LayerVisibility, MapBounds, MapSelection } from "../map/types";
+import { geometryBounds, validBounds, validGeometry } from "../map/utils";
 import { loadCollection } from "../overview/api";
 import type { RiskArea } from "../overview/api";
 import "./RiskPage.css";
@@ -59,6 +60,11 @@ function RiskSummary({ items }: { items: RiskArea[] | null }) {
 function RiskCard({ item }: { item: RiskArea }) {
   const level = effectiveLevel(item);
   const stale = item.freshness !== "FRESH";
+  const query = new URLSearchParams({ risk: item.id });
+  if (validGeometry(item.geometry)) {
+    const bounds = geometryBounds(item.geometry);
+    if (validBounds(bounds)) query.set("bbox", [bounds.west, bounds.south, bounds.east, bounds.north].join(","));
+  }
 
   return <li className="data-card risk-card">
     <div className="data-card__heading risk-card__heading">
@@ -69,6 +75,7 @@ function RiskCard({ item }: { item: RiskArea }) {
     <p className="data-card__meta risk-card__source">{item.source.name}</p>
     <div className="risk-card__times"><DataTimestamp label="เริ่มมีผล" value={item.validFrom} /><DataTimestamp label="สิ้นสุด" value={item.validTo} /></div>
     {stale && <p className="uncertainty risk-card__uncertainty">ข้อมูลเก่าหรือไม่พร้อมใช้งาน จึงแสดงเป็นไม่ทราบสถานะและไม่ยืนยันว่าพื้นที่ปลอดภัย</p>}
+    <a className="risk-card__map-link" href={`/map?${query}`} aria-label={`ดูบนแผนที่: ${item.name}`}>ดูบนแผนที่ <span aria-hidden="true">↗</span></a>
   </li>;
 }
 

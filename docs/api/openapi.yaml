@@ -3,42 +3,68 @@ info:
   title: Flood Watch Ongkharak API
   version: 0.4.0
   description: |
+    # Introduction
+    Public REST API for Flood Watch Ongkharak. The Go API is the public backend.
+
+    # Evidence and freshness
+    Keep OFFICIAL, COMMUNITY, and AI provenance distinct.
     Availability data that is stale or unavailable is UNKNOWN, never SAFE.
+
+    # Authentication
+    Access tokens use JWT bearer authentication.
     Refresh tokens are sent only in an HttpOnly cookie. The cookie uses the configured
     SameSite Lax or Strict policy and Secure is enabled in production; refresh tokens
     are never returned in response bodies. Phase 2 flood-domain collections are empty
     until explicitly populated; no response implies current safe conditions. GUEST has
     no persisted role; only USER and ADMIN accounts exist. Authentication is required
     for the Phase 1 demonstration routes.
+
+    # Community reports
     Phase 6 community reports are always COMMUNITY evidence. Only VERIFIED reports
     and their images are public; an empty list never means SAFE. Submission time is
     not a measured observation time. Pending reports are owner-editable, rejected
     and verified reports are immutable, and an ADMIN cannot verify their own report.
+
+    # Alerts and realtime
     Phase 7 alerts are created only by explicit structured rules; no threshold is
     preconfigured. Public SSE transports versioned change notifications, not canonical
     resource state. Redis outages do not roll back committed PostgreSQL data.
+
+    # Errors
     Other auth failures use the ErrorResponse envelope (including 403 origin rejection,
     415 unsupported media type, 429 rate limiting, and 500 infrastructure failure).
 servers:
   - url: /
+    description: Public API through Caddy or Go directly; resource paths include /api where required
 tags:
   - name: System
     description: Service liveness and dependency readiness.
   - name: Auth
+    description: Account authentication and session lifecycle.
   - name: Overview
+    description: Aggregated flood situation overview.
   - name: Alerts
+    description: Structured alerts and their evidence.
   - name: Water
+    description: Water stations and timestamped readings.
   - name: Flood
+    description: Flood situation information.
   - name: Map
+    description: Geospatial flood situation information.
   - name: Roads
+    description: Roads and condition history; not a travel-safety guarantee.
   - name: CCTV
+    description: Camera information and evidence.
   - name: Reports
+    description: Community reports and public verified evidence.
   - name: Realtime
+    description: Versioned server-sent change notifications.
   - name: Admin
+    description: ADMIN-only management and moderation.
   - name: Data Sources
-  - name: Water
+    description: Data provider metadata and provenance.
   - name: Flood Domain
-  - name: Roads
+    description: Flood events and assessed risk areas.
 paths:
   /health:
     get:
@@ -70,6 +96,132 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ReadinessResponse'
+  /api/v1/auth/google/config:
+    get:
+      tags: [Auth]
+      summary: Read optional Google login availability
+      operationId: getGoogleLoginConfig
+      security: []
+      responses:
+        '200':
+          description: Availability only; no client configuration or secrets.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [enabled]
+                properties:
+                  enabled: {type: boolean}
+  /api/v1/auth/google/start:
+    get:
+      tags: [Auth]
+      summary: Start browser-bound Google authorization
+      operationId: startGoogleLogin
+      security: []
+      parameters:
+        - in: query
+          name: returnTo
+          schema: {type: string, maxLength: 2048, default: /reports}
+          description: Internal application destination only; external, encoded ambiguous and authentication-loop paths are rejected.
+      responses:
+        '302':
+          description: Redirect to Google with state, nonce and S256 PKCE; sets a five-minute host-only HttpOnly SameSite=Lax transaction cookie, Secure in production.
+          headers:
+            Location: {schema: {type: string}}
+            Set-Cookie: {schema: {type: string}}
+        '400':
+          description: Invalid internal destination or duplicate query input.
+          content: {application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}}
+        '403':
+          description: Browser origin or fetch site rejected.
+          content: {application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}}
+        '429':
+          description: Start rate limit exceeded.
+          content: {application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}}
+        '500':
+          description: Challenge persistence failure.
+          content: {application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}}
+        '503':
+          description: Google login is not configured.
+          content: {application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}}
+  /api/v1/auth/google/callback:
+    get:
+      tags: [Auth]
+      summary: Consume Google authorization callback
+      operationId: completeGoogleLogin
+      description: Requires matching browser transaction cookie and single-use state. Verifies Google's signed ID token before creating accounts or sessions. Email collisions redirect to password verification without issuing a session. Do not log callback query strings.
+      security: []
+      parameters:
+        - {in: query, name: state, required: true, schema: {type: string, maxLength: 43}}
+        - {in: query, name: code, schema: {type: string, maxLength: 4096}}
+        - {in: query, name: error, schema: {type: string}}
+      responses:
+        '302':
+          description: Fixed-origin redirect to completion, pending link, or login with a safe error code. Clears OAuth cookie; success sets the regular refresh cookie. Tokens are never placed in the redirect URL. No-store/no-referrer apply.
+          headers:
+            Location: {schema: {type: string}}
+            Set-Cookie: {schema: {type: string}}
+        '429':
+          description: Callback rate limit exceeded; no state or identity is accepted.
+          content: {application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}}
+        '503':
+          description: Google login is not configured.
+          content: {application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}}
+  /api/v1/auth/google/link:
+    post:
+      tags: [Auth]
+      summary: Verify an existing password before linking Google
+      operationId: linkGoogleIdentity
+      description: Requires a five-minute pending-link HttpOnly cookie from a verified Google callback and an approved browser Origin. Account and subject come from server-side state, never submitted IDs or email. Maximum five failed password attempts per pending link. This endpoint does not use bearer authentication.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [password]
+              properties:
+                password: {type: string, format: password, maxLength: 128, writeOnly: true}
+      responses:
+        '200':
+          description: Identity linked, pending cookie cleared and ordinary refresh cookie set; browser navigates to completion and bootstraps refresh/me.
+          headers:
+            Set-Cookie: {schema: {type: string}}
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [returnTo]
+                properties:
+                  returnTo: {type: string, maxLength: 2048}
+        '400':
+          description: Invalid or unknown JSON fields.
+          content: {application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}}
+        '401':
+          description: Generic wrong password, invalid/expired/consumed pending state, or unavailable account.
+          content: {application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}}
+        '403':
+          description: Origin rejected.
+          content: {application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}}
+        '409':
+          description: Identity already belongs to another account or the account has a different Google identity.
+          content: {application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}}
+        '415':
+          description: Expected application/json.
+          content: {application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}}
+        '429':
+          description: Password attempt or endpoint rate limit exceeded.
+          content: {application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}}
+        '500':
+          description: Identity or session persistence failure.
+          content: {application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}}
+        '503':
+          description: Google login is not configured.
+          content: {application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}}
   /api/v1/auth/register:
     post:
       tags: [Auth]

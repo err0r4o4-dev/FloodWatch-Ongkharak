@@ -60,7 +60,7 @@ describe("MapPage", () => {
     fireEvent.click(screen.getByRole("checkbox", { name: "สถานีวัดน้ำ" }));
     await waitFor(() => expect(request).toHaveBeenCalledTimes(4));
     expect(request.mock.calls.some(([url]) => url.includes("water-stations"))).toBe(false);
-    expect(screen.getByText(/คำอธิบาย:/)).not.toHaveTextContent("◯ สถานีวัดน้ำ");
+    expect(screen.getByLabelText("คำอธิบายสัญลักษณ์")).not.toHaveTextContent("สถานีวัดน้ำ");
   });
 
   it("selects a stale road via the keyboard alternative and keeps UNKNOWN distinct from passable", async () => {
@@ -142,7 +142,7 @@ describe("MapPage", () => {
     const input = screen.getByRole("searchbox", { name: "ค้นหาสถานีหรือพื้นที่ในขอบเขตที่โหลด" });
     fireEvent.change(input, { target: { value: "คลองทดสอบ" } });
     const result = await screen.findByRole("button", { name: /สถานีคลองทดสอบ/ });
-    expect(screen.getByText("ค้นหาเฉพาะสถานีและพื้นที่ในขอบเขตที่โหลด")).toBeInTheDocument();
+    expect(screen.getAllByText("ค้นหาเฉพาะสถานีและพื้นที่ในขอบเขตที่โหลด").length).toBeGreaterThan(0);
     fireEvent.click(result);
     expect(input).toHaveValue("");
     expect(screen.queryByRole("region", { name: "ข้อมูลตำแหน่งที่เลือก" })).not.toBeInTheDocument();

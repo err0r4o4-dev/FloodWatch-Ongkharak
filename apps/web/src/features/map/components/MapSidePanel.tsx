@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { EmptyState, StatusBadge } from "../../../shared/components/DataStates";
 import { FeatureDetails } from "./FeatureDetails";
 import { RoutePanel } from "./RoutePanel";
@@ -6,7 +7,7 @@ import { effectiveFloodSeverity, effectiveRiskLevel, effectiveRoadStatus } from 
 import { layerKeys, layerLabels } from "../types";
 import type { LayerItems, LayerKey, LayerVisibility, MapMode, MapSelection } from "../types";
 
-export function MapSidePanel({ mode, items, visible, loading, failed, failedLayers, truncated, onRetry, selection, onSelect, onClose, points, onPointChange, picking, onPickingChange }: {
+export function MapSidePanel({ mode, items, visible, loading, failed, failedLayers, truncated, onRetry, selection, onSelect, onClose, points, onPointChange, picking, onPickingChange, showList = true, onDismiss }: {
   mode: MapMode;
   items: LayerItems;
   visible: LayerVisibility;
@@ -22,7 +23,11 @@ export function MapSidePanel({ mode, items, visible, loading, failed, failedLaye
   onPointChange: (key: keyof RoutePoints, point: RoutePoint) => void;
   picking: Picking;
   onPickingChange: (key: Picking) => void;
+  showList?: boolean;
+  onDismiss?: () => void;
 }) {
+  const dismissButton = useRef<HTMLButtonElement>(null);
+  useEffect(() => { if (!selection) dismissButton.current?.focus({ preventScroll: true }); }, []);
   const selections: MapSelection[] = [
     ...items.flood.map((feature) => ({ layer: "flood" as const, feature })),
     ...items.water.map((feature) => ({ layer: "water" as const, feature })),
@@ -30,10 +35,13 @@ export function MapSidePanel({ mode, items, visible, loading, failed, failedLaye
     ...items.roads.map((feature) => ({ layer: "roads" as const, feature })),
     ...items.reports.map((feature) => ({ layer: "reports" as const, feature }))
   ];
-  return <aside className="map-side-panel" aria-label="ข้อมูลแผนที่และเส้นทาง">
+  return <aside id="map-information-panel" className="map-side-panel" aria-label="ข้อมูลแผนที่และเส้นทาง" onKeyDown={(event) => {
+    if (event.key === "Escape" && !selection) { event.stopPropagation(); onDismiss?.(); }
+  }}>
+    {onDismiss && !selection && <div className="map-side-panel__heading"><strong>{mode === "ROUTE" ? "โหมดเส้นทาง" : "รายการในขอบเขต"}</strong><button ref={dismissButton} type="button" aria-label="ปิดแผงข้อมูล" onClick={onDismiss}>×</button></div>}
     {selection && <FeatureDetails selection={selection} onClose={onClose} />}
     {mode === "ROUTE" && <RoutePanel points={points} onPointChange={onPointChange} picking={picking} onPickingChange={onPickingChange} items={items} />}
-    <section aria-labelledby="visible-features-title"><h2 id="visible-features-title">ข้อมูลในขอบเขตที่โหลด</h2>
+    {showList && <section aria-labelledby="visible-features-title"><h2 id="visible-features-title">รายการข้อมูลบนแผนที่</h2>
       <p>เลือกจากรายการนี้ได้ด้วยคีย์บอร์ด หรือคลิกสัญลักษณ์และพื้นที่บนแผนที่</p>
       {!failed && failedLayers.length > 0 && <p className="map-partial" role="status">ข้อมูลบางส่วนไม่พร้อมใช้งาน: {failedLayers.map((key) => layerLabels[key]).join(", ")} <button type="button" onClick={onRetry}>ลองอีกครั้ง</button></p>}
       {truncated.length > 0 && <p role="status">ข้อมูลเกิน 100 รายการสำหรับ {truncated.map((key) => layerLabels[key]).join(", ")} · ซูมเข้าเพื่อดูขอบเขตย่อย</p>}
@@ -43,6 +51,6 @@ export function MapSidePanel({ mode, items, visible, loading, failed, failedLaye
         return <li key={`${item.layer}-${item.feature.id}`}><button type="button" onClick={() => onSelect(item)}><span>{name}<small>{layerLabels[item.layer]}</small></span><StatusBadge status={status} /></button></li>;
       })}</ul> : <EmptyState title="ไม่มีข้อมูลในขอบเขตที่โหลด">ไม่มีรายการจากชั้นข้อมูลที่โหลดสำเร็จ ไม่ได้หมายความว่าพื้นที่ปลอดภัย</EmptyState>}
       <p className="map-layer-summary">{layerKeys.filter((key) => visible[key]).map((key) => `${layerLabels[key]} ${items[key].length}`).join(" · ") || "ปิดทุกชั้นข้อมูล"}</p>
-    </section>
+    </section>}
   </aside>;
 }

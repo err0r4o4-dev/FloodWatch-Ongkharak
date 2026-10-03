@@ -65,6 +65,10 @@ From the repository root, run `corepack pnpm typecheck`, `corepack pnpm test`, a
 The OpenAPI contract documents health, Phase 1 authentication, and Phase 2 public read/ADMIN write routes. Future tags do not imply other live endpoints. `PUBLIC READ` / `AUTHENTICATED WRITE` governs the implemented boundary; authoritative flood-domain writes require ADMIN. Do not expose this foundation as a production disaster-information service.
 
 
+## Google Login
+
+Optional Google login supports new USER accounts and password-verified linking to existing accounts while retaining the normal JWT/refresh lifecycle. Configure the backend-only OAuth settings and migration using `docs/architecture/google-login.md`. Until configured, the Google action is unavailable and email/password login remains usable. Live Google consent and sign-in require a registered client; automated fixtures are not evidence of a live provider round trip.
+
 ## Admin Panel (Phase 8)
 
 ADMIN users access `/admin` for centralized management:

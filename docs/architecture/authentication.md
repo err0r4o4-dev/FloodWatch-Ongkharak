@@ -1,5 +1,7 @@
 # Authentication boundary (Phase 1)
 
+Google login is an optional additional identity provider using the same Flood Watch sessions and authorization checks. Password-email collisions require explicit password proof before linking, and new Google accounts are USER only. See `google-login.md` for the callback, cookie, migration, setup and operational boundaries.
+
 `GUEST` is an unauthenticated request, not a stored role. Accounts have only `USER` or `ADMIN` roles. Public information remains readable without a token; the Phase 1 demonstration routes `/api/v1/user/ping` (USER or ADMIN) and `/api/v1/admin/ping` (ADMIN only) prove the server-side policy. Flood-domain administration uses protected write routes. Missing/invalid JWTs receive 401, authenticated users without permission receive 403; database outages are not reported as invalid credentials.
 
 Phase 6 report writes and personal report lists require USER or ADMIN authentication. Pending edits and uploads additionally require ownership; ADMIN review actions require the ADMIN role and self-verification is prohibited. Review requires the latest report revision to prevent publishing content changed after inspection. Public report reads expose only verified reports; unpublished reports and media are not exposed through guest routes. The UI does not substitute for these server-side checks. See `community-reports.md`.

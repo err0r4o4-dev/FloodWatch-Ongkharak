@@ -17,6 +17,7 @@ import (
 	"github.com/floodwatch-ongkharak/backend/internal/auth"
 	"github.com/floodwatch-ongkharak/backend/internal/config"
 	"github.com/floodwatch-ongkharak/backend/internal/flood"
+	"github.com/floodwatch-ongkharak/backend/internal/googleauth"
 	"github.com/floodwatch-ongkharak/backend/internal/health"
 	"github.com/floodwatch-ongkharak/backend/internal/http/handler"
 	"github.com/floodwatch-ongkharak/backend/internal/http/router"
@@ -54,9 +55,21 @@ func run() error {
 		return fmt.Errorf("configure PostgreSQL pool: %w", err)
 	}
 	defer postgresPool.Close()
-	authService, err := auth.NewService(authrepo.New(postgresPool), []byte(configuration.JWTSecret), configuration.JWTIssuer, configuration.JWTAccessTTL, configuration.RefreshTokenTTL)
+	authRepository := authrepo.New(postgresPool)
+	authService, err := auth.NewService(authRepository, []byte(configuration.JWTSecret), configuration.JWTIssuer, configuration.JWTAccessTTL, configuration.RefreshTokenTTL)
 	if err != nil {
 		return fmt.Errorf("configure auth service: %w", err)
+	}
+	var googleService *auth.GoogleService
+	if configuration.GoogleClientID != "" {
+		provider, err := googleauth.New(context.Background(), googleauth.Config{ClientID: configuration.GoogleClientID, ClientSecret: configuration.GoogleClientSecret, RedirectURI: configuration.GoogleRedirectURI})
+		if err != nil {
+			return fmt.Errorf("configure Google provider: %w", err)
+		}
+		googleService, err = auth.NewGoogleService(authService, authRepository, provider)
+		if err != nil {
+			return fmt.Errorf("configure Google login: %w", err)
+		}
 	}
 	floodService, err := flood.NewService(floodrepo.New(postgresPool), flood.DefaultFreshnessPolicy())
 	if err != nil {
@@ -128,6 +141,7 @@ func run() error {
 		Handler: router.New(router.Dependencies{
 			Logger: logger, Readiness: readiness, CORSAllowedOrigins: configuration.CORSAllowedOrigins,
 			SwaggerEnabled: configuration.SwaggerEnabled, AuthService: authService,
+			GoogleService: googleService, AuthFrontendOrigin: configuration.AuthFrontendOrigin,
 			FloodService:        floodService,
 			ReportService:       reportService,
 			AlertService:        alertService,

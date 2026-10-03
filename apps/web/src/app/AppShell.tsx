@@ -42,7 +42,7 @@ function Navigation({ mobile = false }: { mobile?: boolean }) {
 export function AppShell({ children }: { children: ReactNode }) {
   const { account, logout } = useOptionalAuth();
   const location = useLocation();
-  if (["/login", "/register", "/forgot-password"].includes(location.pathname)) return <main id="main-content">{children}</main>;
+  if (["/login", "/register", "/forgot-password", "/auth/complete", "/auth/google/link"].includes(location.pathname)) return <main id="main-content">{children}</main>;
   return <div className="app-shell public-shell">
     <a className="skip-link" href="#main-content">ข้ามไปยังเนื้อหาหลัก</a>
     <aside className="desktop-sidebar">

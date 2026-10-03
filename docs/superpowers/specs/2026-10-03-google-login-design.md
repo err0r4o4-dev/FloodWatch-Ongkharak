@@ -2,7 +2,7 @@
 
 Date: 2026-10-03
 
-Status: Conversational flow approved. Written specification awaiting user review before implementation. No application code, configuration, or database has been changed for this feature.
+Status: Written specification approved by the user on 2026-10-03; implementation authorized. The inspected baseline describes the state at design time. Follow the implementation plan and tracker for current checks and remaining deployment validation.
 
 ## Goal and scope
 
@@ -102,4 +102,4 @@ Test real same-origin Google login only once the user configures credentials sec
 
 ## Next gate
 
-Ask the user to review this written specification. After approval, create the implementation plan, record the feature in the tracker, and implement with focused tests. Do not claim Google login implemented or tested while this specification is the only change.
+The user approved implementation. Track execution in `../plans/2026-10-03-google-login.md` and `TODO.md`. Do not claim live Google or production verification without the corresponding evidence.

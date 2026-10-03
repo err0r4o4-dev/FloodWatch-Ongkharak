@@ -54,6 +54,8 @@ export type MapSelection =
   | { layer: "roads"; feature: RoadFeature }
   | { layer: "reports"; feature: CommunityReportFeature };
 
+export type MapSelectHandler = (selection: MapSelection, position?: Position) => void;
+
 export const layerKeys: LayerKey[] = ["flood", "water", "risk", "roads", "reports"];
 export const layerLabels: Record<LayerKey, string> = {
   flood: "เหตุการณ์น้ำ", water: "สถานีวัดน้ำ", risk: "พื้นที่เสี่ยง", roads: "สภาพถนน", reports: "รายงานชุมชนที่ยืนยันแล้ว"

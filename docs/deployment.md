@@ -10,6 +10,8 @@ Flood Watch Ongkharak uses a containerized stack for production deployment. The 
 
 ## Pre-deployment Preparation
 
+Google login is optional. To enable it, configure the four backend settings and exact HTTPS callback described in `docs/architecture/google-login.md`, and apply migration `000013_google_auth` before deploying the API. Leave all four settings empty to retain password-only authentication. Never expose the Google client secret in frontend settings. The production proxy preserves `/api` for the Go callback.
+
 Before running the stack, you must define the required production secrets. Do not use development-only secrets.
 
 Create a `.env` file in the project root:

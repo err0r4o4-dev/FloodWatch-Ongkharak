@@ -103,6 +103,10 @@ func (service *Service) Login(ctx context.Context, email, password string) (Sess
 	if err != nil {
 		return SessionResult{}, err
 	}
+	if user.PasswordHash == "" {
+		verifyDummyPassword()
+		return SessionResult{}, ErrInvalidCredentials
+	}
 	if !verifyPassword(user.PasswordHash, password) || user.DisabledAt != nil || !validRole(user.Role) {
 		return SessionResult{}, ErrInvalidCredentials
 	}

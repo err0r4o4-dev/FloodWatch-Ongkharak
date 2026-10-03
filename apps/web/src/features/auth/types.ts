@@ -12,4 +12,8 @@ export type Credentials = {
   password: string;
 };
 
-export type RegisterInput = Credentials;
+export type RegisterInput = {
+  email: string;
+  username: string;
+  password: string;
+};

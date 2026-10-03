@@ -1,6 +1,6 @@
-import { CircleMarker } from "react-leaflet";
-import type { MapSelection, WaterFeature } from "../../types";
+import { MapMarker } from "../MapMarker";
+import type { MapSelectHandler, WaterFeature } from "../../types";
 
-export function WaterStationLayer({ items, onSelect }: { items: WaterFeature[]; onSelect: (selection: MapSelection) => void }) {
-  return <>{items.map((feature) => <CircleMarker key={feature.id} center={[feature.location.coordinates[1], feature.location.coordinates[0]]} radius={7} pathOptions={{ color: "var(--color-primary-strong)", fillColor: "var(--color-surface)", fillOpacity: 0.95, weight: 3 }} eventHandlers={{ click: () => onSelect({ layer: "water", feature }) }} />)}</>;
+export function WaterStationLayer({ items, onSelect }: { items: WaterFeature[]; onSelect: MapSelectHandler }) {
+  return <>{items.map((feature) => <MapMarker key={feature.id} selection={{ layer: "water", feature }} position={feature.location.coordinates} onSelect={onSelect} />)}</>;
 }

@@ -2,10 +2,12 @@ import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
 import { ApiError } from "./api";
 import { useAuth } from "./AuthProvider";
+import { GoogleSignInButton } from "./GoogleSignInButton";
+import { googleErrorMessage, safeReturnTo } from "./google";
 
 function destination(search: string): string {
   const value = new URLSearchParams(search).get("returnTo");
-  return value && value.startsWith("/") && !value.startsWith("//") ? value : "/reports";
+  return safeReturnTo(value);
 }
 
 export function AuthPage({ mode }: { mode: "login" | "register" }) {
@@ -13,20 +15,23 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const registering = mode === "register";
   const returnTo = destination(location.search);
+  const googleError = googleErrorMessage(new URLSearchParams(location.search).get("googleError"));
 
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!email.trim() || !password) return setError("กรอกอีเมลและรหัสผ่าน");
+    if (!email.trim() || !password) return setError(registering ? "กรุณากรอกอีเมล ชื่อผู้ใช้งาน และรหัสผ่าน" : "กรอกอีเมลและรหัสผ่าน");
+    if (registering && !username.trim()) return setError("กรุณากรอกชื่อผู้ใช้งาน");
     setSubmitting(true);
     setError(null);
     try {
-      if (registering) await register({ email: email.trim(), password });
+      if (registering) await register({ email: email.trim(), username: username.trim(), password });
       await login({ email: email.trim(), password });
       navigate(returnTo, { replace: true });
     } catch (cause) {
@@ -53,16 +58,29 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
       </header>
 
       {error && <p className="form-error" role="alert">{error}</p>}
+      {googleError && <p className="form-error" role="alert">{googleError}</p>}
 
       <label>
-        อีเมล หรือ รหัสประจำตัว
+        {registering ? "อีเมล" : "อีเมล หรือ ชื่อผู้ใช้งาน"}
         <input
-          type="email"
-          autoComplete="email"
+          type={registering ? "email" : "text"}
+          autoComplete={registering ? "email" : "username"}
           value={email}
           onChange={(event) => setEmail(event.target.value)}
         />
       </label>
+
+      {registering && (
+        <label>
+          ชื่อผู้ใช้งาน
+          <input
+            type="text"
+            autoComplete="username"
+            value={username}
+            onChange={(event) => setUsername(event.target.value)}
+          />
+        </label>
+      )}
 
       <label>
         รหัสผ่าน
@@ -95,9 +113,7 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
 
       <div className="auth-divider">หรือ</div>
 
-      <button type="button" className="auth-google" disabled title="รอเชื่อมต่อ Google API">
-        <strong aria-hidden="true" style={{ fontSize: "1.1rem", marginRight: "0.4rem" }}>G</strong> Continue with Google <small>เร็ว ๆ นี้</small>
-      </button>
+      <GoogleSignInButton returnTo={returnTo} />
 
       <p className="section-caption">
         {registering ? (

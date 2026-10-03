@@ -1835,7 +1835,7 @@
     }
   },
   "info": {
-    "description": "Availability data that is stale or unavailable is UNKNOWN, never SAFE.\nRefresh tokens are sent only in an HttpOnly cookie. The cookie uses the configured\nSameSite Lax or Strict policy and Secure is enabled in production; refresh tokens\nare never returned in response bodies. Phase 2 flood-domain collections are empty\nuntil explicitly populated; no response implies current safe conditions. GUEST has\nno persisted role; only USER and ADMIN accounts exist. Authentication is required\nfor the Phase 1 demonstration routes.\nPhase 6 community reports are always COMMUNITY evidence. Only VERIFIED reports\nand their images are public; an empty list never means SAFE. Submission time is\nnot a measured observation time. Pending reports are owner-editable, rejected\nand verified reports are immutable, and an ADMIN cannot verify their own report.\nPhase 7 alerts are created only by explicit structured rules; no threshold is\npreconfigured. Public SSE transports versioned change notifications, not canonical\nresource state. Redis outages do not roll back committed PostgreSQL data.\nOther auth failures use the ErrorResponse envelope (including 403 origin rejection,\n415 unsupported media type, 429 rate limiting, and 500 infrastructure failure).\n",
+    "description": "# Introduction\nPublic REST API for Flood Watch Ongkharak. The Go API is the public backend.\n\n# Evidence and freshness\nKeep OFFICIAL, COMMUNITY, and AI provenance distinct.\nAvailability data that is stale or unavailable is UNKNOWN, never SAFE.\n\n# Authentication\nAccess tokens use JWT bearer authentication.\nRefresh tokens are sent only in an HttpOnly cookie. The cookie uses the configured\nSameSite Lax or Strict policy and Secure is enabled in production; refresh tokens\nare never returned in response bodies. Phase 2 flood-domain collections are empty\nuntil explicitly populated; no response implies current safe conditions. GUEST has\nno persisted role; only USER and ADMIN accounts exist. Authentication is required\nfor the Phase 1 demonstration routes.\n\n# Community reports\nPhase 6 community reports are always COMMUNITY evidence. Only VERIFIED reports\nand their images are public; an empty list never means SAFE. Submission time is\nnot a measured observation time. Pending reports are owner-editable, rejected\nand verified reports are immutable, and an ADMIN cannot verify their own report.\n\n# Alerts and realtime\nPhase 7 alerts are created only by explicit structured rules; no threshold is\npreconfigured. Public SSE transports versioned change notifications, not canonical\nresource state. Redis outages do not roll back committed PostgreSQL data.\n\n# Errors\nOther auth failures use the ErrorResponse envelope (including 403 origin rejection,\n415 unsupported media type, 429 rate limiting, and 500 infrastructure failure).\n",
     "title": "Flood Watch Ongkharak API",
     "version": "0.4.0"
   },
@@ -2326,6 +2326,342 @@
           }
         },
         "summary": "Rotate the refresh session",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/google/callback": {
+      "get": {
+        "description": "Requires matching browser transaction cookie and single-use state. Verifies Google's signed ID token before creating accounts or sessions. Email collisions redirect to password verification without issuing a session. Do not log callback query strings.",
+        "operationId": "completeGoogleLogin",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "state",
+            "required": true,
+            "schema": {
+              "maxLength": 43,
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "code",
+            "schema": {
+              "maxLength": 4096,
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "error",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Fixed-origin redirect to completion, pending link, or login with a safe error code. Clears OAuth cookie; success sets the regular refresh cookie. Tokens are never placed in the redirect URL. No-store/no-referrer apply.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Set-Cookie": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Callback rate limit exceeded; no state or identity is accepted."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Google login is not configured."
+          }
+        },
+        "security": [],
+        "summary": "Consume Google authorization callback",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/google/config": {
+      "get": {
+        "operationId": "getGoogleLoginConfig",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "enabled": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "enabled"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Availability only; no client configuration or secrets."
+          }
+        },
+        "security": [],
+        "summary": "Read optional Google login availability",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/google/link": {
+      "post": {
+        "description": "Requires a five-minute pending-link HttpOnly cookie from a verified Google callback and an approved browser Origin. Account and subject come from server-side state, never submitted IDs or email. Maximum five failed password attempts per pending link. This endpoint does not use bearer authentication.",
+        "operationId": "linkGoogleIdentity",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "password": {
+                    "format": "password",
+                    "maxLength": 128,
+                    "type": "string",
+                    "writeOnly": true
+                  }
+                },
+                "required": [
+                  "password"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "returnTo": {
+                      "maxLength": 2048,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "returnTo"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Identity linked, pending cookie cleared and ordinary refresh cookie set; browser navigates to completion and bootstraps refresh/me.",
+            "headers": {
+              "Set-Cookie": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid or unknown JSON fields."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Generic wrong password, invalid/expired/consumed pending state, or unavailable account."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Origin rejected."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Identity already belongs to another account or the account has a different Google identity."
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Expected application/json."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Password attempt or endpoint rate limit exceeded."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Identity or session persistence failure."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Google login is not configured."
+          }
+        },
+        "security": [],
+        "summary": "Verify an existing password before linking Google",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/google/start": {
+      "get": {
+        "operationId": "startGoogleLogin",
+        "parameters": [
+          {
+            "description": "Internal application destination only; external, encoded ambiguous and authentication-loop paths are rejected.",
+            "in": "query",
+            "name": "returnTo",
+            "schema": {
+              "default": "/reports",
+              "maxLength": 2048,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Redirect to Google with state, nonce and S256 PKCE; sets a five-minute host-only HttpOnly SameSite=Lax transaction cookie, Secure in production.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Set-Cookie": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid internal destination or duplicate query input."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Browser origin or fetch site rejected."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Start rate limit exceeded."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Challenge persistence failure."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Google login is not configured."
+          }
+        },
+        "security": [],
+        "summary": "Start browser-bound Google authorization",
         "tags": [
           "Auth"
         ]
@@ -3267,6 +3603,7 @@
   },
   "servers": [
     {
+      "description": "Public API through Caddy or Go directly; resource paths include /api where required",
       "url": "/"
     }
   ],
@@ -3276,49 +3613,56 @@
       "name": "System"
     },
     {
+      "description": "Account authentication and session lifecycle.",
       "name": "Auth"
     },
     {
+      "description": "Aggregated flood situation overview.",
       "name": "Overview"
     },
     {
+      "description": "Structured alerts and their evidence.",
       "name": "Alerts"
     },
     {
+      "description": "Water stations and timestamped readings.",
       "name": "Water"
     },
     {
+      "description": "Flood situation information.",
       "name": "Flood"
     },
     {
+      "description": "Geospatial flood situation information.",
       "name": "Map"
     },
     {
+      "description": "Roads and condition history; not a travel-safety guarantee.",
       "name": "Roads"
     },
     {
+      "description": "Camera information and evidence.",
       "name": "CCTV"
     },
     {
+      "description": "Community reports and public verified evidence.",
       "name": "Reports"
     },
     {
+      "description": "Versioned server-sent change notifications.",
       "name": "Realtime"
     },
     {
+      "description": "ADMIN-only management and moderation.",
       "name": "Admin"
     },
     {
+      "description": "Data provider metadata and provenance.",
       "name": "Data Sources"
     },
     {
-      "name": "Water"
-    },
-    {
+      "description": "Flood events and assessed risk areas.",
       "name": "Flood Domain"
-    },
-    {
-      "name": "Roads"
     }
   ]
 }

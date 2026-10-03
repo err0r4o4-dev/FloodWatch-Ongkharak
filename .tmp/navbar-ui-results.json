@@ -1,0 +1,1170 @@
+{
+  "checks": [
+    {
+      "viewport": "1024x1366",
+      "mobile": true,
+      "width": 1024,
+      "height": 1366,
+      "rootFontSize": "16px",
+      "overflow": false,
+      "navVisible": true,
+      "sidebarVisible": false,
+      "nav": {
+        "left": 128,
+        "right": 896,
+        "top": 1245.625,
+        "bottom": 1345.53125,
+        "width": 768,
+        "height": 99.90625
+      },
+      "padding": 136.4,
+      "links": [
+        {
+          "text": "ภาพรวม",
+          "href": "/",
+          "current": null,
+          "left": 137,
+          "right": 283.796875,
+          "top": 1254.625,
+          "bottom": 1336.53125,
+          "width": 146.796875,
+          "height": 81.90625,
+          "label": {
+            "left": 189.046875,
+            "right": 231.75,
+            "top": 1305.765625,
+            "bottom": 1322.34375,
+            "width": 42.703125,
+            "height": 16.578125
+          }
+        },
+        {
+          "text": "ประกาศ",
+          "href": "/announcements",
+          "current": "page",
+          "left": 287.796875,
+          "right": 434.59375,
+          "top": 1254.625,
+          "bottom": 1336.53125,
+          "width": 146.796875,
+          "height": 81.90625,
+          "label": {
+            "left": 341.359375,
+            "right": 381.015625,
+            "top": 1305.765625,
+            "bottom": 1322.34375,
+            "width": 39.65625,
+            "height": 16.578125
+          }
+        },
+        {
+          "text": "พื้นที่เสี่ยง",
+          "href": "/risk",
+          "current": null,
+          "left": 438.59375,
+          "right": 585.390625,
+          "top": 1254.625,
+          "bottom": 1336.53125,
+          "width": 146.796875,
+          "height": 81.90625,
+          "label": {
+            "left": 486.515625,
+            "right": 537.46875,
+            "top": 1305.765625,
+            "bottom": 1322.34375,
+            "width": 50.953125,
+            "height": 16.578125
+          }
+        },
+        {
+          "text": "แผนที่",
+          "href": "/map",
+          "current": null,
+          "left": 589.390625,
+          "right": 736.1875,
+          "top": 1254.625,
+          "bottom": 1336.53125,
+          "width": 146.796875,
+          "height": 81.90625,
+          "label": {
+            "left": 646.734375,
+            "right": 678.84375,
+            "top": 1305.765625,
+            "bottom": 1322.34375,
+            "width": 32.109375,
+            "height": 16.578125
+          }
+        },
+        {
+          "text": "รายงาน",
+          "href": "/reports",
+          "current": null,
+          "left": 740.1875,
+          "right": 887,
+          "top": 1254.625,
+          "bottom": 1336.53125,
+          "width": 146.8125,
+          "height": 81.90625,
+          "label": {
+            "left": 793.765625,
+            "right": 833.40625,
+            "top": 1305.765625,
+            "bottom": 1322.34375,
+            "width": 39.640625,
+            "height": 16.578125
+          }
+        }
+      ]
+    },
+    {
+      "viewport": "320x740",
+      "mobile": true,
+      "width": 320,
+      "height": 740,
+      "rootFontSize": "16px",
+      "overflow": false,
+      "navVisible": true,
+      "sidebarVisible": false,
+      "nav": {
+        "left": 12,
+        "right": 308,
+        "top": 634,
+        "bottom": 728,
+        "width": 296,
+        "height": 94
+      },
+      "padding": 138,
+      "links": [
+        {
+          "text": "ภาพรวม",
+          "href": "/",
+          "current": null,
+          "left": 21,
+          "right": 73.390625,
+          "top": 643,
+          "bottom": 719,
+          "width": 52.390625,
+          "height": 76,
+          "label": {
+            "left": 28.265625,
+            "right": 66.109375,
+            "top": 689.65625,
+            "bottom": 704.328125,
+            "width": 37.84375,
+            "height": 14.671875
+          }
+        },
+        {
+          "text": "ประกาศ",
+          "href": "/announcements",
+          "current": "page",
+          "left": 77.390625,
+          "right": 129.796875,
+          "top": 643,
+          "bottom": 719,
+          "width": 52.40625,
+          "height": 76,
+          "label": {
+            "left": 86.015625,
+            "right": 121.15625,
+            "top": 689.65625,
+            "bottom": 704.328125,
+            "width": 35.140625,
+            "height": 14.671875
+          }
+        },
+        {
+          "text": "พื้นที่เสี่ยง",
+          "href": "/risk",
+          "current": null,
+          "left": 133.796875,
+          "right": 186.1875,
+          "top": 643,
+          "bottom": 719,
+          "width": 52.390625,
+          "height": 76,
+          "label": {
+            "left": 137.40625,
+            "right": 182.5625,
+            "top": 689.65625,
+            "bottom": 704.328125,
+            "width": 45.15625,
+            "height": 14.671875
+          }
+        },
+        {
+          "text": "แผนที่",
+          "href": "/map",
+          "current": null,
+          "left": 190.1875,
+          "right": 242.59375,
+          "top": 643,
+          "bottom": 719,
+          "width": 52.40625,
+          "height": 76,
+          "label": {
+            "left": 202.15625,
+            "right": 230.609375,
+            "top": 689.65625,
+            "bottom": 704.328125,
+            "width": 28.453125,
+            "height": 14.671875
+          }
+        },
+        {
+          "text": "รายงาน",
+          "href": "/reports",
+          "current": null,
+          "left": 246.59375,
+          "right": 299,
+          "top": 643,
+          "bottom": 719,
+          "width": 52.40625,
+          "height": 76,
+          "label": {
+            "left": 255.234375,
+            "right": 290.359375,
+            "top": 689.65625,
+            "bottom": 704.328125,
+            "width": 35.125,
+            "height": 14.671875
+          }
+        }
+      ]
+    },
+    {
+      "viewport": "390x844",
+      "mobile": true,
+      "width": 390,
+      "height": 844,
+      "rootFontSize": "16px",
+      "overflow": false,
+      "navVisible": true,
+      "sidebarVisible": false,
+      "nav": {
+        "left": 12,
+        "right": 378,
+        "top": 738,
+        "bottom": 832,
+        "width": 366,
+        "height": 94
+      },
+      "padding": 138,
+      "links": [
+        {
+          "text": "ภาพรวม",
+          "href": "/",
+          "current": null,
+          "left": 21,
+          "right": 87.390625,
+          "top": 747,
+          "bottom": 823,
+          "width": 66.390625,
+          "height": 76,
+          "label": {
+            "left": 35.265625,
+            "right": 73.109375,
+            "top": 793.65625,
+            "bottom": 808.328125,
+            "width": 37.84375,
+            "height": 14.671875
+          }
+        },
+        {
+          "text": "ประกาศ",
+          "href": "/announcements",
+          "current": "page",
+          "left": 91.390625,
+          "right": 157.796875,
+          "top": 747,
+          "bottom": 823,
+          "width": 66.40625,
+          "height": 76,
+          "label": {
+            "left": 107.015625,
+            "right": 142.15625,
+            "top": 793.65625,
+            "bottom": 808.328125,
+            "width": 35.140625,
+            "height": 14.671875
+          }
+        },
+        {
+          "text": "พื้นที่เสี่ยง",
+          "href": "/risk",
+          "current": null,
+          "left": 161.796875,
+          "right": 228.1875,
+          "top": 747,
+          "bottom": 823,
+          "width": 66.390625,
+          "height": 76,
+          "label": {
+            "left": 172.40625,
+            "right": 217.5625,
+            "top": 793.65625,
+            "bottom": 808.328125,
+            "width": 45.15625,
+            "height": 14.671875
+          }
+        },
+        {
+          "text": "แผนที่",
+          "href": "/map",
+          "current": null,
+          "left": 232.1875,
+          "right": 298.59375,
+          "top": 747,
+          "bottom": 823,
+          "width": 66.40625,
+          "height": 76,
+          "label": {
+            "left": 251.15625,
+            "right": 279.609375,
+            "top": 793.65625,
+            "bottom": 808.328125,
+            "width": 28.453125,
+            "height": 14.671875
+          }
+        },
+        {
+          "text": "รายงาน",
+          "href": "/reports",
+          "current": null,
+          "left": 302.59375,
+          "right": 369,
+          "top": 747,
+          "bottom": 823,
+          "width": 66.40625,
+          "height": 76,
+          "label": {
+            "left": 318.234375,
+            "right": 353.359375,
+            "top": 793.65625,
+            "bottom": 808.328125,
+            "width": 35.125,
+            "height": 14.671875
+          }
+        }
+      ]
+    },
+    {
+      "viewport": "768x1024",
+      "mobile": true,
+      "width": 768,
+      "height": 1024,
+      "rootFontSize": "16px",
+      "overflow": false,
+      "navVisible": true,
+      "sidebarVisible": false,
+      "nav": {
+        "left": 12,
+        "right": 756,
+        "top": 914.640625,
+        "bottom": 1008.640625,
+        "width": 744,
+        "height": 94
+      },
+      "padding": 141.36,
+      "links": [
+        {
+          "text": "ภาพรวม",
+          "href": "/",
+          "current": null,
+          "left": 21,
+          "right": 163,
+          "top": 923.640625,
+          "bottom": 999.640625,
+          "width": 142,
+          "height": 76,
+          "label": {
+            "left": 73.078125,
+            "right": 110.921875,
+            "top": 970.296875,
+            "bottom": 984.96875,
+            "width": 37.84375,
+            "height": 14.671875
+          }
+        },
+        {
+          "text": "ประกาศ",
+          "href": "/announcements",
+          "current": "page",
+          "left": 167,
+          "right": 309,
+          "top": 923.640625,
+          "bottom": 999.640625,
+          "width": 142,
+          "height": 76,
+          "label": {
+            "left": 220.421875,
+            "right": 255.5625,
+            "top": 970.296875,
+            "bottom": 984.96875,
+            "width": 35.140625,
+            "height": 14.671875
+          }
+        },
+        {
+          "text": "พื้นที่เสี่ยง",
+          "href": "/risk",
+          "current": null,
+          "left": 313,
+          "right": 455,
+          "top": 923.640625,
+          "bottom": 999.640625,
+          "width": 142,
+          "height": 76,
+          "label": {
+            "left": 361.421875,
+            "right": 406.578125,
+            "top": 970.296875,
+            "bottom": 984.96875,
+            "width": 45.15625,
+            "height": 14.671875
+          }
+        },
+        {
+          "text": "แผนที่",
+          "href": "/map",
+          "current": null,
+          "left": 459,
+          "right": 601,
+          "top": 923.640625,
+          "bottom": 999.640625,
+          "width": 142,
+          "height": 76,
+          "label": {
+            "left": 515.765625,
+            "right": 544.21875,
+            "top": 970.296875,
+            "bottom": 984.96875,
+            "width": 28.453125,
+            "height": 14.671875
+          }
+        },
+        {
+          "text": "รายงาน",
+          "href": "/reports",
+          "current": null,
+          "left": 605,
+          "right": 747,
+          "top": 923.640625,
+          "bottom": 999.640625,
+          "width": 142,
+          "height": 76,
+          "label": {
+            "left": 658.4375,
+            "right": 693.5625,
+            "top": 970.296875,
+            "bottom": 984.96875,
+            "width": 35.125,
+            "height": 14.671875
+          }
+        }
+      ]
+    },
+    {
+      "viewport": "820x1180",
+      "mobile": true,
+      "width": 820,
+      "height": 1180,
+      "rootFontSize": "16px",
+      "overflow": false,
+      "navVisible": true,
+      "sidebarVisible": false,
+      "nav": {
+        "left": 26,
+        "right": 794,
+        "top": 1069.609375,
+        "bottom": 1163.609375,
+        "width": 768,
+        "height": 94
+      },
+      "padding": 142.4,
+      "links": [
+        {
+          "text": "ภาพรวม",
+          "href": "/",
+          "current": null,
+          "left": 35,
+          "right": 181.796875,
+          "top": 1078.609375,
+          "bottom": 1154.609375,
+          "width": 146.796875,
+          "height": 76,
+          "label": {
+            "left": 89.46875,
+            "right": 127.3125,
+            "top": 1125.265625,
+            "bottom": 1139.9375,
+            "width": 37.84375,
+            "height": 14.671875
+          }
+        },
+        {
+          "text": "ประกาศ",
+          "href": "/announcements",
+          "current": "page",
+          "left": 185.796875,
+          "right": 332.59375,
+          "top": 1078.609375,
+          "bottom": 1154.609375,
+          "width": 146.796875,
+          "height": 76,
+          "label": {
+            "left": 241.625,
+            "right": 276.765625,
+            "top": 1125.265625,
+            "bottom": 1139.9375,
+            "width": 35.140625,
+            "height": 14.671875
+          }
+        },
+        {
+          "text": "พื้นที่เสี่ยง",
+          "href": "/risk",
+          "current": null,
+          "left": 336.59375,
+          "right": 483.390625,
+          "top": 1078.609375,
+          "bottom": 1154.609375,
+          "width": 146.796875,
+          "height": 76,
+          "label": {
+            "left": 387.40625,
+            "right": 432.5625,
+            "top": 1125.265625,
+            "bottom": 1139.9375,
+            "width": 45.15625,
+            "height": 14.671875
+          }
+        },
+        {
+          "text": "แผนที่",
+          "href": "/map",
+          "current": null,
+          "left": 487.390625,
+          "right": 634.1875,
+          "top": 1078.609375,
+          "bottom": 1154.609375,
+          "width": 146.796875,
+          "height": 76,
+          "label": {
+            "left": 546.5625,
+            "right": 575.015625,
+            "top": 1125.265625,
+            "bottom": 1139.9375,
+            "width": 28.453125,
+            "height": 14.671875
+          }
+        },
+        {
+          "text": "รายงาน",
+          "href": "/reports",
+          "current": null,
+          "left": 638.1875,
+          "right": 785,
+          "top": 1078.609375,
+          "bottom": 1154.609375,
+          "width": 146.8125,
+          "height": 76,
+          "label": {
+            "left": 694.03125,
+            "right": 729.15625,
+            "top": 1125.265625,
+            "bottom": 1139.9375,
+            "width": 35.125,
+            "height": 14.671875
+          }
+        }
+      ]
+    },
+    {
+      "viewport": "1180x820",
+      "mobile": true,
+      "width": 1180,
+      "height": 820,
+      "rootFontSize": "16px",
+      "overflow": false,
+      "navVisible": true,
+      "sidebarVisible": false,
+      "nav": {
+        "left": 206,
+        "right": 974,
+        "top": 686.40625,
+        "bottom": 796.40625,
+        "width": 768,
+        "height": 110
+      },
+      "padding": 165.6,
+      "links": [
+        {
+          "text": "ภาพรวม",
+          "href": "/",
+          "current": null,
+          "left": 215,
+          "right": 361.796875,
+          "top": 695.40625,
+          "bottom": 787.40625,
+          "width": 146.796875,
+          "height": 92,
+          "label": {
+            "left": 264.046875,
+            "right": 312.734375,
+            "top": 751.953125,
+            "bottom": 770.84375,
+            "width": 48.6875,
+            "height": 18.890625
+          }
+        },
+        {
+          "text": "ประกาศ",
+          "href": "/announcements",
+          "current": "page",
+          "left": 365.796875,
+          "right": 512.59375,
+          "top": 695.40625,
+          "bottom": 787.40625,
+          "width": 146.796875,
+          "height": 92,
+          "label": {
+            "left": 416.578125,
+            "right": 461.796875,
+            "top": 751.953125,
+            "bottom": 770.84375,
+            "width": 45.21875,
+            "height": 18.890625
+          }
+        },
+        {
+          "text": "พื้นที่เสี่ยง",
+          "href": "/risk",
+          "current": null,
+          "left": 516.59375,
+          "right": 663.390625,
+          "top": 695.40625,
+          "bottom": 787.40625,
+          "width": 146.796875,
+          "height": 92,
+          "label": {
+            "left": 560.9375,
+            "right": 619.03125,
+            "top": 751.953125,
+            "bottom": 770.84375,
+            "width": 58.09375,
+            "height": 18.890625
+          }
+        },
+        {
+          "text": "แผนที่",
+          "href": "/map",
+          "current": null,
+          "left": 667.390625,
+          "right": 814.1875,
+          "top": 695.40625,
+          "bottom": 787.40625,
+          "width": 146.796875,
+          "height": 92,
+          "label": {
+            "left": 722.484375,
+            "right": 759.09375,
+            "top": 751.953125,
+            "bottom": 770.84375,
+            "width": 36.609375,
+            "height": 18.890625
+          }
+        },
+        {
+          "text": "รายงาน",
+          "href": "/reports",
+          "current": null,
+          "left": 818.1875,
+          "right": 965,
+          "top": 695.40625,
+          "bottom": 787.40625,
+          "width": 146.8125,
+          "height": 92,
+          "label": {
+            "left": 869,
+            "right": 914.1875,
+            "top": 751.953125,
+            "bottom": 770.84375,
+            "width": 45.1875,
+            "height": 18.890625
+          }
+        }
+      ]
+    },
+    {
+      "viewport": "1366x1024",
+      "mobile": true,
+      "width": 1366,
+      "height": 1024,
+      "rootFontSize": "16px",
+      "overflow": false,
+      "navVisible": true,
+      "sidebarVisible": false,
+      "nav": {
+        "left": 299,
+        "right": 1067,
+        "top": 890,
+        "bottom": 1000,
+        "width": 768,
+        "height": 110
+      },
+      "padding": 166,
+      "links": [
+        {
+          "text": "ภาพรวม",
+          "href": "/",
+          "current": null,
+          "left": 308,
+          "right": 454.796875,
+          "top": 899,
+          "bottom": 991,
+          "width": 146.796875,
+          "height": 92,
+          "label": {
+            "left": 357.046875,
+            "right": 405.734375,
+            "top": 955.546875,
+            "bottom": 974.4375,
+            "width": 48.6875,
+            "height": 18.890625
+          }
+        },
+        {
+          "text": "ประกาศ",
+          "href": "/announcements",
+          "current": "page",
+          "left": 458.796875,
+          "right": 605.59375,
+          "top": 899,
+          "bottom": 991,
+          "width": 146.796875,
+          "height": 92,
+          "label": {
+            "left": 509.578125,
+            "right": 554.796875,
+            "top": 955.546875,
+            "bottom": 974.4375,
+            "width": 45.21875,
+            "height": 18.890625
+          }
+        },
+        {
+          "text": "พื้นที่เสี่ยง",
+          "href": "/risk",
+          "current": null,
+          "left": 609.59375,
+          "right": 756.390625,
+          "top": 899,
+          "bottom": 991,
+          "width": 146.796875,
+          "height": 92,
+          "label": {
+            "left": 653.9375,
+            "right": 712.03125,
+            "top": 955.546875,
+            "bottom": 974.4375,
+            "width": 58.09375,
+            "height": 18.890625
+          }
+        },
+        {
+          "text": "แผนที่",
+          "href": "/map",
+          "current": null,
+          "left": 760.390625,
+          "right": 907.1875,
+          "top": 899,
+          "bottom": 991,
+          "width": 146.796875,
+          "height": 92,
+          "label": {
+            "left": 815.484375,
+            "right": 852.09375,
+            "top": 955.546875,
+            "bottom": 974.4375,
+            "width": 36.609375,
+            "height": 18.890625
+          }
+        },
+        {
+          "text": "รายงาน",
+          "href": "/reports",
+          "current": null,
+          "left": 911.1875,
+          "right": 1058,
+          "top": 899,
+          "bottom": 991,
+          "width": 146.8125,
+          "height": 92,
+          "label": {
+            "left": 962,
+            "right": 1007.1875,
+            "top": 955.546875,
+            "bottom": 974.4375,
+            "width": 45.1875,
+            "height": 18.890625
+          }
+        }
+      ]
+    },
+    {
+      "viewport": "1280x800",
+      "mobile": false,
+      "width": 1280,
+      "height": 800,
+      "rootFontSize": "16px",
+      "overflow": false,
+      "navVisible": false,
+      "sidebarVisible": true,
+      "nav": {
+        "left": 0,
+        "right": 0,
+        "top": 0,
+        "bottom": 0,
+        "width": 0,
+        "height": 0
+      },
+      "padding": 0,
+      "links": [
+        {
+          "text": "ภาพรวม",
+          "href": "/",
+          "current": null,
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "bottom": 0,
+          "width": 0,
+          "height": 0,
+          "label": {
+            "left": 0,
+            "right": 0,
+            "top": 0,
+            "bottom": 0,
+            "width": 0,
+            "height": 0
+          }
+        },
+        {
+          "text": "ประกาศ",
+          "href": "/announcements",
+          "current": "page",
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "bottom": 0,
+          "width": 0,
+          "height": 0,
+          "label": {
+            "left": 0,
+            "right": 0,
+            "top": 0,
+            "bottom": 0,
+            "width": 0,
+            "height": 0
+          }
+        },
+        {
+          "text": "พื้นที่เสี่ยง",
+          "href": "/risk",
+          "current": null,
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "bottom": 0,
+          "width": 0,
+          "height": 0,
+          "label": {
+            "left": 0,
+            "right": 0,
+            "top": 0,
+            "bottom": 0,
+            "width": 0,
+            "height": 0
+          }
+        },
+        {
+          "text": "แผนที่",
+          "href": "/map",
+          "current": null,
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "bottom": 0,
+          "width": 0,
+          "height": 0,
+          "label": {
+            "left": 0,
+            "right": 0,
+            "top": 0,
+            "bottom": 0,
+            "width": 0,
+            "height": 0
+          }
+        },
+        {
+          "text": "รายงาน",
+          "href": "/reports",
+          "current": null,
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "bottom": 0,
+          "width": 0,
+          "height": 0,
+          "label": {
+            "left": 0,
+            "right": 0,
+            "top": 0,
+            "bottom": 0,
+            "width": 0,
+            "height": 0
+          }
+        }
+      ]
+    },
+    {
+      "viewport": "1440x900",
+      "mobile": false,
+      "width": 1440,
+      "height": 900,
+      "rootFontSize": "16px",
+      "overflow": false,
+      "navVisible": false,
+      "sidebarVisible": true,
+      "nav": {
+        "left": 0,
+        "right": 0,
+        "top": 0,
+        "bottom": 0,
+        "width": 0,
+        "height": 0
+      },
+      "padding": 0,
+      "links": [
+        {
+          "text": "ภาพรวม",
+          "href": "/",
+          "current": null,
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "bottom": 0,
+          "width": 0,
+          "height": 0,
+          "label": {
+            "left": 0,
+            "right": 0,
+            "top": 0,
+            "bottom": 0,
+            "width": 0,
+            "height": 0
+          }
+        },
+        {
+          "text": "ประกาศ",
+          "href": "/announcements",
+          "current": "page",
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "bottom": 0,
+          "width": 0,
+          "height": 0,
+          "label": {
+            "left": 0,
+            "right": 0,
+            "top": 0,
+            "bottom": 0,
+            "width": 0,
+            "height": 0
+          }
+        },
+        {
+          "text": "พื้นที่เสี่ยง",
+          "href": "/risk",
+          "current": null,
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "bottom": 0,
+          "width": 0,
+          "height": 0,
+          "label": {
+            "left": 0,
+            "right": 0,
+            "top": 0,
+            "bottom": 0,
+            "width": 0,
+            "height": 0
+          }
+        },
+        {
+          "text": "แผนที่",
+          "href": "/map",
+          "current": null,
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "bottom": 0,
+          "width": 0,
+          "height": 0,
+          "label": {
+            "left": 0,
+            "right": 0,
+            "top": 0,
+            "bottom": 0,
+            "width": 0,
+            "height": 0
+          }
+        },
+        {
+          "text": "รายงาน",
+          "href": "/reports",
+          "current": null,
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "bottom": 0,
+          "width": 0,
+          "height": 0,
+          "label": {
+            "left": 0,
+            "right": 0,
+            "top": 0,
+            "bottom": 0,
+            "width": 0,
+            "height": 0
+          }
+        }
+      ]
+    },
+    {
+      "textSize": "200%",
+      "width": 640,
+      "height": 1386,
+      "rootFontSize": "32px",
+      "overflow": false,
+      "navVisible": true,
+      "sidebarVisible": false,
+      "nav": {
+        "left": 24,
+        "right": 366,
+        "top": 607.25,
+        "bottom": 820,
+        "width": 342,
+        "height": 212.75
+      },
+      "padding": 274,
+      "links": [
+        {
+          "text": "ภาพรวม",
+          "href": "/",
+          "current": null,
+          "left": 41,
+          "right": 96.1875,
+          "top": 624.25,
+          "bottom": 803,
+          "width": 55.1875,
+          "height": 178.75,
+          "label": {
+            "left": 45,
+            "right": 92.1875,
+            "top": 716.25,
+            "bottom": 775,
+            "width": 47.1875,
+            "height": 58.75
+          }
+        },
+        {
+          "text": "ประกาศ",
+          "href": "/announcements",
+          "current": "page",
+          "left": 104.1875,
+          "right": 159.390625,
+          "top": 624.25,
+          "bottom": 803,
+          "width": 55.203125,
+          "height": 178.75,
+          "label": {
+            "left": 108.1875,
+            "right": 155.390625,
+            "top": 716.25,
+            "bottom": 775,
+            "width": 47.203125,
+            "height": 58.75
+          }
+        },
+        {
+          "text": "พื้นที่เสี่ยง",
+          "href": "/risk",
+          "current": null,
+          "left": 167.390625,
+          "right": 222.59375,
+          "top": 624.25,
+          "bottom": 803,
+          "width": 55.203125,
+          "height": 178.75,
+          "label": {
+            "left": 171.390625,
+            "right": 218.59375,
+            "top": 716.25,
+            "bottom": 775,
+            "width": 47.203125,
+            "height": 58.75
+          }
+        },
+        {
+          "text": "แผนที่",
+          "href": "/map",
+          "current": null,
+          "left": 230.59375,
+          "right": 285.796875,
+          "top": 624.25,
+          "bottom": 803,
+          "width": 55.203125,
+          "height": 178.75,
+          "label": {
+            "left": 234.59375,
+            "right": 281.796875,
+            "top": 716.25,
+            "bottom": 775,
+            "width": 47.203125,
+            "height": 58.75
+          }
+        },
+        {
+          "text": "รายงาน",
+          "href": "/reports",
+          "current": null,
+          "left": 293.796875,
+          "right": 349,
+          "top": 624.25,
+          "bottom": 803,
+          "width": 55.203125,
+          "height": 178.75,
+          "label": {
+            "left": 297.796875,
+            "right": 345,
+            "top": 716.25,
+            "bottom": 775,
+            "width": 47.203125,
+            "height": 58.75
+          }
+        }
+      ]
+    },
+    {
+      "keyboard": "all five links, visible focus, Enter route change",
+      "reducedMotion": "passed",
+      "mapUnavailable": "rendered"
+    }
+  ],
+  "errors": [],
+  "canceledRequests": 3
+}

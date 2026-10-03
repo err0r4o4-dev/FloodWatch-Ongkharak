@@ -29,6 +29,15 @@ function mockRisks(items: unknown[]) {
 afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 
 describe("RiskPage", () => {
+  it("links an assessed area to its real map bounds", async () => {
+    mockRisks([risk({ geometry: { type: "MultiPolygon", coordinates: [[[[101, 14], [101.1, 14], [101.1, 14.1], [101, 14]]]] } })]);
+    render(<RiskPage />);
+    const link = await screen.findByRole("link", { name: "ดูบนแผนที่: พื้นที่ทดสอบ" });
+    const target = new URL(link.getAttribute("href")!, "http://localhost");
+    expect(target.pathname).toBe("/map");
+    expect(target.searchParams.get("risk")).toBe("risk-1");
+    expect(target.searchParams.get("bbox")).toBe("101,14,101.1,14.1");
+  });
   it("loads published risk areas and filters by their effective level", async () => {
     const request = mockRisks([risk(), risk({ id: "risk-2", name: "พื้นที่ปานกลาง", source: source("COMMUNITY"), riskLevel: "MODERATE", effectiveRiskLevel: "MODERATE" }), risk({ id: "risk-3", name: "พื้นที่เสี่ยงสูงมาก", riskLevel: "VERY_HIGH", effectiveRiskLevel: "VERY_HIGH" })]);
 

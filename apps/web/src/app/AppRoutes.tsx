@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router";
 import { AnnouncementsPage } from "../features/announcements/AnnouncementsPage";
 import { AuthPage } from "../features/auth/AuthPage";
+import { GoogleCompletePage, GoogleLinkPage } from "../features/auth/GoogleAuthPages";
 import { ForgotPasswordPage } from "../features/auth/ForgotPasswordPage";
 import { HealthPage } from "../features/health/HealthPage";
 import { MapPage } from "../features/map/MapPage";
@@ -25,6 +26,8 @@ export function AppRoutes() {
     <Route path="/reports" element={<ReportsPage />} />
     <Route path="/login" element={<AuthPage mode="login" />} />
     <Route path="/register" element={<AuthPage mode="register" />} />
+    <Route path="/auth/complete" element={<GoogleCompletePage />} />
+    <Route path="/auth/google/link" element={<GoogleLinkPage />} />
     <Route path="/forgot-password" element={<ForgotPasswordPage />} />
     <Route path="/system-status" element={<HealthPage />} />
     <Route path="/admin/*" element={<RequireAdmin><Routes>

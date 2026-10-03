@@ -68,12 +68,10 @@ export function selectionName(selection: MapSelection): string {
 export function geometryBounds(geometry: MapGeometry): MapBounds {
   const positions: Position[] = geometry.type === "Point" ? [geometry.coordinates]
     : geometry.type === "MultiPolygon" ? geometry.coordinates.flat(2) : geometry.coordinates.flat();
-  return {
-    west: Math.min(...positions.map(([longitude]) => longitude)),
-    east: Math.max(...positions.map(([longitude]) => longitude)),
-    south: Math.min(...positions.map(([, latitude]) => latitude)),
-    north: Math.max(...positions.map(([, latitude]) => latitude))
-  };
+  return positions.reduce((bounds, [longitude, latitude]) => ({
+    west: Math.min(bounds.west, longitude), east: Math.max(bounds.east, longitude),
+    south: Math.min(bounds.south, latitude), north: Math.max(bounds.north, latitude)
+  }), { west: Infinity, east: -Infinity, south: Infinity, north: -Infinity });
 }
 
 export function selectionGeometry(selection: MapSelection): MapGeometry {

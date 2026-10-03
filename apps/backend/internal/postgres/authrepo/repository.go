@@ -25,8 +25,8 @@ func (repository *Repository) CreateUser(ctx context.Context, user auth.User) (a
 	user.Email = normalizeEmail(user.Email)
 	err := repository.pool.QueryRow(ctx, `
 		INSERT INTO users (id, email, password_hash, role, disabled_at)
-		VALUES ($1, $2, $3, $4, $5)
-		RETURNING id, email, password_hash, role, created_at, updated_at, disabled_at
+		VALUES ($1, $2, NULLIF($3, ''), $4, $5)
+		RETURNING id, email, COALESCE(password_hash, ''), role, created_at, updated_at, disabled_at
 	`, user.ID, user.Email, user.PasswordHash, user.Role, user.DisabledAt).Scan(
 		&user.ID,
 		&user.Email,
@@ -47,7 +47,7 @@ func (repository *Repository) CreateUser(ctx context.Context, user auth.User) (a
 
 func (repository *Repository) FindUserByEmail(ctx context.Context, email string) (auth.User, error) {
 	user, err := scanUser(repository.pool.QueryRow(ctx, `
-		SELECT id, email, password_hash, role, created_at, updated_at, disabled_at
+		SELECT id, email, COALESCE(password_hash, ''), role, created_at, updated_at, disabled_at
 		FROM users
 		WHERE email = $1
 	`, normalizeEmail(email)))
@@ -62,7 +62,7 @@ func (repository *Repository) FindUserByEmail(ctx context.Context, email string)
 
 func (repository *Repository) FindUserByID(ctx context.Context, id string) (auth.User, error) {
 	user, err := scanUser(repository.pool.QueryRow(ctx, `
-		SELECT id, email, password_hash, role, created_at, updated_at, disabled_at
+		SELECT id, email, COALESCE(password_hash, ''), role, created_at, updated_at, disabled_at
 		FROM users
 		WHERE id = $1
 	`, id))
@@ -76,15 +76,23 @@ func (repository *Repository) FindUserByID(ctx context.Context, id string) (auth
 }
 
 func (repository *Repository) CreateRefreshSession(ctx context.Context, session auth.RefreshSession) error {
-	_, err := repository.pool.Exec(ctx, `
+	commandTag, err := repository.pool.Exec(ctx, `
 		INSERT INTO refresh_sessions (id, user_id, token_hash, expires_at)
-		VALUES ($1, $2, $3, $4)
+		SELECT $1, id, $3, $4 FROM users WHERE id = $2 AND disabled_at IS NULL
 	`, session.ID, session.UserID, session.TokenHash, session.ExpiresAt)
 	if err != nil {
 		if isUserForeignKeyError(err) {
 			return auth.ErrNotFound
 		}
 		return fmt.Errorf("create refresh session: %w", err)
+	}
+	if commandTag.RowsAffected() == 0 {
+		if _, err := repository.FindUserByID(ctx, session.UserID); errors.Is(err, auth.ErrNotFound) {
+			return auth.ErrNotFound
+		} else if err != nil {
+			return err
+		}
+		return auth.ErrAccountDisabled
 	}
 	return nil
 }
@@ -103,7 +111,7 @@ func (repository *Repository) RotateRefreshSession(ctx context.Context, oldToken
 		revokedAt *time.Time
 	)
 	err = tx.QueryRow(ctx, `
-		SELECT u.id, u.email, u.password_hash, u.role, u.created_at, u.updated_at, u.disabled_at,
+		SELECT u.id, u.email, COALESCE(u.password_hash, ''), u.role, u.created_at, u.updated_at, u.disabled_at,
 		       s.expires_at, s.rotated_at, s.revoked_at
 		FROM refresh_sessions AS s
 		JOIN users AS u ON u.id = s.user_id
