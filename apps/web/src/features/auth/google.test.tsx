@@ -7,7 +7,19 @@ import { googleAuthApi, safeReturnTo } from "./google";
 import { GoogleSignInButton } from "./GoogleSignInButton";
 import { GoogleCompletePage, GoogleLinkPage } from "./GoogleAuthPages";
 
-afterEach(() => vi.unstubAllGlobals());
+const alertMocks = vi.hoisted(() => ({
+  notifySuccess: vi.fn().mockResolvedValue(undefined),
+  notifyError: vi.fn().mockResolvedValue(undefined),
+  notifyInfo: vi.fn().mockResolvedValue(undefined),
+  notifyWarning: vi.fn().mockResolvedValue(undefined)
+}));
+
+vi.mock("../../shared/alerts", () => alertMocks, { virtual: true });
+
+afterEach(() => {
+  vi.clearAllMocks();
+  vi.unstubAllGlobals();
+});
 
 describe("Google login", () => {
   it("rejects external and ambiguous destinations", () => {
@@ -46,6 +58,7 @@ describe("Google login", () => {
     fireEvent.click(screen.getByRole("button", { name: "ยืนยันและเชื่อม Google" }));
     await waitFor(() => expect(navigate).toHaveBeenCalledWith("/auth/complete?returnTo=%2Freports%3Fmode%3Dmine"));
     expect(api.link).toHaveBeenCalledWith("correct-password");
+    expect(alertMocks.notifySuccess).toHaveBeenCalledWith("เชื่อมบัญชี Google สำเร็จ");
   });
 
   it("shows link failure without success and blocks exhausted attempts", async () => {
@@ -57,6 +70,7 @@ describe("Google login", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("ครบจำนวนครั้ง");
     expect(screen.getByRole("button", { name: "ยืนยันและเชื่อม Google" })).toBeDisabled();
     expect(navigate).not.toHaveBeenCalled();
+    expect(alertMocks.notifyError).toHaveBeenCalledWith("เชื่อมบัญชี Google ไม่สำเร็จ", expect.stringContaining("ครบจำนวนครั้ง"));
   });
 
   it("does not claim success when refresh bootstrap fails", async () => {
@@ -64,6 +78,8 @@ describe("Google login", () => {
     render(<MemoryRouter initialEntries={["/auth/complete?returnTo=/reports"]}><AuthProvider api={api}><GoogleCompletePage /></AuthProvider></MemoryRouter>);
     expect(await screen.findByRole("alert")).toHaveTextContent("ยืนยันการเข้าสู่ระบบไม่สำเร็จ");
     expect(screen.getByRole("link", { name: "กลับไปเข้าสู่ระบบ" })).toHaveAttribute("href", "/login?returnTo=%2Freports");
+    expect(alertMocks.notifySuccess).not.toHaveBeenCalled();
+    expect(alertMocks.notifyError).not.toHaveBeenCalled();
   });
 
   it("returns to the requested page only after refresh and me succeed", async () => {

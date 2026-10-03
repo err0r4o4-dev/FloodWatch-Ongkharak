@@ -429,7 +429,7 @@ code {
   .shell-main { padding-bottom: calc(5rem + env(safe-area-inset-bottom)); }
   .mobile-header { display: flex; align-items: center; min-height: 4.5rem; border-bottom: var(--border-width) solid var(--color-border); }
   .bottom-navigation { position: fixed; z-index: var(--z-bottom-nav); right: 0; bottom: 0; left: 0; display: block; padding: var(--space-2) var(--space-2) calc(var(--space-2) + env(safe-area-inset-bottom)); border-top: var(--border-width) solid var(--color-border); background: var(--color-glass-fallback); background: var(--color-glass); backdrop-filter: blur(var(--blur-glass)); }
-  .bottom-navigation ul { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .bottom-navigation ul { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .bottom-navigation .shell-nav-link { min-height: var(--touch-target); flex-direction: column; justify-content: center; gap: 0; padding: var(--space-1) 0; font-size: 0.68rem; text-align: center; line-height: 1.3; }
   .bottom-navigation .shell-nav-symbol { width: auto; font-size: 1.2rem; }
   .map-layout { grid-template-columns: 1fr; }

@@ -33,6 +33,33 @@ function mockApi(collections: Record<string, unknown[]> = {}, failed: string[] =
 afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 
 describe("MapPage", () => {
+  it("opens the risk directory, filters stale evidence as UNKNOWN, and restores focus", async () => {
+    const risk = { id: "risk-fresh", name: "พื้นที่เสี่ยงทดสอบ", description: "หลักฐานทดสอบ", source, riskLevel: "HIGH", effectiveRiskLevel: "HIGH", freshness: "FRESH", validFrom: null, validTo: null, geometry: { type: "MultiPolygon", coordinates: [[[[101, 14], [101.1, 14], [101.1, 14.1], [101, 14]]]] } };
+    mockApi({ "/api/v1/risk-areas": [risk, { ...risk, id: "risk-stale", name: "พื้นที่ข้อมูลเก่า", freshness: "STALE" }] });
+    render(<MapPage />);
+    const trigger = screen.getByRole("button", { name: "พื้นที่เสี่ยง" });
+    fireEvent.click(trigger);
+    expect(await screen.findByRole("button", { name: /พื้นที่ข้อมูลเก่า/ })).toBeInTheDocument();
+    expect(screen.getByText("พื้นที่ในบริเวณแผนที่ที่กำลังดู")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /กรอง: ความเสี่ยงสูง$/ }));
+    expect(screen.getByRole("button", { name: /พื้นที่เสี่ยงทดสอบ/ })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /พื้นที่ข้อมูลเก่า/ })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /กรอง: ไม่ทราบสถานะ/ }));
+    expect(screen.getByRole("button", { name: /พื้นที่ข้อมูลเก่า/ })).toHaveTextContent("ไม่ทราบสถานะ");
+    fireEvent.keyDown(screen.getByRole("button", { name: /พื้นที่ข้อมูลเก่า/ }), { key: "Escape" });
+    expect(trigger).toHaveFocus();
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("keeps risk failures distinct from empty data and offers retry", async () => {
+    mockApi({}, ["/risk-areas"]);
+    render(<MapPage />);
+    fireEvent.click(screen.getByRole("button", { name: "พื้นที่เสี่ยง" }));
+    expect(await screen.findByText("ไม่สามารถโหลดพื้นที่เสี่ยงได้ · สถานะไม่ทราบ")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "ลองโหลดพื้นที่เสี่ยงอีกครั้ง" })).toBeInTheDocument();
+    expect(screen.queryByText("ไม่มีพื้นที่เสี่ยงในข้อมูลที่โหลด ไม่ได้หมายความว่าปลอดภัย")).not.toBeInTheDocument();
+  });
+
   it("loads five visible collections and shows an honest empty state", async () => {
     const request = mockApi();
     render(<MapPage />);

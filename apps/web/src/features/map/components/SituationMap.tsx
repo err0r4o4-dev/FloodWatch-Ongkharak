@@ -93,7 +93,7 @@ function MapFeaturePopup({ selection, position, onClose, onDetails }: {
   </Popup>;
 }
 
-function InteractiveLayers({ items, visible, mode, enablePopups, focusSelection, initialRiskId, onSelect }: {
+function InteractiveLayers({ items, visible, mode, enablePopups, focusSelection, initialRiskId, onSelect, onPreview }: {
   items: LayerItems;
   visible: LayerVisibility;
   mode: MapMode;
@@ -101,6 +101,7 @@ function InteractiveLayers({ items, visible, mode, enablePopups, focusSelection,
   focusSelection?: MapSelection | null;
   initialRiskId?: string | null;
   onSelect: (selection: MapSelection) => void;
+  onPreview?: (selection: MapSelection | null) => void;
 }) {
   const [popup, setPopup] = useState<{ selection: MapSelection; position: Position } | null>(null);
   const initialRiskOpened = useRef(false);
@@ -116,6 +117,7 @@ function InteractiveLayers({ items, visible, mode, enablePopups, focusSelection,
     if (typeof window.matchMedia === "function" && window.matchMedia("(max-width: 55rem)").matches) map.getContainer().scrollIntoView({ block: "center", behavior: "instant" });
     const bounds = geometryBounds(selectionGeometry(selection));
     setPopup({ selection, position: position ?? [(bounds.west + bounds.east) / 2, (bounds.south + bounds.north) / 2] });
+    onPreview?.(selection);
   };
   useEffect(() => {
     if (popup && !visible[popup.selection.layer]) setPopup(null);
@@ -145,7 +147,7 @@ function InteractiveLayers({ items, visible, mode, enablePopups, focusSelection,
   </>;
 }
 
-export function SituationMap({ items, visible, mode, points, picking, onBoundsChange, onMapPoint, onSelect, enablePopups = false, focusSelection, initialBounds, initialRiskId }: {
+export function SituationMap({ items, visible, mode, points, picking, onBoundsChange, onMapPoint, onSelect, onPreview, enablePopups = false, focusSelection, initialBounds, initialRiskId }: {
   items: LayerItems;
   visible: LayerVisibility;
   mode: MapMode;
@@ -154,6 +156,7 @@ export function SituationMap({ items, visible, mode, points, picking, onBoundsCh
   onBoundsChange: (bounds: MapBounds) => void;
   onMapPoint: (position: Position) => void;
   onSelect: (selection: MapSelection) => void;
+  onPreview?: (selection: MapSelection | null) => void;
   enablePopups?: boolean;
   focusSelection?: MapSelection | null;
   initialBounds?: MapBounds;
@@ -163,7 +166,7 @@ export function SituationMap({ items, visible, mode, points, picking, onBoundsCh
     <MapContainer center={initialCenter} zoom={initialZoom} minZoom={8} maxZoom={16} zoomControl={false} scrollWheelZoom={false} className="leaflet-map">
       <TileLayer url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' />
       <ViewportEvents onBoundsChange={onBoundsChange} onMapPoint={onMapPoint} initialBounds={initialBounds} />
-      <InteractiveLayers items={items} visible={visible} mode={mode} enablePopups={enablePopups} focusSelection={focusSelection} initialRiskId={initialRiskId} onSelect={onSelect} />
+      <InteractiveLayers items={items} visible={visible} mode={mode} enablePopups={enablePopups} focusSelection={focusSelection} initialRiskId={initialRiskId} onSelect={onSelect} onPreview={onPreview} />
       {mode === "ROUTE" && (["origin", "destination"] as const).map((key) => {
         const position = parseRoutePoint(points[key]);
         return position ? <CircleMarker key={key} center={[position[1], position[0]]} radius={9} pathOptions={{ color: "var(--color-primary-strong)", fillColor: "var(--color-surface)", fillOpacity: 1, weight: 3 }}><Tooltip permanent direction="top">{key === "origin" ? "จุดเริ่มต้น" : "จุดหมาย"}</Tooltip></CircleMarker> : null;

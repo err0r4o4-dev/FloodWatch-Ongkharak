@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
+import { notifyError, notifySuccess } from "../../shared/alerts";
 import { ApiError } from "./api";
 import { useAuth } from "./AuthProvider";
 import { GoogleSignInButton } from "./GoogleSignInButton";
@@ -26,6 +27,7 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
 
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (submitting) return;
     if (!email.trim() || !password) return setError(registering ? "กรุณากรอกอีเมล ชื่อผู้ใช้งาน และรหัสผ่าน" : "กรอกอีเมลและรหัสผ่าน");
     if (registering && !username.trim()) return setError("กรุณากรอกชื่อผู้ใช้งาน");
     setSubmitting(true);
@@ -33,9 +35,14 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
     try {
       if (registering) await register({ email: email.trim(), username: username.trim(), password });
       await login({ email: email.trim(), password });
+      void notifySuccess(registering ? "สมัครสมาชิกสำเร็จ" : "เข้าสู่ระบบสำเร็จ");
       navigate(returnTo, { replace: true });
     } catch (cause) {
-      setError(cause instanceof ApiError ? cause.message : registering ? "ไม่สามารถสมัครสมาชิกได้" : "ไม่สามารถเข้าสู่ระบบได้");
+      const message = cause instanceof ApiError ? cause.message : registering ? "ไม่สามารถสมัครสมาชิกได้" : "ไม่สามารถเข้าสู่ระบบได้";
+      setError(message);
+      if (cause instanceof ApiError) {
+        void notifyError(registering ? "สมัครสมาชิกไม่สำเร็จ" : "เข้าสู่ระบบไม่สำเร็จ", message);
+      }
     } finally {
       setSubmitting(false);
     }

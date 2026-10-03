@@ -1,12 +1,13 @@
+import { useRef, useState } from "react";
 import type { ReactNode } from "react";
-import { NavLink, useLocation } from "react-router";
+import { NavLink, useLocation, useNavigate } from "react-router";
 import { useOptionalAuth } from "../features/auth/AuthProvider";
+import { confirmAction } from "../shared/alerts";
 
 const links = [
   { to: "/", label: "ภาพรวม", symbol: "home" },
   { to: "/announcements", label: "ประกาศ", symbol: "bell" },
-  { to: "/risk", label: "พื้นที่เสี่ยง", symbol: "pin" },
-  { to: "/map", label: "แผนที่", symbol: "map" },
+  { to: "/map", label: "แผนที่และพื้นที่เสี่ยง", symbol: "map" },
   { to: "/reports", label: "รายงาน", symbol: "report" }
 ];
 
@@ -42,6 +43,31 @@ function Navigation({ mobile = false }: { mobile?: boolean }) {
 export function AppShell({ children }: { children: ReactNode }) {
   const { account, logout } = useOptionalAuth();
   const location = useLocation();
+  const navigate = useNavigate();
+  const [signingOut, setSigningOut] = useState(false);
+  const logoutPending = useRef(false);
+  const handleLogout = async () => {
+    if (logoutPending.current) return;
+    logoutPending.current = true;
+    setSigningOut(true);
+    try {
+      const completed = await confirmAction({
+        title: "ออกจากระบบหรือไม่?",
+        text: "คุณจะต้องเข้าสู่ระบบอีกครั้ง เพื่อใช้งานฟีเจอร์สำหรับสมาชิก Flood Watch",
+        confirmText: "ออกจากระบบ",
+        cancelText: "อยู่ในระบบต่อ",
+        danger: true,
+        action: logout,
+        successTitle: "ออกจากระบบแล้ว",
+        errorTitle: "ยืนยันการออกจากระบบไม่สำเร็จ",
+        errorText: "เว็บล้างสถานะบัญชีในหน้านี้แล้ว แต่ยังยืนยันการยกเลิกเซสชันฝั่งเซิร์ฟเวอร์ไม่ได้ กรุณาตรวจสอบการเชื่อมต่อและลองเข้าสู่ระบบใหม่ก่อนออกจากระบบอีกครั้ง"
+      });
+      if (completed) navigate("/", { replace: true });
+    } finally {
+      logoutPending.current = false;
+      setSigningOut(false);
+    }
+  };
   if (["/login", "/register", "/forgot-password", "/auth/complete", "/auth/google/link"].includes(location.pathname)) return <main id="main-content">{children}</main>;
   return <div className="app-shell public-shell">
     <a className="skip-link" href="#main-content">ข้ามไปยังเนื้อหาหลัก</a>
@@ -51,7 +77,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <aside className="sidebar-status" aria-labelledby="sidebar-status-title"><span className="sidebar-status__dot" aria-hidden="true" /><div><strong id="sidebar-status-title">ข้อควรทราบ</strong><p>ข้อมูลไม่พร้อมใช้งานไม่ได้หมายถึงพื้นที่ปลอดภัย</p></div></aside>
     </aside>
     <div className="shell-main"><div className="shell-top">
-      <header className="institution-header"><div className="w-full max-w-[1600px] mx-auto px-4 sm:px-5 md:px-5 lg:px-5 flex items-center justify-between gap-4"><span className="institution-header__name">ศูนย์ติดตามสถานการณ์น้ำ อำเภอองครักษ์ จังหวัดนครนายก</span><div className="institution-header__actions"><div className="locale-toggle" aria-label="ภาษา"><span aria-current="true">TH</span><button type="button" disabled title="ภาษาอังกฤษยังไม่พร้อมใช้งาน">EN</button></div><NavLink className="header-icon" to="/#notification-settings" aria-label="ตั้งค่าการแจ้งเตือน"><Icon name="bell" /></NavLink><details className="account-menu" onKeyDown={(event) => { if (event.key === "Escape") event.currentTarget.open = false; }}><summary aria-label="เมนูบัญชี" className={account ? "is-logged-in" : ""}>{account ? <span className="avatar avatar--initial" aria-hidden="true">{account.email.charAt(0).toUpperCase()}</span> : <Icon name="user" />} <span className="account-chevron" aria-hidden="true"><Icon name="chevron" /></span></summary><div className="account-menu__content">{account ? <><span>{account.email}</span>{account.role === "ADMIN" && <NavLink to="/admin">จัดการระบบ</NavLink>}<button type="button" onClick={() => void logout()}>ออกจากระบบ</button></> : <><NavLink to="/login">เข้าสู่ระบบ</NavLink><NavLink to="/register">สมัครสมาชิก</NavLink></>}</div></details></div></div></header>
+      <header className="institution-header"><div className="w-full max-w-[1600px] mx-auto px-4 sm:px-5 md:px-5 lg:px-5 flex items-center justify-between gap-4"><span className="institution-header__name">ศูนย์ติดตามสถานการณ์น้ำ อำเภอองครักษ์ จังหวัดนครนายก</span><div className="institution-header__actions"><div className="locale-toggle" aria-label="ภาษา"><span aria-current="true">TH</span><button type="button" disabled title="ภาษาอังกฤษยังไม่พร้อมใช้งาน">EN</button></div><NavLink className="header-icon" to="/#notification-settings" aria-label="ตั้งค่าการแจ้งเตือน"><Icon name="bell" /></NavLink><details className="account-menu" onKeyDown={(event) => { if (event.key === "Escape") event.currentTarget.open = false; }}><summary aria-label="เมนูบัญชี" className={account ? "is-logged-in" : ""}>{account ? <span className="avatar avatar--initial" aria-hidden="true">{account.email.charAt(0).toUpperCase()}</span> : <Icon name="user" />} <span className="account-chevron" aria-hidden="true"><Icon name="chevron" /></span></summary><div className="account-menu__content">{account ? <><span>{account.email}</span>{account.role === "ADMIN" && <NavLink to="/admin">จัดการระบบ</NavLink>}<button type="button" disabled={signingOut} onClick={() => void handleLogout()}>ออกจากระบบ</button></> : <><NavLink to="/login">เข้าสู่ระบบ</NavLink><NavLink to="/register">สมัครสมาชิก</NavLink></>}</div></details></div></div></header>
       <header className="mobile-header"><div className="w-full max-w-[1600px] mx-auto px-4 sm:px-5 md:px-5 lg:px-5 flex items-center h-full"><NavLink to="/" className="brand" aria-label="Flood Watch Ongkharak หน้าหลัก"><img className="brand__image" src="/flood-watch-mark.svg" alt="" /><span><strong>Flood Watch</strong><small>Ongkharak</small></span></NavLink></div></header>
     </div>
       <main id="main-content" className="page-content w-full" tabIndex={-1}>

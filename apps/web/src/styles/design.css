@@ -27,6 +27,16 @@
   --shadow-surface: 0 10px 28px rgb(42 96 156 / 8%);
   --sidebar-width: 13.4rem;
   --radius-control: .875rem;
+  --radius-alert: 2.5rem;
+  --z-alert: 10000;
+  --color-alert-surface: rgb(239 240 243 / 97%);
+  --color-alert-edge: rgb(255 255 255 / 94%);
+  --color-alert-backdrop: rgb(20 25 35 / 45%);
+  --color-alert-muted: #61718b;
+  --color-alert-cancel: #f4f7fc;
+  --color-alert-danger: #80233f;
+  --color-alert-warning: #eaa12a;
+  --shadow-alert: 0 24px 80px rgb(15 23 42 / 22%);
   --radius-card: 1.25rem;
   --color-nav-muted: #526b8e;
   --color-nav-active: var(--color-primary-strong);
@@ -250,7 +260,7 @@ body {
   }
   .bottom-navigation ul {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: var(--space-1);
     align-items: center;
   }

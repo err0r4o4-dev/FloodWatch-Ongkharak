@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
+import { notifyInfo } from "../../shared/alerts";
 
 export function ForgotPasswordPage() {
   const navigate = useNavigate();
@@ -44,8 +45,7 @@ export function ForgotPasswordPage() {
     // Simulate API call
     setTimeout(() => {
       setLoading(false);
-      // Ideally redirect or show success. We will show success inside step 3 or redirect.
-      alert("เปลี่ยนรหัสผ่านสำเร็จ (จำลอง)");
+      void notifyInfo("โหมดสาธิตเท่านั้น", "ขั้นตอนนี้เป็นเพียงการสาธิต และไม่มีการเปลี่ยนรหัสผ่านจริง");
       navigate("/login", { replace: true });
     }, 1000);
   };

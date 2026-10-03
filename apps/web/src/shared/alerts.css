@@ -1,0 +1,101 @@
+.swal2-container.fw-alert-container {
+  z-index: var(--z-alert, 10000);
+  padding: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+}
+
+.swal2-container.fw-alert-container.swal2-backdrop-show {
+  background: var(--color-alert-backdrop);
+  backdrop-filter: blur(6px);
+}
+
+.swal2-popup.fw-alert {
+  width: min(35rem, 100%);
+  padding: 3rem 1.75rem;
+  border: 2px solid var(--color-alert-edge);
+  border-radius: var(--radius-alert);
+  background: var(--color-alert-surface);
+  box-shadow: var(--shadow-alert);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+.fw-alert .fw-alert__icon {
+  width: 6.25rem;
+  height: 6.25rem;
+  margin: .25rem auto 0;
+  border-width: 4px;
+}
+
+.fw-alert .swal2-icon.swal2-warning {
+  color: var(--color-alert-warning);
+  border-color: var(--color-alert-warning);
+}
+
+.fw-alert .fw-alert__title {
+  padding: 1rem 0 0;
+  color: var(--color-ink);
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  font-weight: 700;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.fw-alert .fw-alert__message {
+  margin: 1.5rem 0 0;
+  padding: 0 .5rem;
+  color: var(--color-alert-muted);
+  font-size: clamp(1rem, 2.8vw, 1.25rem);
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
+.fw-alert .fw-alert__actions {
+  width: 100%;
+  margin: 2.75rem 0 0;
+  gap: 1rem;
+}
+
+.fw-alert__button {
+  min-height: 3.5rem;
+  min-width: 9rem;
+  max-width: 100%;
+  padding: .8rem 1.75rem;
+  border: 0;
+  border-radius: 999px;
+  font: 700 1.125rem/1.5 var(--font-sans);
+  cursor: pointer;
+  overflow-wrap: anywhere;
+  transition: filter 150ms ease, box-shadow 150ms ease;
+}
+
+.fw-alert__button--confirm {
+  background: var(--color-primary-strong);
+  color: white;
+}
+
+.fw-alert__button--danger {
+  background: var(--color-alert-danger);
+  color: white;
+  box-shadow: 0 6px 18px rgb(128 35 63 / 15%);
+}
+
+.fw-alert__button--cancel {
+  background: var(--color-alert-cancel);
+  color: var(--color-alert-muted);
+}
+
+.fw-alert__button:hover:not(:disabled) { filter: brightness(.96); }
+.fw-alert__button:focus-visible { outline: 3px solid var(--color-primary-strong); outline-offset: 4px; }
+.fw-alert__button:disabled { cursor: wait; opacity: .65; }
+.fw-alert .fw-alert__loader { border-color: var(--color-primary-strong) transparent var(--color-primary-strong) transparent; }
+
+@media (max-width: 480px) {
+  .swal2-popup.fw-alert { padding: 2rem 1.25rem; }
+  .fw-alert .fw-alert__icon { width: 5rem; height: 5rem; }
+  .fw-alert .fw-alert__actions { gap: .75rem; margin-top: 2rem; }
+  .fw-alert__button { min-width: 0; flex: 1 1 7rem; padding-inline: 1rem; font-size: 1rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fw-alert, .fw-alert *, .fw-alert-container { animation: none !important; transition: none !important; }
+}

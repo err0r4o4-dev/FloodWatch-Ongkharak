@@ -4,8 +4,6 @@ import { loadCollection } from "./api";
 import type { CollectionKey, Collections } from "./api";
 import type { Freshness } from "../../shared/types/flood";
 import { useRealtimeRevision } from "../realtime/RealtimeProvider";
-import { NotificationToggle } from "../notifications/NotificationToggle";
-import { useOptionalAuth } from "../auth/AuthProvider";
 import { Link, useLocation } from "react-router";
 import { OverviewMapPreview } from "./OverviewMapPreview";
 import "./OverviewPage.css";
@@ -35,18 +33,10 @@ function UnavailableOverview() {
 }
 
 export function OverviewPage() {
-  const { status } = useOptionalAuth();
   const location = useLocation();
   const [result, setResult] = useState<Result | null>(null);
   const [revision, setRevision] = useState(0);
   const realtimeRevision = useRealtimeRevision(overviewEvents);
-
-  useEffect(() => {
-    if (location.hash !== "#notification-settings") return;
-    const target = document.getElementById("notification-settings");
-    target?.focus();
-    target?.scrollIntoView?.({ block: "start" });
-  }, [location.hash]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -72,7 +62,7 @@ export function OverviewPage() {
   const hasItems = result && Object.values(result.collections).some((items) => items.length > 0);
 
   return <div className="overview-page">
-    <div className="page-hero"><div className="page-hero__copy"><p className="eyebrow">FLOOD WATCH · ONGKHARAK</p><h1>ภาพรวมสถานการณ์น้ำ</h1><p>อำเภอองครักษ์ จังหวัดนครนายก</p><small>ข้อมูลจาก API สาธารณะพร้อมแหล่งที่มาและเวลา ไม่ใช่การยืนยันว่าพื้นที่ปลอดภัย</small></div><div id="notification-settings" tabIndex={-1} className="page-hero__action">{status === "authenticated" ? <NotificationToggle /> : <Link to="/login?returnTo=%2F%23notification-settings">เข้าสู่ระบบเพื่อตั้งค่าการแจ้งเตือน</Link>}</div></div>
+    <div className="page-hero"><div className="page-hero__copy"><p className="eyebrow">FLOOD WATCH · ONGKHARAK</p><h1>ภาพรวมสถานการณ์น้ำ</h1><p>อำเภอองครักษ์ จังหวัดนครนายก</p><small>ข้อมูลจาก API สาธารณะพร้อมแหล่งที่มาและเวลา ไม่ใช่การยืนยันว่าพื้นที่ปลอดภัย</small></div></div>
     {!result ? <><UnavailableOverview /><LoadingState /></> : result.failed.length === keys.length ? <><UnavailableOverview /><ErrorState onRetry={retry} /></> : <>
       {result.failed.length > 0 && <div className="notice" role="status"><strong>ข้อมูลบางส่วนไม่พร้อมใช้งาน</strong><span>โหลดไม่ได้: {result.failed.map((key) => headings[key]).join(", ")} · ไม่ควรใช้ข้อมูลที่ขาดหายยืนยันความปลอดภัย</span><button type="button" onClick={retry}>ลองอีกครั้ง</button></div>}
       <div className="summary-metrics" aria-label="สรุปข้อมูลที่โหลดได้"><Link to="/risk" className="summary-metric"><span className="summary-metric__icon summary-metric__icon--danger">!</span><span>พื้นที่เสี่ยงในรายการ<strong>{result.collections.risks ? result.collections.risks.length : "—"}</strong><small>เฉพาะข้อมูลที่โหลดได้</small></span></Link><Link to="/map" className="summary-metric"><span className="summary-metric__icon">≋</span><span>สถานีวัดน้ำในรายการ<strong>{result.collections.water ? result.collections.water.length : "—"}</strong><small>ดูรายละเอียดบนแผนที่</small></span></Link><Link to="/announcements" className="summary-metric"><span className="summary-metric__icon summary-metric__icon--sky">☂</span><span>เหตุการณ์น้ำในรายการ<strong>{result.collections.events ? result.collections.events.length : "—"}</strong><small>ตรวจสอบสถานะล่าสุด</small></span></Link><Link to="/map" className="summary-metric"><span className="summary-metric__icon summary-metric__icon--road">▥</span><span>ถนนในรายการ<strong>{result.collections.roads ? result.collections.roads.length : "—"}</strong><small>ดูสถานะและแหล่งที่มา</small></span></Link></div>

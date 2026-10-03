@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from "react-router";
+import { Navigate, Route, Routes, useLocation } from "react-router";
 import { AnnouncementsPage } from "../features/announcements/AnnouncementsPage";
 import { AuthPage } from "../features/auth/AuthPage";
 import { GoogleCompletePage, GoogleLinkPage } from "../features/auth/GoogleAuthPages";
@@ -6,7 +6,6 @@ import { ForgotPasswordPage } from "../features/auth/ForgotPasswordPage";
 import { HealthPage } from "../features/health/HealthPage";
 import { MapPage } from "../features/map/MapPage";
 import { OverviewPage } from "../features/overview/OverviewPage";
-import { RiskPage } from "../features/risk/RiskPage";
 import { ReportsPage } from "../features/reports/ReportsPage";
 import { AdminDashboardPage } from "../features/admin/AdminDashboardPage";
 import { UsersPage } from "../features/admin/UsersPage";
@@ -17,11 +16,18 @@ import { AIEvidenceReview } from "../features/admin/AIEvidenceReview";
 import { RequireAdmin } from "../features/admin/RequireAdmin";
 import { AppShell } from "./AppShell";
 
+function LegacyRiskRedirect() {
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  params.set("panel", "risk");
+  return <Navigate to={`/map?${params}${location.hash}`} replace />;
+}
+
 export function AppRoutes() {
   return <AppShell><Routes>
     <Route path="/" element={<OverviewPage />} />
     <Route path="/announcements" element={<AnnouncementsPage />} />
-    <Route path="/risk" element={<RiskPage />} />
+    <Route path="/risk" element={<LegacyRiskRedirect />} />
     <Route path="/map" element={<MapPage />} />
     <Route path="/reports" element={<ReportsPage />} />
     <Route path="/login" element={<AuthPage mode="login" />} />

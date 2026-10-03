@@ -85,13 +85,16 @@ func TestGoogleStartOriginAndCookiePolicy(t *testing.T) {
 func TestGoogleCallbackUsesBrowserCookieAndNeverLeaksTokens(t *testing.T) {
 	service := &stubGoogleAuth{result: auth.GoogleResult{ReturnTo: "/reports", Session: &auth.SessionResult{RefreshToken: "private-refresh", AccessToken: "private-access"}}}
 	handler := googleHandler(service)
-	request := httptest.NewRequest("GET", "/api/v1/auth/google/callback?state=state-value&code=code-value", nil)
+	request := httptest.NewRequest("GET", "http://localhost:8080/api/v1/auth/google/callback?state=state-value&code=code-value", nil)
 	request.Header.Set("Sec-Fetch-Site", "cross-site")
 	request.AddCookie(&http.Cookie{Name: "fw_refresh_google_state", Value: "browser-value"})
 	response := httptest.NewRecorder()
 	handler.Callback(response, request)
 	if response.Code != 302 || service.browser != "browser-value" || service.code != "code-value" {
 		t.Fatalf("callback: %d %+v", response.Code, service)
+	}
+	if response.Header().Get("Location") != "http://localhost:5173/auth/complete?returnTo=%2Freports" {
+		t.Fatal("callback must return to the frontend port, not the API port")
 	}
 	if strings.Contains(response.Header().Get("Location"), "private") || strings.Contains(response.Body.String(), "private") {
 		t.Fatal("token leaked")
@@ -105,7 +108,7 @@ func TestGoogleCallbackUsesBrowserCookieAndNeverLeaksTokens(t *testing.T) {
 			refresh = cookie
 		}
 	}
-	if refresh == nil || refresh.SameSite != http.SameSiteStrictMode || refresh.Value != "private-refresh" {
+	if refresh == nil || refresh.SameSite != http.SameSiteStrictMode || refresh.Value != "private-refresh" || refresh.Domain != "" || refresh.Path != "/api/v1/auth" {
 		t.Fatalf("refresh cookie changed: %+v", refresh)
 	}
 }

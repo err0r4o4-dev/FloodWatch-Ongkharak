@@ -64,7 +64,7 @@ Down migration refuses restoring NOT NULL while Google-only users exist. Documen
 
 ## Configuration and deployment
 
-Add backend-only `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`, and `AUTH_FRONTEND_ORIGIN`. All Google settings absent disables the feature without breaking existing deployments. Partial/invalid configuration fails startup without printing values.
+Add backend-only `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, and `GOOGLE_OAUTH_REDIRECT_URL`. Derive the frontend origin from the validated callback URL and require it in the allowed origins. All Google settings absent disables the feature without breaking existing deployments. Partial/invalid configuration fails startup without printing values.
 
 Validate frontend origin against the exact existing allowlist; forbid credentials, paths, queries, and fragments. Production frontend/callback require HTTPS; HTTP is permitted only for loopback development. Callback uses `/api/v1/auth/google/callback` at public API ingress.
 

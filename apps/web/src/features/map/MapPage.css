@@ -1,13 +1,10 @@
 .map-page { display: flex; min-height: 100%; flex-direction: column; gap: var(--space-3); }
-.map-page__header { display: flex; align-items: center; justify-content: space-between; gap: var(--space-6); }
-.map-page__header .eyebrow { margin: 0 0 var(--space-1); font-size: .7rem; }
-.map-page__header h1 { margin: 0; color: var(--color-ink); font-size: clamp(1.35rem, 2vw, 1.8rem); line-height: 1.4; }
-.map-page__header p:not(.eyebrow) { margin: var(--space-1) 0 0; color: var(--color-ink-muted); font-size: .82rem; }
+.map-page__hero { align-items: center; }
 .map-page__caution { margin: 0; color: var(--color-ink-muted); font-size: .75rem; }
-.map-page__workspace { position: relative; flex: none; height: clamp(32rem, calc(100dvh - 19rem), 48rem); min-height: 32rem; overflow: hidden; isolation: isolate; border: var(--border-width) solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-canvas-soft); box-shadow: var(--shadow-surface); }
+.map-page__workspace { position: relative; z-index: 1; margin-top: -3.8rem; flex: none; height: clamp(32rem, calc(100dvh - 19rem), 48rem); min-height: 32rem; overflow: hidden; isolation: isolate; border: var(--border-width) solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-canvas-soft); box-shadow: var(--shadow-surface); }
 .map-page__workspace > .situation-map { position: absolute; inset: 0; height: 100%; min-height: 0; }
 .map-page__layers, .map-page__tools, .map-page__legend { position: absolute; z-index: 950; }
-.map-page__layers { top: var(--space-4); left: var(--space-4); width: 13.25rem; }
+.map-page__layers { top: calc(var(--touch-target) + var(--space-4) * 2); left: var(--space-4); width: 13.25rem; }
 .map-layer-menu { overflow: hidden; border: var(--border-width) solid var(--color-border); border-radius: var(--radius-md); background: var(--color-glass-fallback); background: var(--color-glass); box-shadow: var(--shadow-surface); backdrop-filter: blur(var(--blur-glass)); }
 .map-layer-menu summary { display: flex; min-height: var(--touch-target); align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-3); color: var(--color-ink); font-size: .8rem; font-weight: 750; cursor: pointer; list-style: none; }
 .map-layer-menu summary::-webkit-details-marker { display: none; }
@@ -70,7 +67,7 @@
 .map-page.is-expanded .map-data-status { flex: none; height: 5rem; overflow-y: auto; }
 .map-page.is-expanded .situation-map { min-height: 28rem; }
 @media (max-width: 72rem) {
-  .map-page__header { align-items: start; gap: var(--space-3); }
+  .map-page__hero { align-items: start; gap: var(--space-3); }
   .map-page__layers { width: 11.75rem; }
   .map-page .map-layer-options label { font-size: .7rem; }
   .map-tool-button { gap: var(--space-1); padding-inline: var(--space-2); }
@@ -84,6 +81,9 @@
   .map-page .map-toolbar { flex: 1; }
   .map-page .map-toolbar button { flex: 1; padding-inline: var(--space-2); }
   .map-tool-button__count { display: none; }
+  .map-page__tools { flex-wrap: wrap; }
+  .map-tool-button--list { margin-left: auto; }
+  .map-tool-button--list > span:not(:first-child) { display: none; }
   .map-tool-button { min-height: calc(var(--touch-target) + var(--space-2)); }
   .map-page .map-page__workspace .map-side-panel { position: fixed; top: auto; right: var(--space-3); bottom: var(--bottom-nav-clearance); left: var(--space-3); width: auto; max-height: min(62dvh, 34rem); border-radius: var(--radius-lg) var(--radius-lg) var(--radius-sm) var(--radius-sm); padding-bottom: max(var(--space-4), env(safe-area-inset-bottom)); }
   .map-page__workspace:has(.map-popup) .map-page__layers { visibility: hidden; }
@@ -95,6 +95,14 @@
   .map-page.is-expanded .map-page__workspace { flex: 1; }
   .map-page.is-expanded .map-page__workspace .map-side-panel { bottom: var(--space-3); }
 }
+
+.map-risk-filters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2); }
+.map-risk-filters button { display: flex; min-width: 0; min-height: var(--touch-target); align-items: center; justify-content: space-between; gap: var(--space-1); padding: var(--space-2); border: var(--border-width) solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-canvas-soft); color: var(--color-ink); font: inherit; font-size: .75rem; cursor: pointer; }
+.map-risk-filters button[aria-pressed="true"] { border-color: var(--color-primary-strong); background: var(--color-source-official); color: var(--color-primary-strong); }
+.map-risk-filters button:disabled { cursor: default; opacity: .6; }
+.map-risk-directory__note { color: var(--color-ink-muted); font-size: .75rem; }
+.map-risk-list__badges { display: flex; flex-wrap: wrap; gap: var(--space-1); margin-top: var(--space-2); }
+.map-risk-list button[aria-pressed="true"] { outline: var(--border-width) solid var(--color-primary-strong); background: var(--color-source-official); }
 @media (max-width: 25rem) {
   .map-page .map-toolbar button { padding-inline: var(--space-1); font-size: .7rem; }
   .map-tool-button { padding-inline: var(--space-1); font-size: .65rem; }

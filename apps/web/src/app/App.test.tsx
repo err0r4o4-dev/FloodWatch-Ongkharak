@@ -23,6 +23,12 @@ describe("AppRoutes", () => {
 });
 
 describe("public routes", () => {
+  it("opens the unified map risk panel from legacy links", async () => {
+    render(<MemoryRouter initialEntries={["/risk?risk=missing-area&bbox=101,14,101.1,14.1"]}><AppRoutes /></MemoryRouter>);
+    expect(await screen.findByRole("heading", { level: 1, name: "แผนที่สถานการณ์น้ำ" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "พื้นที่เสี่ยง" })).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getAllByRole("link", { name: "แผนที่และพื้นที่เสี่ยง" })[0]).toHaveAttribute("aria-current", "page");
+  });
   it("keeps the scroll region full width while constraining page content", () => {
     render(<MemoryRouter initialEntries={["/system-status"]}><AppRoutes /></MemoryRouter>);
     const main = screen.getByRole("main");
@@ -50,9 +56,10 @@ describe("public routes", () => {
     expect(screen.getByRole("link", { name: "เข้าสู่ระบบ" })).toHaveAttribute("href", "/login");
   });
 
-  it("links to risk areas from both navigation surfaces without CCTV", () => {
+  it("combines map and risk navigation without CCTV", () => {
     render(<MemoryRouter initialEntries={["/system-status"]}><AppRoutes /></MemoryRouter>);
-    expect(screen.getAllByRole("link", { name: "พื้นที่เสี่ยง" })).toHaveLength(2);
+    expect(screen.getAllByRole("link", { name: "แผนที่และพื้นที่เสี่ยง" })).toHaveLength(2);
+    expect(screen.queryByRole("link", { name: "พื้นที่เสี่ยง" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /CCTV/ })).not.toBeInTheDocument();
   });
 
@@ -67,12 +74,12 @@ describe("public routes", () => {
     expect(within(caution).getByText("ข้อมูลไม่พร้อมใช้งานไม่ได้หมายถึงพื้นที่ปลอดภัย")).toBeInTheDocument();
   });
 
-  it("keeps five mobile destinations for an admin and exposes admin from the account menu", async () => {
+  it("keeps four mobile destinations for an admin and exposes admin from the account menu", async () => {
     const account = { id: "admin-1", email: "admin@example.com", role: "ADMIN" as const, createdAt: "2026-10-02T00:00:00Z" };
     const api = { refresh: vi.fn().mockResolvedValue(undefined), me: vi.fn().mockResolvedValue(account), logout: vi.fn(), login: vi.fn(), register: vi.fn() };
     render(<MemoryRouter initialEntries={["/system-status"]}><AuthProvider api={api}><AppRoutes /></AuthProvider></MemoryRouter>);
     await waitFor(() => expect(within(screen.getByRole("navigation", { name: "การนำทางหลัก" })).getByRole("link", { name: "จัดการระบบ" })).toBeInTheDocument());
-    expect(within(screen.getByRole("navigation", { name: "การนำทางมือถือ" })).getAllByRole("link")).toHaveLength(5);
+    expect(within(screen.getByRole("navigation", { name: "การนำทางมือถือ" })).getAllByRole("link")).toHaveLength(4);
     fireEvent.click(screen.getByLabelText("เมนูบัญชี"));
     expect(screen.getAllByRole("link", { name: "จัดการระบบ" })).toHaveLength(2);
   });
@@ -116,8 +123,8 @@ describe("public routes", () => {
     render(<MemoryRouter initialEntries={["/map"]}><AppRoutes /></MemoryRouter>);
     expect(screen.getByRole("navigation", { name: "การนำทางหลัก" })).toBeInTheDocument();
     expect(screen.getByRole("navigation", { name: "การนำทางมือถือ" })).toBeInTheDocument();
-    expect(screen.getAllByRole("link", { name: "แผนที่" })).toHaveLength(2);
-    expect(screen.getAllByRole("link", { name: "แผนที่" })[0]).toHaveAttribute("aria-current", "page");
+    expect(screen.getAllByRole("link", { name: "แผนที่และพื้นที่เสี่ยง" })).toHaveLength(2);
+    expect(screen.getAllByRole("link", { name: "แผนที่และพื้นที่เสี่ยง" })[0]).toHaveAttribute("aria-current", "page");
     fireEvent.click(screen.getByRole("button", { name: "เส้นทาง" }));
     expect(screen.getByText(/ยังไม่มีบริการคำนวณเส้นทาง/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "เส้นทาง" })).toHaveAttribute("aria-pressed", "true");

@@ -1,9 +1,19 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { ApiError } from "./api";
 import { AuthPage } from "./AuthPage";
 import { AuthProvider } from "./AuthProvider";
 import { ForgotPasswordPage } from "./ForgotPasswordPage";
+
+const alertMocks = vi.hoisted(() => ({
+  notifySuccess: vi.fn().mockResolvedValue(undefined),
+  notifyError: vi.fn().mockResolvedValue(undefined),
+  notifyInfo: vi.fn().mockResolvedValue(undefined),
+  notifyWarning: vi.fn().mockResolvedValue(undefined)
+}));
+
+vi.mock("../../shared/alerts", () => alertMocks, { virtual: true });
 
 const account = { id: "user-1", email: "user@example.com", role: "USER" as const, createdAt: "2026-10-02T00:00:00Z" };
 
@@ -15,7 +25,11 @@ function renderAuth(mode: "login" | "register", api: { refresh: () => Promise<ne
   </Routes></AuthProvider></MemoryRouter>);
 }
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  vi.clearAllMocks();
+  vi.restoreAllMocks();
+  vi.useRealTimers();
+});
 
 describe("AuthPage", () => {
   it("keeps pending integrations visibly unavailable while allowing password visibility", async () => {
@@ -51,6 +65,67 @@ describe("AuthPage", () => {
 
     expect(await screen.findByText("Reports destination")).toBeInTheDocument();
     expect(api.login).toHaveBeenCalledWith({ email: account.email, password: "password" });
+    expect(alertMocks.notifySuccess).toHaveBeenCalledWith("เข้าสู่ระบบสำเร็จ");
+  });
+
+  it("shows API failures inline and in an error notification", async () => {
+    const api = {
+      refresh: vi.fn().mockRejectedValue(new Error("anonymous")),
+      me: vi.fn().mockResolvedValue(account),
+      login: vi.fn().mockRejectedValue(new ApiError("บัญชีไม่พร้อมใช้งาน", 503, "SERVICE_UNAVAILABLE")),
+      register: vi.fn(),
+      logout: vi.fn()
+    };
+    renderAuth("login", api);
+
+    fireEvent.change(await screen.findByLabelText("อีเมล หรือ ชื่อผู้ใช้งาน"), { target: { value: account.email } });
+    fireEvent.change(screen.getByLabelText("รหัสผ่าน"), { target: { value: "password" } });
+    fireEvent.click(screen.getByRole("button", { name: /เข้าสู่ระบบ/ }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("บัญชีไม่พร้อมใช้งาน");
+    expect(alertMocks.notifyError).toHaveBeenCalledWith("เข้าสู่ระบบไม่สำเร็จ", "บัญชีไม่พร้อมใช้งาน");
+    expect(alertMocks.notifySuccess).not.toHaveBeenCalled();
+  });
+
+  it("keeps non-API failures inline without an error notification", async () => {
+    const api = {
+      refresh: vi.fn().mockRejectedValue(new Error("anonymous")),
+      me: vi.fn().mockResolvedValue(account),
+      login: vi.fn().mockRejectedValue(new Error("network failure")),
+      register: vi.fn(),
+      logout: vi.fn()
+    };
+    renderAuth("login", api);
+
+    fireEvent.change(await screen.findByLabelText("อีเมล หรือ ชื่อผู้ใช้งาน"), { target: { value: account.email } });
+    fireEvent.change(screen.getByLabelText("รหัสผ่าน"), { target: { value: "password" } });
+    fireEvent.click(screen.getByRole("button", { name: /เข้าสู่ระบบ/ }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("ไม่สามารถเข้าสู่ระบบได้");
+    expect(alertMocks.notifyError).not.toHaveBeenCalled();
+  });
+
+  it("does not submit twice while the request is pending", async () => {
+    let resolveLogin: ((value: { user: typeof account; accessToken: string; expiresIn: number }) => void) | undefined;
+    const api = {
+      refresh: vi.fn().mockRejectedValue(new Error("anonymous")),
+      me: vi.fn().mockResolvedValue(account),
+      login: vi.fn(() => new Promise<{ user: typeof account; accessToken: string; expiresIn: number }>((resolve) => {
+        resolveLogin = resolve;
+      })),
+      register: vi.fn(),
+      logout: vi.fn()
+    };
+    renderAuth("login", api);
+
+    fireEvent.change(await screen.findByLabelText("อีเมล หรือ ชื่อผู้ใช้งาน"), { target: { value: account.email } });
+    fireEvent.change(screen.getByLabelText("รหัสผ่าน"), { target: { value: "password" } });
+    const submit = screen.getByRole("button", { name: /เข้าสู่ระบบ/ });
+    fireEvent.click(submit);
+    fireEvent.click(submit);
+
+    expect(api.login).toHaveBeenCalledOnce();
+    resolveLogin?.({ user: account, accessToken: "token", expiresIn: 900 });
   });
 
   it("registers before creating a session", async () => {
@@ -71,5 +146,30 @@ describe("AuthPage", () => {
     expect(await screen.findByText("Reports destination")).toBeInTheDocument();
     expect(api.register).toHaveBeenCalledWith({ email: account.email, username: "testuser", password: "password" });
     expect(api.login).toHaveBeenCalledWith({ email: account.email, password: "password" });
+    expect(alertMocks.notifySuccess).toHaveBeenCalledWith("สมัครสมาชิกสำเร็จ");
+  });
+
+  it("uses an explicit demo-only info notification after the simulated reset flow", async () => {
+    vi.useFakeTimers();
+    render(<MemoryRouter initialEntries={["/forgot-password"]}><Routes>
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/login" element={<p>Login destination</p>} />
+    </Routes></MemoryRouter>);
+
+    fireEvent.change(screen.getByLabelText("อีเมล"), { target: { value: account.email } });
+    fireEvent.click(screen.getByRole("button", { name: "ส่งรหัส OTP" }));
+    act(() => vi.advanceTimersByTime(1000));
+
+    fireEvent.change(screen.getByLabelText("รหัส OTP"), { target: { value: "123456" } });
+    fireEvent.click(screen.getByRole("button", { name: "ยืนยันรหัส OTP" }));
+    act(() => vi.advanceTimersByTime(1000));
+
+    fireEvent.change(screen.getByLabelText("รหัสผ่านใหม่"), { target: { value: "new-password" } });
+    fireEvent.change(screen.getByLabelText("ยืนยันรหัสผ่านใหม่"), { target: { value: "new-password" } });
+    fireEvent.click(screen.getByRole("button", { name: "เปลี่ยนรหัสผ่าน" }));
+    act(() => vi.advanceTimersByTime(1000));
+
+    expect(alertMocks.notifyInfo).toHaveBeenCalledWith("โหมดสาธิตเท่านั้น", expect.stringContaining("ไม่มีการเปลี่ยนรหัสผ่านจริง"));
+    expect(screen.getByText("Login destination")).toBeInTheDocument();
   });
 });

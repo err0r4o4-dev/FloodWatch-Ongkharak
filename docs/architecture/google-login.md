@@ -26,16 +26,15 @@ Challenges are stored in PostgreSQL with hashed state/browser/pending handles, t
 
 Create a Google OAuth client of type **Web application** in Google Auth Platform. Configure its consent audience and test users as needed. Enable only `openid email`, and register the exact public callback; do not use the Vite-only host unless it also proxies `/api`.
 
-All four backend settings must either be absent or valid:
+All three backend settings must either be absent or valid:
 
 ```env
-GOOGLE_CLIENT_ID=<web-client-id>
-GOOGLE_CLIENT_SECRET=<web-client-secret>
-GOOGLE_REDIRECT_URI=http://localhost/api/v1/auth/google/callback
-AUTH_FRONTEND_ORIGIN=http://localhost
+GOOGLE_OAUTH_CLIENT_ID=<web-client-id>
+GOOGLE_OAUTH_CLIENT_SECRET=<web-client-secret>
+GOOGLE_OAUTH_REDIRECT_URL=http://localhost/api/v1/auth/google/callback
 ```
 
-The example uses the development Caddy origin. If using a different Caddy port, include that port in both URLs and in `CORS_ALLOWED_ORIGINS`. Open the app on the same origin. Callback and frontend origins must match so that host-only cookies work reliably. Production requires HTTPS; only loopback development may use HTTP. Callback paths, credentials/query/fragment and unapproved frontend origins are rejected at startup.
+The example uses the development Caddy origin. The backend derives the frontend origin from the redirect URL's scheme and host (including its port); no separate frontend-origin setting is required. If using Caddy on port 5173, set `GOOGLE_OAUTH_REDIRECT_URL=http://localhost:5173/api/v1/auth/google/callback` and include `http://localhost:5173` in `CORS_ALLOWED_ORIGINS`. Open the app on that same origin so that host-only cookies work reliably. Production requires HTTPS; only loopback development may use HTTP. Callback paths, credentials/query/fragment and unapproved origins are rejected at startup. Existing deployments must rename the previous Google environment variables to these three names when deploying the updated API.
 
 Configure real values only in your untracked local environment or deployment secret store. Never paste them into source, browser `VITE_*` settings, logs or tickets. Settings are passed only to the API; missing configuration disables Google without breaking password auth. Partial configuration fails startup without showing its values.
 

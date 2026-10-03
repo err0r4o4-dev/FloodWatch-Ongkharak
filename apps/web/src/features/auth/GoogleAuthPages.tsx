@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, Navigate, useLocation } from "react-router";
+import { notifyError, notifySuccess } from "../../shared/alerts";
 import { ApiError } from "./api";
 import { useAuth } from "./AuthProvider";
 import { googleAuthApi, googleErrorMessage, safeReturnTo } from "./google";
@@ -34,10 +35,13 @@ export function GoogleLinkPage({ api = googleAuthApi, navigate = (url: string) =
     try {
       const result = await api.link(password);
       setPassword("");
+      void notifySuccess("เชื่อมบัญชี Google สำเร็จ");
       navigate(`/auth/complete?returnTo=${encodeURIComponent(safeReturnTo(result.returnTo))}`);
     } catch (failure) {
       const code = failure instanceof ApiError ? failure.code ?? "GOOGLE_LOGIN_FAILED" : "GOOGLE_LOGIN_FAILED";
-      setError(googleErrorMessage(code));
+      const message = googleErrorMessage(code);
+      setError(message);
+      void notifyError("เชื่อมบัญชี Google ไม่สำเร็จ", message);
       setBlocked(failure instanceof ApiError && [429, 409, 503].includes(failure.status));
       setSubmitting(false);
     }

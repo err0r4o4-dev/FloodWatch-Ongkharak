@@ -2,12 +2,13 @@ import { useEffect, useRef } from "react";
 import { EmptyState, StatusBadge } from "../../../shared/components/DataStates";
 import { FeatureDetails } from "./FeatureDetails";
 import { RoutePanel } from "./RoutePanel";
+import { RiskDirectory } from "./RiskDirectory";
 import type { Picking, RoutePoint, RoutePoints } from "./RoutePanel";
 import { effectiveFloodSeverity, effectiveRiskLevel, effectiveRoadStatus } from "../utils";
 import { layerKeys, layerLabels } from "../types";
 import type { LayerItems, LayerKey, LayerVisibility, MapMode, MapSelection } from "../types";
 
-export function MapSidePanel({ mode, items, visible, loading, failed, failedLayers, truncated, onRetry, selection, onSelect, onClose, points, onPointChange, picking, onPickingChange, showList = true, onDismiss }: {
+export function MapSidePanel({ mode, items, visible, loading, failed, failedLayers, truncated, onRetry, selection, onSelect, onClose, points, onPointChange, picking, onPickingChange, showList = true, showRisk = false, selectedRiskId = null, onRiskSelect = onSelect, onDismiss }: {
   mode: MapMode;
   items: LayerItems;
   visible: LayerVisibility;
@@ -24,6 +25,9 @@ export function MapSidePanel({ mode, items, visible, loading, failed, failedLaye
   picking: Picking;
   onPickingChange: (key: Picking) => void;
   showList?: boolean;
+  showRisk?: boolean;
+  selectedRiskId?: string | null;
+  onRiskSelect?: (selection: MapSelection) => void;
   onDismiss?: () => void;
 }) {
   const dismissButton = useRef<HTMLButtonElement>(null);
@@ -38,9 +42,10 @@ export function MapSidePanel({ mode, items, visible, loading, failed, failedLaye
   return <aside id="map-information-panel" className="map-side-panel" aria-label="ข้อมูลแผนที่และเส้นทาง" onKeyDown={(event) => {
     if (event.key === "Escape" && !selection) { event.stopPropagation(); onDismiss?.(); }
   }}>
-    {onDismiss && !selection && <div className="map-side-panel__heading"><strong>{mode === "ROUTE" ? "โหมดเส้นทาง" : "รายการในขอบเขต"}</strong><button ref={dismissButton} type="button" aria-label="ปิดแผงข้อมูล" onClick={onDismiss}>×</button></div>}
+    {onDismiss && !selection && <div className="map-side-panel__heading"><strong>{mode === "ROUTE" ? "โหมดเส้นทาง" : showRisk ? "พื้นที่เสี่ยง" : "รายการในขอบเขต"}</strong><button ref={dismissButton} type="button" aria-label="ปิดแผงข้อมูล" onClick={onDismiss}>×</button></div>}
     {selection && <FeatureDetails selection={selection} onClose={onClose} />}
     {mode === "ROUTE" && <RoutePanel points={points} onPointChange={onPointChange} picking={picking} onPickingChange={onPickingChange} items={items} />}
+    {showRisk && !selection && <RiskDirectory items={items.risk} loading={loading} failed={failedLayers.includes("risk")} truncated={truncated.includes("risk")} selectedId={selectedRiskId} onSelect={onRiskSelect} onRetry={onRetry} />}
     {showList && <section aria-labelledby="visible-features-title"><h2 id="visible-features-title">รายการข้อมูลบนแผนที่</h2>
       <p>เลือกจากรายการนี้ได้ด้วยคีย์บอร์ด หรือคลิกสัญลักษณ์และพื้นที่บนแผนที่</p>
       {!failed && failedLayers.length > 0 && <p className="map-partial" role="status">ข้อมูลบางส่วนไม่พร้อมใช้งาน: {failedLayers.map((key) => layerLabels[key]).join(", ")} <button type="button" onClick={onRetry}>ลองอีกครั้ง</button></p>}
