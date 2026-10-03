@@ -1,5 +1,7 @@
 .risk-page {
-  display: grid;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
   gap: var(--space-4);
 }
 
@@ -48,6 +50,8 @@
 }
 
 .risk-dashboard {
+  flex: 1;
+  min-height: 0;
   display: grid;
   grid-template-columns: minmax(20rem, 0.85fr) minmax(0, 1.55fr);
   align-items: stretch;
@@ -55,6 +59,8 @@
 }
 
 .risk-directory {
+  display: flex;
+  flex-direction: column;
   padding: clamp(var(--space-4), 2.5vw, var(--space-6));
   border: var(--border-width) solid var(--color-border);
   border-radius: var(--radius-lg);
@@ -223,12 +229,17 @@
 }
 
 .risk-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
   display: grid;
+  align-content: start;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
   margin: var(--space-5, 1.25rem) 0 0;
   padding: 0;
   list-style: none;
   gap: var(--space-3);
+  padding-right: var(--space-2);
 }
 
 .risk-card {

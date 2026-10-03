@@ -1,5 +1,7 @@
 .map-page {
   display: grid;
+  grid-template-rows: auto 1fr;
+  height: 100%;
   gap: var(--space-4);
 }
 
@@ -11,6 +13,9 @@
 }
 
 .map-page__workspace {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
   padding: var(--space-3);
   border: var(--border-width) solid var(--color-border);
   border-radius: var(--radius-lg);
@@ -38,6 +43,8 @@
 }
 
 .map-page__layout {
+  flex: 1;
+  min-height: 0;
   grid-template-columns: minmax(0, 1fr) minmax(19rem, 23rem);
   gap: var(--space-3);
 }

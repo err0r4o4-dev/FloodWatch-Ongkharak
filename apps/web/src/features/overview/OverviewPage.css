@@ -1,5 +1,5 @@
-.overview-page { display: grid; gap: var(--space-4); }
-.overview-page .overview-sections { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: stretch; gap: .8rem; }
+.overview-page { display: flex; flex-direction: column; height: 100%; gap: var(--space-4); }
+.overview-page .overview-sections { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: stretch; gap: .8rem; }
 .overview-page .overview-sections > .data-section { min-width: 0; padding: 1.15rem; }
 .overview-map { grid-column: span 2; }
 .overview-events { grid-column: 3; grid-row: 1; }
