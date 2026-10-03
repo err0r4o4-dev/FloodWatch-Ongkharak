@@ -1,8 +1,8 @@
 .reports-page {
-  gap: var(--space-6);
+  display: grid;
+  gap: var(--space-4);
 }
 
-.reports-page .reports-page__heading,
 .reports-page .reports-page__notice {
   margin-bottom: 0;
 }

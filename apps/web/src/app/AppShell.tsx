@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import { NavLink, useLocation } from "react-router";
 import { useOptionalAuth } from "../features/auth/AuthProvider";
-import { useRealtimeStatus } from "../features/realtime/RealtimeProvider";
 
 const links = [
   { to: "/", label: "ภาพรวม", symbol: "home" },
@@ -40,7 +39,6 @@ function Navigation({ mobile = false }: { mobile?: boolean }) {
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const realtimeStatus = useRealtimeStatus();
   const { account, logout } = useOptionalAuth();
   const location = useLocation();
   if (["/login", "/register", "/forgot-password"].includes(location.pathname)) return <main id="main-content">{children}</main>;
@@ -56,7 +54,6 @@ export function AppShell({ children }: { children: ReactNode }) {
       <header className="mobile-header"><div className="w-full max-w-[1600px] mx-auto px-4 sm:px-5 md:px-5 lg:px-5 flex items-center h-full"><NavLink to="/" className="brand" aria-label="Flood Watch Ongkharak หน้าหลัก"><img className="brand__image" src="/flood-watch-mark.svg" alt="" /><span><strong>Flood Watch</strong><small>Ongkharak</small></span></NavLink></div></header>
     </div>
       <main id="main-content" className="page-content w-full max-w-[1600px] mx-auto px-4 sm:px-5 md:px-5 lg:px-5" tabIndex={-1}>{children}</main>
-      <footer className="site-footer w-full max-w-[1600px] mx-auto px-4 sm:px-5 md:px-5 lg:px-5"><p>Flood Watch Ongkharak · ข้อมูลสาธารณะ</p><span role="status" className="realtime-indicator">{realtimeStatus === "CONNECTED" ? "อัปเดตอัตโนมัติพร้อมใช้งาน" : realtimeStatus === "RECONNECTING" ? "กำลังเชื่อมต่อการอัปเดต · ข้อมูลยังโหลดผ่าน API ได้" : "การอัปเดตอัตโนมัติไม่พร้อม · ข้อมูลยังโหลดผ่าน API ได้"}</span><NavLink to="/system-status">สถานะระบบ</NavLink></footer>
     </div>
     <Navigation mobile />
   </div>;

@@ -1,9 +1,6 @@
 .announcements-page {
-  max-width: 80rem;
-}
-
-.announcements-page__header {
-  margin-bottom: var(--space-6);
+  display: grid;
+  gap: var(--space-4);
 }
 
 .announcements-page__layout {

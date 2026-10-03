@@ -1,44 +1,6 @@
 .risk-page {
   display: grid;
-  gap: var(--space-6);
-  max-width: 84rem;
-  margin-inline: auto;
-}
-
-.risk-page__heading {
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: var(--space-6);
-  padding: clamp(var(--space-5, 1.25rem), 3vw, var(--space-8));
-  border: var(--border-width) solid var(--color-border);
-  border-radius: var(--radius-lg);
-  background:
-    linear-gradient(120deg, rgb(255 255 255 / 94%), rgb(234 243 255 / 78%)),
-    radial-gradient(circle at 90% 15%, rgb(59 130 246 / 15%), transparent 30%);
-  box-shadow: var(--shadow-surface);
-}
-
-.risk-page__heading h1 {
-  max-width: none;
-}
-
-.risk-page__heading > div > p:last-child {
-  max-width: 52rem;
-  margin: var(--space-3) 0 0;
-  color: var(--color-ink-muted);
-}
-
-.risk-page__scope {
-  max-width: 16rem;
-  margin: 0;
-  padding: var(--space-3) var(--space-4);
-  border: var(--border-width) solid var(--color-border);
-  border-radius: var(--radius-md);
-  color: var(--color-ink-muted);
-  font-size: 0.83rem;
-  font-weight: 700;
-  background: var(--color-glass-fallback);
+  gap: var(--space-4);
 }
 
 .risk-summary {
@@ -351,14 +313,9 @@
 }
 
 @media (max-width: 40rem) {
-  .risk-page__heading,
   .risk-directory__heading {
     align-items: start;
     flex-direction: column;
-  }
-
-  .risk-page__scope {
-    max-width: none;
   }
 
   .risk-directory__count {

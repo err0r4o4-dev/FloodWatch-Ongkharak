@@ -176,7 +176,6 @@ body {
   border-radius: 1.15rem;
   background: linear-gradient(90deg, rgb(242 250 255 / 53%), rgb(214 236 255 / 17%)), url("/ongkharak-landscape.svg") center 52% / cover;
   box-shadow: 0 8px 22px rgb(81 139 192 / 9%);
-  margin-bottom: 2.5rem;
 }
 .page-hero__copy { max-width: 37rem; padding: .55rem .65rem; color: #173972; text-shadow: 0 1px 18px white; }
 .page-hero__copy h1 { margin: .15rem 0 0; color: #0a225a; font-size: clamp(1.75rem, 3vw, 2.75rem); line-height: 1.25; font-weight: 800; }
@@ -185,7 +184,7 @@ body {
 .page-hero__action { max-width: 14rem; padding: .9rem; border: 1px solid #e8f4ff; border-radius: .95rem; background: rgb(255 255 255 / 82%); backdrop-filter: blur(12px); font-size: .78rem; scroll-margin-top: 6rem; }
 .page-hero__action label { line-height: 1.35; }
 
-.summary-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: .75rem; margin-top: -3.8rem; padding-inline: .7rem; z-index: 1; position: relative; margin-bottom: 2rem; }
+.summary-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: .75rem; margin-top: -3.8rem; padding-inline: .7rem; z-index: 1; position: relative; }
 .summary-metric { display: flex; align-items: center; gap: .75rem; min-width: 0; min-height: 7.15rem; padding: 1rem; border: 1px solid #e4effc; border-radius: .95rem; background: rgb(255 255 255 / 94%); box-shadow: 0 8px 24px rgb(62 113 166 / 8%); color: #1b3569; font-size: .82rem; font-weight: 700; text-decoration: none; }
 .summary-metric:hover { border-color: #80b7ff; }
 .summary-metric strong { display: block; margin-top: .12rem; color: #06194f; font-family: Inter, "Noto Sans Thai", sans-serif; font-size: 1.55rem; line-height: 1.25; }

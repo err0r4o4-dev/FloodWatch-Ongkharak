@@ -1,4 +1,4 @@
-.overview-page { display: grid; gap: 1rem; }
+.overview-page { display: grid; gap: var(--space-4); }
 .overview-page .overview-sections { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: stretch; gap: .8rem; }
 .overview-page .overview-sections > .data-section { min-width: 0; padding: 1.15rem; }
 .overview-map { grid-column: span 2; }
