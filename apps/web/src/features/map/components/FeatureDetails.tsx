@@ -13,7 +13,7 @@ function Verification({ value, confidence }: { value?: string; confidence?: numb
   return <p className="map-evidence">การตรวจสอบ: {value ? verificationLabels[value] ?? "ไม่ทราบ" : "API ไม่ระบุ"} · ความเชื่อมั่น: {confidence == null ? "ไม่ระบุ" : `${Math.round(confidence * 100)}%`}</p>;
 }
 
-function WaterDetails({ stationId }: { stationId: string }) {
+export function WaterDetails({ stationId, compact = false }: { stationId: string; compact?: boolean }) {
   const [result, setResult] = useState<{ state: "loading" | "error" | "ready"; reading: WaterReading | null }>({ state: "loading", reading: null });
   useEffect(() => {
     const controller = new AbortController();
@@ -30,7 +30,7 @@ function WaterDetails({ stationId }: { stationId: string }) {
   return <div className="map-reading"><p>ค่าที่รายงาน ไม่ใช่ระดับความปลอดภัย</p>
     <div className="badge-row"><SourceBadge type={reading.source.sourceType} /><FreshnessBadge freshness={reading.freshness} /><StatusBadge status="UNKNOWN" /></div>
     <p>แหล่งค่าที่สังเกต: {reading.source.name}</p><DataTimestamp value={reading.observedAt} />
-    <Verification value={reading.verificationStatus} confidence={reading.confidence} />
+    {!compact && <Verification value={reading.verificationStatus} confidence={reading.confidence} />}
     <p>{reading.waterLevelM != null ? `ระดับน้ำ ${reading.waterLevelM} ม.` : "ไม่ระบุระดับน้ำ"} · {reading.rainfallMm != null ? `ฝน ${reading.rainfallMm} มม.` : "ไม่ระบุปริมาณฝน"}</p>
   </div>;
 }

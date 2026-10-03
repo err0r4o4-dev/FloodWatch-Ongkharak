@@ -28,6 +28,12 @@ Node.js 24, Corepack/pnpm 10, Go (version in `apps/backend/go.mod`), Python 3.12
 3. Open `http://localhost/` (Caddy), `http://localhost:8080/health`, `http://localhost:8080/ready`, and—only when enabled—`http://localhost:8080/docs` and `http://localhost:8080/openapi.json`.
 4. Apply PostGIS, auth, flood-domain, and ingestion migrations with `docker compose --profile tools run --rm migrate` (or `docker-compose --profile tools run --rm migrate` if the standalone Compose binary is installed). This uses `golang-migrate` and its version-tracking table. Apply migrations before starting the worker or calling Phase 2 APIs.
 
+## Frontend hot reload in Docker
+
+Keep using `docker compose up --build` and open `http://localhost/` through Caddy (or the configured `CADDY_HTTP_PORT`). The development web service mounts `apps/web/src`, `apps/web/public`, `apps/web/index.html`, and `apps/web/vite.config.ts` read-only from your computer; dependencies remain inside the image. Saving frontend source or styles triggers Vite HMR without rebuilding, while HTML and public-file changes can trigger a full page reload. Docker enables file polling every 300 ms so Windows/Docker Desktop edits are detected.
+
+If the stack is already running with the old configuration, apply the mounts once with `docker compose up --build -d --no-deps web`. Keep the browser open and save a frontend file to see the update. Rebuild after changing dependency manifests, lockfiles, Dockerfiles, or files outside the mounted paths. Go API/worker and Python code changes still require rebuilding their services. This applies only to the development Compose stack, not production deployment.
+
 ## Authentication
 
 Public registration creates USER accounts only; GUEST is an unauthenticated visitor. Login returns a short-lived bearer JWT and sets a host-only HttpOnly refresh cookie. Refresh rotates a server-side session, logout revokes its current token, and `/auth/me` requires a current access token. `/api/v1/user/ping` accepts USER and ADMIN; `/api/v1/admin/ping` accepts ADMIN only. See `docs/architecture/authentication.md` for security semantics and limitations.

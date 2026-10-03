@@ -1,6 +1,12 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render as renderView, screen, waitFor } from "@testing-library/react";
+import { MemoryRouter } from "react-router";
+import type { ReactElement } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { MapPage } from "./MapPage";
+
+function render(view: ReactElement) {
+  return renderView(<MemoryRouter>{view}</MemoryRouter>);
+}
 
 vi.mock("./components/SituationMap", async () => {
   const React = await import("react");
@@ -60,6 +66,7 @@ describe("MapPage", () => {
   it("selects a stale road via the keyboard alternative and keeps UNKNOWN distinct from passable", async () => {
     mockApi({ "/api/v1/roads": [road] });
     render(<MapPage />);
+    fireEvent.click(screen.getByRole("button", { name: /รายการในขอบเขต/ }));
     fireEvent.click(await screen.findByRole("button", { name: /ถนนทดสอบ/ }));
     expect(screen.getByRole("region", { name: "ข้อมูลตำแหน่งที่เลือก" })).toHaveTextContent("หน่วยงานทดสอบ");
     expect(screen.getAllByText("ไม่ทราบสถานะ").length).toBeGreaterThan(0);
@@ -91,6 +98,7 @@ describe("MapPage", () => {
     };
     mockApi({ "/api/v1/flood-events": [flood] });
     render(<MapPage />);
+    fireEvent.click(screen.getByRole("button", { name: /รายการในขอบเขต/ }));
     fireEvent.click(await screen.findByRole("button", { name: /เหตุการณ์ทดสอบ/ }));
     const details = screen.getByRole("region", { name: "ข้อมูลตำแหน่งที่เลือก" });
     expect(details).toHaveTextContent("หลักฐาน AI");
@@ -104,6 +112,7 @@ describe("MapPage", () => {
     const reading = { source, observedAt: "2026-10-02T00:00:00Z", freshness: "STALE", verificationStatus: "UNVERIFIED", confidence: null, waterLevelM: 1.2, flowRateM3s: null, rainfallMm: null };
     mockApi({ "/api/v1/water-stations": [station], "/api/v1/water-stations/station-1/readings": [reading] });
     render(<MapPage />);
+    fireEvent.click(screen.getByRole("button", { name: /รายการในขอบเขต/ }));
     fireEvent.click(await screen.findByRole("button", { name: /สถานีทดสอบ/ }));
     const details = screen.getByRole("region", { name: "ข้อมูลตำแหน่งที่เลือก" });
     expect(details).toHaveTextContent("แหล่งทางการ");
@@ -111,5 +120,35 @@ describe("MapPage", () => {
     expect(details).toHaveTextContent("ข้อมูลเก่า");
     expect(details).toHaveTextContent("ยังไม่ตรวจสอบ");
     expect(details).toHaveTextContent("ไม่ทราบสถานะ");
+  });
+
+  it("keeps the map primary and lets the keyboard list open and close", () => {
+    mockApi();
+    render(<MapPage />);
+    expect(screen.queryByRole("complementary", { name: "ข้อมูลแผนที่และเส้นทาง" })).not.toBeInTheDocument();
+    const listButton = screen.getByRole("button", { name: /รายการในขอบเขต/ });
+    fireEvent.click(listButton);
+    expect(listButton).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("complementary", { name: "ข้อมูลแผนที่และเส้นทาง" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "ปิดแผงข้อมูล" }));
+    expect(listButton).toHaveFocus();
+    expect(screen.queryByRole("complementary")).not.toBeInTheDocument();
+  });
+
+  it("searches only loaded stations and areas without claiming global place search", async () => {
+    const station = { id: "station-search", name: "สถานีคลองทดสอบ", source, active: true, location: { type: "Point", coordinates: [101, 14.1] } };
+    mockApi({ "/api/v1/water-stations": [station] });
+    render(<MapPage />);
+    const input = screen.getByRole("searchbox", { name: "ค้นหาสถานีหรือพื้นที่ในขอบเขตที่โหลด" });
+    fireEvent.change(input, { target: { value: "คลองทดสอบ" } });
+    const result = await screen.findByRole("button", { name: /สถานีคลองทดสอบ/ });
+    expect(screen.getByText("ค้นหาเฉพาะสถานีและพื้นที่ในขอบเขตที่โหลด")).toBeInTheDocument();
+    fireEvent.click(result);
+    expect(input).toHaveValue("");
+    expect(screen.queryByRole("region", { name: "ข้อมูลตำแหน่งที่เลือก" })).not.toBeInTheDocument();
+    fireEvent.change(input, { target: { value: "ไม่พบสถานี" } });
+    expect(screen.getByText("ไม่พบสถานีหรือพื้นที่ในข้อมูลที่โหลด")).toBeInTheDocument();
+    fireEvent.keyDown(input, { key: "Escape" });
+    expect(input).toHaveValue("");
   });
 });

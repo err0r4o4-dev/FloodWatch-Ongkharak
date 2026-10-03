@@ -7,6 +7,12 @@ services:
       dockerfile: apps/web/Dockerfile
     environment:
       VITE_API_BASE_URL: /api
+      VITE_USE_POLLING: "true"
+    volumes:
+      - ./apps/web/src:/app/apps/web/src:ro
+      - ./apps/web/public:/app/apps/web/public:ro
+      - ./apps/web/index.html:/app/apps/web/index.html:ro
+      - ./apps/web/vite.config.ts:/app/apps/web/vite.config.ts:ro
     ports:
       - "127.0.0.1:${WEB_PORT:-5173}:5173"
     healthcheck:

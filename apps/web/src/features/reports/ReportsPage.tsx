@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router";
 import { DataTimestamp, SourceBadge } from "../../shared/components/DataStates";
 import { useOptionalAuth } from "../auth/AuthProvider";
 import { useRealtimeRevision } from "../realtime/RealtimeProvider";
@@ -152,11 +151,6 @@ export function ReportsPage() {
         <p>รายงานจากชุมชนจะแสดงต่อสาธารณะเมื่อผ่านการตรวจสอบแล้วเท่านั้น</p>
       </div>
     </header>
-    {status !== "authenticated" && <aside className="notice reports-page__notice">
-      <span>มีข้อมูลพื้นที่ที่ต้องการแจ้งหรือไม่? เข้าสู่ระบบเพื่อส่งรายงานพร้อมตำแหน่งและหลักฐาน</span>
-      <Link className="action-button" to="/login?returnTo=%2Freports">เข้าสู่ระบบเพื่อส่งรายงาน</Link>
-      <Link className="action-button" to="/register?returnTo=%2Freports">สมัครสมาชิก</Link>
-    </aside>}
     <section className="data-section reports-public" aria-labelledby="public-reports-heading">
       <div className="reports-public__heading">
         <div><h2 id="public-reports-heading">รายงานที่ยืนยันแล้ว</h2><p className="section-caption">แหล่งข้อมูล: รายงานชุมชนที่ตรวจสอบแล้ว</p></div>

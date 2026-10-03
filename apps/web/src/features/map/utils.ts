@@ -1,4 +1,4 @@
-import type { FloodFeature, MapBounds, MapGeometry, Position, RiskFeature, RoadCondition, RoadStatus } from "./types";
+import type { FloodFeature, LayerItems, MapBounds, MapGeometry, MapSelection, Position, RiskFeature, RoadCondition, RoadStatus } from "./types";
 
 function validPosition(value: unknown): value is Position {
   return Array.isArray(value) && value.length === 2 &&
@@ -49,4 +49,33 @@ export function parseRoutePoint(point: { longitude: string; latitude: string }):
   if (!point.longitude.trim() || !point.latitude.trim()) return null;
   const position: Position = [Number(point.longitude), Number(point.latitude)];
   return validPosition(position) ? position : null;
+}
+
+export function mapSelections(items: LayerItems): MapSelection[] {
+  return [
+    ...items.water.map((feature) => ({ layer: "water" as const, feature })),
+    ...items.risk.map((feature) => ({ layer: "risk" as const, feature })),
+    ...items.flood.map((feature) => ({ layer: "flood" as const, feature })),
+    ...items.reports.map((feature) => ({ layer: "reports" as const, feature })),
+    ...items.roads.map((feature) => ({ layer: "roads" as const, feature }))
+  ];
+}
+
+export function selectionName(selection: MapSelection): string {
+  return selection.layer === "flood" ? selection.feature.title : selection.layer === "reports" ? selection.feature.description : selection.feature.name;
+}
+
+export function geometryBounds(geometry: MapGeometry): MapBounds {
+  const positions: Position[] = geometry.type === "Point" ? [geometry.coordinates]
+    : geometry.type === "MultiPolygon" ? geometry.coordinates.flat(2) : geometry.coordinates.flat();
+  return {
+    west: Math.min(...positions.map(([longitude]) => longitude)),
+    east: Math.max(...positions.map(([longitude]) => longitude)),
+    south: Math.min(...positions.map(([, latitude]) => latitude)),
+    north: Math.max(...positions.map(([, latitude]) => latitude))
+  };
+}
+
+export function selectionGeometry(selection: MapSelection): MapGeometry {
+  return selection.layer === "water" || selection.layer === "reports" ? selection.feature.location : selection.feature.geometry;
 }

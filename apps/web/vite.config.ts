@@ -4,6 +4,12 @@ import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  server: {
+    watch: {
+      usePolling: process.env.VITE_USE_POLLING === "true",
+      interval: 300
+    }
+  },
   test: {
     environment: "jsdom",
     globals: true,
