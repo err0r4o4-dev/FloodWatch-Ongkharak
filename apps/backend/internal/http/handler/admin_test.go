@@ -13,21 +13,30 @@ import (
 	"github.com/floodwatch-ongkharak/backend/internal/auth"
 	"github.com/floodwatch-ongkharak/backend/internal/http/handler"
 	"github.com/floodwatch-ongkharak/backend/internal/http/middleware"
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 )
 
 type mockAdminService struct {
-	listUsersFn     func(ctx context.Context, filter admin.ListUsersFilter) ([]admin.UserManagement, int, error)
-	getUserFn       func(ctx context.Context, userID string) (admin.UserManagement, error)
-	getUserStatsFn  func(ctx context.Context, userID string) (admin.UserStats, error)
-	updateRoleFn    func(ctx context.Context, userID string, newRole string, actorID, actorEmail string, actorRole admin.ActorRole) error
-	disableUserFn   func(ctx context.Context, userID string, actorID, actorEmail string, actorRole admin.ActorRole) error
-	enableUserFn    func(ctx context.Context, userID string, actorID, actorEmail string, actorRole admin.ActorRole) error
-	listSettingsFn  func(ctx context.Context, filter admin.ListSettingsFilter) ([]admin.SystemSetting, error)
-	getSettingFn    func(ctx context.Context, key string) (admin.SystemSetting, error)
-	updateSettingFn func(ctx context.Context, key string, value json.RawMessage, actorID, actorEmail string, actorRole admin.ActorRole) error
-	listAuditLogsFn func(ctx context.Context, filter admin.ListAuditLogsFilter) ([]admin.AuditLog, int, error)
-	getAuditLogFn   func(ctx context.Context, id string) (admin.AuditLog, error)
+	getDashboardStatsFn func(ctx context.Context) (admin.DashboardStats, error)
+	listUsersFn         func(ctx context.Context, filter admin.ListUsersFilter) ([]admin.UserManagement, int, error)
+	getUserFn           func(ctx context.Context, userID string) (admin.UserManagement, error)
+	getUserStatsFn      func(ctx context.Context, userID string) (admin.UserStats, error)
+	updateRoleFn        func(ctx context.Context, userID string, newRole string, actorID, actorEmail string, actorRole admin.ActorRole) error
+	disableUserFn       func(ctx context.Context, userID string, actorID, actorEmail string, actorRole admin.ActorRole) error
+	enableUserFn        func(ctx context.Context, userID string, actorID, actorEmail string, actorRole admin.ActorRole) error
+	listSettingsFn      func(ctx context.Context, filter admin.ListSettingsFilter) ([]admin.SystemSetting, error)
+	getSettingFn        func(ctx context.Context, key string) (admin.SystemSetting, error)
+	updateSettingFn     func(ctx context.Context, key string, value json.RawMessage, actorID, actorEmail string, actorRole admin.ActorRole) error
+	listAuditLogsFn     func(ctx context.Context, filter admin.ListAuditLogsFilter) ([]admin.AuditLog, int, error)
+	getAuditLogFn       func(ctx context.Context, id string) (admin.AuditLog, error)
+}
+
+func (m *mockAdminService) GetDashboardStats(ctx context.Context) (admin.DashboardStats, error) {
+	if m.getDashboardStatsFn != nil {
+		return m.getDashboardStatsFn(ctx)
+	}
+	return admin.DashboardStats{}, nil
 }
 
 func (m *mockAdminService) ListUsers(ctx context.Context, filter admin.ListUsersFilter) ([]admin.UserManagement, int, error) {
@@ -136,6 +145,57 @@ func TestListUsersHandler(t *testing.T) {
 	users := response["users"].([]interface{})
 	if len(users) != 1 {
 		t.Errorf("Expected 1 user, got %d", len(users))
+	}
+}
+
+func TestGetDashboardStatsHandler(t *testing.T) {
+	service := &mockAdminService{
+		getDashboardStatsFn: func(ctx context.Context) (admin.DashboardStats, error) {
+			return admin.DashboardStats{
+				TotalUsers:     12,
+				ActiveUsers:    9,
+				TotalReports:   7,
+				PendingReports: 3,
+				RecentActivity: 5,
+			}, nil
+		},
+	}
+
+	h := handler.NewAdminHandler(service, service)
+	req := httptest.NewRequest(http.MethodGet, "/admin/dashboard/stats", nil)
+	req = req.WithContext(withPrincipal(req.Context(), uuid.NewString(), auth.RoleAdmin))
+	w := httptest.NewRecorder()
+
+	h.GetDashboardStats(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("GetDashboardStats status = %d, want %d", w.Code, http.StatusOK)
+	}
+	var response admin.DashboardStats
+	if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
+		t.Fatalf("decode dashboard stats: %v", err)
+	}
+	if response.TotalUsers != 12 || response.PendingReports != 3 {
+		t.Fatalf("dashboard stats = %#v, want repository values", response)
+	}
+}
+
+func TestGetDashboardStatsHandlerReturnsInternalError(t *testing.T) {
+	service := &mockAdminService{
+		getDashboardStatsFn: func(ctx context.Context) (admin.DashboardStats, error) {
+			return admin.DashboardStats{}, errors.New("database unavailable")
+		},
+	}
+
+	h := handler.NewAdminHandler(service, service)
+	req := httptest.NewRequest(http.MethodGet, "/admin/dashboard/stats", nil)
+	req = req.WithContext(withPrincipal(req.Context(), uuid.NewString(), auth.RoleAdmin))
+	w := httptest.NewRecorder()
+
+	h.GetDashboardStats(w, req)
+
+	if w.Code != http.StatusInternalServerError {
+		t.Fatalf("GetDashboardStats error status = %d, want %d", w.Code, http.StatusInternalServerError)
 	}
 }
 
@@ -424,6 +484,54 @@ func TestListAuditLogsWithFilters(t *testing.T) {
 }
 
 type principalKey struct{}
+
+func TestAdminChiRouteParametersReachHandlers(t *testing.T) {
+	userID := uuid.NewString()
+	service := &mockAdminService{
+		getUserFn: func(_ context.Context, id string) (admin.UserManagement, error) {
+			return admin.UserManagement{ID: id}, nil
+		},
+		getSettingFn: func(_ context.Context, key string) (admin.SystemSetting, error) {
+			return admin.SystemSetting{Key: key, Value: json.RawMessage(`true`)}, nil
+		},
+		getAuditLogFn: func(_ context.Context, id string) (admin.AuditLog, error) { return admin.AuditLog{ID: id}, nil },
+	}
+	handler := handler.NewAdminHandler(service, service)
+	router := chi.NewRouter()
+	router.Get("/users/{id}", handler.GetUser)
+	router.Get("/settings/{key}", handler.GetSetting)
+	router.Get("/logs/{id}", handler.GetAuditLog)
+	for _, path := range []string{"/users/" + userID, "/settings/feature.push_enabled", "/logs/" + userID} {
+		response := httptest.NewRecorder()
+		router.ServeHTTP(response, httptest.NewRequest(http.MethodGet, path, nil))
+		if response.Code != http.StatusOK {
+			t.Errorf("%s = %d: %s", path, response.Code, response.Body)
+		}
+	}
+}
+
+func TestAdminListsUseEmptyArraysAndBoundedPagination(t *testing.T) {
+	service := &mockAdminService{}
+	adminHandler := handler.NewAdminHandler(service, service)
+	for _, test := range []struct { path string; field string; handle http.HandlerFunc }{
+		{"/users", "users", adminHandler.ListUsers},
+		{"/settings", "settings", adminHandler.ListSettings},
+		{"/audit-logs", "logs", adminHandler.ListAuditLogs},
+	} {
+		response := httptest.NewRecorder()
+		test.handle(response, httptest.NewRequest(http.MethodGet, test.path, nil))
+		var payload map[string]json.RawMessage
+		if err := json.Unmarshal(response.Body.Bytes(), &payload); err != nil { t.Fatal(err) }
+		if string(payload[test.field]) != "[]" { t.Errorf("%s empty collection = %s", test.path, payload[test.field]) }
+	}
+	for _, handle := range []http.HandlerFunc{adminHandler.ListUsers, adminHandler.ListAuditLogs} {
+		for _, query := range []string{"?limit=101", "?limit=0", "?offset=-1", "?offset=100001", "?limit=bad"} {
+			response := httptest.NewRecorder()
+			handle(response, httptest.NewRequest(http.MethodGet, "/admin/list"+query, nil))
+			if response.Code != http.StatusBadRequest { t.Errorf("pagination %s = %d", query, response.Code) }
+		}
+	}
+}
 
 func withPrincipal(ctx context.Context, userID string, role auth.Role) context.Context {
 	principal := middleware.Principal{UserID: userID, Role: role}

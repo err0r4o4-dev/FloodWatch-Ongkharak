@@ -152,7 +152,8 @@ func run() error {
 		Addr: fmt.Sprintf(":%d", configuration.APIPort),
 		Handler: router.New(router.Dependencies{
 			Logger: logger, Readiness: readiness, CORSAllowedOrigins: configuration.CORSAllowedOrigins,
-			SwaggerEnabled: configuration.SwaggerEnabled, AuthService: authService,
+			TrustedProxyCIDRs: configuration.TrustedProxyCIDRs,
+			SwaggerEnabled:    configuration.SwaggerEnabled, AuthService: authService,
 			RecoveryService: recoveryService,
 			GoogleService:   googleService, AuthFrontendOrigin: configuration.AuthFrontendOrigin,
 			FloodService:        floodService,

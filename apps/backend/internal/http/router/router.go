@@ -3,8 +3,8 @@ package router
 import (
 	"embed"
 	"log/slog"
-	"net/netip"
 	"net/http"
+	"net/netip"
 	"time"
 
 	"github.com/floodwatch-ongkharak/backend/internal/alert"
@@ -72,6 +72,8 @@ func New(dependencies Dependencies) http.Handler {
 			ruleLimiter := middleware.NewRateLimiter()
 			api.Get("/alerts", alertHandler.List)
 			if dependencies.AuthService != nil {
+				api.With(middleware.RequireAuthentication(dependencies.AuthService), middleware.RequireRole(auth.RoleAdmin)).Get("/admin/alert-rules", alertHandler.ListRules)
+				api.With(middleware.RequireAuthentication(dependencies.AuthService), middleware.RequireRole(auth.RoleAdmin)).Get("/admin/alert-rules/{id}", alertHandler.GetRule)
 				api.With(middleware.RequireAuthentication(dependencies.AuthService), middleware.RequireRole(auth.RoleAdmin), ruleLimiter.LimitAuthenticated("alert-rule-create", 10, time.Hour)).Post("/admin/alert-rules", alertHandler.CreateRule)
 				api.With(middleware.RequireAuthentication(dependencies.AuthService), middleware.RequireRole(auth.RoleAdmin), ruleLimiter.LimitAuthenticated("alert-rule-update", 30, time.Hour)).Put("/admin/alert-rules/{id}", alertHandler.UpdateRule)
 			}
@@ -141,6 +143,10 @@ func New(dependencies Dependencies) http.Handler {
 			api.Get("/notifications/public-key", notificationHandler.PublicKey)
 			if dependencies.AuthService != nil {
 				authenticated := middleware.RequireAuthentication(dependencies.AuthService)
+				api.With(authenticated).Get("/notifications", notificationHandler.List)
+				api.With(authenticated).Get("/notifications/unread-count", notificationHandler.UnreadCount)
+				api.With(authenticated).Patch("/notifications/{id}/read", notificationHandler.MarkRead)
+				api.With(authenticated).Post("/notifications/read-all", notificationHandler.MarkAllRead)
 				api.With(authenticated).Post("/notifications/subscribe", notificationHandler.Subscribe)
 				api.With(authenticated).Delete("/notifications/unsubscribe", notificationHandler.Unsubscribe)
 			}
@@ -150,6 +156,7 @@ func New(dependencies Dependencies) http.Handler {
 			adminLimiter := middleware.NewRateLimiter()
 			authenticated := middleware.RequireAuthentication(dependencies.AuthService)
 			adminOnly := []func(http.Handler) http.Handler{authenticated, middleware.RequireRole(auth.RoleAdmin)}
+			api.With(adminOnly...).Get("/admin/dashboard/stats", adminHandler.GetDashboardStats)
 
 			// User management
 			api.With(adminOnly...).Get("/admin/users", adminHandler.ListUsers)

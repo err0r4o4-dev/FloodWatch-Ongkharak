@@ -1,3 +1,4 @@
+//go:build integration
 // +build integration
 
 package adminrepo_test
@@ -266,7 +267,7 @@ func TestDisableAndEnableUser(t *testing.T) {
 		PasswordHash: "hash",
 		Role:         auth.RoleUser,
 	}
-	admin := auth.User{
+	adminUser := auth.User{
 		ID:           uuid.NewString(),
 		Email:        "adminactor@test.com",
 		PasswordHash: "hash",
@@ -277,19 +278,19 @@ func TestDisableAndEnableUser(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CreateUser failed: %v", err)
 	}
-	_, err = authRepo.CreateUser(ctx, admin)
+	_, err = authRepo.CreateUser(ctx, adminUser)
 	if err != nil {
 		t.Fatalf("CreateUser admin failed: %v", err)
 	}
 
 	// Test cannot disable self
-	err = adminRepo.DisableUser(ctx, admin.ID, admin.ID)
+	err = adminRepo.DisableUser(ctx, adminUser.ID, adminUser.ID)
 	if err != admin.ErrUserCannotDisable {
 		t.Errorf("Expected ErrUserCannotDisable, got %v", err)
 	}
 
 	// Disable user
-	err = adminRepo.DisableUser(ctx, user.ID, admin.ID)
+	err = adminRepo.DisableUser(ctx, user.ID, adminUser.ID)
 	if err != nil {
 		t.Fatalf("DisableUser failed: %v", err)
 	}
@@ -304,7 +305,7 @@ func TestDisableAndEnableUser(t *testing.T) {
 	}
 
 	// Enable user
-	err = adminRepo.EnableUser(ctx, user.ID, admin.ID)
+	err = adminRepo.EnableUser(ctx, user.ID, adminUser.ID)
 	if err != nil {
 		t.Fatalf("EnableUser failed: %v", err)
 	}
@@ -436,6 +437,69 @@ func TestGetUserStats(t *testing.T) {
 	}
 	if stats.LastActivity == nil {
 		t.Error("Expected LastActivity to be set")
+	}
+}
+
+func TestGetDashboardStats(t *testing.T) {
+	pool := getTestPool(t)
+	authRepo := authrepo.New(pool)
+	repo := adminrepo.New(pool)
+	ctx := context.Background()
+
+	before, err := repo.GetDashboardStats(ctx)
+	if err != nil {
+		t.Fatalf("GetDashboardStats before fixtures failed: %v", err)
+	}
+
+	activeUser := auth.User{ID: uuid.NewString(), Email: "dashboard-active@test.com", PasswordHash: "hash", Role: auth.RoleUser}
+	disabledUser := auth.User{ID: uuid.NewString(), Email: "dashboard-disabled@test.com", PasswordHash: "hash", Role: auth.RoleUser}
+	for _, user := range []auth.User{activeUser, disabledUser} {
+		if _, err := authRepo.CreateUser(ctx, user); err != nil {
+			t.Fatalf("CreateUser failed: %v", err)
+		}
+	}
+	reportIDs := []string{uuid.NewString(), uuid.NewString()}
+	for i, status := range []string{"PENDING", "VERIFIED"} {
+		if _, err := pool.Exec(ctx, `
+			INSERT INTO community_reports (id, user_id, type, location, status)
+			VALUES ($1, $2, 'FLOOD', ST_SetSRID(ST_MakePoint(101, 14), 4326), $3)
+		`, reportIDs[i], activeUser.ID, status); err != nil {
+			t.Fatalf("insert dashboard report failed: %v", err)
+		}
+	}
+	if err := repo.CreateAuditLog(ctx, admin.AuditLog{
+		ID:         uuid.NewString(),
+		Action:     admin.ActionLoginSuccess,
+		ActorID:    &activeUser.ID,
+		ActorEmail: activeUser.Email,
+		ActorRole:  admin.ActorRoleUser,
+		TargetType: admin.TargetAuthSession,
+		TargetID:   activeUser.ID,
+		Metadata:   map[string]interface{}{},
+	}); err != nil {
+		t.Fatalf("create dashboard activity failed: %v", err)
+	}
+	if err := repo.DisableUser(ctx, disabledUser.ID, activeUser.ID); err != nil {
+		t.Fatalf("disable dashboard user failed: %v", err)
+	}
+	t.Cleanup(func() {
+		_, _ = pool.Exec(ctx, `DELETE FROM community_reports WHERE id = ANY($1)`, reportIDs)
+		_, _ = pool.Exec(ctx, `DELETE FROM audit_logs WHERE actor_id = $1`, activeUser.ID)
+		_, _ = pool.Exec(ctx, `DELETE FROM users WHERE id = ANY($1)`, []string{activeUser.ID, disabledUser.ID})
+	})
+
+	after, err := repo.GetDashboardStats(ctx)
+	if err != nil {
+		t.Fatalf("GetDashboardStats after fixtures failed: %v", err)
+	}
+	if after.TotalUsers != before.TotalUsers+2 || after.ActiveUsers != before.ActiveUsers+1 {
+		t.Fatalf("user stats = %#v, before %#v", after, before)
+	}
+	if after.TotalReports != before.TotalReports+2 || after.PendingReports != before.PendingReports+1 {
+		t.Fatalf("report stats = %#v, before %#v", after, before)
+	}
+	if after.RecentActivity <= before.RecentActivity {
+		t.Fatalf("recent activity = %d, before %d", after.RecentActivity, before.RecentActivity)
 	}
 }
 

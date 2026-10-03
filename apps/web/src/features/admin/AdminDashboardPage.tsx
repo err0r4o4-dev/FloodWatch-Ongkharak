@@ -1,8 +1,45 @@
+import { useEffect, useState } from "react";
 import { NavLink } from "react-router";
 import { useAuth } from "../auth/AuthProvider";
+import { adminApi } from "./api";
+import type { AdminDashboardStats } from "./types";
 
 export function AdminDashboardPage() {
   const { account } = useAuth();
+  const [stats, setStats] = useState<AdminDashboardStats | null>(null);
+  const [statsLoading, setStatsLoading] = useState(false);
+  const [statsError, setStatsError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (account?.role !== "ADMIN") {
+      return;
+    }
+
+    let active = true;
+    setStatsLoading(true);
+    setStatsError(null);
+
+    void adminApi.getDashboardStats()
+      .then((dashboardStats) => {
+        if (active) {
+          setStats(dashboardStats);
+        }
+      })
+      .catch((error: unknown) => {
+        if (active) {
+          setStatsError(error instanceof Error ? error.message : "ไม่สามารถโหลดสถิติแดชบอร์ดได้");
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setStatsLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [account?.role]);
 
   if (account?.role !== "ADMIN") {
     return (
@@ -22,6 +59,41 @@ export function AdminDashboardPage() {
         <h1>ส่วนจัดการระบบ</h1>
         <p>จัดการผู้ใช้งาน ตั้งค่าระบบ และตรวจสอบการดำเนินการ</p>
       </header>
+
+      <section className="panel admin-stats-panel" aria-labelledby="admin-stats-heading" aria-live="polite">
+        <h2 id="admin-stats-heading">ภาพรวมระบบ</h2>
+        {statsLoading && <p role="status">กำลังโหลดสถิติแดชบอร์ด...</p>}
+        {statsError && (
+          <div className="error-state" role="alert">
+            <p>ไม่สามารถโหลดสถิติแดชบอร์ดได้</p>
+            <p className="muted">{statsError}</p>
+          </div>
+        )}
+        {stats && (
+          <dl className="admin-dashboard-grid">
+            <div className="admin-card">
+              <dt>ผู้ใช้งานทั้งหมด</dt>
+              <dd>{stats.totalUsers}</dd>
+            </div>
+            <div className="admin-card">
+              <dt>ผู้ใช้งานที่ใช้งานอยู่</dt>
+              <dd>{stats.activeUsers}</dd>
+            </div>
+            <div className="admin-card">
+              <dt>รายงานทั้งหมด</dt>
+              <dd>{stats.totalReports}</dd>
+            </div>
+            <div className="admin-card">
+              <dt>รายงานรอตรวจสอบ</dt>
+              <dd>{stats.pendingReports}</dd>
+            </div>
+            <div className="admin-card">
+              <dt>กิจกรรมใน 24 ชั่วโมงล่าสุด</dt>
+              <dd>{stats.recentActivity}</dd>
+            </div>
+          </dl>
+        )}
+      </section>
 
       <div className="admin-dashboard-grid">
         <section className="panel admin-card">

@@ -2,8 +2,8 @@ package config
 
 import (
 	"fmt"
-	"net/netip"
 	"net/http"
+	"net/netip"
 	"net/url"
 	"os"
 	"strconv"

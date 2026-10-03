@@ -21,6 +21,29 @@ func New(pool *pgxpool.Pool) *Repository {
 	return &Repository{pool: pool}
 }
 
+// GetDashboardStats retrieves aggregate values for the admin dashboard.
+func (r *Repository) GetDashboardStats(ctx context.Context) (admin.DashboardStats, error) {
+	var stats admin.DashboardStats
+	err := r.pool.QueryRow(ctx, `
+		SELECT
+			(SELECT COUNT(*) FROM users),
+			(SELECT COUNT(*) FROM users WHERE disabled_at IS NULL),
+			(SELECT COUNT(*) FROM community_reports),
+			(SELECT COUNT(*) FROM community_reports WHERE status = 'PENDING'),
+			(SELECT COUNT(*) FROM audit_logs WHERE created_at >= CURRENT_TIMESTAMP - INTERVAL '24 hours')
+	`).Scan(
+		&stats.TotalUsers,
+		&stats.ActiveUsers,
+		&stats.TotalReports,
+		&stats.PendingReports,
+		&stats.RecentActivity,
+	)
+	if err != nil {
+		return admin.DashboardStats{}, fmt.Errorf("get dashboard stats: %w", err)
+	}
+	return stats, nil
+}
+
 // CreateAuditLog records an audit trail entry
 func (r *Repository) CreateAuditLog(ctx context.Context, log admin.AuditLog) error {
 	metadata := log.Metadata

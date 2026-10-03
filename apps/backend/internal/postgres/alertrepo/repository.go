@@ -17,6 +17,35 @@ func New(pool *pgxpool.Pool) *Repository { return &Repository{pool: pool} }
 
 var _ alert.Repository = (*Repository)(nil)
 
+func (repository *Repository) ListRules(ctx context.Context, page alert.Page) ([]alert.Rule, error) {
+	rows, err := repository.pool.Query(ctx, `SELECT id, name, rule_type, enabled, severity, title, message, water_level_threshold_m::double precision, created_at, updated_at FROM alert_rules ORDER BY created_at DESC, id DESC LIMIT $1 OFFSET $2`, page.Limit, page.Offset)
+	if err != nil {
+		return nil, fmt.Errorf("list alert rules: %w", err)
+	}
+	defer rows.Close()
+	items := make([]alert.Rule, 0)
+	for rows.Next() {
+		var rule alert.Rule
+		if err := rows.Scan(&rule.ID, &rule.Name, &rule.Type, &rule.Enabled, &rule.Severity, &rule.Title, &rule.Message, &rule.WaterLevelThresholdM, &rule.CreatedAt, &rule.UpdatedAt); err != nil {
+			return nil, err
+		}
+		items = append(items, rule)
+	}
+	return items, rows.Err()
+}
+
+func (repository *Repository) GetRule(ctx context.Context, id string) (alert.Rule, error) {
+	var rule alert.Rule
+	err := repository.pool.QueryRow(ctx, `SELECT id, name, rule_type, enabled, severity, title, message, water_level_threshold_m::double precision, created_at, updated_at FROM alert_rules WHERE id=$1`, id).Scan(&rule.ID, &rule.Name, &rule.Type, &rule.Enabled, &rule.Severity, &rule.Title, &rule.Message, &rule.WaterLevelThresholdM, &rule.CreatedAt, &rule.UpdatedAt)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return alert.Rule{}, alert.ErrNotFound
+	}
+	if err != nil {
+		return alert.Rule{}, fmt.Errorf("get alert rule: %w", err)
+	}
+	return rule, nil
+}
+
 func (repository *Repository) ListEnabledRules(ctx context.Context) ([]alert.Rule, error) {
 	rows, err := repository.pool.Query(ctx, `SELECT id, name, rule_type, enabled, severity, title, message, water_level_threshold_m::double precision, created_at, updated_at FROM alert_rules WHERE enabled ORDER BY created_at, id`)
 	if err != nil {

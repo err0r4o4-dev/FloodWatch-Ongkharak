@@ -1,27 +1,10 @@
 import type { UserManagement, UserStats, SystemSetting, AuditLog, AdminDashboardStats } from "./types";
+import { apiClient } from "../auth/api";
 
-const BASE_URL = "/api/v1";
-
-async function fetchWithAuth<T>(url: string, options: RequestInit = {}): Promise<T> {
-  const token = sessionStorage.getItem("accessToken");
-  const headers = {
-    ...options.headers,
-    "Content-Type": "application/json",
-    ...(token && { Authorization: `Bearer ${token}` }),
-  };
-
-  const response = await fetch(`${BASE_URL}${url}`, { ...options, headers });
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: { message: "Request failed" } }));
-    throw new Error(error.error?.message || "Request failed");
-  }
-
-  if (response.status === 204) {
-    return undefined as T;
-  }
-
-  return response.json();
+async function requestAdmin<T>(url: string, options: RequestInit = {}): Promise<T> {
+  const headers = new Headers(options.headers);
+  headers.set("Content-Type", "application/json");
+  return apiClient.request<T>(url, { ...options, headers });
 }
 
 export const adminApi = {
@@ -34,28 +17,28 @@ export const adminApi = {
     if (params?.limit) searchParams.set("limit", String(params.limit));
     if (params?.offset) searchParams.set("offset", String(params.offset));
     
-    return fetchWithAuth<{ users: UserManagement[]; pagination: { total: number; limit: number; offset: number } }>(
+    return requestAdmin<{ users: UserManagement[]; pagination: { total: number; limit: number; offset: number } }>(
       `/admin/users?${searchParams.toString()}`
     );
   },
 
   async getUser(userId: string) {
-    return fetchWithAuth<{ user: UserManagement; stats: UserStats }>(`/admin/users/${userId}`);
+    return requestAdmin<{ user: UserManagement; stats: UserStats }>(`/admin/users/${userId}`);
   },
 
   async updateUserRole(userId: string, role: string) {
-    return fetchWithAuth<void>(`/admin/users/${userId}/role`, {
+    return requestAdmin<void>(`/admin/users/${userId}/role`, {
       method: "PATCH",
       body: JSON.stringify({ role }),
     });
   },
 
   async disableUser(userId: string) {
-    return fetchWithAuth<void>(`/admin/users/${userId}/disable`, { method: "POST" });
+    return requestAdmin<void>(`/admin/users/${userId}/disable`, { method: "POST" });
   },
 
   async enableUser(userId: string) {
-    return fetchWithAuth<void>(`/admin/users/${userId}/enable`, { method: "POST" });
+    return requestAdmin<void>(`/admin/users/${userId}/enable`, { method: "POST" });
   },
 
   // System settings
@@ -64,15 +47,15 @@ export const adminApi = {
     if (params?.category) searchParams.set("category", params.category);
     if (params?.editable !== undefined) searchParams.set("editable", String(params.editable));
     
-    return fetchWithAuth<{ settings: SystemSetting[] }>(`/admin/settings?${searchParams.toString()}`);
+    return requestAdmin<{ settings: SystemSetting[] }>(`/admin/settings?${searchParams.toString()}`);
   },
 
   async getSetting(key: string) {
-    return fetchWithAuth<{ setting: SystemSetting }>(`/admin/settings/${key}`);
+    return requestAdmin<{ setting: SystemSetting }>(`/admin/settings/${key}`);
   },
 
   async updateSetting(key: string, value: unknown) {
-    return fetchWithAuth<void>(`/admin/settings/${key}`, {
+    return requestAdmin<void>(`/admin/settings/${key}`, {
       method: "PUT",
       body: JSON.stringify({ value }),
     });
@@ -99,24 +82,16 @@ export const adminApi = {
     if (params?.limit) searchParams.set("limit", String(params.limit));
     if (params?.offset) searchParams.set("offset", String(params.offset));
     
-    return fetchWithAuth<{ logs: AuditLog[]; pagination: { total: number; limit: number; offset: number } }>(
+    return requestAdmin<{ logs: AuditLog[]; pagination: { total: number; limit: number; offset: number } }>(
       `/admin/audit-logs?${searchParams.toString()}`
     );
   },
 
   async getAuditLog(logId: string) {
-    return fetchWithAuth<{ log: AuditLog }>(`/admin/audit-logs/${logId}`);
+    return requestAdmin<{ log: AuditLog }>(`/admin/audit-logs/${logId}`);
   },
 
-  // Dashboard stats (mock for now - can be implemented later)
   async getDashboardStats(): Promise<AdminDashboardStats> {
-    // This would be a real endpoint in the future
-    return {
-      totalUsers: 0,
-      activeUsers: 0,
-      totalReports: 0,
-      pendingReports: 0,
-      recentActivity: 0,
-    };
+    return requestAdmin<AdminDashboardStats>("/admin/dashboard/stats");
   },
 };

@@ -11,18 +11,26 @@ import (
 )
 
 type mockRepository struct {
-	createAuditLogFn   func(context.Context, admin.AuditLog) error
-	listAuditLogsFn    func(context.Context, admin.ListAuditLogsFilter) ([]admin.AuditLog, int, error)
-	getUserFn          func(context.Context, string) (admin.UserManagement, error)
-	updateUserRoleFn   func(context.Context, string, string, string) error
-	disableUserFn      func(context.Context, string, string) error
-	enableUserFn       func(context.Context, string, string) error
-	getSettingFn       func(context.Context, string) (admin.SystemSetting, error)
-	updateSettingFn    func(context.Context, string, json.RawMessage, string) error
-	listSettingsFn     func(context.Context, admin.ListSettingsFilter) ([]admin.SystemSetting, error)
-	listUsersFn        func(context.Context, admin.ListUsersFilter) ([]admin.UserManagement, int, error)
-	getUserStatsFn     func(context.Context, string) (admin.UserStats, error)
-	getAuditLogFn      func(context.Context, string) (admin.AuditLog, error)
+	createAuditLogFn    func(context.Context, admin.AuditLog) error
+	getDashboardStatsFn func(context.Context) (admin.DashboardStats, error)
+	listAuditLogsFn     func(context.Context, admin.ListAuditLogsFilter) ([]admin.AuditLog, int, error)
+	getUserFn           func(context.Context, string) (admin.UserManagement, error)
+	updateUserRoleFn    func(context.Context, string, string, string) error
+	disableUserFn       func(context.Context, string, string) error
+	enableUserFn        func(context.Context, string, string) error
+	getSettingFn        func(context.Context, string) (admin.SystemSetting, error)
+	updateSettingFn     func(context.Context, string, json.RawMessage, string) error
+	listSettingsFn      func(context.Context, admin.ListSettingsFilter) ([]admin.SystemSetting, error)
+	listUsersFn         func(context.Context, admin.ListUsersFilter) ([]admin.UserManagement, int, error)
+	getUserStatsFn      func(context.Context, string) (admin.UserStats, error)
+	getAuditLogFn       func(context.Context, string) (admin.AuditLog, error)
+}
+
+func (m *mockRepository) GetDashboardStats(ctx context.Context) (admin.DashboardStats, error) {
+	if m.getDashboardStatsFn != nil {
+		return m.getDashboardStatsFn(ctx)
+	}
+	return admin.DashboardStats{}, nil
 }
 
 func (m *mockRepository) CreateAuditLog(ctx context.Context, log admin.AuditLog) error {
@@ -112,7 +120,7 @@ func (m *mockRepository) UpdateSetting(ctx context.Context, key string, value js
 func TestUpdateUserRoleLogsAction(t *testing.T) {
 	userID := uuid.NewString()
 	actorID := uuid.NewString()
-	
+
 	var capturedLog admin.AuditLog
 	repo := &mockRepository{
 		getUserFn: func(ctx context.Context, id string) (admin.UserManagement, error) {
@@ -150,7 +158,7 @@ func TestUpdateUserRoleLogsAction(t *testing.T) {
 func TestDisableUserLogsAction(t *testing.T) {
 	userID := uuid.NewString()
 	actorID := uuid.NewString()
-	
+
 	var capturedLog admin.AuditLog
 	repo := &mockRepository{
 		disableUserFn: func(ctx context.Context, id string, disabledBy string) error {
@@ -175,7 +183,7 @@ func TestDisableUserLogsAction(t *testing.T) {
 
 func TestUpdateSettingValidatesType(t *testing.T) {
 	settingKey := "test.number"
-	
+
 	repo := &mockRepository{
 		getSettingFn: func(ctx context.Context, key string) (admin.SystemSetting, error) {
 			return admin.SystemSetting{
@@ -210,7 +218,7 @@ func TestUpdateSettingValidatesType(t *testing.T) {
 
 func TestUpdateSettingRejectsReadOnly(t *testing.T) {
 	settingKey := "readonly.setting"
-	
+
 	repo := &mockRepository{
 		getSettingFn: func(ctx context.Context, key string) (admin.SystemSetting, error) {
 			return admin.SystemSetting{
@@ -232,7 +240,7 @@ func TestUpdateSettingLogsChange(t *testing.T) {
 	settingKey := "test.setting"
 	oldValue := json.RawMessage(`"old"`)
 	newValue := json.RawMessage(`"new"`)
-	
+
 	var capturedLog admin.AuditLog
 	repo := &mockRepository{
 		getSettingFn: func(ctx context.Context, key string) (admin.SystemSetting, error) {
@@ -280,7 +288,7 @@ func TestListAuditLogsEnforcesLimits(t *testing.T) {
 	}
 
 	service := admin.NewService(repo)
-	
+
 	// Test limit is capped at 100
 	_, _, err := service.ListAuditLogs(context.Background(), admin.ListAuditLogsFilter{Limit: 200})
 	if err != nil {
@@ -308,7 +316,7 @@ func TestListUsersEnforcesLimits(t *testing.T) {
 	}
 
 	service := admin.NewService(repo)
-	
+
 	// Test limit is capped at 100
 	_, _, err := service.ListUsers(context.Background(), admin.ListUsersFilter{Limit: 200})
 	if err != nil {
@@ -319,5 +327,28 @@ func TestListUsersEnforcesLimits(t *testing.T) {
 	_, _, err = service.ListUsers(context.Background(), admin.ListUsersFilter{Limit: 0})
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
+	}
+}
+
+func TestGetDashboardStatsDelegatesToRepository(t *testing.T) {
+	want := admin.DashboardStats{
+		TotalUsers:     12,
+		ActiveUsers:    9,
+		TotalReports:   7,
+		PendingReports: 3,
+		RecentActivity: 5,
+	}
+	repo := &mockRepository{
+		getDashboardStatsFn: func(ctx context.Context) (admin.DashboardStats, error) {
+			return want, nil
+		},
+	}
+
+	got, err := admin.NewService(repo).GetDashboardStats(context.Background())
+	if err != nil {
+		t.Fatalf("GetDashboardStats failed: %v", err)
+	}
+	if got != want {
+		t.Fatalf("GetDashboardStats() = %#v, want %#v", got, want)
 	}
 }

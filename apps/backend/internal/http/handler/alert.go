@@ -12,12 +12,40 @@ import (
 )
 
 type AlertService interface {
+	ListRules(context.Context, alert.Page) ([]alert.Rule, error)
+	GetRule(context.Context, string) (alert.Rule, error)
 	List(context.Context, alert.Page) ([]alert.Alert, error)
 	CreateRule(context.Context, alert.RuleInput) (alert.Rule, error)
 	UpdateRule(context.Context, string, alert.RuleInput) (alert.Rule, error)
 }
 
 type AlertHandler struct{ service AlertService }
+
+func (handler *AlertHandler) ListRules(response http.ResponseWriter, request *http.Request) {
+	filter, ok := parseListFilter(response, request)
+	if !ok {
+		return
+	}
+	items, err := handler.service.ListRules(request.Context(), alert.Page{Limit: filter.Page.Limit, Offset: filter.Page.Offset})
+	if err != nil {
+		writeAlertError(response, err)
+		return
+	}
+	result := make([]any, 0, len(items))
+	for _, rule := range items {
+		result = append(result, ruleResponse(rule))
+	}
+	writeJSON(response, http.StatusOK, map[string]any{"items": result, "limit": filter.Page.Limit, "offset": filter.Page.Offset})
+}
+
+func (handler *AlertHandler) GetRule(response http.ResponseWriter, request *http.Request) {
+	rule, err := handler.service.GetRule(request.Context(), chi.URLParam(request, "id"))
+	if err != nil {
+		writeAlertError(response, err)
+		return
+	}
+	writeJSON(response, http.StatusOK, map[string]any{"rule": ruleResponse(rule)})
+}
 
 func NewAlertHandler(service AlertService) *AlertHandler { return &AlertHandler{service: service} }
 

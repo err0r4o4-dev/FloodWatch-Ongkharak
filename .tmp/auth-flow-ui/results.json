@@ -1,0 +1,60 @@
+[
+  {
+    "width": 1280,
+    "passed": [
+      "register-fields",
+      "keyboard",
+      "step-focus",
+      "single-request",
+      "wrong-otp",
+      "password-mismatch-no-request",
+      "success-no-auto-redirect",
+      "no-grant-storage",
+      "returnTo",
+      "no-overflow"
+    ]
+  },
+  {
+    "width": 390,
+    "passed": [
+      "register-fields",
+      "keyboard",
+      "step-focus",
+      "single-request",
+      "wrong-otp",
+      "password-mismatch-no-request",
+      "success-no-auto-redirect",
+      "no-grant-storage",
+      "returnTo",
+      "no-overflow"
+    ]
+  },
+  {
+    "width": 320,
+    "passed": [
+      "register-fields",
+      "keyboard",
+      "step-focus",
+      "single-request",
+      "wrong-otp",
+      "password-mismatch-no-request",
+      "success-no-auto-redirect",
+      "no-grant-storage",
+      "returnTo",
+      "no-overflow"
+    ]
+  },
+  {
+    "isolatedErrors": [
+      "SMTP-unavailable-stays-step1",
+      "expired-grant-restarts-without-password-inputs",
+      "register-success-login-failure-honest",
+      "username-login-error-then-safe-destination"
+    ],
+    "accessibility": [
+      "44px-primary-targets",
+      "200%-auth-text-no-overflow",
+      "reduced-motion"
+    ]
+  }
+]

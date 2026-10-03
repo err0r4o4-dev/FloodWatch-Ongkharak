@@ -3,8 +3,8 @@ package middleware
 import (
 	"io"
 	"net"
-	"net/netip"
 	"net/http"
+	"net/netip"
 	"strconv"
 	"strings"
 	"sync"

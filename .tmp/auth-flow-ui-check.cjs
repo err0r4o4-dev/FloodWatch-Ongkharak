@@ -21,6 +21,7 @@ const server = http.createServer(async (request, response) => {
     const error = (status, code) => { response.writeHead(status); response.end(JSON.stringify({ error: { code, message: code } })); };
     const send = (status, value) => { response.writeHead(status); response.end(value === undefined ? undefined : JSON.stringify(value)); };
     if (url.pathname.endsWith('/google/config')) return send(200, { enabled: false });
+    if (url.pathname.endsWith('/me') && request.headers.authorization === 'Bearer fixture-access-token') return send(200, { user: account });
     if (url.pathname.endsWith('/refresh') || url.pathname.endsWith('/me')) return error(401, 'UNAUTHENTICATED');
     if (url.pathname.endsWith('/register')) { assert.deepEqual(Object.keys(input).sort(), ['email', 'password', 'username']); return send(201, { user: account }); }
     if (url.pathname.endsWith('/login')) {
@@ -75,6 +76,7 @@ const server = http.createServer(async (request, response) => {
       await page.getByRole('heading', { name: 'ยืนยันรหัส OTP', exact: true }).waitFor();
       assert.equal(calls.filter((entry) => entry.path.endsWith('/request-otp')).length, before + 1);
       assert.equal(await page.getByRole('heading', { name: 'ยืนยันรหัส OTP', exact: true }).evaluate((element) => element === document.activeElement), true);
+      assert.ok((await page.getByRole('button', { name: 'ยืนยันรหัส OTP', exact: true }).boundingBox()).height >= 44);
       await page.screenshot({ path: path.join(output, `otp-${width}.png`), fullPage: true });
       await page.getByLabel('รหัส OTP', { exact: true }).fill('111111');
       await page.getByRole('button', { name: 'ยืนยันรหัส OTP', exact: true }).click();
@@ -83,6 +85,7 @@ const server = http.createServer(async (request, response) => {
       await page.getByLabel('รหัส OTP', { exact: true }).fill('123456');
       await page.getByRole('button', { name: 'ยืนยันรหัส OTP', exact: true }).click();
       await page.getByRole('heading', { name: 'ตั้งรหัสผ่านใหม่', exact: true }).waitFor();
+      assert.ok((await page.getByRole('button', { name: 'เปลี่ยนรหัสผ่าน', exact: true }).boundingBox()).height >= 44);
       await page.getByLabel('รหัสผ่านใหม่', { exact: true }).fill('replacement long passphrase');
       await page.getByLabel('ยืนยันรหัสผ่านใหม่', { exact: true }).fill('different long passphrase');
       const resets = calls.filter((entry) => entry.path.endsWith('/password/reset')).length;
@@ -94,6 +97,7 @@ const server = http.createServer(async (request, response) => {
       await page.getByRole('button', { name: 'เปลี่ยนรหัสผ่าน', exact: true }).focus();
       await page.keyboard.press('Enter');
       await page.getByRole('heading', { name: 'เปลี่ยนรหัสผ่านสำเร็จ', exact: true }).waitFor();
+      assert.ok((await page.getByRole('button', { name: 'กลับไปหน้าเข้าสู่ระบบ', exact: true }).boundingBox()).height >= 44);
       assert.ok(page.url().includes('/forgot-password'));
       assert.equal(await page.evaluate(() => localStorage.length + sessionStorage.length), 0);
       await page.screenshot({ path: path.join(output, `success-${width}.png`), fullPage: true });
@@ -113,6 +117,23 @@ const server = http.createServer(async (request, response) => {
     await page.getByRole('alert').filter({ hasText: 'บริการกู้คืนรหัสผ่านไม่พร้อมใช้งาน' }).waitFor();
     assert.equal(await page.getByRole('heading', { name: 'ลืมรหัสผ่าน?', exact: true }).count(), 1);
     await page.screenshot({ path: path.join(output, 'smtp-unavailable-390.png'), fullPage: true });
+    await page.goto('http://127.0.0.1:19176/forgot-password?scenario=expired');
+    await page.getByLabel('อีเมล', { exact: true }).fill(account.email);
+    await page.getByRole('button', { name: 'ส่งรหัส OTP', exact: true }).click();
+    await page.getByRole('heading', { name: 'ยืนยันรหัส OTP', exact: true }).waitFor();
+    await page.addStyleTag({ content: '.auth-page { font-size: 200%; } .auth-page input, .auth-page button, .auth-page p { font-size: inherit; }' });
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+    await page.screenshot({ path: path.join(output, 'otp-enlarged-text-390.png'), fullPage: true });
+    await page.getByLabel('รหัส OTP', { exact: true }).fill('123456');
+    await page.getByRole('button', { name: 'ยืนยันรหัส OTP', exact: true }).click();
+    await page.getByRole('heading', { name: 'ตั้งรหัสผ่านใหม่', exact: true }).waitFor();
+    await page.getByLabel('รหัสผ่านใหม่', { exact: true }).fill('replacement long passphrase');
+    await page.getByLabel('ยืนยันรหัสผ่านใหม่', { exact: true }).fill('replacement long passphrase');
+    await page.getByRole('button', { name: 'เปลี่ยนรหัสผ่าน', exact: true }).click();
+    await page.getByRole('heading', { name: 'ลืมรหัสผ่าน?', exact: true }).waitFor();
+    await page.getByRole('alert').filter({ hasText: 'สิทธิ์ตั้งรหัสผ่านหมดอายุ' }).waitFor();
+    assert.equal(await page.getByLabel('รหัสผ่านใหม่', { exact: true }).count(), 0);
+    await page.screenshot({ path: path.join(output, 'expired-grant-390.png'), fullPage: true });
     await page.goto('http://127.0.0.1:19176/register?scenario=register-login-error');
     await page.getByLabel('อีเมล', { exact: true }).fill(account.email);
     await page.getByLabel('ชื่อผู้ใช้งาน', { exact: true }).fill('Fixture_User');
@@ -125,7 +146,21 @@ const server = http.createServer(async (request, response) => {
     await page.locator('.swal2-container').waitFor({ state: 'detached' });
     await page.screenshot({ path: path.join(output, 'register-login-failure-390.png'), fullPage: true });
     assert.equal(await page.getByRole('link', { name: 'เข้าสู่ระบบด้วยบัญชีที่สร้างไว้' }).count(), 1);
-    results.push({ isolatedErrors: ['SMTP-unavailable-stays-step1', 'register-success-login-failure-honest'] });
+    await page.goto('http://127.0.0.1:19176/login?returnTo=%2Fnotifications');
+    await page.getByLabel('อีเมล หรือ ชื่อผู้ใช้งาน', { exact: true }).fill(account.username);
+    await page.getByLabel('รหัสผ่าน', { exact: true }).fill('wrong long passphrase');
+    await page.getByRole('button', { name: /เข้าสู่ระบบ/, exact: false }).click();
+    await page.locator('.form-error').filter({ hasText: 'อีเมล/ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง' }).waitFor();
+    await page.locator('.swal2-confirm').click();
+    await page.locator('.swal2-container').waitFor({ state: 'detached' });
+    await page.screenshot({ path: path.join(output, 'username-login-error-390.png'), fullPage: true });
+    await page.getByLabel('รหัสผ่าน', { exact: true }).fill('original long passphrase');
+    await page.getByRole('button', { name: /เข้าสู่ระบบ/, exact: false }).focus();
+    await page.keyboard.press('Enter');
+    await page.waitForURL('**/notifications');
+    const latestLogin = calls.filter((entry) => entry.path.endsWith('/login')).at(-1);
+    assert.equal(latestLogin.input.email, account.username);
+    results.push({ isolatedErrors: ['SMTP-unavailable-stays-step1', 'expired-grant-restarts-without-password-inputs', 'register-success-login-failure-honest', 'username-login-error-then-safe-destination'], accessibility: ['44px-primary-targets', '200%-auth-text-no-overflow', 'reduced-motion'] });
     fs.writeFileSync(path.join(output, 'results.json'), JSON.stringify(results, null, 2));
     console.log(JSON.stringify(results));
     await context.close();

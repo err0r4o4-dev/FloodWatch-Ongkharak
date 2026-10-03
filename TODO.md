@@ -203,6 +203,39 @@ Verification: `corepack pnpm --filter @floodwatch/web exec vitest run src/app/La
 
 Rendered verification: `node .tmp/landing-ui-check.cjs` passes in isolated headless Edge at 320, 390, 768, 1024, and 1440px; no horizontal overflow, links meet 44px touch targets, skip-link/keyboard entry opens `/overview`, overview bookmarks and brand return work, direct map and login-return links work, and 200% root text fits at 390px. Screenshots inspected include desktop, phone, and enlarged text under `.tmp/landing-ui`; the landing does not request live flood feeds. Safari, actual devices, and a real backend login were not exercised. No dependencies, backend contracts, production data, commits, or later roadmap phases were changed by this task.
 
+## Approved feature — Real Username Login and OTP Password Recovery
+
+- [x] Persist normalized unique usernames and accept email or username login while preserving legacy/Google account identity and safe return destinations.
+- [x] Replace simulated recovery with request email, verify six-digit OTP, reset/confirm password, and persistent success with an explicit login button. Report successful registration separately from a failed automatic login.
+- [x] Add migration 14, single-use expiring hashed grants, five-attempt OTP checks, per-email resend/hour limits, Argon2id password updates, and atomic revocation of refresh/access sessions. Reproduce and fix the old-password-login/reset race using a barrier-controlled PostgreSQL test.
+- [x] Add optional verified STARTTLS SMTP delivery and explicit trusted-proxy CIDR recovery limiting without reading credentials or changing application databases/services.
+- [x] Update OpenAPI/runtime JSON and architecture/setup docs, inspect rendered responsive/keyboard states, run focused tests, and independently review security fixes.
+- [ ] Release gate: apply migration 14 to the intended application database, configure real SMTP and exact trusted ingress CIDRs securely, deploy the matching API/web services, and verify a real mailbox round trip.
+
+Verification: `corepack pnpm -C apps/web test src/features/auth` passes 36 tests across four files. Standalone Vite bundling passes with the existing large-chunk warning; full typecheck remains blocked by the absent `FloodEvent` export in `AIEvidenceReview.tsx`. Full frontend suite: 183/190 pass; seven failures remain in existing App (development link and three auth-main-landmark checks), Map search, Overview empty-state, and Realtime/Overview empty-state tests. Those unrelated files/tests were not modified or weakened.
+
+Focused Go auth, config, mailer, middleware, router/OpenAPI tests, selected production auth/recovery/Google handler tests, `go vet`, and `go build ./cmd/api` pass. Real authrepo PostgreSQL tests pass twice against a fresh disposable PostGIS database, including full router registration/login/OTP/reset, duplicate usernames, cooldown/attempt/expiry/replay limits, concurrent verify/reset, barrier-controlled login/reset, repeated refresh/reset races, old-session revocation, and linked-Google sign-in/refresh after reset with a nonzero authentication version. Migration 14 up/down/up preserved a synthetic legacy account with null username. Full Go suite still fails in unrelated AI missing flood types and unused admin/notification test imports; a broad parallel integration run also encountered shared-fixture contamination in alert/flood/outbox tests. The new ineligible recovery fixture was fixed to clean up its userless challenge and the clean authrepo suite passes repeatedly.
+
+Rendered checks: `node .tmp/auth-flow-ui-check.cjs` passes in headless Edge at 1280, 390, and 320px with synthetic API interception, not live flood/auth data. Inspected register, OTP/error, mismatch/reset, success, and service-unavailable screenshots; checked keyboard submission, focus transfer, no overflow, one request, mismatch without mutation, no persisted grants, safe returnTo, no automatic success redirect, honest registration-success/login-failure handling, expired-grant restart, username login/error/navigation, 44px primary actions, reduced motion, and scoped 200% text reflow. Local evidence is under `.tmp/auth-flow-ui`; disposable database testing never used application/production data. Independent final security review found no unresolved High/Medium findings in the changed scope; proxy isolation remains dependent on configuring exact trusted ingress CIDRs. No real SMTP inbox, live proxy deployment, real device/Safari, service reload, or Go race-detector run (cgo unavailable) was verified. Concurrent user changes and externally created commits were preserved; agents did not commit or push.
+
+## Approved feature — Existing-feature API coverage
+
+The user approved filling current feature gaps after reviewing the API flow. This is an explicit feature extension, not authorization to begin a later roadmap phase or integrate live providers, routing engines, or CCTV.
+
+- [x] Inspect frontend calls, Go router, worker, OpenAPI, current changes, and baseline checks
+- [ ] Replace Admin dashboard mock with database-backed statistics and use the shared authenticated frontend client
+- [ ] Add ADMIN reads for alert rules
+- [ ] Add account-scoped notification history, unread counts, read state, and durable Push delivery
+- [ ] Complete private-media AI jobs, non-mock evidence persistence, ADMIN review, and worker wiring
+- [ ] Align frontend, canonical/embedded OpenAPI, and architecture documentation
+- [ ] Run focused and integration checks, inspect affected rendered states, and review the final diff
+
+Baseline: Go tests cannot build the existing AI worker because it references nonexistent flood types; existing Admin and notification test imports also fail compilation. Frontend typecheck fails on the AI review's missing `FloodEvent` export. Full frontend Vitest reports 183 passing and 11 failing tests in five files before implementation; preserve unrelated failures rather than weakening coverage. Python previously returned synthetic predictions as default inference; this must not feed public flood evidence. See `docs/architecture/api-coverage.md` for the approved boundaries and final verification record.
+
+## Small Tasks
+
+- [x] Remove the extra "เข้าสู่เมนู" button in the landing nav section.
+
 ## Future Skills
 
 - [ ] Add narrower skills only when a later phase exposes meaningful recurring practices not covered by the Phase 0 core.

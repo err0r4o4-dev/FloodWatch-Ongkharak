@@ -57,17 +57,17 @@ const (
 
 // AuditLog represents an audit trail entry
 type AuditLog struct {
-	ID         string
-	Action     AuditAction
-	ActorID    *string
-	ActorEmail string
-	ActorRole  ActorRole
-	TargetType TargetType
-	TargetID   string
-	Metadata   map[string]interface{}
-	IPAddress  *string
-	UserAgent  *string
-	CreatedAt  time.Time
+	ID         string                 `json:"id"`
+	Action     AuditAction            `json:"action"`
+	ActorID    *string                `json:"actorId"`
+	ActorEmail string                 `json:"actorEmail"`
+	ActorRole  ActorRole              `json:"actorRole"`
+	TargetType TargetType             `json:"targetType"`
+	TargetID   string                 `json:"targetId"`
+	Metadata   map[string]interface{} `json:"metadata"`
+	IPAddress  *string                `json:"ipAddress"`
+	UserAgent  *string                `json:"userAgent"`
+	CreatedAt  time.Time              `json:"createdAt"`
 }
 
 // SettingCategory represents groupings of system settings
@@ -93,44 +93,53 @@ const (
 
 // SystemSetting represents a configurable system parameter
 type SystemSetting struct {
-	Key         string
-	Value       json.RawMessage
-	ValueType   SettingValueType
-	Description string
-	Category    SettingCategory
-	Editable    bool
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	UpdatedBy   *string
+	Key         string           `json:"key"`
+	Value       json.RawMessage  `json:"value"`
+	ValueType   SettingValueType `json:"valueType"`
+	Description string           `json:"description"`
+	Category    SettingCategory  `json:"category"`
+	Editable    bool             `json:"editable"`
+	CreatedAt   time.Time        `json:"createdAt"`
+	UpdatedAt   time.Time        `json:"updatedAt"`
+	UpdatedBy   *string          `json:"updatedBy"`
 }
 
 // UserManagement represents user information for admin operations
 type UserManagement struct {
-	ID         string
-	Email      string
-	Role       string
-	CreatedAt  time.Time
-	UpdatedAt  time.Time
-	DisabledAt *time.Time
+	ID         string     `json:"id"`
+	Email      string     `json:"email"`
+	Role       string     `json:"role"`
+	CreatedAt  time.Time  `json:"createdAt"`
+	UpdatedAt  time.Time  `json:"updatedAt"`
+	DisabledAt *time.Time `json:"disabledAt"`
 }
 
 // UserStats represents activity statistics for a user
 type UserStats struct {
-	ReportCount       int
-	LastActivity      *time.Time
-	VerifiedReports   int
-	RejectedReports   int
-	AuditLogCount     int
-	RefreshSessionCount int
+	ReportCount         int        `json:"reportCount"`
+	LastActivity        *time.Time `json:"lastActivity"`
+	VerifiedReports     int        `json:"verifiedReports"`
+	RejectedReports     int        `json:"rejectedReports"`
+	AuditLogCount       int        `json:"auditLogCount"`
+	RefreshSessionCount int        `json:"refreshSessionCount"`
+}
+
+// DashboardStats contains aggregate values used by the admin dashboard.
+type DashboardStats struct {
+	TotalUsers     int `json:"totalUsers"`
+	ActiveUsers    int `json:"activeUsers"`
+	TotalReports   int `json:"totalReports"`
+	PendingReports int `json:"pendingReports"`
+	RecentActivity int `json:"recentActivity"`
 }
 
 // ListUsersFilter contains criteria for filtering user lists
 type ListUsersFilter struct {
-	Role          *string
+	Role            *string
 	IncludeDisabled bool
-	SearchEmail   *string
-	Limit         int
-	Offset        int
+	SearchEmail     *string
+	Limit           int
+	Offset          int
 }
 
 // ListAuditLogsFilter contains criteria for filtering audit logs
@@ -153,6 +162,8 @@ type ListSettingsFilter struct {
 
 // Repository defines persistence operations for admin functionality
 type Repository interface {
+	GetDashboardStats(ctx context.Context) (DashboardStats, error)
+
 	// Audit logging
 	CreateAuditLog(ctx context.Context, log AuditLog) error
 	ListAuditLogs(ctx context.Context, filter ListAuditLogsFilter) ([]AuditLog, int, error)

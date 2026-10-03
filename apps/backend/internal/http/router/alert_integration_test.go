@@ -87,4 +87,19 @@ func TestAlertPublicReadAndAdminOnlyRuleWrites(t *testing.T) {
 	if response := call(http.MethodPost, "/api/v1/admin/alert-rules", body, adminSession.AccessToken); response.Code != http.StatusCreated {
 		t.Fatalf("ADMIN rule write = %d: %s", response.Code, response.Body)
 	}
+	if response := call(http.MethodGet, "/api/v1/admin/alert-rules", "", ""); response.Code != http.StatusUnauthorized {
+		t.Fatalf("guest rules read = %d", response.Code)
+	}
+	if response := call(http.MethodGet, "/api/v1/admin/alert-rules", "", userSession.AccessToken); response.Code != http.StatusForbidden {
+		t.Fatalf("USER rules read = %d", response.Code)
+	}
+	if response := call(http.MethodGet, "/api/v1/admin/alert-rules", "", adminSession.AccessToken); response.Code != http.StatusOK || !strings.Contains(response.Body.String(), "synthetic-alert-"+unique) {
+		t.Fatalf("ADMIN rules read = %d: %s", response.Code, response.Body)
+	}
+	if response := call(http.MethodGet, "/api/v1/admin/alert-rules/"+uuid.NewString(), "", adminSession.AccessToken); response.Code != http.StatusNotFound {
+		t.Fatalf("missing rule = %d", response.Code)
+	}
+	if response := call(http.MethodGet, "/api/v1/admin/alert-rules?limit=51", "", adminSession.AccessToken); response.Code != http.StatusBadRequest {
+		t.Fatalf("unbounded rules = %d", response.Code)
+	}
 }

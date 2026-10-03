@@ -181,6 +181,11 @@ func recoveryFixture(t *testing.T) (context.Context, *Repository, auth.PasswordC
 	if err := repository.SavePasswordChallenge(ctx, challenge, now); err != nil {
 		t.Fatal(err)
 	}
+	t.Cleanup(func() {
+		if _, err := pool.Exec(context.Background(), `DELETE FROM password_recovery_challenges WHERE email_hash=$1`, emailHash[:]); err != nil {
+			t.Error(err)
+		}
+	})
 	return ctx, repository, challenge, now
 }
 

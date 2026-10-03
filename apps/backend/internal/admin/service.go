@@ -16,6 +16,11 @@ func NewService(repository Repository) *Service {
 	return &Service{repository: repository}
 }
 
+// GetDashboardStats retrieves aggregate values for the admin dashboard.
+func (s *Service) GetDashboardStats(ctx context.Context) (DashboardStats, error) {
+	return s.repository.GetDashboardStats(ctx)
+}
+
 // LogAudit creates an audit log entry
 func (s *Service) LogAudit(ctx context.Context, log AuditLog) error {
 	if log.ID == "" {

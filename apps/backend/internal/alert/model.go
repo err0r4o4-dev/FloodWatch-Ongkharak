@@ -88,6 +88,8 @@ type RuleInput struct {
 }
 
 type Repository interface {
+	ListRules(context.Context, Page) ([]Rule, error)
+	GetRule(context.Context, string) (Rule, error)
 	ListEnabledRules(context.Context) ([]Rule, error)
 	ListAlerts(context.Context, Page) ([]Alert, error)
 	CreateRule(context.Context, Rule) (Rule, error)

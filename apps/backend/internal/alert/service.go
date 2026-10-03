@@ -52,6 +52,20 @@ func (service *Service) EnabledRules(ctx context.Context) ([]Rule, error) {
 	return service.repository.ListEnabledRules(ctx)
 }
 
+func (service *Service) ListRules(ctx context.Context, page Page) ([]Rule, error) {
+	if !validPage(page) || page.Limit > 50 || page.Offset > 1000 {
+		return nil, ErrInvalid
+	}
+	return service.repository.ListRules(ctx, page)
+}
+
+func (service *Service) GetRule(ctx context.Context, id string) (Rule, error) {
+	if parsed, err := uuid.Parse(id); err != nil || parsed == uuid.Nil {
+		return Rule{}, ErrInvalid
+	}
+	return service.repository.GetRule(ctx, id)
+}
+
 func (service *Service) CreateRule(ctx context.Context, input RuleInput) (Rule, error) {
 	rule := normalizeRule(input)
 	rule.ID = uuid.NewString()

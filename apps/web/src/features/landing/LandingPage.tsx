@@ -49,7 +49,6 @@ export function LandingPage() {
     <header className="landing-header"><div className="landing-container landing-header__inner">
       <Link to="/" className="landing-brand" aria-label="Flood Watch Ongkharak หน้าหลัก"><img src="/flood-watch-mark.svg" alt="" width="42" height="42" /><span><strong>Flood Watch</strong><small>ONGKHARAK</small></span></Link>
       <nav className="landing-nav" aria-label="การนำทางหน้าแรก">
-        <Link className="landing-button landing-button--quiet" to="/overview">เข้าสู่เมนู</Link>
         {account ? <Link className="landing-button landing-button--primary" to={account.role === "ADMIN" ? "/admin" : "/reports"}>{account.role === "ADMIN" ? "จัดการระบบ" : "หน้ารายงาน"}</Link> : <Link className="landing-button landing-button--primary" to="/login?returnTo=%2Foverview">เข้าสู่ระบบ</Link>}
       </nav>
     </div></header>

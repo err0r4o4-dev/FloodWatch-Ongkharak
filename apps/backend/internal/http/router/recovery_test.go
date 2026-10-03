@@ -2,14 +2,14 @@ package router
 
 import (
 	"context"
-	"net/netip"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"net/netip"
 	"testing"
 	"time"
 
 	"github.com/floodwatch-ongkharak/backend/internal/auth"
-	"log/slog"
 )
 
 type recoveryRouterRepository struct{}

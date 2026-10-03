@@ -2,9 +2,9 @@ package middleware
 
 import (
 	"context"
-	"net/netip"
 	"net/http"
 	"net/http/httptest"
+	"net/netip"
 	"strings"
 	"testing"
 	"time"
@@ -116,7 +116,13 @@ func TestTrustedProxyLimiterFallsBackForMalformedOrDuplicateForwarding(t *testin
 		second func(*http.Request)
 	}{
 		{name: "malformed", set: func(request *http.Request) { request.Header.Set("X-Forwarded-For", "not-an-ip") }, second: func(request *http.Request) { request.Header.Set("X-Forwarded-For", "still-not-an-ip") }},
-		{name: "duplicate", set: func(request *http.Request) { request.Header.Add("X-Forwarded-For", "203.0.113.10"); request.Header.Add("X-Forwarded-For", "203.0.113.11") }, second: func(request *http.Request) { request.Header.Add("X-Forwarded-For", "203.0.113.12"); request.Header.Add("X-Forwarded-For", "203.0.113.13") }},
+		{name: "duplicate", set: func(request *http.Request) {
+			request.Header.Add("X-Forwarded-For", "203.0.113.10")
+			request.Header.Add("X-Forwarded-For", "203.0.113.11")
+		}, second: func(request *http.Request) {
+			request.Header.Add("X-Forwarded-For", "203.0.113.12")
+			request.Header.Add("X-Forwarded-For", "203.0.113.13")
+		}},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			limiter := NewRateLimiterWithTrustedProxies([]netip.Prefix{netip.MustParsePrefix("192.0.2.0/24")})

@@ -15,6 +15,8 @@ import (
 )
 
 type AdminService interface {
+	GetDashboardStats(ctx context.Context) (admin.DashboardStats, error)
+
 	// User management
 	ListUsers(ctx context.Context, filter admin.ListUsersFilter) ([]admin.UserManagement, int, error)
 	GetUser(ctx context.Context, userID string) (admin.UserManagement, error)
@@ -49,10 +51,21 @@ func NewAdminHandler(service AdminService, userFetcher UserFetcher) *AdminHandle
 	}
 }
 
+// GetDashboardStats handles GET /admin/dashboard/stats.
+func (h *AdminHandler) GetDashboardStats(w http.ResponseWriter, r *http.Request) {
+	stats, err := h.service.GetDashboardStats(r.Context())
+	if err != nil {
+		writeAdminError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "Failed to get dashboard stats")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, stats)
+}
+
 // ListUsers handles GET /admin/users
 func (h *AdminHandler) ListUsers(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
-	
+
 	filter := admin.ListUsersFilter{
 		IncludeDisabled: query.Get("includeDisabled") == "true",
 		Limit:           parseIntParam(query.Get("limit"), 50),
@@ -200,7 +213,7 @@ func (h *AdminHandler) EnableUser(w http.ResponseWriter, r *http.Request) {
 // ListSettings handles GET /admin/settings
 func (h *AdminHandler) ListSettings(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
-	
+
 	filter := admin.ListSettingsFilter{}
 
 	if category := query.Get("category"); category != "" {
@@ -284,7 +297,7 @@ func (h *AdminHandler) UpdateSetting(w http.ResponseWriter, r *http.Request) {
 // ListAuditLogs handles GET /admin/audit-logs
 func (h *AdminHandler) ListAuditLogs(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
-	
+
 	filter := admin.ListAuditLogsFilter{
 		Limit:  parseIntParam(query.Get("limit"), 50),
 		Offset: parseIntParam(query.Get("offset"), 0),
@@ -356,13 +369,13 @@ func (h *AdminHandler) GetAuditLog(w http.ResponseWriter, r *http.Request) {
 
 func (h *AdminHandler) getActorInfo(ctx context.Context) (middleware.Principal, string) {
 	principal, _ := middleware.PrincipalFromContext(ctx)
-	
+
 	// Fetch user email
 	var actorEmail string
 	if user, err := h.userFetcher.GetUser(ctx, principal.UserID); err == nil {
 		actorEmail = user.Email
 	}
-	
+
 	return principal, actorEmail
 }
 
@@ -375,7 +388,7 @@ func readJSONBody(w http.ResponseWriter, r *http.Request, target interface{}, ma
 
 	decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, maxBytes))
 	decoder.DisallowUnknownFields()
-	
+
 	if err := decoder.Decode(target); err != nil {
 		writeAdminError(w, http.StatusBadRequest, "INVALID_REQUEST", "Invalid request body")
 		return false

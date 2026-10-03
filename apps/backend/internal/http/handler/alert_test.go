@@ -21,6 +21,12 @@ type alertServiceStub struct {
 func (service *alertServiceStub) List(_ context.Context, _ alert.Page) ([]alert.Alert, error) {
 	return service.items, nil
 }
+func (service *alertServiceStub) ListRules(context.Context, alert.Page) ([]alert.Rule, error) {
+	return []alert.Rule{{ID: "11111111-1111-4111-8111-111111111111", Enabled: false}}, nil
+}
+func (service *alertServiceStub) GetRule(context.Context, string) (alert.Rule, error) {
+	return alert.Rule{}, alert.ErrNotFound
+}
 func (service *alertServiceStub) CreateRule(_ context.Context, input alert.RuleInput) (alert.Rule, error) {
 	service.created = input
 	return alert.Rule{ID: "rule-1", Name: input.Name, Type: input.Type, Enabled: input.Enabled, Severity: input.Severity, Title: input.Title, Message: input.Message}, nil
