@@ -23,6 +23,14 @@ describe("AppRoutes", () => {
 });
 
 describe("public routes", () => {
+  it("keeps the scroll region full width while constraining page content", () => {
+    render(<MemoryRouter initialEntries={["/system-status"]}><AppRoutes /></MemoryRouter>);
+    const main = screen.getByRole("main");
+    expect(main).toHaveClass("page-content");
+    expect(main).not.toHaveClass("max-w-[1600px]");
+    expect(main.firstElementChild).toHaveClass("page-content__inner", "max-w-[1600px]");
+  });
+
   it.each(["/login", "/register", "/forgot-password"])("keeps a main landmark on %s", async (path) => {
     const api = {
       refresh: vi.fn().mockRejectedValue(new Error("anonymous")),

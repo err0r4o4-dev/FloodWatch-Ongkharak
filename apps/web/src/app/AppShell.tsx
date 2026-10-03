@@ -53,7 +53,9 @@ export function AppShell({ children }: { children: ReactNode }) {
       <header className="institution-header"><div className="w-full max-w-[1600px] mx-auto px-4 sm:px-5 md:px-5 lg:px-5 flex items-center justify-between gap-4"><span className="institution-header__name">ศูนย์ติดตามสถานการณ์น้ำ อำเภอองครักษ์ จังหวัดนครนายก</span><div className="institution-header__actions"><div className="locale-toggle" aria-label="ภาษา"><span aria-current="true">TH</span><button type="button" disabled title="ภาษาอังกฤษยังไม่พร้อมใช้งาน">EN</button></div><NavLink className="header-icon" to="/#notification-settings" aria-label="ตั้งค่าการแจ้งเตือน"><Icon name="bell" /></NavLink><details className="account-menu" onKeyDown={(event) => { if (event.key === "Escape") event.currentTarget.open = false; }}><summary aria-label="เมนูบัญชี"><Icon name="user" /> <span aria-hidden="true">⌄</span></summary><div className="account-menu__content">{account ? <><span>{account.email}</span>{account.role === "ADMIN" && <NavLink to="/admin">จัดการระบบ</NavLink>}<button type="button" onClick={() => void logout()}>ออกจากระบบ</button></> : <><NavLink to="/login">เข้าสู่ระบบ</NavLink><NavLink to="/register">สมัครสมาชิก</NavLink></>}</div></details></div></div></header>
       <header className="mobile-header"><div className="w-full max-w-[1600px] mx-auto px-4 sm:px-5 md:px-5 lg:px-5 flex items-center h-full"><NavLink to="/" className="brand" aria-label="Flood Watch Ongkharak หน้าหลัก"><img className="brand__image" src="/flood-watch-mark.svg" alt="" /><span><strong>Flood Watch</strong><small>Ongkharak</small></span></NavLink></div></header>
     </div>
-      <main id="main-content" className="page-content w-full max-w-[1600px] mx-auto px-4 sm:px-5 md:px-5 lg:px-5" tabIndex={-1}>{children}</main>
+      <main id="main-content" className="page-content w-full" tabIndex={-1}>
+        <div className="page-content__inner w-full max-w-[1600px] mx-auto px-4 sm:px-5 md:px-5 lg:px-5">{children}</div>
+      </main>
     </div>
     <Navigation mobile />
   </div>;

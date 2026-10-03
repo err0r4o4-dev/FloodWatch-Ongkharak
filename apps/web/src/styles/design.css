@@ -101,6 +101,7 @@ body {
 .account-menu__content a, .account-menu__content button, .account-menu__content span { padding: .6rem; border: 0; border-radius: .5rem; color: var(--color-ink); background: transparent; font: inherit; font-size: .82rem; text-align: left; text-decoration: none; overflow-wrap: anywhere; }
 .account-menu__content a:hover, .account-menu__content button:hover { background: #eaf3ff; }
 .public-shell .page-content { flex: 1; min-height: 0; overflow-y: auto; padding-block: 1.35rem 2rem; }
+.public-shell .page-content__inner { height: 100%; }
 .page-heading h1 { color: #081a51; font-size: clamp(1.75rem, 2.65vw, 2.5rem); font-weight: 800; letter-spacing: -.025em; }
 .data-section, .state-panel, .map-side-panel { border-color: rgb(222 236 252 / 76%); box-shadow: 0 8px 25px rgb(61 115 170 / 6%); }
 .data-card { border-color: #e7f0fc; box-shadow: 0 4px 14px rgb(51 100 151 / 4%); }
@@ -149,6 +150,7 @@ body {
   .public-shell { display: block; }
   .shell-main { height: auto; overflow: visible; padding-bottom: calc(5rem + env(safe-area-inset-bottom)); }
   .public-shell .page-content { overflow-y: visible; }
+  .public-shell .page-content__inner { height: auto; }
   .institution-header { min-height: 3.8rem; border-bottom: 0; }
   .mobile-header { display: flex; align-items: center; min-height: 3.8rem; border-color: var(--color-border); background: var(--shell-chrome-surface); }
   .bottom-navigation { padding-inline: 0; background: var(--shell-chrome-surface); }
