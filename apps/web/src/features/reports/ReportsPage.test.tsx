@@ -93,6 +93,35 @@ describe("report review API", () => {
 });
 
 describe("ReportsPage public list", () => {
+  it("summarizes loaded verified records and identifies the selected report", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response({ items: [verifiedReport, { ...verifiedReport, id: "road", type: "ROAD", description: "ถนนทดสอบ" }, { ...verifiedReport, id: "pending", status: "PENDING", verificationStatus: "PENDING" }], limit: 20, offset: 0 })));
+    renderReports();
+    const summary = screen.getByRole("region", { name: "สรุปรายงานที่โหลดได้" });
+    await waitFor(() => expect(summary).toHaveTextContent("2"));
+    expect(Array.from(summary.querySelectorAll("dd"), (element) => element.textContent)).toEqual(["2 รายงาน", "1 รายงาน", "1 รายงาน", "0 รายงาน"]);
+    expect(summary).toHaveTextContent("เฉพาะรายงานที่ยืนยันแล้วในรายการที่โหลดได้ ไม่ใช่ยอดรวมทั้งพื้นที่");
+    const first = screen.getByRole("button", { name: `ดูรายละเอียด: น้ำท่วม · ${verifiedReport.description}` });
+    expect(first).toHaveAttribute("aria-pressed", "true");
+    const road = screen.getByRole("button", { name: "ดูรายละเอียด: สภาพถนน · ถนนทดสอบ" });
+    fireEvent.click(road);
+    expect(road).toHaveAttribute("aria-pressed", "true");
+    expect(first).toHaveAttribute("aria-pressed", "false");
+    await waitFor(() => expect(screen.getByRole("heading", { name: "ถนนทดสอบ" })).toHaveFocus());
+    fireEvent.change(screen.getByRole("searchbox", { name: "ค้นหารายงาน" }), { target: { value: "ไม่ตรงกับรายงาน" } });
+    expect(screen.getByText("แสดง 0 จาก 2 รายงานที่โหลดได้")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "ล้างตัวกรอง" }));
+    expect(screen.getByRole("searchbox", { name: "ค้นหารายงาน" })).toHaveValue("");
+    expect(screen.getByText("แสดง 2 จาก 2 รายงานที่โหลดได้")).toBeInTheDocument();
+  });
+
+  it("does not present unavailable summary counts as zero", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response({ error: { message: "Offline" } }, 503)));
+    renderReports();
+    await screen.findByRole("alert");
+    expect(screen.getByRole("region", { name: "สรุปรายงานที่โหลดได้" })).toHaveTextContent("—");
+    expect(screen.getByText("จำนวนรายงานไม่พร้อมใช้งาน")).toBeInTheDocument();
+  });
+
   it("does not silently substitute another report when the linked report is unavailable", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response({ items: [verifiedReport], limit: 20, offset: 0 })));
     render(<MemoryRouter initialEntries={["/reports?report=missing"]}><ReportsPage /></MemoryRouter>);

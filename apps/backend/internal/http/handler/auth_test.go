@@ -20,7 +20,7 @@ type fakeAuthService struct {
 	err           error
 }
 
-func (fake *fakeAuthService) Register(context.Context, string, string) (auth.User, error) {
+func (fake *fakeAuthService) RegisterWithUsername(context.Context, string, string, string) (auth.User, error) {
 	fake.registerCalls++
 	return fake.user, fake.err
 }
@@ -67,6 +67,18 @@ func TestRegisterReturnsOnlySafeUserFields(t *testing.T) {
 	}
 	if body["user"]["role"] != "USER" || len(body["user"]) != 4 {
 		t.Fatalf("unsafe or incorrect user body: %+v", body["user"])
+	}
+}
+
+func TestRegisterAcceptsUsername(t *testing.T) {
+	service := &fakeAuthService{user: auth.User{ID: "user-id", Email: "person@example.test", Role: auth.RoleUser}}
+	handler := NewAuthHandler(service, testCookieOptions())
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register", strings.NewReader(`{"email":"person@example.test","username":"person_name","password":"strong-passphrase"}`))
+	request.Header.Set("Content-Type", "application/json")
+	response := httptest.NewRecorder()
+	handler.Register(response, request)
+	if response.Code != http.StatusCreated || service.registerCalls != 1 {
+		t.Fatalf("register status = %d, calls = %d, want 201 and 1", response.Code, service.registerCalls)
 	}
 }
 

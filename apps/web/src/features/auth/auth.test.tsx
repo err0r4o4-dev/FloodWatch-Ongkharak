@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AuthProvider, useAuth } from "./AuthProvider";
-import { ApiClient, createAuthApi } from "./api";
+import { ApiClient, createAuthApi, createPasswordRecoveryApi } from "./api";
 import { RequireAdmin, RequireAuth } from "./RequireAuth";
 
 const account = {
@@ -101,6 +101,35 @@ describe("AuthProvider", () => {
 });
 
 describe("ApiClient", () => {
+  it("uses the unauthenticated password recovery contract for all three steps", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(response({ challengeId: "challenge-1", expiresIn: 600, resendAfter: 60, message: "generic" }))
+      .mockResolvedValueOnce(response({ resetToken: "reset-1", expiresIn: 300 }))
+      .mockResolvedValueOnce(response(undefined, 204));
+    vi.stubGlobal("fetch", fetchMock);
+    const api = createPasswordRecoveryApi(new ApiClient());
+
+    await expect(api.requestOtp("user@example.com")).resolves.toEqual(expect.objectContaining({ challengeId: "challenge-1" }));
+    await expect(api.verifyOtp({ challengeId: "challenge-1", otp: "123456" })).resolves.toEqual({ resetToken: "reset-1", expiresIn: 300 });
+    await expect(api.resetPassword({ resetToken: "reset-1", password: "password1234" })).resolves.toBeUndefined();
+
+    expect(fetchMock).toHaveBeenNthCalledWith(1, "/api/v1/auth/password/request-otp", expect.objectContaining({ method: "POST", credentials: "same-origin" }));
+    expect(fetchMock).toHaveBeenNthCalledWith(2, "/api/v1/auth/password/verify-otp", expect.objectContaining({ method: "POST", credentials: "same-origin" }));
+    expect(fetchMock).toHaveBeenNthCalledWith(3, "/api/v1/auth/password/reset", expect.objectContaining({ method: "POST", credentials: "same-origin" }));
+    expect(JSON.parse(String(fetchMock.mock.calls[1][1].body))).toEqual({ challengeId: "challenge-1", otp: "123456" });
+  });
+
+  it("does not refresh an unauthenticated recovery request after 401", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(response({ error: { code: "INVALID_REQUEST", message: "invalid" } }, 401));
+    vi.stubGlobal("fetch", fetchMock);
+    const client = new ApiClient();
+    const refresh = vi.fn().mockResolvedValue(true);
+    client.setUnauthorizedHandler(refresh);
+
+    await expect(createPasswordRecoveryApi(client).requestOtp("user@example.com")).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+    expect(refresh).not.toHaveBeenCalled();
+  });
+
   it("shares one refresh and retries each unauthorized request once", async () => {
     const fetchMock = vi.fn((path: string, options: RequestInit) => {
       const authorized = (options.headers as Headers).get("Authorization") === "Bearer renewed-token";

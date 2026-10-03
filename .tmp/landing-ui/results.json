@@ -1,0 +1,43 @@
+[
+  {
+    "width": 320,
+    "viewport": 320,
+    "document": 320,
+    "touchTargets": "pass"
+  },
+  {
+    "width": 390,
+    "viewport": 390,
+    "document": 390,
+    "touchTargets": "pass"
+  },
+  {
+    "width": 768,
+    "viewport": 768,
+    "document": 768,
+    "touchTargets": "pass"
+  },
+  {
+    "width": 1024,
+    "viewport": 1024,
+    "document": 1024,
+    "touchTargets": "pass"
+  },
+  {
+    "width": 1440,
+    "viewport": 1440,
+    "document": 1440,
+    "touchTargets": "pass"
+  },
+  {
+    "keyboard": "pass",
+    "routes": "pass",
+    "overviewBookmark": "pass",
+    "loginReturnTo": "/overview",
+    "textZoom": {
+      "viewport": 390,
+      "document": 390
+    },
+    "pageErrors": []
+  }
+]

@@ -6,6 +6,7 @@
     "overview 768px no document overflow",
     "overview 390px no document overflow",
     "overview 320px no document overflow",
+    "desktop lower risk/road/report panels are reachable in existing content scroller",
     "keyboard Enter opens selected verified individual report",
     "empty state visible without overflow",
     "error state visible without overflow",

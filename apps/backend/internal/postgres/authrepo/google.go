@@ -36,23 +36,23 @@ func (repository *Repository) ResolveGoogleIdentity(ctx context.Context, identit
 	if _, err := tx.Exec(ctx, `SELECT pg_advisory_xact_lock(hashtextextended($1,0))`, "GOOGLE:"+identity.Subject); err != nil {
 		return auth.User{}, false, err
 	}
-	user, err := scanUser(tx.QueryRow(ctx, `SELECT u.id,u.email,COALESCE(u.password_hash,''),u.role,u.created_at,u.updated_at,u.disabled_at FROM auth_identities i JOIN users u ON u.id=i.user_id WHERE i.provider='GOOGLE' AND i.provider_subject=$1 FOR UPDATE OF u`, identity.Subject))
+	user, err := scanUser(tx.QueryRow(ctx, `SELECT u.id,u.email,COALESCE(u.password_hash,''),u.role,u.created_at,u.updated_at,u.disabled_at,COALESCE(u.username,''),u.auth_version FROM auth_identities i JOIN users u ON u.id=i.user_id WHERE i.provider='GOOGLE' AND i.provider_subject=$1 FOR UPDATE OF u`, identity.Subject))
 	if err == nil {
 		return user, false, tx.Commit(ctx)
 	}
 	if !errors.Is(err, pgx.ErrNoRows) {
 		return auth.User{}, false, err
 	}
-	user, err = scanUser(tx.QueryRow(ctx, `SELECT id,email,COALESCE(password_hash,''),role,created_at,updated_at,disabled_at FROM users WHERE email=$1 FOR UPDATE`, identity.Email))
+	user, err = scanUser(tx.QueryRow(ctx, `SELECT id,email,COALESCE(password_hash,''),role,created_at,updated_at,disabled_at,COALESCE(username,''),auth_version FROM users WHERE email=$1 FOR UPDATE`, identity.Email))
 	if err == nil {
 		return user, true, tx.Commit(ctx)
 	}
 	if !errors.Is(err, pgx.ErrNoRows) {
 		return auth.User{}, false, err
 	}
-	user, err = scanUser(tx.QueryRow(ctx, `INSERT INTO users(id,email,password_hash,role) VALUES ($1,$2,NULL,'USER') ON CONFLICT (email) DO NOTHING RETURNING id,email,COALESCE(password_hash,''),role,created_at,updated_at,disabled_at`, newUser.ID, identity.Email))
+	user, err = scanUser(tx.QueryRow(ctx, `INSERT INTO users(id,email,password_hash,role) VALUES ($1,$2,NULL,'USER') ON CONFLICT (email) DO NOTHING RETURNING id,email,COALESCE(password_hash,''),role,created_at,updated_at,disabled_at,COALESCE(username,''),auth_version`, newUser.ID, identity.Email))
 	if errors.Is(err, pgx.ErrNoRows) {
-		user, err = scanUser(tx.QueryRow(ctx, `SELECT id,email,COALESCE(password_hash,''),role,created_at,updated_at,disabled_at FROM users WHERE email=$1 FOR UPDATE`, identity.Email))
+		user, err = scanUser(tx.QueryRow(ctx, `SELECT id,email,COALESCE(password_hash,''),role,created_at,updated_at,disabled_at,COALESCE(username,''),auth_version FROM users WHERE email=$1 FOR UPDATE`, identity.Email))
 		if err != nil {
 			return auth.User{}, false, err
 		}
@@ -95,7 +95,7 @@ func (repository *Repository) CompleteGoogleLink(ctx context.Context, tokenHash 
 	var returnTo string
 	var attempts int
 	var expiresAt time.Time
-	err = tx.QueryRow(ctx, `SELECT u.id,u.email,COALESCE(u.password_hash,''),u.role,u.created_at,u.updated_at,u.disabled_at,p.return_to,p.attempts,p.expires_at FROM auth_google_pending_links p JOIN users u ON u.id=p.user_id WHERE p.token_hash=$1 FOR UPDATE OF p,u`, tokenHash).Scan(&user.ID, &user.Email, &user.PasswordHash, &user.Role, &user.CreatedAt, &user.UpdatedAt, &user.DisabledAt, &returnTo, &attempts, &expiresAt)
+	err = tx.QueryRow(ctx, `SELECT u.id,u.email,COALESCE(u.password_hash,''),u.role,u.created_at,u.updated_at,u.disabled_at,COALESCE(u.username,''),u.auth_version,p.return_to,p.attempts,p.expires_at FROM auth_google_pending_links p JOIN users u ON u.id=p.user_id WHERE p.token_hash=$1 FOR UPDATE OF p,u`, tokenHash).Scan(&user.ID, &user.Email, &user.PasswordHash, &user.Role, &user.CreatedAt, &user.UpdatedAt, &user.DisabledAt, &user.Username, &user.AuthVersion, &returnTo, &attempts, &expiresAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return auth.User{}, "", auth.ErrGoogleLink
 	}

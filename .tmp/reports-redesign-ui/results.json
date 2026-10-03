@@ -1,0 +1,110 @@
+{
+  "checks": [
+    {
+      "width": 1440,
+      "scrollWidth": 1440,
+      "targets": [
+        48,
+        44,
+        44,
+        44,
+        44,
+        44,
+        44,
+        44,
+        44
+      ]
+    },
+    {
+      "width": 1024,
+      "scrollWidth": 1024,
+      "targets": [
+        48,
+        44,
+        44,
+        44,
+        44,
+        44,
+        44,
+        44,
+        44
+      ]
+    },
+    {
+      "width": 768,
+      "scrollWidth": 768,
+      "targets": [
+        48,
+        44,
+        44,
+        44,
+        44,
+        44,
+        44,
+        44,
+        44
+      ]
+    },
+    {
+      "width": 390,
+      "scrollWidth": 390,
+      "targets": [
+        48,
+        44,
+        44,
+        44,
+        44,
+        44,
+        44,
+        44,
+        44
+      ]
+    },
+    {
+      "width": 320,
+      "scrollWidth": 320,
+      "targets": [
+        48,
+        59.59375,
+        59.59375,
+        59.59375,
+        59.59375,
+        44,
+        44,
+        44,
+        44
+      ]
+    },
+    {
+      "keyboardSelection": true,
+      "filtering": true,
+      "clearFilters": true
+    },
+    {
+      "mobileDetailFocus": true,
+      "scoped200PercentText": true
+    },
+    {
+      "state": "loading",
+      "checked": true
+    },
+    {
+      "state": "empty",
+      "checked": true
+    },
+    {
+      "state": "error",
+      "checked": true
+    },
+    {
+      "state": "media-error",
+      "checked": true
+    },
+    {
+      "authenticated": true,
+      "createAnchor": true,
+      "missingDeepLink": true
+    }
+  ],
+  "errors": []
+}

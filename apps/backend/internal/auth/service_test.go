@@ -409,8 +409,24 @@ func (repository *fakeRepository) CreateUser(_ context.Context, user User) (User
 	if _, exists := repository.usersByEmail[user.Email]; exists {
 		return User{}, ErrEmailExists
 	}
+	if user.Username != "" {
+		for _, existing := range repository.usersByID {
+			if existing.Username == user.Username {
+				return User{}, ErrUsernameExists
+			}
+		}
+	}
 	repository.storeUser(user)
 	return user, nil
+}
+
+func (repository *fakeRepository) FindUserByUsername(_ context.Context, username string) (User, error) {
+	for _, user := range repository.usersByID {
+		if user.Username == username {
+			return user, nil
+		}
+	}
+	return User{}, ErrNotFound
 }
 
 func (repository *fakeRepository) FindUserByEmail(_ context.Context, email string) (User, error) {

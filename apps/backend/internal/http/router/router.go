@@ -3,6 +3,7 @@ package router
 import (
 	"embed"
 	"log/slog"
+	"net/netip"
 	"net/http"
 	"time"
 
@@ -27,8 +28,10 @@ type Dependencies struct {
 	Logger              *slog.Logger
 	Readiness           *health.Service
 	CORSAllowedOrigins  []string
+	TrustedProxyCIDRs   []netip.Prefix
 	SwaggerEnabled      bool
 	AuthService         *auth.Service
+	RecoveryService     *auth.RecoveryService
 	GoogleService       *auth.GoogleService
 	AuthFrontendOrigin  string
 	FloodService        *flood.Service
@@ -76,6 +79,15 @@ func New(dependencies Dependencies) http.Handler {
 		if dependencies.AuthService != nil {
 			authHandler := handler.NewAuthHandler(dependencies.AuthService, dependencies.CookieOptions)
 			limiter := middleware.NewRateLimiter()
+			var recoveryService handler.PasswordRecovery
+			if dependencies.RecoveryService != nil {
+				recoveryService = dependencies.RecoveryService
+			}
+			recoveryHandler := handler.NewRecoveryHandler(recoveryService, dependencies.CookieOptions)
+			recoveryLimiter := middleware.NewRateLimiterWithTrustedProxies(dependencies.TrustedProxyCIDRs)
+			api.With(recoveryLimiter.Limit("request-otp", 5, time.Hour)).Post("/auth/password/request-otp", recoveryHandler.RequestOTP)
+			api.With(recoveryLimiter.Limit("verify-otp", 30, time.Minute)).Post("/auth/password/verify-otp", recoveryHandler.VerifyOTP)
+			api.With(recoveryLimiter.Limit("reset-password", 10, time.Minute)).Post("/auth/password/reset", recoveryHandler.Reset)
 			api.With(limiter.Limit("register", 5, time.Minute)).Post("/auth/register", authHandler.Register)
 			api.With(limiter.Limit("login", 10, time.Minute)).Post("/auth/login", authHandler.Login)
 			api.With(limiter.Limit("refresh", 30, time.Minute)).Post("/auth/refresh", authHandler.Refresh)

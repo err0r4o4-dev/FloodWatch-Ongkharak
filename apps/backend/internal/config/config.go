@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"net/netip"
 	"net/http"
 	"net/url"
 	"os"
@@ -24,6 +25,7 @@ type Config struct {
 	MinIOSecretKey             string
 	MinIOBucket                string
 	CORSAllowedOrigins         []string
+	TrustedProxyCIDRs          []netip.Prefix
 	JWTIssuer                  string
 	JWTSecret                  string
 	JWTAccessTTL               time.Duration
@@ -32,6 +34,12 @@ type Config struct {
 	CookieSecure               bool
 	CookieSameSite             http.SameSite
 	AIServiceURL               string
+	SMTPHost                   string
+	SMTPPort                   int
+	SMTPUsername               string
+	SMTPPassword               string
+	SMTPFrom                   string
+	SMTPRequireTLS             bool
 	SwaggerEnabled             bool
 	ReadinessTimeout           time.Duration
 	IngestionFixtureURL        string
@@ -89,7 +97,15 @@ func Load() (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
+	trustedProxyCIDRs, err := trustedProxyCIDRs()
+	if err != nil {
+		return Config{}, err
+	}
 	googleSettings, err := loadGoogle(environment, corsOrigins)
+	if err != nil {
+		return Config{}, err
+	}
+	smtpSettings, err := loadSMTP(environment)
 	if err != nil {
 		return Config{}, err
 	}
@@ -183,6 +199,7 @@ func Load() (Config, error) {
 		MinIOSecretKey:             minioSecretKey,
 		MinIOBucket:                minioBucket,
 		CORSAllowedOrigins:         corsOrigins,
+		TrustedProxyCIDRs:          trustedProxyCIDRs,
 		JWTIssuer:                  jwtIssuer,
 		JWTSecret:                  jwtSecret,
 		JWTAccessTTL:               accessTTL,
@@ -191,6 +208,12 @@ func Load() (Config, error) {
 		CookieSecure:               cookieSecure,
 		CookieSameSite:             cookieSameSite,
 		AIServiceURL:               aiServiceURL.String(),
+		SMTPHost:                   smtpSettings.Host,
+		SMTPPort:                   smtpSettings.Port,
+		SMTPUsername:               smtpSettings.Username,
+		SMTPPassword:               smtpSettings.Password,
+		SMTPFrom:                   smtpSettings.From,
+		SMTPRequireTLS:             smtpSettings.RequireTLS,
 		SwaggerEnabled:             swaggerEnabled,
 		ReadinessTimeout:           defaultReadinessTimeout,
 		IngestionFixtureURL:        fixtureURL,

@@ -14,7 +14,7 @@ describe("sign out confirmation", () => {
   beforeEach(() => { vi.clearAllMocks(); vi.mocked(confirmAction).mockResolvedValue(false); });
 
   it("requests confirmation without immediately logging out", async () => {
-    render(<MemoryRouter><AppShell>Content</AppShell></MemoryRouter>);
+    render(<MemoryRouter initialEntries={["/overview"]}><AppShell>Content</AppShell></MemoryRouter>);
     fireEvent.click(screen.getByRole("button", { name: "ออกจากระบบ" }));
     await waitFor(() => expect(confirmAction).toHaveBeenCalledTimes(1));
     expect(logout).not.toHaveBeenCalled();
@@ -24,7 +24,7 @@ describe("sign out confirmation", () => {
   it("ignores duplicate clicks while a confirmation is active", async () => {
     let finish: (value: boolean) => void = () => undefined;
     vi.mocked(confirmAction).mockImplementation(() => new Promise((resolve) => { finish = resolve; }));
-    render(<MemoryRouter><AppShell>Content</AppShell></MemoryRouter>);
+    render(<MemoryRouter initialEntries={["/overview"]}><AppShell>Content</AppShell></MemoryRouter>);
     const button = screen.getByRole("button", { name: "ออกจากระบบ" });
     fireEvent.click(button);
     fireEvent.click(button);
@@ -34,7 +34,7 @@ describe("sign out confirmation", () => {
     expect(button).not.toBeDisabled();
   });
 
-  it("returns to the overview only after successful sign out", async () => {
+  it("returns to the landing page only after successful sign out", async () => {
     vi.mocked(confirmAction).mockImplementation(async (options) => { await options.action(); return true; });
     render(<MemoryRouter initialEntries={["/reports"]}><AppShell><CurrentPath /></AppShell></MemoryRouter>);
     fireEvent.click(screen.getByRole("button", { name: "ออกจากระบบ" }));

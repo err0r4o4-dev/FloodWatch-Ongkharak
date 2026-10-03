@@ -61,6 +61,18 @@ func NewService(repository Repository, secret []byte, issuer string, accessTTL, 
 }
 
 func (service *Service) Register(ctx context.Context, email, password string) (User, error) {
+	return service.register(ctx, email, "", password)
+}
+
+func (service *Service) RegisterWithUsername(ctx context.Context, email, username, password string) (User, error) {
+	normalizedUsername, err := normalizeUsername(username)
+	if err != nil {
+		return User{}, err
+	}
+	return service.register(ctx, email, normalizedUsername, password)
+}
+
+func (service *Service) register(ctx context.Context, email, username, password string) (User, error) {
 	normalizedEmail, err := normalizeEmail(email)
 	if err != nil {
 		return User{}, err
@@ -77,6 +89,7 @@ func (service *Service) Register(ctx context.Context, email, password string) (U
 	user, err := service.repository.CreateUser(ctx, User{
 		ID:           uuid.NewString(),
 		Email:        normalizedEmail,
+		Username:     username,
 		PasswordHash: passwordHash,
 		Role:         RoleUser,
 		CreatedAt:    now,
@@ -89,14 +102,32 @@ func (service *Service) Register(ctx context.Context, email, password string) (U
 }
 
 func (service *Service) Login(ctx context.Context, email, password string) (SessionResult, error) {
-	normalizedEmail, emailErr := normalizeEmail(email)
-	if emailErr != nil || !passwordWithinBounds(password) {
+	if !passwordWithinBounds(password) {
 		verifyDummyPassword()
 		return SessionResult{}, ErrInvalidCredentials
 	}
-
-	user, err := service.repository.FindUserByEmail(ctx, normalizedEmail)
-	if errors.Is(err, ErrNotFound) || errors.Is(err, ErrAccountDisabled) {
+	var user User
+	var err error
+	if strings.Contains(email, "@") {
+		var normalizedEmail string
+		normalizedEmail, err = normalizeEmail(email)
+		if err == nil {
+			user, err = service.repository.FindUserByEmail(ctx, normalizedEmail)
+		}
+	} else {
+		var username string
+		username, err = normalizeUsername(email)
+		if err == nil {
+			if repository, ok := service.repository.(interface {
+				FindUserByUsername(context.Context, string) (User, error)
+			}); ok {
+				user, err = repository.FindUserByUsername(ctx, username)
+			} else {
+				err = ErrNotFound
+			}
+		}
+	}
+	if errors.Is(err, ErrNotFound) || errors.Is(err, ErrAccountDisabled) || errors.Is(err, ErrInvalidRequest) {
 		verifyDummyPassword()
 		return SessionResult{}, ErrInvalidCredentials
 	}
@@ -161,7 +192,7 @@ func (service *Service) Authenticate(ctx context.Context, bearerToken string) (U
 	if err != nil {
 		return User{}, err
 	}
-	if user.DisabledAt != nil || user.Role != claims.Role || !validRole(user.Role) {
+	if user.DisabledAt != nil || user.Role != claims.Role || user.AuthVersion != claims.AuthVersion || !validRole(user.Role) {
 		return User{}, ErrUnauthenticated
 	}
 	return sanitizedUser(user), nil
@@ -240,6 +271,7 @@ func (service *Service) createSession(ctx context.Context, user User) (SessionRe
 	if err != nil {
 		return SessionResult{}, err
 	}
+	session.AuthVersion = user.AuthVersion
 	if err := service.repository.CreateRefreshSession(ctx, session); err != nil {
 		return SessionResult{}, err
 	}

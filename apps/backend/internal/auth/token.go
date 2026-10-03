@@ -10,14 +10,16 @@ import (
 )
 
 type accessClaims struct {
-	Role Role `json:"role"`
+	Role        Role  `json:"role"`
+	AuthVersion int64 `json:"authVersion,omitempty"`
 	jwt.RegisteredClaims
 }
 
 func (service *Service) issueAccessToken(user User, issuedAt time.Time) (string, time.Time, error) {
 	expiresAt := issuedAt.Add(service.accessTTL)
 	claims := accessClaims{
-		Role: user.Role,
+		Role:        user.Role,
+		AuthVersion: user.AuthVersion,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    service.issuer,
 			Subject:   user.ID,

@@ -24,10 +24,10 @@ func New(pool *pgxpool.Pool) *Repository {
 func (repository *Repository) CreateUser(ctx context.Context, user auth.User) (auth.User, error) {
 	user.Email = normalizeEmail(user.Email)
 	err := repository.pool.QueryRow(ctx, `
-		INSERT INTO users (id, email, password_hash, role, disabled_at)
-		VALUES ($1, $2, NULLIF($3, ''), $4, $5)
-		RETURNING id, email, COALESCE(password_hash, ''), role, created_at, updated_at, disabled_at
-	`, user.ID, user.Email, user.PasswordHash, user.Role, user.DisabledAt).Scan(
+		INSERT INTO users (id, email, password_hash, role, disabled_at, username)
+		VALUES ($1, $2, NULLIF($3, ''), $4, $5, NULLIF($6, ''))
+		RETURNING id, email, COALESCE(password_hash, ''), role, created_at, updated_at, disabled_at, COALESCE(username, ''), auth_version
+	`, user.ID, user.Email, user.PasswordHash, user.Role, user.DisabledAt, strings.ToLower(strings.TrimSpace(user.Username))).Scan(
 		&user.ID,
 		&user.Email,
 		&user.PasswordHash,
@@ -35,8 +35,14 @@ func (repository *Repository) CreateUser(ctx context.Context, user auth.User) (a
 		&user.CreatedAt,
 		&user.UpdatedAt,
 		&user.DisabledAt,
+		&user.Username,
+		&user.AuthVersion,
 	)
 	if err != nil {
+		var databaseError *pgconn.PgError
+		if errors.As(err, &databaseError) && databaseError.Code == "23505" && databaseError.ConstraintName == "users_username_unique" {
+			return auth.User{}, auth.ErrUsernameExists
+		}
 		if isUniqueEmailError(err) {
 			return auth.User{}, auth.ErrEmailExists
 		}
@@ -47,7 +53,7 @@ func (repository *Repository) CreateUser(ctx context.Context, user auth.User) (a
 
 func (repository *Repository) FindUserByEmail(ctx context.Context, email string) (auth.User, error) {
 	user, err := scanUser(repository.pool.QueryRow(ctx, `
-		SELECT id, email, COALESCE(password_hash, ''), role, created_at, updated_at, disabled_at
+		SELECT id, email, COALESCE(password_hash, ''), role, created_at, updated_at, disabled_at, COALESCE(username, ''), auth_version
 		FROM users
 		WHERE email = $1
 	`, normalizeEmail(email)))
@@ -62,7 +68,7 @@ func (repository *Repository) FindUserByEmail(ctx context.Context, email string)
 
 func (repository *Repository) FindUserByID(ctx context.Context, id string) (auth.User, error) {
 	user, err := scanUser(repository.pool.QueryRow(ctx, `
-		SELECT id, email, COALESCE(password_hash, ''), role, created_at, updated_at, disabled_at
+		SELECT id, email, COALESCE(password_hash, ''), role, created_at, updated_at, disabled_at, COALESCE(username, ''), auth_version
 		FROM users
 		WHERE id = $1
 	`, id))
@@ -76,9 +82,29 @@ func (repository *Repository) FindUserByID(ctx context.Context, id string) (auth
 }
 
 func (repository *Repository) CreateRefreshSession(ctx context.Context, session auth.RefreshSession) error {
-	commandTag, err := repository.pool.Exec(ctx, `
+	tx, err := repository.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+	var version int64
+	var disabledAt *time.Time
+	err = tx.QueryRow(ctx, `SELECT auth_version,disabled_at FROM users WHERE id=$1 FOR UPDATE`, session.UserID).Scan(&version, &disabledAt)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return auth.ErrNotFound
+	}
+	if err != nil {
+		return err
+	}
+	if disabledAt != nil {
+		return auth.ErrAccountDisabled
+	}
+	if version != session.AuthVersion {
+		return auth.ErrInvalidCredentials
+	}
+	_, err = tx.Exec(ctx, `
 		INSERT INTO refresh_sessions (id, user_id, token_hash, expires_at)
-		SELECT $1, id, $3, $4 FROM users WHERE id = $2 AND disabled_at IS NULL
+		VALUES ($1,$2,$3,$4)
 	`, session.ID, session.UserID, session.TokenHash, session.ExpiresAt)
 	if err != nil {
 		if isUserForeignKeyError(err) {
@@ -86,15 +112,21 @@ func (repository *Repository) CreateRefreshSession(ctx context.Context, session 
 		}
 		return fmt.Errorf("create refresh session: %w", err)
 	}
-	if commandTag.RowsAffected() == 0 {
-		if _, err := repository.FindUserByID(ctx, session.UserID); errors.Is(err, auth.ErrNotFound) {
-			return auth.ErrNotFound
-		} else if err != nil {
-			return err
-		}
-		return auth.ErrAccountDisabled
+	return tx.Commit(ctx)
+}
+
+func (repository *Repository) FindUserByUsername(ctx context.Context, username string) (auth.User, error) {
+	user, err := scanUser(repository.pool.QueryRow(ctx, `
+		SELECT id, email, COALESCE(password_hash, ''), role, created_at, updated_at, disabled_at, COALESCE(username, ''), auth_version
+		FROM users WHERE username = $1
+	`, strings.ToLower(strings.TrimSpace(username))))
+	if errors.Is(err, pgx.ErrNoRows) {
+		return auth.User{}, auth.ErrNotFound
 	}
-	return nil
+	if err != nil {
+		return auth.User{}, fmt.Errorf("find user by username: %w", err)
+	}
+	return user, nil
 }
 
 func (repository *Repository) RotateRefreshSession(ctx context.Context, oldTokenHash []byte, replacement auth.RefreshSession, now time.Time) (auth.User, error) {
@@ -103,6 +135,12 @@ func (repository *Repository) RotateRefreshSession(ctx context.Context, oldToken
 		return auth.User{}, fmt.Errorf("begin refresh rotation: %w", err)
 	}
 	defer tx.Rollback(ctx)
+	var lockedUserID string
+	if err := tx.QueryRow(ctx, `SELECT u.id FROM users u JOIN refresh_sessions s ON s.user_id=u.id WHERE s.token_hash=$1 FOR UPDATE OF u`, oldTokenHash).Scan(&lockedUserID); errors.Is(err, pgx.ErrNoRows) {
+		return auth.User{}, auth.ErrSessionInvalid
+	} else if err != nil {
+		return auth.User{}, err
+	}
 
 	var (
 		user      auth.User
@@ -111,7 +149,7 @@ func (repository *Repository) RotateRefreshSession(ctx context.Context, oldToken
 		revokedAt *time.Time
 	)
 	err = tx.QueryRow(ctx, `
-		SELECT u.id, u.email, COALESCE(u.password_hash, ''), u.role, u.created_at, u.updated_at, u.disabled_at,
+		SELECT u.id, u.email, COALESCE(u.password_hash, ''), u.role, u.created_at, u.updated_at, u.disabled_at, COALESCE(u.username, ''), u.auth_version,
 		       s.expires_at, s.rotated_at, s.revoked_at
 		FROM refresh_sessions AS s
 		JOIN users AS u ON u.id = s.user_id
@@ -125,6 +163,8 @@ func (repository *Repository) RotateRefreshSession(ctx context.Context, oldToken
 		&user.CreatedAt,
 		&user.UpdatedAt,
 		&user.DisabledAt,
+		&user.Username,
+		&user.AuthVersion,
 		&expiresAt,
 		&rotatedAt,
 		&revokedAt,
@@ -199,6 +239,8 @@ func scanUser(row userRow) (auth.User, error) {
 		&user.CreatedAt,
 		&user.UpdatedAt,
 		&user.DisabledAt,
+		&user.Username,
+		&user.AuthVersion,
 	)
 	return user, err
 }

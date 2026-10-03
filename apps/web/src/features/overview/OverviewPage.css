@@ -8,6 +8,11 @@
   max-width: 100%;
 }
 
+.overview-page .summary-metrics {
+  margin-top: 0;
+  padding-inline: 0;
+}
+
 .overview-page .overview-sections { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: stretch; gap: .8rem; }
 .overview-page .overview-sections > .data-section { min-width: 0; padding: 1.15rem; }
 
@@ -351,6 +356,7 @@
 
 .overview-report-link {
   display: flex;
+  min-height: var(--touch-target);
   min-width: 0;
   align-items: flex-start;
   flex: 1;
@@ -466,136 +472,24 @@
   grid-column: 1 / -1;
 }
 
-.overview-map {
-  grid-column: span 2;
-}
-
-.overview-events {
-  grid-column: 3;
-  grid-row: 1;
-}
-
-.overview-trend__plot {
-  display: grid;
-  min-height: 9.5rem;
-  place-items: center;
-  padding: 1rem;
-  border: 1px dashed #d3e4f6;
-  border-radius: .75rem;
-  background: repeating-linear-gradient(to bottom, #f9fcff 0 31px, #e2ecf8 32px 33px);
-  color: #6880a4;
-  font-size: .79rem;
-  text-align: center;
-}
-
-.overview-trend__plot p {
-  max-width: 21rem;
-  margin: 0;
-  padding: .5rem;
-  background: rgb(255 255 255 / 88%);
-}
-
-.overview-map__layers {
-  display: flex;
-  flex-wrap: wrap;
-  gap: .35rem;
-  margin-bottom: .7rem;
-}
-
-.overview-map__layers button {
-  min-height: 2.75rem;
-  padding: .45rem .7rem;
-  border: 1px solid #d8e9fb;
-  border-radius: .8rem;
-  background: white;
-  color: #304976;
-  font: inherit;
-  font-size: .75rem;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.overview-map__layers button[aria-pressed="true"] {
-  border-color: #86beff;
-  background: #e9f4ff;
-  color: #0875ed;
-}
-
-.overview-map__canvas {
-  position: relative;
-  min-width: 0;
-  overflow: hidden;
-  border-radius: .9rem;
-}
-
-.overview-map__canvas .situation-map {
-  height: 18rem;
-  min-height: 18rem;
-}
-
-.overview-map__canvas .map-zoom-controls {
-  top: .45rem;
-  right: .45rem;
-  max-width: 10rem;
-  gap: .25rem;
-  padding: .3rem;
-}
-
-.overview-map__canvas .map-zoom-controls button {
-  min-height: 2.75rem;
-  padding: .2rem .4rem;
-  font-size: .7rem;
-}
-
-.overview-map__status {
-  position: absolute;
-  z-index: 500;
-  right: .5rem;
-  bottom: .5rem;
-  left: .5rem;
-  margin: 0;
-  padding: .5rem .7rem;
-  border-radius: .65rem;
-  background: rgb(255 255 255 / 92%);
-  color: #284672;
-  font-size: .78rem;
-}
-
-.overview-map__status--error {
-  background: rgb(255 244 228 / 95%);
-  color: #814a0c;
-}
-
-.overview-map__status button {
-  margin-left: .5rem;
-  border: 0;
-  background: none;
-  color: #075cd1;
-  font: inherit;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.overview-map .map-legend {
-  margin: .55rem 0 0;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: #62799e;
-  font-size: .72rem;
-}
-
-.overview-map .map-selection {
-  margin-top: .7rem;
-}
-
-.overview-page .data-list {
-  gap: .55rem;
-}
-
-.overview-page .data-card {
-  padding: .8rem;
-}
+.overview-map { grid-column: span 2; }
+.overview-events { grid-column: 3; grid-row: 1; }
+.overview-trend__plot { display: grid; min-height: 9.5rem; place-items: center; padding: 1rem; border: 1px dashed #d3e4f6; border-radius: .75rem; background: repeating-linear-gradient(to bottom, #f9fcff 0 31px, #e2ecf8 32px 33px); color: #6880a4; font-size: .79rem; text-align: center; }
+.overview-trend__plot p { max-width: 21rem; margin: 0; padding: .5rem; background: rgb(255 255 255 / 88%); }
+.overview-map__layers { display: flex; flex-wrap: wrap; gap: .35rem; margin-bottom: .7rem; }
+.overview-map__layers button { min-height: 2.75rem; padding: .45rem .7rem; border: 1px solid #d8e9fb; border-radius: .8rem; background: white; color: #304976; font: inherit; font-size: .75rem; font-weight: 700; cursor: pointer; }
+.overview-map__layers button[aria-pressed="true"] { border-color: #86beff; background: #e9f4ff; color: #0875ed; }
+.overview-map__canvas { position: relative; min-width: 0; overflow: hidden; border-radius: .9rem; }
+.overview-map__canvas .situation-map { height: 18rem; min-height: 18rem; }
+.overview-map__canvas .map-zoom-controls { top: .45rem; right: .45rem; max-width: 10rem; gap: .25rem; padding: .3rem; }
+.overview-map__canvas .map-zoom-controls button { min-height: 2.75rem; padding: .2rem .4rem; font-size: .7rem; }
+.overview-map__status { position: absolute; z-index: 500; right: .5rem; bottom: .5rem; left: .5rem; margin: 0; padding: .5rem .7rem; border-radius: .65rem; background: rgb(255 255 255 / 92%); color: #284672; font-size: .78rem; }
+.overview-map__status--error { background: rgb(255 244 228 / 95%); color: #814a0c; }
+.overview-map__status button { margin-left: .5rem; border: 0; background: none; color: #075cd1; font: inherit; font-weight: 700; cursor: pointer; }
+.overview-map .map-legend { margin: .55rem 0 0; padding: 0; border: 0; background: none; color: #62799e; font-size: .72rem; }
+.overview-map .map-selection { margin-top: .7rem; }
+.overview-page .data-list { gap: .55rem; }
+.overview-page .data-card { padding: .8rem; }
 
 @media (max-width: 62rem) {
   .overview-dashboard {
@@ -650,42 +544,7 @@
   .overview-report-list > li > article {
     grid-template-columns: 4.5rem minmax(0, 1fr);
   }
-
-  .overview-map__canvas .situation-map {
-    height: 18rem;
-  }
 }
 
-@media (max-width: 75rem) {
-  .overview-page .overview-sections {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .overview-map {
-    grid-column: 1 / -1;
-  }
-
-  .overview-events {
-    grid-column: 1 / -1;
-    grid-row: auto;
-  }
-
-  .overview-page .overview-sections > .data-section:not(.overview-map):not(.overview-events) {
-    grid-row: auto;
-  }
-}
-
-@media (max-width: 45rem) {
-  .overview-page .overview-sections {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .overview-map,
-  .overview-events {
-    grid-column: 1;
-  }
-
-  .overview-map__canvas .situation-map {
-    height: 18rem;
-  }
-}
+@media (max-width: 75rem) { .overview-page .overview-sections { grid-template-columns: repeat(2, minmax(0, 1fr)); } .overview-map { grid-column: 1 / -1; } .overview-events { grid-column: 1 / -1; grid-row: auto; } .overview-page .overview-sections > .data-section:not(.overview-map):not(.overview-events) { grid-row: auto; } }
+@media (max-width: 45rem) { .overview-page .overview-sections { grid-template-columns: minmax(0, 1fr); } .overview-map, .overview-events { grid-column: 1; } .overview-map__canvas .situation-map { height: 18rem; } }

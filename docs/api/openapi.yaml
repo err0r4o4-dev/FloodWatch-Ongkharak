@@ -232,7 +232,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CredentialsRequest'
+              $ref: '#/components/schemas/RegistrationRequest'
       responses:
         '201':
           description: The user account was created with the USER role.
@@ -247,7 +247,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '409':
-          description: An account already exists for the email address.
+          description: The email or normalized username is already registered (EMAIL_EXISTS or USERNAME_EXISTS).
           content:
             application/json:
               schema:
@@ -255,7 +255,7 @@ paths:
   /api/v1/auth/login:
     post:
       tags: [Auth]
-      summary: Start an authenticated session
+      summary: Start an authenticated session using email or username
       operationId: login
       requestBody:
         required: true
@@ -275,6 +275,149 @@ paths:
                 $ref: '#/components/schemas/SessionResponse'
         '401':
           description: Invalid credentials. This response is intentionally generic for unknown, disabled, and incorrect-password accounts.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/auth/password/request-otp:
+    post:
+      tags: [Auth]
+      summary: Request an account-neutral password recovery email
+      operationId: requestPasswordOTP
+      description: Sends a six-digit code to a valid supplied email without disclosing account eligibility. Unknown, disabled, and Google-only accounts cannot obtain a reset grant. Requires configured SMTP; never returns the OTP. A new accepted request invalidates the previous challenge and grant. Limited to one request per email per 60 seconds and five per hour, plus the direct-peer limit.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestPasswordOTP'
+      responses:
+        '202':
+          description: SMTP accepted the account-neutral email; this does not prove inbox delivery or that an eligible account exists. Response is not cacheable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PasswordOTPChallenge'
+        '400':
+          description: Invalid email or JSON body (INVALID_REQUEST).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Unapproved request origin.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Email cooldown/hour cap (RECOVERY_RATE_LIMITED) or direct-peer cap (RATE_LIMITED). Retry later; Retry-After does not guarantee eligibility when the hourly cap remains exhausted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: SMTP is disabled or delivery failed (RECOVERY_UNAVAILABLE). No fake success is returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal recovery failure without diagnostic details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/auth/password/verify-otp:
+    post:
+      tags: [Auth]
+      summary: Exchange a valid OTP for a restricted single-use reset grant
+      operationId: verifyPasswordOTP
+      description: Challenges expire after ten minutes and allow at most five well-formed failed attempts. Verification is single-use and does not create a login session. Keep the returned grant only in memory, not in URLs or persistent storage.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyPasswordOTP'
+      responses:
+        '200':
+          description: A five-minute, password-reset-only grant was created. Response is not cacheable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PasswordResetGrant'
+        '400':
+          description: Malformed JSON (INVALID_REQUEST) or wrong, expired, exhausted, replayed, or ineligible OTP (INVALID_OTP).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Unapproved request origin.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Direct-peer verification rate limit.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Recovery service unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal recovery failure without diagnostic details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/auth/password/reset:
+    post:
+      tags: [Auth]
+      summary: Set a new password using a restricted reset grant
+      operationId: resetPassword
+      description: Atomically consumes the grant, updates the Argon2id hash, revokes all refresh sessions, and increments the account authentication version so old access tokens fail. Does not log the user in.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
+      responses:
+        '204':
+          description: Password changed and the browser's old refresh cookie cleared. No response body; not cacheable.
+        '400':
+          description: Invalid password/body (INVALID_REQUEST) or missing, malformed, expired, replayed, superseded, or ineligible grant (INVALID_RESET_TOKEN).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Unapproved request origin.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Direct-peer reset rate limit.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Recovery service unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal recovery failure without diagnostic details.
           content:
             application/json:
               schema:
@@ -1257,12 +1400,94 @@ components:
       properties:
         email:
           type: string
-          format: email
+          maxLength: 254
+          description: Email or case-insensitive username. The field name remains email for compatibility.
         password:
           type: string
           format: password
           minLength: 12
           maxLength: 128
+          description: Server bounds this value to 12–128 UTF-8 bytes.
+    RegistrationRequest:
+      type: object
+      additionalProperties: false
+      required: [email, username, password]
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        username:
+          type: string
+          minLength: 3
+          maxLength: 32
+          pattern: '^[A-Za-z0-9_]{3,32}$'
+          description: Trimmed and normalized to lowercase; globally unique. Legacy and Google-only accounts may have no username.
+        password:
+          type: string
+          format: password
+          description: Server bounds this value to 12–128 UTF-8 bytes.
+    RequestPasswordOTP:
+      type: object
+      additionalProperties: false
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 254
+    PasswordOTPChallenge:
+      type: object
+      additionalProperties: false
+      required: [challengeId, expiresIn, resendAfter, message]
+      properties:
+        challengeId:
+          type: string
+          format: uuid
+        expiresIn:
+          type: integer
+          const: 600
+        resendAfter:
+          type: integer
+          const: 60
+        message:
+          type: string
+          description: Account-neutral recovery notice, not an assertion that the account exists.
+    VerifyPasswordOTP:
+      type: object
+      additionalProperties: false
+      required: [challengeId, otp]
+      properties:
+        challengeId:
+          type: string
+          format: uuid
+        otp:
+          type: string
+          pattern: '^[0-9]{6}$'
+    PasswordResetGrant:
+      type: object
+      additionalProperties: false
+      required: [resetToken, expiresIn]
+      properties:
+        resetToken:
+          type: string
+          pattern: '^[A-Za-z0-9_-]{43}$'
+          description: Secret single-use reset-only authorization; never a bearer login token.
+        expiresIn:
+          type: integer
+          const: 300
+    ResetPasswordRequest:
+      type: object
+      additionalProperties: false
+      required: [resetToken, password]
+      properties:
+        resetToken:
+          type: string
+          pattern: '^[A-Za-z0-9_-]{43}$'
+        password:
+          type: string
+          format: password
+          description: Server bounds this value to 12–128 UTF-8 bytes. Confirmation is checked by the UI and not sent to the API.
     User:
       type: object
       additionalProperties: false
@@ -1274,6 +1499,10 @@ components:
         email:
           type: string
           format: email
+        username:
+          type: string
+          pattern: '^[a-z0-9_]{3,32}$'
+          description: Omitted for legacy or Google-only accounts without a username.
         role:
           type: string
           enum: [USER, ADMIN]

@@ -5,7 +5,7 @@ import { useOptionalAuth } from "../features/auth/AuthProvider";
 import { confirmAction } from "../shared/alerts";
 
 const links = [
-  { to: "/", label: "ภาพรวม", symbol: "home" },
+  { to: "/overview", label: "ภาพรวม", symbol: "home" },
   { to: "/announcements", label: "ประกาศ", symbol: "bell" },
   { to: "/map", label: "แผนที่และพื้นที่เสี่ยง", symbol: "map" },
   { to: "/reports", label: "รายงาน", symbol: "report" }
@@ -30,7 +30,7 @@ function Navigation({ mobile = false }: { mobile?: boolean }) {
   const isAdmin = account?.role === "ADMIN";
 
   return <nav aria-label={mobile ? "การนำทางมือถือ" : "การนำทางหลัก"} className={mobile ? "bottom-navigation" : "sidebar-navigation"}>
-    <ul>{links.map(({ to, label, symbol }) => <li key={to}><NavLink to={to} end={to === "/"} className={({ isActive }) => `shell-nav-link${isActive ? " is-active" : ""}`}>
+    <ul>{links.map(({ to, label, symbol }) => <li key={to}><NavLink to={to} end={to === "/overview"} className={({ isActive }) => `shell-nav-link${isActive ? " is-active" : ""}`}>
       <span className="shell-nav-symbol" aria-hidden="true"><Icon name={symbol} /></span><span>{label}</span>
     </NavLink></li>)}
       {isAdmin && !mobile && <li className="admin-nav-divider"><NavLink to="/admin" className={({ isActive }) => `shell-nav-link admin-nav-link${isActive ? " is-active" : ""}`}>
@@ -68,6 +68,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       setSigningOut(false);
     }
   };
+  if (location.pathname === "/") return <>{children}</>;
   if (["/login", "/register", "/forgot-password", "/auth/complete", "/auth/google/link"].includes(location.pathname)) return <main id="main-content">{children}</main>;
   return <div className="app-shell public-shell">
     <a className="skip-link" href="#main-content">ข้ามไปยังเนื้อหาหลัก</a>

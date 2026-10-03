@@ -89,6 +89,13 @@ const reports = Array.from({ length: 3 }, (_, index) => ({ id: `report-${index}`
     }
 
     await page.setViewportSize({ width: 1440, height: 1100 });
+    await page.getByRole('region', { name: 'พื้นที่เสี่ยง (ล่าสุด)', exact: true }).scrollIntoViewIfNeeded();
+    await page.screenshot({ path: path.join(output, 'overview-desktop-lower-panels.png') });
+    await page.getByRole('region', { name: 'รายงานจากประชาชน (ล่าสุด)', exact: true }).scrollIntoViewIfNeeded();
+    await page.screenshot({ path: path.join(output, 'overview-desktop-reports.png') });
+    checks.push('desktop lower risk/road/report panels are reachable in existing content scroller');
+
+    await page.setViewportSize({ width: 1440, height: 1100 });
     const chosen = page.getByRole('link', { name: /รายงานบุคคลสำหรับทดสอบ 3/ });
     await chosen.focus();
     assert.equal(await chosen.evaluate((element) => document.activeElement === element), true);
@@ -119,6 +126,7 @@ const reports = Array.from({ length: 3 }, (_, index) => ({ id: `report-${index}`
         assert.ok((await hero.evaluate((element) => getComputedStyle(element).backgroundImage)).includes('river-landscape.jpg'));
         const credit = hero.getByRole('link', { name: 'เครดิตภาพ', exact: true });
         await credit.scrollIntoViewIfNeeded();
+        assert.ok((await credit.boundingBox()).height >= 44, 'image credit touch target');
         const clickable = await credit.evaluate((element) => { const rect = element.getBoundingClientRect(); const target = document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2); return target === element || element.contains(target); });
         assert.ok(clickable, `hero credit obscured on ${route} ${width}`);
         await checkOverflow(`${route} ${width}`);
@@ -141,7 +149,6 @@ const reports = Array.from({ length: 3 }, (_, index) => ({ id: `report-${index}`
       targets.forEach((element, index) => { element.style.fontSize = `${sizes[index] * 2}px`; });
     });
     await page.screenshot({ path: path.join(output, 'overview-scoped-200-percent.png'), fullPage: true });
-    console.log('Scoped enlarged text overflow:', await page.evaluate(() => Array.from(document.querySelectorAll('.overview-page, .overview-page *')).filter((element) => { const rect = element.getBoundingClientRect(); return rect.right > innerWidth + 2 && rect.width > 0 && !element.closest('.overview-table-wrap'); }).slice(0, 14).map((element) => ({ tag: element.tagName, class: element.className, right: element.getBoundingClientRect().right, width: element.getBoundingClientRect().width }))));
     await checkOverflow('affected overview 200% text');
     checks.push('affected overview 200% text reflows without document overflow');
     assert.deepEqual(errors, []);

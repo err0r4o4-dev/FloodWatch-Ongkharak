@@ -11,6 +11,28 @@ function destination(search: string): string {
   return safeReturnTo(value);
 }
 
+function passwordLengthMessage(password: string): string | null {
+  const bytes = new TextEncoder().encode(password).byteLength;
+  return bytes < 12 || bytes > 128 ? "รหัสผ่านต้องมีความยาว 12–128 ไบต์" : null;
+}
+
+function usernameError(username: string): string | null {
+  const normalized = username.trim().toLowerCase();
+  if (normalized.length < 3 || normalized.length > 32) return "ชื่อผู้ใช้งานต้องมีความยาว 3–32 ตัวอักษร";
+  if (!/^[a-z0-9_]+$/u.test(normalized)) return "ชื่อผู้ใช้งานใช้ได้เฉพาะ a–z, 0–9 และ _";
+  return null;
+}
+
+function authErrorMessage(cause: unknown, fallback: string): string {
+  if (!(cause instanceof ApiError)) return fallback;
+  switch (cause.code) {
+    case "USERNAME_EXISTS": return "ชื่อผู้ใช้งานนี้ถูกใช้แล้ว กรุณาเลือกชื่ออื่น";
+    case "EMAIL_EXISTS": return "อีเมลนี้มีบัญชีอยู่แล้ว กรุณาเข้าสู่ระบบหรือใช้ลืมรหัสผ่าน";
+    case "INVALID_CREDENTIALS": return "อีเมล/ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง";
+    default: return cause.message || fallback;
+  }
+}
+
 export function AuthPage({ mode }: { mode: "login" | "register" }) {
   const { login, register, status } = useAuth();
   const location = useLocation();
@@ -21,6 +43,7 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [registrationSucceeded, setRegistrationSucceeded] = useState(false);
   const registering = mode === "register";
   const returnTo = destination(location.search);
   const googleError = googleErrorMessage(new URLSearchParams(location.search).get("googleError"));
@@ -28,19 +51,49 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (submitting) return;
-    if (!email.trim() || !password) return setError(registering ? "กรุณากรอกอีเมล ชื่อผู้ใช้งาน และรหัสผ่าน" : "กรอกอีเมลและรหัสผ่าน");
-    if (registering && !username.trim()) return setError("กรุณากรอกชื่อผู้ใช้งาน");
+    const normalizedEmail = email.trim();
+    const normalizedUsername = username.trim().toLowerCase();
+    if (!normalizedEmail || !password) return setError(registering ? "กรุณากรอกอีเมล ชื่อผู้ใช้งาน และรหัสผ่าน" : "กรอกอีเมลหรือชื่อผู้ใช้งาน และรหัสผ่าน");
+    const passwordError = passwordLengthMessage(password);
+    if (passwordError) return setError(passwordError);
+    if (registering) {
+      const usernameValidationError = usernameError(username);
+      if (usernameValidationError) return setError(usernameValidationError);
+    }
     setSubmitting(true);
     setError(null);
+    setRegistrationSucceeded(false);
     try {
-      if (registering) await register({ email: email.trim(), username: username.trim(), password });
-      await login({ email: email.trim(), password });
-      void notifySuccess(registering ? "สมัครสมาชิกสำเร็จ" : "เข้าสู่ระบบสำเร็จ");
+      if (registering) {
+        try {
+          await register({ email: normalizedEmail, username: normalizedUsername, password });
+        } catch (cause) {
+          const message = authErrorMessage(cause, "ไม่สามารถสมัครสมาชิกได้");
+          setError(message);
+          void notifyError("สมัครสมาชิกไม่สำเร็จ", message);
+          return;
+        }
+
+        setRegistrationSucceeded(true);
+        void notifySuccess("สมัครสมาชิกสำเร็จ");
+        try {
+          await login({ email: normalizedEmail, password });
+        } catch (cause) {
+          const message = authErrorMessage(cause, "เข้าสู่ระบบอัตโนมัติไม่สำเร็จ");
+          const honestMessage = `สมัครสมาชิกสำเร็จแล้ว แต่เข้าสู่ระบบอัตโนมัติไม่สำเร็จ: ${message}`;
+          setError(honestMessage);
+          void notifyError("เข้าสู่ระบบไม่สำเร็จ", message);
+          return;
+        }
+      } else {
+        await login({ email: normalizedEmail, password });
+        void notifySuccess("เข้าสู่ระบบสำเร็จ");
+      }
       navigate(returnTo, { replace: true });
     } catch (cause) {
-      const message = cause instanceof ApiError ? cause.message : registering ? "ไม่สามารถสมัครสมาชิกได้" : "ไม่สามารถเข้าสู่ระบบได้";
+      const message = authErrorMessage(cause, "ไม่สามารถเข้าสู่ระบบได้");
       setError(message);
-      void notifyError(registering ? "สมัครสมาชิกไม่สำเร็จ" : "เข้าสู่ระบบไม่สำเร็จ", message);
+      void notifyError("เข้าสู่ระบบไม่สำเร็จ", message);
     } finally {
       setSubmitting(false);
     }
@@ -57,12 +110,13 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
     </Link>
 
     <form className="auth-form data-section" onSubmit={submit} noValidate>
-      <header className="auth-heading">
+      <header className="auth-heading" style={{ textAlign: "left" }}>
         <h1>{registering ? "สมัครสมาชิก" : "เข้าสู่ระบบ"}</h1>
         <p>เข้าสู่ระบบเพื่อส่งและติดตามรายงานสถานการณ์น้ำในพื้นที่</p>
       </header>
 
       {error && <p className="form-error" role="alert">{error}</p>}
+      {registrationSucceeded && <p className="form-success" role="status" aria-label="สมัครสมาชิกสำเร็จ" style={{ margin: 0, padding: "0.75rem", borderRadius: "0.75rem", color: "var(--color-source-community-ink)", background: "var(--color-source-community)" }}>สมัครสมาชิกสำเร็จ บัญชีของคุณถูกสร้างแล้ว <Link to={`/login?returnTo=${encodeURIComponent(returnTo)}`}>เข้าสู่ระบบด้วยบัญชีที่สร้างไว้</Link></p>}
       {googleError && <p className="form-error" role="alert">{googleError}</p>}
 
       <label>
@@ -76,15 +130,18 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
       </label>
 
       {registering && (
-        <label>
-          ชื่อผู้ใช้งาน
-          <input
-            type="text"
-            autoComplete="username"
-            value={username}
-            onChange={(event) => setUsername(event.target.value)}
-          />
-        </label>
+        <>
+          <label>
+            ชื่อผู้ใช้งาน
+            <input
+              type="text"
+              autoComplete="username"
+              value={username}
+              onChange={(event) => setUsername(event.target.value)}
+            />
+          </label>
+          <small>ใช้ a–z, 0–9 หรือ _ ความยาว 3–32 ตัวอักษร</small>
+        </>
       )}
 
       <label>
@@ -96,6 +153,7 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
           onChange={(event) => setPassword(event.target.value)}
         />
       </label>
+      <small>รหัสผ่านต้องมีความยาว 12–128 ไบต์</small>
 
       <label className="auth-show-password">
         <input

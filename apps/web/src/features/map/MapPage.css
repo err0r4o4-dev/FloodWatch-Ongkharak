@@ -1,7 +1,7 @@
 .map-page { display: flex; min-height: 100%; flex-direction: column; gap: var(--space-3); }
 .map-page__hero { align-items: center; }
 .map-page__caution { margin: 0; color: var(--color-ink-muted); font-size: .75rem; }
-.map-page__workspace { position: relative; z-index: 1; margin-top: -3.8rem; flex: none; height: clamp(32rem, calc(100dvh - 19rem), 48rem); min-height: 32rem; overflow: hidden; isolation: isolate; border: var(--border-width) solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-canvas-soft); box-shadow: var(--shadow-surface); }
+.map-page__workspace { position: relative; z-index: 1; margin-top: 0; flex: none; height: clamp(32rem, calc(100dvh - 19rem), 48rem); min-height: 32rem; overflow: hidden; isolation: isolate; border: var(--border-width) solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-canvas-soft); box-shadow: var(--shadow-surface); }
 .map-page__workspace > .situation-map { position: absolute; inset: 0; height: 100%; min-height: 0; }
 .map-page__layers, .map-page__tools, .map-page__legend { position: absolute; z-index: 950; }
 .map-page__layers { top: calc(var(--touch-target) + var(--space-4) * 2); left: var(--space-4); width: 13.25rem; }

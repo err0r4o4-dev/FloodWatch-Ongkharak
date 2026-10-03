@@ -34,6 +34,12 @@ Keep using `docker compose up --build` and open `http://localhost/` through Cadd
 
 If the stack is already running with the old configuration, apply the mounts once with `docker compose up --build -d --no-deps web`. Keep the browser open and save a frontend file to see the update. Rebuild after changing dependency manifests, lockfiles, Dockerfiles, or files outside the mounted paths. Go API/worker and Python code changes still require rebuilding their services. This applies only to the development Compose stack, not production deployment.
 
+## Public web navigation
+
+`/` is the introductory Flood Watch landing page, using the existing blue theme and an explicitly illustrative map rather than fabricated live readings. Its "เข้าสู่เมนู" actions open the original situation overview at `/overview`. The overview retains the desktop sidebar and four-destination mobile navigation; announcements, map/risk, and reports remain at `/announcements`, `/map`, and `/reports`. The application logo returns to the landing page, while the "ภาพรวม" navigation item opens `/overview`.
+
+Public pages remain available without login. The landing sign-in action uses `/login?returnTo=%2Foverview`; existing authentication, permission checks, and other return destinations are unchanged. Authenticated visitors receive a reports or admin shortcut instead of another sign-in action.
+
 ## Authentication
 
 For token configuration, `.env` only needs `JWT_SECRET` (32-4096 bytes; use a fresh random value in production). The backend defaults to a 15-minute access token, a 7-day refresh token, and issuer `floodwatch-ongkharak-local` in development/test or `floodwatch-ongkharak` in production. `JWT_ISSUER`, `JWT_ACCESS_TTL`, and `REFRESH_TOKEN_TTL` remain optional overrides for direct backend runs and development Compose. Existing deployments with a custom issuer should keep the `JWT_ISSUER` override to avoid invalidating active access tokens.

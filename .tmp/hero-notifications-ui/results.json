@@ -1,0 +1,26 @@
+{
+  "checks": [
+    "/ matches notifications hero at 1440px; header unchanged; no overflow",
+    "/map matches notifications hero at 1440px; header unchanged; no overflow",
+    "/risk matches notifications hero at 1440px; header unchanged; no overflow",
+    "/announcements matches notifications hero at 1440px; header unchanged; no overflow",
+    "/reports matches notifications hero at 1440px; header unchanged; no overflow",
+    "/ matches notifications hero at 768px; header unchanged; no overflow",
+    "/map matches notifications hero at 768px; header unchanged; no overflow",
+    "/risk matches notifications hero at 768px; header unchanged; no overflow",
+    "/announcements matches notifications hero at 768px; header unchanged; no overflow",
+    "/reports matches notifications hero at 768px; header unchanged; no overflow",
+    "/ matches notifications hero at 390px; header unchanged; no overflow",
+    "/map matches notifications hero at 390px; header unchanged; no overflow",
+    "/risk matches notifications hero at 390px; header unchanged; no overflow",
+    "/announcements matches notifications hero at 390px; header unchanged; no overflow",
+    "/reports matches notifications hero at 390px; header unchanged; no overflow",
+    "/ matches notifications hero at 320px; header unchanged; no overflow",
+    "/map matches notifications hero at 320px; header unchanged; no overflow",
+    "/risk matches notifications hero at 320px; header unchanged; no overflow",
+    "/announcements matches notifications hero at 320px; header unchanged; no overflow",
+    "/reports matches notifications hero at 320px; header unchanged; no overflow"
+  ],
+  "errors": [],
+  "fixtures": "Isolated empty guest APIs; no live flood data or service mutations"
+}

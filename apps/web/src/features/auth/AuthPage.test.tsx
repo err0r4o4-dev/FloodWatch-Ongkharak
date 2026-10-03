@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "./api";
@@ -9,7 +9,6 @@ import { ForgotPasswordPage } from "./ForgotPasswordPage";
 const alertMocks = vi.hoisted(() => ({
   notifySuccess: vi.fn().mockResolvedValue(undefined),
   notifyError: vi.fn().mockResolvedValue(undefined),
-  notifyInfo: vi.fn().mockResolvedValue(undefined),
   notifyWarning: vi.fn().mockResolvedValue(undefined)
 }));
 
@@ -60,11 +59,11 @@ describe("AuthPage", () => {
     renderAuth("login", api);
 
     fireEvent.change(await screen.findByLabelText("อีเมล หรือ ชื่อผู้ใช้งาน"), { target: { value: account.email } });
-    fireEvent.change(screen.getByLabelText("รหัสผ่าน"), { target: { value: "password" } });
+    fireEvent.change(screen.getByLabelText("รหัสผ่าน"), { target: { value: "password1234" } });
     fireEvent.click(screen.getByRole("button", { name: /เข้าสู่ระบบ/ }));
 
     expect(await screen.findByText("Reports destination")).toBeInTheDocument();
-    expect(api.login).toHaveBeenCalledWith({ email: account.email, password: "password" });
+    expect(api.login).toHaveBeenCalledWith({ email: account.email, password: "password1234" });
     expect(alertMocks.notifySuccess).toHaveBeenCalledWith("เข้าสู่ระบบสำเร็จ");
   });
 
@@ -79,7 +78,7 @@ describe("AuthPage", () => {
     renderAuth("login", api);
 
     fireEvent.change(await screen.findByLabelText("อีเมล หรือ ชื่อผู้ใช้งาน"), { target: { value: account.email } });
-    fireEvent.change(screen.getByLabelText("รหัสผ่าน"), { target: { value: "password" } });
+    fireEvent.change(screen.getByLabelText("รหัสผ่าน"), { target: { value: "password1234" } });
     fireEvent.click(screen.getByRole("button", { name: /เข้าสู่ระบบ/ }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("บัญชีไม่พร้อมใช้งาน");
@@ -98,7 +97,7 @@ describe("AuthPage", () => {
     renderAuth("login", api);
 
     fireEvent.change(await screen.findByLabelText("อีเมล หรือ ชื่อผู้ใช้งาน"), { target: { value: account.email } });
-    fireEvent.change(screen.getByLabelText("รหัสผ่าน"), { target: { value: "password" } });
+    fireEvent.change(screen.getByLabelText("รหัสผ่าน"), { target: { value: "password1234" } });
     fireEvent.click(screen.getByRole("button", { name: /เข้าสู่ระบบ/ }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("ไม่สามารถเข้าสู่ระบบได้");
@@ -119,7 +118,7 @@ describe("AuthPage", () => {
     renderAuth("login", api);
 
     fireEvent.change(await screen.findByLabelText("อีเมล หรือ ชื่อผู้ใช้งาน"), { target: { value: account.email } });
-    fireEvent.change(screen.getByLabelText("รหัสผ่าน"), { target: { value: "password" } });
+    fireEvent.change(screen.getByLabelText("รหัสผ่าน"), { target: { value: "password1234" } });
     const submit = screen.getByRole("button", { name: /เข้าสู่ระบบ/ });
     fireEvent.click(submit);
     fireEvent.click(submit);
@@ -128,7 +127,7 @@ describe("AuthPage", () => {
     resolveLogin?.({ user: account, accessToken: "token", expiresIn: 900 });
   });
 
-  it("registers before creating a session", async () => {
+  it("registers with a normalized username before creating a session", async () => {
     const api = {
       refresh: vi.fn().mockRejectedValue(new Error("anonymous")),
       me: vi.fn().mockResolvedValue(account),
@@ -139,37 +138,71 @@ describe("AuthPage", () => {
     renderAuth("register", api);
 
     fireEvent.change(await screen.findByLabelText("อีเมล"), { target: { value: account.email } });
-    fireEvent.change(screen.getByLabelText("ชื่อผู้ใช้งาน"), { target: { value: "testuser" } });
-    fireEvent.change(screen.getByLabelText("รหัสผ่าน"), { target: { value: "password" } });
+    fireEvent.change(screen.getByLabelText("ชื่อผู้ใช้งาน"), { target: { value: "Test_User" } });
+    fireEvent.change(screen.getByLabelText("รหัสผ่าน"), { target: { value: "password1234" } });
     fireEvent.click(screen.getByRole("button", { name: /สมัครสมาชิก/ }));
 
     expect(await screen.findByText("Reports destination")).toBeInTheDocument();
-    expect(api.register).toHaveBeenCalledWith({ email: account.email, username: "testuser", password: "password" });
-    expect(api.login).toHaveBeenCalledWith({ email: account.email, password: "password" });
+    expect(api.register).toHaveBeenCalledWith({ email: account.email, username: "test_user", password: "password1234" });
+    expect(api.login).toHaveBeenCalledWith({ email: account.email, password: "password1234" });
     expect(alertMocks.notifySuccess).toHaveBeenCalledWith("สมัครสมาชิกสำเร็จ");
   });
 
-  it("uses an explicit demo-only info notification after the simulated reset flow", async () => {
-    vi.useFakeTimers();
-    render(<MemoryRouter initialEntries={["/forgot-password"]}><Routes>
-      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-      <Route path="/login" element={<p>Login destination</p>} />
-    </Routes></MemoryRouter>);
+  it("distinguishes a successful registration from an automatic login failure", async () => {
+    const api = {
+      refresh: vi.fn().mockRejectedValue(new Error("anonymous")),
+      me: vi.fn().mockResolvedValue(account),
+      login: vi.fn().mockRejectedValue(new ApiError("บัญชียังเข้าสู่ระบบไม่ได้", 503, "SERVICE_UNAVAILABLE")),
+      register: vi.fn().mockResolvedValue(account),
+      logout: vi.fn()
+    };
+    renderAuth("register", api);
 
-    fireEvent.change(screen.getByLabelText("อีเมล"), { target: { value: account.email } });
-    fireEvent.click(screen.getByRole("button", { name: "ส่งรหัส OTP" }));
-    act(() => vi.advanceTimersByTime(1000));
+    fireEvent.change(await screen.findByLabelText("อีเมล"), { target: { value: account.email } });
+    fireEvent.change(screen.getByLabelText("ชื่อผู้ใช้งาน"), { target: { value: "testuser" } });
+    fireEvent.change(screen.getByLabelText("รหัสผ่าน"), { target: { value: "password1234" } });
+    fireEvent.click(screen.getByRole("button", { name: /สมัครสมาชิก/ }));
 
-    fireEvent.change(screen.getByLabelText("รหัส OTP"), { target: { value: "123456" } });
-    fireEvent.click(screen.getByRole("button", { name: "ยืนยันรหัส OTP" }));
-    act(() => vi.advanceTimersByTime(1000));
+    expect(await screen.findByRole("status", { name: "สมัครสมาชิกสำเร็จ" })).toHaveTextContent("สมัครสมาชิกสำเร็จ");
+    expect(screen.getByRole("link", { name: "เข้าสู่ระบบด้วยบัญชีที่สร้างไว้" })).toHaveAttribute("href", "/login?returnTo=%2Freports");
+    expect(screen.getByRole("alert")).toHaveTextContent("เข้าสู่ระบบอัตโนมัติไม่สำเร็จ");
+    expect(alertMocks.notifySuccess).toHaveBeenCalledWith("สมัครสมาชิกสำเร็จ");
+  });
 
-    fireEvent.change(screen.getByLabelText("รหัสผ่านใหม่"), { target: { value: "new-password" } });
-    fireEvent.change(screen.getByLabelText("ยืนยันรหัสผ่านใหม่"), { target: { value: "new-password" } });
-    fireEvent.click(screen.getByRole("button", { name: "เปลี่ยนรหัสผ่าน" }));
-    act(() => vi.advanceTimersByTime(1000));
+  it("rejects passwords shorter than the backend policy before network access", async () => {
+    const api = {
+      refresh: vi.fn().mockRejectedValue(new Error("anonymous")),
+      me: vi.fn().mockResolvedValue(account),
+      login: vi.fn(),
+      register: vi.fn(),
+      logout: vi.fn()
+    };
+    renderAuth("login", api);
 
-    expect(alertMocks.notifyInfo).toHaveBeenCalledWith("โหมดสาธิตเท่านั้น", expect.stringContaining("ไม่มีการเปลี่ยนรหัสผ่านจริง"));
-    expect(screen.getByText("Login destination")).toBeInTheDocument();
+    fireEvent.change(await screen.findByLabelText("อีเมล หรือ ชื่อผู้ใช้งาน"), { target: { value: account.email } });
+    fireEvent.change(screen.getByLabelText("รหัสผ่าน"), { target: { value: "short" } });
+    fireEvent.click(screen.getByRole("button", { name: /เข้าสู่ระบบ/ }));
+
+    expect(screen.getByRole("alert")).toHaveTextContent("รหัสผ่านต้องมีความยาว 12–128 ไบต์");
+    expect(api.login).not.toHaveBeenCalled();
+  });
+
+  it("maps backend account conflicts to honest Thai guidance", async () => {
+    const api = {
+      refresh: vi.fn().mockRejectedValue(new Error("anonymous")),
+      me: vi.fn().mockResolvedValue(account),
+      login: vi.fn(),
+      register: vi.fn().mockRejectedValue(new ApiError("conflict", 409, "USERNAME_EXISTS")),
+      logout: vi.fn()
+    };
+    renderAuth("register", api);
+
+    fireEvent.change(await screen.findByLabelText("อีเมล"), { target: { value: account.email } });
+    fireEvent.change(screen.getByLabelText("ชื่อผู้ใช้งาน"), { target: { value: "testuser" } });
+    fireEvent.change(screen.getByLabelText("รหัสผ่าน"), { target: { value: "password1234" } });
+    fireEvent.click(screen.getByRole("button", { name: /สมัครสมาชิก/ }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("ชื่อผู้ใช้งานนี้ถูกใช้แล้ว");
+    expect(api.login).not.toHaveBeenCalled();
   });
 });

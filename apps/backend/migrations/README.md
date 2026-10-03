@@ -1,5 +1,7 @@
 # Database migrations
 
+Migration 14 adds nullable, normalized unique usernames, account authentication versions, and expiring single-use password-recovery challenges. Existing accounts retain current sign-in methods; no username is invented. Deploy the updated API only after applying it. Down migration 14 permanently removes usernames and recovery metadata; populated installations need an approved backup and matching application rollback. See `docs/architecture/password-recovery.md` for setup and release gates.
+
 Migration 13 adds Google identities and five-minute OAuth/pending-link challenges, and allows null local passwords for Google-only accounts. Its down migration refuses rollback while Google-only accounts exist; explicitly provision valid local credentials through a reviewed administrative procedure before rollback, never delete users or fabricate hashes. See `docs/architecture/google-login.md` for deployment ordering and account policy.
 
 The selected migration system is `golang-migrate/migrate` `v4.18.3`. Migrations use its versioned `NNNNNN_description.up.sql` and `.down.sql` convention. The root Compose `migrate` service owns execution and records applied versions in `schema_migrations`; no Go migration dependency is required.

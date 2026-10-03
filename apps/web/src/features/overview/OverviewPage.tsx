@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router";
-import { DataTimestamp, EmptyState, ErrorState, FreshnessBadge, LoadingState, SourceBadge, StatusBadge } from "../../shared/components/DataStates";
-import { HeroImageCredit } from "../../shared/components/HeroImageCredit";
+import { DataTimestamp, ErrorState, FreshnessBadge, LoadingState, SourceBadge, StatusBadge } from "../../shared/components/DataStates";
+import { PageHeroArt } from "../../shared/components/PageHeroArt";
 import type { Freshness, SourceRef } from "../../shared/types/flood";
 import { listPublicAlerts, type PublicAlert } from "../announcements/api";
 import { reportsApi } from "../reports/api";
@@ -135,11 +135,11 @@ export function OverviewPage() {
   ] as const;
 
   return <div className="overview-page">
-    <header className="page-hero"><div className="page-hero__copy"><p className="eyebrow">FLOOD WATCH · ONGKHARAK</p><h1>ภาพรวมสถานการณ์น้ำ</h1><p>อำเภอองครักษ์ จังหวัดนครนายก</p><small>ติดตามข้อมูลที่เผยแพร่ พร้อมแหล่งที่มาและเวลาสังเกต · ไม่ใช่การยืนยันว่าพื้นที่ปลอดภัย</small></div><div className="page-hero__context"><strong>ข้อมูลสถานการณ์</strong><span>พร้อมแหล่งที่มาและเวลาสังเกต</span></div><HeroImageCredit /></header>
+    <header className="page-hero"><div className="page-hero__copy"><p className="eyebrow">FLOOD WATCH · ONGKHARAK</p><h1>ภาพรวมสถานการณ์น้ำ</h1><p>อำเภอองครักษ์ จังหวัดนครนายก</p></div><PageHeroArt kind="water" /></header>
     <div className="summary-metrics" aria-label={result ? "สรุปข้อมูลที่โหลดได้" : "กำลังโหลดข้อมูลสรุป"}>{metrics.map((metric) => <Link key={metric.key} to={metric.to} className="summary-metric"><span className={`summary-metric__icon${metric.tone ? ` summary-metric__icon--${metric.tone}` : ""}`} aria-hidden="true"><OverviewIcon name={metric.icon} /></span><span>{metric.label}<strong>{collections?.[metric.key]?.length ?? "—"}</strong><small>{!result ? "กำลังโหลดข้อมูล" : result.failed.includes(metric.key) ? "ข้อมูลยังไม่พร้อมใช้งาน" : metric.caption}</small></span><span className="summary-metric__arrow" aria-hidden="true">›</span></Link>)}</div>
     {!result && <LoadingState />}
     {allFailed ? <ErrorState onRetry={() => setRevision((previous) => previous + 1)} /> : result && result.failed.length > 0 && <div className="notice" role="status"><strong>ข้อมูลบางส่วนไม่พร้อมใช้งาน</strong><span>โหลดไม่ได้: {result.failed.map((key) => headings[key]).join(", ")} · ไม่ควรใช้ข้อมูลที่ขาดหายยืนยันความปลอดภัย</span><button type="button" onClick={() => setRevision((previous) => previous + 1)}>ลองอีกครั้ง</button></div>}
-    {result && !allFailed && !hasItems && <EmptyState title="ยังไม่มีข้อมูลสถานการณ์ที่เผยแพร่">ยังไม่มีรายการในชุดข้อมูลที่เรียกดู หรือข้อมูลบางส่วนไม่พร้อมใช้งาน กรุณาตรวจสอบแหล่งข้อมูลอีกครั้งก่อนตัดสินใจเดินทาง</EmptyState>}
+    {result && !allFailed && !hasItems && null}
     <div className="overview-dashboard"><div className="overview-primary">
       <OverviewPanel id="water-title" title="ระดับน้ำ (จุดสำคัญ)" icon="water" to="/map" caption="ค่าที่รายงานสูงสุด 5 สถานี · ยังไม่มีชุดย้อนหลังสำหรับคำนวณแนวโน้ม">
         {water.length ? <ReadingTable stations={water} /> : <PanelState result={result} feed="water" empty="ยังไม่มีสถานีในรายการที่เรียกดู" />}

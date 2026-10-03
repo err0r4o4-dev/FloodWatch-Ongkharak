@@ -27,6 +27,24 @@ type AuthApi = {
   logout(): Promise<void>;
 };
 
+type RequestOtpResponse = {
+  challengeId: string;
+  expiresIn: number;
+  resendAfter: number;
+  message: string;
+};
+
+type VerifyOtpResponse = {
+  resetToken: string;
+  expiresIn: number;
+};
+
+export type PasswordRecoveryApi = {
+  requestOtp(email: string): Promise<RequestOtpResponse>;
+  verifyOtp(input: { challengeId: string; otp: string }): Promise<VerifyOtpResponse>;
+  resetPassword(input: { resetToken: string; password: string }): Promise<void>;
+};
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -223,7 +241,32 @@ export function createAuthApi(client: ApiClient): AuthApi {
   return authApi;
 }
 
+export function createPasswordRecoveryApi(client: ApiClient): PasswordRecoveryApi {
+  const request = <ResponseBody>(path: string, body: unknown) => client.request<ResponseBody>(
+    path,
+    {
+      body: JSON.stringify(body),
+      headers: { "Content-Type": "application/json" },
+      method: "POST"
+    },
+    { authenticate: false, retryUnauthorized: false }
+  );
+
+  return {
+    requestOtp(email) {
+      return request<RequestOtpResponse>("/auth/password/request-otp", { email });
+    },
+    verifyOtp(input) {
+      return request<VerifyOtpResponse>("/auth/password/verify-otp", input);
+    },
+    resetPassword(input) {
+      return request<void>("/auth/password/reset", input);
+    }
+  };
+}
+
 export const apiClient = new ApiClient();
 export const authApi = createAuthApi(apiClient);
+export const passwordRecoveryApi = createPasswordRecoveryApi(apiClient);
 
-export type { AuthApi, AuthSession };
+export type { AuthApi, AuthSession, RequestOtpResponse, VerifyOtpResponse };

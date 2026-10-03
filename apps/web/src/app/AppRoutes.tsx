@@ -4,6 +4,7 @@ import { AuthPage } from "../features/auth/AuthPage";
 import { GoogleCompletePage, GoogleLinkPage } from "../features/auth/GoogleAuthPages";
 import { ForgotPasswordPage } from "../features/auth/ForgotPasswordPage";
 import { HealthPage } from "../features/health/HealthPage";
+import { LandingPage } from "../features/landing/LandingPage";
 import { MapPage } from "../features/map/MapPage";
 import { OverviewPage } from "../features/overview/OverviewPage";
 import { ReportsPage } from "../features/reports/ReportsPage";
@@ -26,7 +27,8 @@ function LegacyRiskRedirect() {
 
 export function AppRoutes() {
   return <AppShell><Routes>
-    <Route path="/" element={<OverviewPage />} />
+    <Route path="/" element={<LandingPage />} />
+    <Route path="/overview" element={<OverviewPage />} />
     <Route path="/announcements" element={<AnnouncementsPage />} />
     <Route path="/notifications" element={<NotificationsPage />} />
     <Route path="/risk" element={<LegacyRiskRedirect />} />

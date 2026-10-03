@@ -15,7 +15,7 @@ import (
 )
 
 type AuthService interface {
-	Register(context.Context, string, string) (auth.User, error)
+	RegisterWithUsername(context.Context, string, string, string) (auth.User, error)
 	Login(context.Context, string, string) (auth.SessionResult, error)
 	Refresh(context.Context, string) (auth.SessionResult, error)
 	Logout(context.Context, string) error
@@ -40,9 +40,16 @@ type credentialsRequest struct {
 	Password string `json:"password"`
 }
 
+type registrationRequest struct {
+	Email    string `json:"email"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
 type publicUser struct {
 	ID        string    `json:"id"`
 	Email     string    `json:"email"`
+	Username  string    `json:"username,omitempty"`
 	Role      auth.Role `json:"role"`
 	CreatedAt time.Time `json:"createdAt"`
 }
@@ -52,17 +59,19 @@ func NewAuthHandler(service AuthService, options CookieOptions) *AuthHandler {
 }
 
 func (handler *AuthHandler) Register(response http.ResponseWriter, request *http.Request) {
-	credentials, ok := readCredentials(response, request)
-	if !ok {
+	var credentials registrationRequest
+	if !readAuthJSON(response, request, &credentials) {
 		return
 	}
-	user, err := handler.service.Register(request.Context(), credentials.Email, credentials.Password)
+	user, err := handler.service.RegisterWithUsername(request.Context(), credentials.Email, credentials.Username, credentials.Password)
 	if err != nil {
 		switch {
 		case errors.Is(err, auth.ErrInvalidRequest):
 			writeAuthError(response, http.StatusBadRequest, "INVALID_REQUEST", "Invalid registration data")
 		case errors.Is(err, auth.ErrEmailExists):
 			writeAuthError(response, http.StatusConflict, "EMAIL_EXISTS", "Email already registered")
+		case errors.Is(err, auth.ErrUsernameExists):
+			writeAuthError(response, http.StatusConflict, "USERNAME_EXISTS", "Username already registered")
 		default:
 			writeAuthError(response, http.StatusInternalServerError, "INTERNAL_ERROR", "Request could not be completed")
 		}
@@ -148,24 +157,29 @@ func (handler *AuthHandler) Me(response http.ResponseWriter, request *http.Reque
 }
 
 func readCredentials(response http.ResponseWriter, request *http.Request) (credentialsRequest, bool) {
+	var credentials credentialsRequest
+	ok := readAuthJSON(response, request, &credentials)
+	return credentials, ok
+}
+
+func readAuthJSON(response http.ResponseWriter, request *http.Request, destination any) bool {
 	mediaType, _, err := mime.ParseMediaType(request.Header.Get("Content-Type"))
 	if err != nil || mediaType != "application/json" {
 		writeAuthError(response, http.StatusUnsupportedMediaType, "UNSUPPORTED_MEDIA_TYPE", "Expected application/json")
-		return credentialsRequest{}, false
+		return false
 	}
 	decoder := json.NewDecoder(http.MaxBytesReader(response, request.Body, 4096))
 	decoder.DisallowUnknownFields()
-	var credentials credentialsRequest
-	if err := decoder.Decode(&credentials); err != nil {
+	if err := decoder.Decode(destination); err != nil {
 		writeAuthError(response, http.StatusBadRequest, "INVALID_REQUEST", "Invalid request body")
-		return credentialsRequest{}, false
+		return false
 	}
 	var extra any
 	if err := decoder.Decode(&extra); !errors.Is(err, io.EOF) {
 		writeAuthError(response, http.StatusBadRequest, "INVALID_REQUEST", "Invalid request body")
-		return credentialsRequest{}, false
+		return false
 	}
-	return credentials, true
+	return true
 }
 
 func (handler *AuthHandler) allowedOrigin(response http.ResponseWriter, request *http.Request) bool {
@@ -195,7 +209,7 @@ func (handler *AuthHandler) clearCookie(response http.ResponseWriter) {
 }
 
 func safeUser(user auth.User) publicUser {
-	return publicUser{ID: user.ID, Email: user.Email, Role: user.Role, CreatedAt: user.CreatedAt}
+	return publicUser{ID: user.ID, Email: user.Email, Username: user.Username, Role: user.Role, CreatedAt: user.CreatedAt}
 }
 
 func writeSession(response http.ResponseWriter, result auth.SessionResult) {

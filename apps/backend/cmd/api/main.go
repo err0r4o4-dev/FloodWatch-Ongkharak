@@ -22,6 +22,7 @@ import (
 	"github.com/floodwatch-ongkharak/backend/internal/http/handler"
 	"github.com/floodwatch-ongkharak/backend/internal/http/router"
 	"github.com/floodwatch-ongkharak/backend/internal/infrastructure/healthcheck"
+	"github.com/floodwatch-ongkharak/backend/internal/mailer"
 	"github.com/floodwatch-ongkharak/backend/internal/notification"
 	"github.com/floodwatch-ongkharak/backend/internal/objectstore"
 	"github.com/floodwatch-ongkharak/backend/internal/postgres/adminrepo"
@@ -59,6 +60,17 @@ func run() error {
 	authService, err := auth.NewService(authRepository, []byte(configuration.JWTSecret), configuration.JWTIssuer, configuration.JWTAccessTTL, configuration.RefreshTokenTTL)
 	if err != nil {
 		return fmt.Errorf("configure auth service: %w", err)
+	}
+	var passwordMailer auth.PasswordMailer
+	if configuration.SMTPHost != "" {
+		passwordMailer, err = mailer.New(mailer.Config{Host: configuration.SMTPHost, Port: configuration.SMTPPort, Username: configuration.SMTPUsername, Password: configuration.SMTPPassword, From: configuration.SMTPFrom, RequireTLS: configuration.SMTPRequireTLS})
+		if err != nil {
+			return fmt.Errorf("configure password email delivery: %w", err)
+		}
+	}
+	recoveryService, err := auth.NewRecoveryService(authService, authRepository, passwordMailer)
+	if err != nil {
+		return fmt.Errorf("configure password recovery: %w", err)
 	}
 	var googleService *auth.GoogleService
 	if configuration.GoogleClientID != "" {
@@ -141,7 +153,8 @@ func run() error {
 		Handler: router.New(router.Dependencies{
 			Logger: logger, Readiness: readiness, CORSAllowedOrigins: configuration.CORSAllowedOrigins,
 			SwaggerEnabled: configuration.SwaggerEnabled, AuthService: authService,
-			GoogleService: googleService, AuthFrontendOrigin: configuration.AuthFrontendOrigin,
+			RecoveryService: recoveryService,
+			GoogleService:   googleService, AuthFrontendOrigin: configuration.AuthFrontendOrigin,
 			FloodService:        floodService,
 			ReportService:       reportService,
 			AlertService:        alertService,

@@ -16,6 +16,7 @@ const (
 var (
 	ErrNotFound        = errors.New("account not found")
 	ErrEmailExists     = errors.New("email already exists")
+	ErrUsernameExists  = errors.New("username already exists")
 	ErrSessionInvalid  = errors.New("refresh session invalid")
 	ErrSessionExpired  = errors.New("refresh session expired")
 	ErrAccountDisabled = errors.New("account disabled")
@@ -24,6 +25,8 @@ var (
 type User struct {
 	ID           string
 	Email        string
+	Username     string
+	AuthVersion  int64
 	PasswordHash string
 	Role         Role
 	CreatedAt    time.Time
@@ -32,10 +35,11 @@ type User struct {
 }
 
 type RefreshSession struct {
-	ID        string
-	UserID    string
-	TokenHash []byte
-	ExpiresAt time.Time
+	ID          string
+	UserID      string
+	AuthVersion int64
+	TokenHash   []byte
+	ExpiresAt   time.Time
 }
 
 type Repository interface {

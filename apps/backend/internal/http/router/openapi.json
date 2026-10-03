@@ -471,10 +471,12 @@
         "additionalProperties": false,
         "properties": {
           "email": {
-            "format": "email",
+            "description": "Email or case-insensitive username. The field name remains email for compatibility.",
+            "maxLength": 254,
             "type": "string"
           },
           "password": {
+            "description": "Server bounds this value to 12–128 UTF-8 bytes.",
             "format": "password",
             "maxLength": 128,
             "minLength": 12,
@@ -837,6 +839,53 @@
         ],
         "type": "object"
       },
+      "PasswordOTPChallenge": {
+        "additionalProperties": false,
+        "properties": {
+          "challengeId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "expiresIn": {
+            "const": 600,
+            "type": "integer"
+          },
+          "message": {
+            "description": "Account-neutral recovery notice, not an assertion that the account exists.",
+            "type": "string"
+          },
+          "resendAfter": {
+            "const": 60,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "challengeId",
+          "expiresIn",
+          "resendAfter",
+          "message"
+        ],
+        "type": "object"
+      },
+      "PasswordResetGrant": {
+        "additionalProperties": false,
+        "properties": {
+          "expiresIn": {
+            "const": 300,
+            "type": "integer"
+          },
+          "resetToken": {
+            "description": "Secret single-use reset-only authorization; never a bearer login token.",
+            "pattern": "^[A-Za-z0-9_-]{43}$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "resetToken",
+          "expiresIn"
+        ],
+        "type": "object"
+      },
       "PointGeometry": {
         "additionalProperties": false,
         "properties": {
@@ -1012,6 +1061,34 @@
           "items",
           "limit",
           "offset"
+        ],
+        "type": "object"
+      },
+      "RegistrationRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "email": {
+            "format": "email",
+            "maxLength": 254,
+            "type": "string"
+          },
+          "password": {
+            "description": "Server bounds this value to 12–128 UTF-8 bytes.",
+            "format": "password",
+            "type": "string"
+          },
+          "username": {
+            "description": "Trimmed and normalized to lowercase; globally unique. Legacy and Google-only accounts may have no username.",
+            "maxLength": 32,
+            "minLength": 3,
+            "pattern": "^[A-Za-z0-9_]{3,32}$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "username",
+          "password"
         ],
         "type": "object"
       },
@@ -1259,6 +1336,39 @@
           "OTHER"
         ],
         "type": "string"
+      },
+      "RequestPasswordOTP": {
+        "additionalProperties": false,
+        "properties": {
+          "email": {
+            "format": "email",
+            "maxLength": 254,
+            "type": "string"
+          }
+        },
+        "required": [
+          "email"
+        ],
+        "type": "object"
+      },
+      "ResetPasswordRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "password": {
+            "description": "Server bounds this value to 12–128 UTF-8 bytes. Confirmation is checked by the UI and not sent to the API.",
+            "format": "password",
+            "type": "string"
+          },
+          "resetToken": {
+            "pattern": "^[A-Za-z0-9_-]{43}$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "resetToken",
+          "password"
+        ],
+        "type": "object"
       },
       "ReviewReportInput": {
         "additionalProperties": false,
@@ -1662,6 +1772,11 @@
               "ADMIN"
             ],
             "type": "string"
+          },
+          "username": {
+            "description": "Omitted for legacy or Google-only accounts without a username.",
+            "pattern": "^[a-z0-9_]{3,32}$",
+            "type": "string"
           }
         },
         "required": [
@@ -1691,6 +1806,24 @@
           "REJECTED"
         ],
         "type": "string"
+      },
+      "VerifyPasswordOTP": {
+        "additionalProperties": false,
+        "properties": {
+          "challengeId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "otp": {
+            "pattern": "^[0-9]{6}$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "challengeId",
+          "otp"
+        ],
+        "type": "object"
       },
       "WaterReading": {
         "properties": {
@@ -2184,153 +2317,6 @@
         ]
       }
     },
-    "/api/v1/auth/login": {
-      "post": {
-        "operationId": "login",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CredentialsRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SessionResponse"
-                }
-              }
-            },
-            "description": "A session was created. The refresh token is sent only in the HttpOnly cookie.",
-            "headers": {
-              "Set-Cookie": {
-                "$ref": "#/components/headers/RefreshTokenCookie"
-              }
-            }
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Invalid credentials. This response is intentionally generic for unknown, disabled, and incorrect-password accounts."
-          }
-        },
-        "summary": "Start an authenticated session",
-        "tags": [
-          "Auth"
-        ]
-      }
-    },
-    "/api/v1/auth/logout": {
-      "post": {
-        "operationId": "logout",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/OptionalRefreshTokenCookie"
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "The session is revoked when present and the refresh cookie is cleared. This operation is idempotent and has no response body.",
-            "headers": {
-              "Set-Cookie": {
-                "$ref": "#/components/headers/ClearedRefreshTokenCookie"
-              }
-            }
-          }
-        },
-        "summary": "End the current refresh session",
-        "tags": [
-          "Auth"
-        ]
-      }
-    },
-    "/api/v1/auth/me": {
-      "get": {
-        "operationId": "getCurrentUser",
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UserResponse"
-                }
-              }
-            },
-            "description": "The authenticated user."
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Authentication is required or the bearer token is invalid."
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "Get the current user",
-        "tags": [
-          "Auth"
-        ]
-      }
-    },
-    "/api/v1/auth/refresh": {
-      "post": {
-        "operationId": "refresh",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/RefreshTokenCookie"
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SessionResponse"
-                }
-              }
-            },
-            "description": "The refresh token was rotated and the replacement is sent only in the HttpOnly cookie.",
-            "headers": {
-              "Set-Cookie": {
-                "$ref": "#/components/headers/RefreshTokenCookie"
-              }
-            }
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "The refresh token is missing, invalid, expired, revoked, or has already been used."
-          }
-        },
-        "summary": "Rotate the refresh session",
-        "tags": [
-          "Auth"
-        ]
-      }
-    },
     "/api/v1/auth/google/callback": {
       "get": {
         "description": "Requires matching browser transaction cookie and single-use state. Verifies Google's signed ID token before creating accounts or sessions. Email collisions redirect to password verification without issuing a session. Do not log callback query strings.",
@@ -2667,6 +2653,392 @@
         ]
       }
     },
+    "/api/v1/auth/login": {
+      "post": {
+        "operationId": "login",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CredentialsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponse"
+                }
+              }
+            },
+            "description": "A session was created. The refresh token is sent only in the HttpOnly cookie.",
+            "headers": {
+              "Set-Cookie": {
+                "$ref": "#/components/headers/RefreshTokenCookie"
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid credentials. This response is intentionally generic for unknown, disabled, and incorrect-password accounts."
+          }
+        },
+        "summary": "Start an authenticated session using email or username",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "operationId": "logout",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/OptionalRefreshTokenCookie"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The session is revoked when present and the refresh cookie is cleared. This operation is idempotent and has no response body.",
+            "headers": {
+              "Set-Cookie": {
+                "$ref": "#/components/headers/ClearedRefreshTokenCookie"
+              }
+            }
+          }
+        },
+        "summary": "End the current refresh session",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "operationId": "getCurrentUser",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            },
+            "description": "The authenticated user."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Authentication is required or the bearer token is invalid."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get the current user",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/password/request-otp": {
+      "post": {
+        "description": "Sends a six-digit code to a valid supplied email without disclosing account eligibility. Unknown, disabled, and Google-only accounts cannot obtain a reset grant. Requires configured SMTP; never returns the OTP. A new accepted request invalidates the previous challenge and grant. Limited to one request per email per 60 seconds and five per hour, plus the direct-peer limit.",
+        "operationId": "requestPasswordOTP",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestPasswordOTP"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PasswordOTPChallenge"
+                }
+              }
+            },
+            "description": "SMTP accepted the account-neutral email; this does not prove inbox delivery or that an eligible account exists. Response is not cacheable."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid email or JSON body (INVALID_REQUEST)."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unapproved request origin."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Email cooldown/hour cap (RECOVERY_RATE_LIMITED) or direct-peer cap (RATE_LIMITED). Retry later; Retry-After does not guarantee eligibility when the hourly cap remains exhausted."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal recovery failure without diagnostic details."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "SMTP is disabled or delivery failed (RECOVERY_UNAVAILABLE). No fake success is returned."
+          }
+        },
+        "summary": "Request an account-neutral password recovery email",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/password/reset": {
+      "post": {
+        "description": "Atomically consumes the grant, updates the Argon2id hash, revokes all refresh sessions, and increments the account authentication version so old access tokens fail. Does not log the user in.",
+        "operationId": "resetPassword",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetPasswordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Password changed and the browser's old refresh cookie cleared. No response body; not cacheable."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid password/body (INVALID_REQUEST) or missing, malformed, expired, replayed, superseded, or ineligible grant (INVALID_RESET_TOKEN)."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unapproved request origin."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Direct-peer reset rate limit."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal recovery failure without diagnostic details."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Recovery service unavailable."
+          }
+        },
+        "summary": "Set a new password using a restricted reset grant",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/password/verify-otp": {
+      "post": {
+        "description": "Challenges expire after ten minutes and allow at most five well-formed failed attempts. Verification is single-use and does not create a login session. Keep the returned grant only in memory, not in URLs or persistent storage.",
+        "operationId": "verifyPasswordOTP",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyPasswordOTP"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PasswordResetGrant"
+                }
+              }
+            },
+            "description": "A five-minute, password-reset-only grant was created. Response is not cacheable."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Malformed JSON (INVALID_REQUEST) or wrong, expired, exhausted, replayed, or ineligible OTP (INVALID_OTP)."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unapproved request origin."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Direct-peer verification rate limit."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal recovery failure without diagnostic details."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Recovery service unavailable."
+          }
+        },
+        "summary": "Exchange a valid OTP for a restricted single-use reset grant",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "operationId": "refresh",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RefreshTokenCookie"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponse"
+                }
+              }
+            },
+            "description": "The refresh token was rotated and the replacement is sent only in the HttpOnly cookie.",
+            "headers": {
+              "Set-Cookie": {
+                "$ref": "#/components/headers/RefreshTokenCookie"
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The refresh token is missing, invalid, expired, revoked, or has already been used."
+          }
+        },
+        "summary": "Rotate the refresh session",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
     "/api/v1/auth/register": {
       "post": {
         "operationId": "register",
@@ -2674,7 +3046,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CredentialsRequest"
+                "$ref": "#/components/schemas/RegistrationRequest"
               }
             }
           },
@@ -2709,7 +3081,7 @@
                 }
               }
             },
-            "description": "An account already exists for the email address."
+            "description": "The email or normalized username is already registered (EMAIL_EXISTS or USERNAME_EXISTS)."
           }
         },
         "summary": "Register a user account",
