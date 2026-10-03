@@ -34,7 +34,16 @@ GOOGLE_OAUTH_CLIENT_SECRET=<web-client-secret>
 GOOGLE_OAUTH_REDIRECT_URL=http://localhost/api/v1/auth/google/callback
 ```
 
-The example uses the development Caddy origin. The backend derives the frontend origin from the redirect URL's scheme and host (including its port); no separate frontend-origin setting is required. If using Caddy on port 5173, set `GOOGLE_OAUTH_REDIRECT_URL=http://localhost:5173/api/v1/auth/google/callback` and include `http://localhost:5173` in `CORS_ALLOWED_ORIGINS`. Open the app on that same origin so that host-only cookies work reliably. Production requires HTTPS; only loopback development may use HTTP. Callback paths, credentials/query/fragment and unapproved origins are rejected at startup. Existing deployments must rename the previous Google environment variables to these three names when deploying the updated API.
+The example uses the development Caddy origin. When the callback origin is in `CORS_ALLOWED_ORIGINS`, the backend uses it as the frontend origin. Otherwise, exactly one allowed frontend origin is required, with the same scheme and hostname as the callback; only the port may differ. This keeps host-only cookies usable without a separate frontend-origin setting or inference from request headers. Ambiguous frontend lists, different hostnames/schemes, invalid callback paths, and credentials/query/fragment are rejected at startup. Production requires HTTPS; only loopback development may use HTTP. Existing deployments must rename the previous Google environment variables to these three names when deploying the updated API.
+
+For the local frontend on Caddy port 5173 with the callback directly on API port 8080:
+
+```env
+GOOGLE_OAUTH_REDIRECT_URL=http://localhost:8080/api/v1/auth/google/callback
+CORS_ALLOWED_ORIGINS=http://localhost:5173
+```
+
+Keep `CADDY_HTTP_PORT=5173`, `API_HOST_PORT=8080`, and the direct Vite `WEB_PORT` on a different available port (for example 15173). Open `http://localhost:5173/login`; frontend API requests still go through Caddy, while Google redirects to port 8080. Register `http://localhost:8080/api/v1/auth/google/callback` as the exact authorized redirect URI in Google Console. Do not add the API origin to the CORS list for this setup, because matching the callback origin selects it as the frontend destination. Switching to a single-origin setup remains supported by registering a callback on the frontend origin instead.
 
 Configure real values only in your untracked local environment or deployment secret store. Never paste them into source, browser `VITE_*` settings, logs or tickets. Settings are passed only to the API; missing configuration disables Google without breaking password auth. Partial configuration fails startup without showing its values.
 

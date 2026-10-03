@@ -64,11 +64,11 @@ Down migration refuses restoring NOT NULL while Google-only users exist. Documen
 
 ## Configuration and deployment
 
-Add backend-only `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, and `GOOGLE_OAUTH_REDIRECT_URL`. Derive the frontend origin from the validated callback URL and require it in the allowed origins. All Google settings absent disables the feature without breaking existing deployments. Partial/invalid configuration fails startup without printing values.
+Add backend-only `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, and `GOOGLE_OAUTH_REDIRECT_URL`. Use the validated callback origin as the frontend when it is allowlisted. Otherwise require exactly one allowlisted frontend with the same scheme and hostname; only its port may differ. All Google settings absent disables the feature without breaking existing deployments. Partial/invalid configuration fails startup without printing values.
 
 Validate frontend origin against the exact existing allowlist; forbid credentials, paths, queries, and fragments. Production frontend/callback require HTTPS; HTTP is permitted only for loopback development. Callback uses `/api/v1/auth/google/callback` at public API ingress.
 
-Document Google Web application client creation, consent audience/test users as applicable, and exact per-environment callback registration. Use the existing same-origin proxy/ingress; do not derive redirects from proxy headers or change topology.
+Document Google Web application client creation, consent audience/test users as applicable, and exact per-environment callback registration. Frontend API requests use the existing same-origin proxy/ingress; callbacks may also use the existing API host port under the validated split-port rules. Do not derive redirects from proxy headers or change topology.
 
 Pass backend settings through development/production Compose using placeholders only. Add empty/example settings to `.env.example`; never read/print current `.env` values or put actual secrets in tracked files. Expose no Google secret through `VITE_*`.
 
