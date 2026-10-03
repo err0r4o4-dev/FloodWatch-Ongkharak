@@ -53,6 +53,21 @@ Migration 000013 introduces nullable local passwords, external identities, and t
 
 ## Redirects, errors and operations
 
+### Google rejects login with `403: org_internal`
+
+This is a Google OAuth audience restriction, not a Flood Watch callback or token-verification failure. The OAuth client belongs to a project restricted to accounts in its Google Cloud organization. A personal Gmail account cannot sign in while the audience is Internal; changing redirect URLs or bypassing application identity checks will not fix it.
+
+For the public Flood Watch login:
+
+1. Select the Google Cloud project that owns the configured OAuth client, then open **Google Auth Platform > Audience**.
+2. Change the user type from **Internal** to **External** and save. If organization policy prevents this, ask the project administrator or use an approved project that permits External clients; do not bypass organizational policy.
+3. While using the Testing publishing status, add the intended test accounts under **Test users > Add users** and save.
+4. Start a new Google login from Flood Watch rather than reloading the old authorization/callback URL.
+
+Changing the audience of the same client does not require changing application credentials. If a different approved project/client is used, update `GOOGLE_OAUTH_CLIENT_ID` and `GOOGLE_OAUTH_CLIENT_SECRET` privately, register the exact `GOOGLE_OAUTH_REDIRECT_URL` for that client, and recreate the API service. Do not paste credentials into chat or tracked files. Only publish for broader use when the Google configuration and any required review are ready. If login is intentionally organization-only, keep Internal and use an authorized organizational account instead.
+
+Official references: [Google OAuth authorization errors](https://developers.google.com/identity/protocols/oauth2/web-server#authorization-errors-org-internal) and [Google Auth platform audience/test-user setup](https://developers.google.com/workspace/guides/configure-oauth-consent).
+
 Destinations are bounded internal paths, defaulting to `/reports`; external URLs, backslashes, encoded ambiguity, control characters and auth loops are rejected. Redirect origins are configured, never inferred from request/proxy headers. Cancellation, state failure and provider outage are shown with safe codes, not raw provider errors. A failed frontend refresh/me never displays success.
 
 OAuth responses use no-store/no-referrer. The API logger records paths only, not callback queries. Both Caddy configurations filter the default structured logger: remove callback code/state/error_description query values and Cookie/Authorization/Set-Cookie fields. Current configurations do not enable access logs; preserve equivalent redaction in any new access logger or external log pipeline. Never export callback codes/state or JWTs as log/metric labels. Production `/api/*` forwarding preserves the full Go path rather than stripping `/api`.

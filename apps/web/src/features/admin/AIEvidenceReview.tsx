@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { confirmAction } from "../../shared/alerts";
 import { apiConfig } from "../../shared/config/api";
 import { StatusBadge } from "../../shared/components/DataStates";
 import type { FloodEvent } from "../../shared/types/flood";
@@ -6,6 +7,9 @@ import type { FloodEvent } from "../../shared/types/flood";
 export function AIEvidenceReview() {
   const [events, setEvents] = useState<FloodEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reviewing, setReviewing] = useState(false);
+  const reviewPending = useRef(false);
 
   useEffect(() => {
     loadAIEvidence();
@@ -13,36 +17,46 @@ export function AIEvidenceReview() {
 
   const loadAIEvidence = async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const response = await fetch(`${apiConfig.baseUrl}/flood-events?source=AI_VISION_V1`);
       if (response.ok) {
          const data = await response.json();
          setEvents(data.items || []);
-      }
+      } else throw new Error("Evidence unavailable");
     } catch (e) {
-      console.error(e);
+      setLoadError("ไม่สามารถโหลดหลักฐาน AI ได้ กรุณาลองใหม่อีกครั้ง");
     } finally {
       setLoading(false);
     }
   };
 
   const verifyEvidence = async (id: string, accept: boolean) => {
+    if (reviewPending.current) return;
+    reviewPending.current = true;
+    setReviewing(true);
     try {
-      const response = await fetch(`${apiConfig.baseUrl}/admin/flood-events/${id}/${accept ? 'verify' : 'reject'}`, {
-        method: "POST",
+      await confirmAction({
+        title: accept ? "อนุมัติหลักฐาน AI หรือไม่?" : "ปฏิเสธหลักฐาน AI หรือไม่?",
+        text: "โปรดตรวจสอบหลักฐานก่อนบันทึกผล การดำเนินการนี้ไม่เปลี่ยนแหล่งที่มาของข้อมูล AI",
+        confirmText: accept ? "อนุมัติหลักฐาน" : "ปฏิเสธหลักฐาน",
+        danger: !accept,
+        action: async () => {
+          const response = await fetch(`${apiConfig.baseUrl}/admin/flood-events/${id}/${accept ? 'verify' : 'reject'}`, { method: "POST" });
+          if (!response.ok) throw new Error("Failed to review evidence");
+          setEvents((current) => current.filter((event) => event.id !== id));
+        },
+        successTitle: accept ? "อนุมัติหลักฐานแล้ว" : "ปฏิเสธหลักฐานแล้ว",
+        errorText: "ไม่สามารถบันทึกผลการตรวจสอบหลักฐาน AI ได้ กรุณาลองใหม่อีกครั้ง"
       });
-      if (response.ok) {
-         setEvents(events.filter(e => e.id !== id));
-      } else {
-         alert("Failed to review evidence");
-      }
-    } catch (e) {
-      console.error(e);
-      alert("Failed to review evidence");
+    } finally {
+      reviewPending.current = false;
+      setReviewing(false);
     }
   };
 
   if (loading) return <div className="p-8 text-center text-gray-500">กำลังโหลด...</div>;
+  if (loadError) return <div className="p-8" role="alert"><p>{loadError}</p><button type="button" className="action-button" onClick={() => void loadAIEvidence()}>ลองอีกครั้ง</button></div>;
 
   if (events.length === 0) return <div className="p-8 text-center text-gray-500">ไม่มีหลักฐาน AI ที่รอการตรวจสอบ</div>;
 
@@ -73,12 +87,14 @@ export function AIEvidenceReview() {
 
             <div className="flex flex-col gap-2 justify-center border-l pl-4 border-gray-200 dark:border-gray-700">
               <button
+                disabled={reviewing}
                 onClick={() => verifyEvidence(event.id, true)}
                 className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
               >
                 ยืนยัน (อนุมัติ)
               </button>
               <button
+                disabled={reviewing}
                 onClick={() => verifyEvidence(event.id, false)}
                 className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
               >

@@ -4,6 +4,8 @@ Phase 7 adds a PostgreSQL trigger/outbox after persisted water readings. Duplica
 
 The Go worker loads enabled `DataSource` rows, selects only exact source codes registered by server configuration, and runs a capability-specific `WaterObservationProvider`. `DataSource.provider` is display metadata, **not** an adapter selector or URL. No external live provider is registered in this phase. A synthetic fixture adapter is available only when explicitly configured in development/test; production rejects that configuration. The worker never creates a source automatically.
 
+The enabled `AI_VISION_V1` source seeded by migration 000012 identifies internal AI evidence; it does not register a water-polling adapter. When unregistered and typed `AI`, the worker skips it with a debug diagnostic rather than a missing-adapter warning. Other unregistered codes, including other AI sources or this code with incorrect provenance, still warn. This does not disable the source, run AI inference, or mark it healthy; AI processing remains a separate capability.
+
 ```mermaid
 flowchart LR
   Config[Trusted adapter registry] --> Scheduler[Bounded scheduler]

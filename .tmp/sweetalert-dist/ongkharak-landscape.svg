@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 420" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="sky" x2="0" y2="1"><stop stop-color="#93cdf7"/><stop offset=".65" stop-color="#d7efff"/><stop offset="1" stop-color="#e8f8ff"/></linearGradient>
+    <linearGradient id="water" x2="0" y2="1"><stop stop-color="#a8dafa"/><stop offset="1" stop-color="#e8f7ff"/></linearGradient>
+    <linearGradient id="hill" x2="0" y2="1"><stop stop-color="#7caed2"/><stop offset="1" stop-color="#5e99bf"/></linearGradient>
+    <filter id="soft"><feGaussianBlur stdDeviation="10"/></filter>
+  </defs>
+  <path fill="url(#sky)" d="M0 0h1440v420H0z"/>
+  <circle cx="1130" cy="75" r="45" fill="#fff9d8" opacity=".72" filter="url(#soft)"/>
+  <g fill="#fff" opacity=".63"><ellipse cx="1115" cy="86" rx="128" ry="21"/><ellipse cx="1205" cy="58" rx="72" ry="15"/><ellipse cx="556" cy="100" rx="155" ry="20"/><ellipse cx="340" cy="65" rx="90" ry="17"/></g>
+  <path fill="#adcbe0" opacity=".68" d="M0 213 100 180 168 197 262 138 355 174 440 115 533 175 660 91 777 184 902 124 1015 171 1110 121 1232 165 1350 117 1440 157v263H0z"/>
+  <path fill="url(#hill)" opacity=".66" d="M0 262 140 230 245 250 371 203 510 240 624 194 750 234 900 190 1033 226 1180 178 1320 215 1440 185v235H0z"/>
+  <path fill="#487e86" opacity=".58" d="M0 260q115-40 227-1t235-18q123-47 230 6t224-9q97-32 218 0t206-24v206H0z"/>
+  <path fill="url(#water)" d="M0 271q183-24 360 0t360 0 360 0 360-11v160H0z"/>
+  <g fill="none" stroke="#fff" opacity=".36" stroke-width="4"><path d="M0 292q120 14 254 0t270 3 250-1 280 4 386-3"/><path d="M0 323q210 11 410-2t360 4 350-6 320 0"/><path d="M0 364q165-14 300 1t310 2 380-3 450 4"/></g>
+  <g fill="#407979" opacity=".78">
+    <path d="M56 270v-70h7v70zm-39-51q41-50 84 0-48-20-84 0zm8-24q39-41 71 2-44-21-71-2zM240 270v-82h8v82zm-48-43q48-60 109-4-66-27-109 4zm8-35q45-46 94 2-56-25-94-2zM1110 271v-90h8v90zm-55-39q49-66 115-6-58-27-115 6zm10-34q50-51 94 0-58-24-94 0zM1310 260v-76h8v76zm-49-42q43-56 101 0-55-24-101 0z"/>
+  </g>
+</svg>

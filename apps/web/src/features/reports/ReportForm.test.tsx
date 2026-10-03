@@ -1,6 +1,9 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ReportForm } from "./ReportForm";
+import { notifyError, notifySuccess, notifyWarning } from "../../shared/alerts";
+
+vi.mock("../../shared/alerts", () => ({ notifyError: vi.fn(), notifySuccess: vi.fn(), notifyWarning: vi.fn() }));
 
 const reportsApi = vi.hoisted(() => ({ create: vi.fn(), update: vi.fn(), uploadMedia: vi.fn() }));
 
@@ -22,6 +25,7 @@ const pendingReport = {
 };
 
 describe("ReportForm uploads", () => {
+  beforeEach(() => { vi.clearAllMocks(); });
   it("keeps a pending edit available when an uploaded file fails", async () => {
     reportsApi.update.mockClear();
     reportsApi.uploadMedia.mockReset();
@@ -35,6 +39,8 @@ describe("ReportForm uploads", () => {
 
     expect(await screen.findByRole("alert")).toHaveTextContent("บางไฟล์อัปโหลดไม่สำเร็จ");
     expect(onComplete).toHaveBeenCalledWith(true);
+    expect(notifyWarning).toHaveBeenCalledTimes(1);
+    expect(notifySuccess).not.toHaveBeenCalled();
     expect(screen.getByRole("button", { name: "อัปโหลดไฟล์ที่เหลืออีกครั้ง" })).toBeInTheDocument();
   });
 
@@ -64,5 +70,16 @@ describe("ReportForm uploads", () => {
     expect(reportsApi.create).toHaveBeenCalledTimes(1);
     expect(reportsApi.uploadMedia).toHaveBeenCalledTimes(3);
     expect(reportsApi.uploadMedia).toHaveBeenNthCalledWith(3, pendingReport.id, failedFile);
+    expect(notifySuccess).toHaveBeenCalledTimes(1);
+  });
+
+  it("notifies on save failure while keeping the form error and draft", async () => {
+    reportsApi.update.mockRejectedValue(new Error("offline"));
+    render(<ReportForm editing={pendingReport} onComplete={vi.fn()} onCancel={vi.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: "บันทึกการแก้ไข" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("ไม่สามารถบันทึกรายงานได้");
+    expect(notifyError).toHaveBeenCalledTimes(1);
+    expect(notifySuccess).not.toHaveBeenCalled();
+    expect(screen.getByLabelText("รายละเอียด")).toHaveValue(pendingReport.description);
   });
 });

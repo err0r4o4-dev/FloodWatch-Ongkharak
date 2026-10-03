@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { NavLink } from "react-router";
 import { adminApi } from "./api";
 import type { SystemSetting, SettingCategory } from "./types";
+import { notifyError, notifySuccess } from "../../shared/alerts";
 
 export function SettingsPage() {
   const [settings, setSettings] = useState<SystemSetting[]>([]);
@@ -45,6 +46,7 @@ export function SettingsPage() {
   };
 
   const handleSave = async (key: string) => {
+    if (saveLoading) return;
     try {
       setSaveLoading(true);
       setSaveError(null);
@@ -53,8 +55,11 @@ export function SettingsPage() {
       await loadSettings();
       setEditingKey(null);
       setEditValue("");
+      void notifySuccess("บันทึกการตั้งค่าแล้ว", `อัปเดต ${key} สำเร็จ`);
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : "Failed to save setting");
+      const message = err instanceof SyntaxError ? "กรุณาใส่ค่าในรูปแบบ JSON ที่ถูกต้อง" : err instanceof Error ? err.message : "ไม่สามารถบันทึกการตั้งค่าได้";
+      setSaveError(message);
+      if (!(err instanceof SyntaxError)) void notifyError("บันทึกการตั้งค่าไม่สำเร็จ", message);
     } finally {
       setSaveLoading(false);
     }

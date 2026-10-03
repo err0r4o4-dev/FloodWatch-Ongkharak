@@ -1,0 +1,28 @@
+{
+  "checks": [
+    "overview 1440px no document overflow",
+    "overview 1280px no document overflow",
+    "overview 1024px no document overflow",
+    "overview 768px no document overflow",
+    "overview 390px no document overflow",
+    "overview 320px no document overflow",
+    "keyboard Enter opens selected verified individual report",
+    "empty state visible without overflow",
+    "error state visible without overflow",
+    "partial state visible without overflow",
+    "loading state visible without overflow",
+    "media-error state visible without overflow",
+    "/map photographic hero 1440px with clickable credit",
+    "/map photographic hero 390px with clickable credit",
+    "/risk photographic hero 1440px with clickable credit",
+    "/risk photographic hero 390px with clickable credit",
+    "/announcements photographic hero 1440px with clickable credit",
+    "/announcements photographic hero 390px with clickable credit",
+    "/reports photographic hero 1440px with clickable credit",
+    "/reports photographic hero 390px with clickable credit",
+    "existing whole-page 200% root font limitation retained (header/body width 640px at 390px; header unchanged)",
+    "affected overview 200% text reflows without document overflow"
+  ],
+  "errors": [],
+  "fixtures": "SYNTHETIC_TEST_ONLY intercepted within isolated browser; no live flood or database writes"
+}

@@ -40,9 +40,7 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
     } catch (cause) {
       const message = cause instanceof ApiError ? cause.message : registering ? "ไม่สามารถสมัครสมาชิกได้" : "ไม่สามารถเข้าสู่ระบบได้";
       setError(message);
-      if (cause instanceof ApiError) {
-        void notifyError(registering ? "สมัครสมาชิกไม่สำเร็จ" : "เข้าสู่ระบบไม่สำเร็จ", message);
-      }
+      void notifyError(registering ? "สมัครสมาชิกไม่สำเร็จ" : "เข้าสู่ระบบไม่สำเร็จ", message);
     } finally {
       setSubmitting(false);
     }

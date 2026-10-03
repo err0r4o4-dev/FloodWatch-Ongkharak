@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router";
+import { HeroImageCredit } from "../../shared/components/HeroImageCredit";
 import { DataTimestamp, SourceBadge } from "../../shared/components/DataStates";
 import { useOptionalAuth } from "../auth/AuthProvider";
 import { useRealtimeRevision } from "../realtime/RealtimeProvider";
@@ -80,14 +82,16 @@ function ReportDetailsState({ state }: { state: LoadState }) {
 }
 
 export function ReportsPage() {
+  const [params] = useSearchParams();
   const { account, status } = useOptionalAuth();
   const realtimeRevision = useRealtimeRevision(reportEvents);
   const [publicReports, setPublicReports] = useState<CommunityReport[]>([]);
   const [publicState, setPublicState] = useState<LoadState>("loading");
   const [filter, setFilter] = useState<ReportFilter>("ALL");
   const [query, setQuery] = useState("");
-  const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
+  const [selectedReportId, setSelectedReportId] = useState<string | null>(params.get("report"));
   const publicRequest = useRef(0);
+  useEffect(() => { setSelectedReportId(params.get("report")); }, [params]);
   const [mine, setMine] = useState<CommunityReport[]>([]);
   const [mineOwnerId, setMineOwnerId] = useState<string | null>(null);
   const mineRequest = useRef(0);
@@ -142,14 +146,16 @@ export function ReportsPage() {
     (!normalizedQuery || report.description.toLocaleLowerCase("th-TH").includes(normalizedQuery))
   );
   const selectedReport = visibleReports.find((report) => report.id === selectedReportId) ?? visibleReports[0] ?? null;
+  const requestedReportUnavailable = params.get("report") !== null && selectedReportId === params.get("report") && !publicReports.some((report) => report.id === selectedReportId);
 
   return <section className="feature-page reports-page">
     <header className="page-hero reports-page__heading">
       <div className="page-hero__copy">
         <p className="eyebrow">COMMUNITY EVIDENCE</p>
         <h1>รายงานสถานการณ์</h1>
-        <p>รายงานจากชุมชนจะแสดงต่อสาธารณะเมื่อผ่านการตรวจสอบแล้วเท่านั้น</p>
+        <p>รายงานที่บุคคลส่งเข้ามา จะแสดงต่อสาธารณะเมื่อผ่านการตรวจสอบแล้วเท่านั้น</p>
       </div>
+      <HeroImageCredit />
     </header>
     <section className="data-section reports-public" aria-labelledby="public-reports-heading">
       <div className="reports-public__heading">
@@ -164,7 +170,11 @@ export function ReportsPage() {
           ? <ul className="data-list reports-list">{visibleReports.map((report) => <li key={report.id}><ReportCard report={report} showDetailsControl onShowDetails={setSelectedReportId} /></li>)}</ul>
           : <div className="reports-list reports-list--state"><PublicReportListState state={publicState} onRetry={() => void loadPublic()} /></div>}
         {publicState !== "ready" || publicReports.length === 0
-          ? <ReportDetailsState state={publicState} />
+          ? publicState === "ready" && requestedReportUnavailable
+            ? <aside className="reports-detail reports-detail--state" aria-labelledby="report-detail-heading"><h2 id="report-detail-heading">รายงานที่เลือกไม่พร้อมใช้งาน</h2><p>ไม่พบรายงานนี้ในรายการสาธารณะที่โหลดได้ อาจยังไม่ผ่านการตรวจสอบหรือไม่พร้อมเผยแพร่</p></aside>
+            : <ReportDetailsState state={publicState} />
+          : requestedReportUnavailable
+            ? <aside className="reports-detail reports-detail--state" aria-labelledby="report-detail-heading"><h2 id="report-detail-heading">รายงานที่เลือกไม่พร้อมใช้งาน</h2><p>ไม่พบรายงานนี้ในรายการสาธารณะที่โหลดได้ เลือกรายงานอื่นเพื่อดูรายละเอียด</p></aside>
           : visibleReports.length === 0
             ? <aside className="reports-detail reports-detail--state" aria-labelledby="report-detail-heading"><h2 id="report-detail-heading" className="section-empty reports-filter-empty">ไม่พบรายงานที่ตรงกับตัวกรอง</h2></aside>
             : selectedReport && <ReportDetails report={selectedReport} />}

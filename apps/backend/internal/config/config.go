@@ -93,9 +93,12 @@ func Load() (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
-	jwtIssuer, err := required("JWT_ISSUER")
-	if err != nil {
-		return Config{}, err
+	jwtIssuer := strings.TrimSpace(os.Getenv("JWT_ISSUER"))
+	if jwtIssuer == "" {
+		jwtIssuer = "floodwatch-ongkharak-local"
+		if environment == "production" {
+			jwtIssuer = "floodwatch-ongkharak"
+		}
 	}
 	jwtSecret, err := required("JWT_SECRET")
 	if err != nil {
@@ -104,11 +107,11 @@ func Load() (Config, error) {
 	if len(jwtSecret) < 32 || len(jwtSecret) > 4096 || (environment == "production" && (strings.Contains(strings.ToLower(jwtSecret), "development-only") || strings.Contains(strings.ToLower(jwtSecret), "dev-only") || strings.Contains(strings.ToLower(jwtSecret), "local-only"))) {
 		return Config{}, fmt.Errorf("JWT_SECRET must be a strong non-development secret of 32-4096 bytes")
 	}
-	accessTTL, err := duration("JWT_ACCESS_TTL", time.Minute, time.Hour)
+	accessTTL, err := duration("JWT_ACCESS_TTL", 15*time.Minute, time.Minute, time.Hour)
 	if err != nil {
 		return Config{}, err
 	}
-	refreshTTL, err := duration("REFRESH_TOKEN_TTL", time.Hour, 30*24*time.Hour)
+	refreshTTL, err := duration("REFRESH_TOKEN_TTL", 7*24*time.Hour, time.Hour, 30*24*time.Hour)
 	if err != nil {
 		return Config{}, err
 	}
@@ -243,10 +246,10 @@ func validFixtureSourceCode(value string) bool {
 	return true
 }
 
-func duration(name string, minimum, maximum time.Duration) (time.Duration, error) {
-	value, err := required(name)
-	if err != nil {
-		return 0, err
+func duration(name string, fallback, minimum, maximum time.Duration) (time.Duration, error) {
+	value := strings.TrimSpace(os.Getenv(name))
+	if value == "" {
+		return fallback, nil
 	}
 	parsed, err := time.ParseDuration(value)
 	if err != nil || parsed < minimum || parsed > maximum {

@@ -7,6 +7,7 @@ import { HealthPage } from "../features/health/HealthPage";
 import { MapPage } from "../features/map/MapPage";
 import { OverviewPage } from "../features/overview/OverviewPage";
 import { ReportsPage } from "../features/reports/ReportsPage";
+import { NotificationsPage } from "../features/notifications/NotificationsPage";
 import { AdminDashboardPage } from "../features/admin/AdminDashboardPage";
 import { UsersPage } from "../features/admin/UsersPage";
 import { UserDetailPage } from "../features/admin/UserDetailPage";
@@ -27,6 +28,7 @@ export function AppRoutes() {
   return <AppShell><Routes>
     <Route path="/" element={<OverviewPage />} />
     <Route path="/announcements" element={<AnnouncementsPage />} />
+    <Route path="/notifications" element={<NotificationsPage />} />
     <Route path="/risk" element={<LegacyRiskRedirect />} />
     <Route path="/map" element={<MapPage />} />
     <Route path="/reports" element={<ReportsPage />} />

@@ -20,15 +20,23 @@
 }
 
 .fw-alert .fw-alert__icon {
-  width: 6.25rem;
-  height: 6.25rem;
+  font-size: 1.25rem;
   margin: .25rem auto 0;
   border-width: 4px;
+  box-sizing: content-box;
+}
+
+.fw-alert .fw-alert__icon * {
+  box-sizing: content-box;
 }
 
 .fw-alert .swal2-icon.swal2-warning {
   color: var(--color-alert-warning);
   border-color: var(--color-alert-warning);
+}
+
+.fw-alert .swal2-icon.swal2-success {
+  font-size: 1rem;
 }
 
 .fw-alert .fw-alert__title {
@@ -91,7 +99,7 @@
 
 @media (max-width: 480px) {
   .swal2-popup.fw-alert { padding: 2rem 1.25rem; }
-  .fw-alert .fw-alert__icon { width: 5rem; height: 5rem; }
+  .fw-alert .fw-alert__icon { font-size: 1rem; }
   .fw-alert .fw-alert__actions { gap: .75rem; margin-top: 2rem; }
   .fw-alert__button { min-width: 0; flex: 1 1 7rem; padding-inline: 1rem; font-size: 1rem; }
 }

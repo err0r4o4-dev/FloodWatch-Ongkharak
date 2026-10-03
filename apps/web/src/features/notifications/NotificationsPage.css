@@ -1,0 +1,285 @@
+.notifications-page {
+  display: grid;
+  gap: var(--space-8);
+}
+
+.notifications-hero {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-6);
+  min-height: 12rem;
+  overflow: hidden;
+  padding: var(--space-8);
+  border: var(--border-width) solid var(--color-surface);
+  border-radius: var(--radius-lg);
+  background: radial-gradient(ellipse at 70% 100%, var(--color-canvas-strong), transparent 60%), linear-gradient(120deg, var(--color-surface), var(--color-canvas-soft));
+  box-shadow: var(--shadow-surface);
+}
+
+.notifications-hero::after {
+  position: absolute;
+  z-index: -1;
+  top: -4rem;
+  right: -3rem;
+  width: 12rem;
+  height: 12rem;
+  border: var(--space-2) solid var(--color-glass);
+  border-radius: 50%;
+  content: "";
+}
+
+.notifications-hero__copy {
+  flex: 1;
+  min-width: 0;
+  max-width: 36rem;
+}
+
+.notifications-hero__copy .eyebrow {
+  margin: 0 0 var(--space-2);
+  color: var(--color-primary-strong);
+  font-size: .875rem;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.notifications-hero h1 {
+  margin: 0;
+  font-size: clamp(1.75rem, 3vw, 2.5rem);
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.notifications-hero h1:focus {
+  outline: none;
+}
+
+.notifications-hero__copy > p:last-child {
+  margin: var(--space-3) 0 0;
+  color: var(--color-ink-muted);
+  font-size: .9375rem;
+}
+
+.notifications-hero__art {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  color: var(--color-primary-strong);
+}
+
+.notifications-hero__tile {
+  display: grid;
+  place-items: center;
+  background: var(--color-glass);
+  box-shadow: var(--shadow-surface);
+}
+
+.notifications-hero__tile--small {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: var(--radius-sm);
+  transform: rotate(-10deg) translateY(var(--space-2));
+}
+
+.notifications-hero__tile--small:last-child {
+  transform: rotate(10deg) translateY(var(--space-3));
+}
+
+.notifications-hero__tile--bell {
+  width: 5rem;
+  height: 5rem;
+  border-radius: var(--radius-lg);
+}
+
+.notifications-hero__tile--bell svg {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+.notifications-hero__actions {
+  display: grid;
+  flex: none;
+  justify-items: end;
+  gap: var(--space-2);
+}
+
+.notifications-read-all {
+  display: inline-flex;
+  min-height: var(--touch-target);
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-glass);
+  color: var(--color-ink-muted);
+  font: inherit;
+  font-size: .875rem;
+  font-weight: 650;
+  cursor: not-allowed;
+}
+
+.notifications-read-all svg {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+.notifications-hero__actions > span:last-child {
+  color: var(--color-ink-muted);
+  font-size: .75rem;
+}
+
+.notifications-page__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(17rem, 20rem);
+  align-items: start;
+  gap: var(--space-6);
+}
+
+.notifications-history {
+  display: grid;
+  min-height: 18rem;
+  justify-items: center;
+  align-content: center;
+  gap: var(--space-3);
+  padding: var(--space-8) var(--space-6);
+  border: var(--border-width) dashed var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-glass);
+  text-align: center;
+}
+
+.notifications-history__icon {
+  display: grid;
+  width: 3.5rem;
+  height: 3.5rem;
+  margin-bottom: var(--space-2);
+  place-items: center;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-primary-strong);
+  box-shadow: var(--shadow-surface);
+}
+
+.notifications-history h2 {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.notifications-history p {
+  max-width: 34rem;
+  margin: 0;
+  color: var(--color-ink-muted);
+  font-size: .9375rem;
+}
+
+.notifications-page__sidebar {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-4);
+}
+
+.notifications-card {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-3);
+  padding: var(--space-6);
+  border: var(--border-width) solid var(--color-surface);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-surface);
+}
+
+.notifications-card__icon {
+  color: var(--color-primary-strong);
+}
+
+.notifications-card h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 750;
+}
+
+.notifications-card > p {
+  margin: 0;
+  color: var(--color-ink-muted);
+  font-size: .875rem;
+}
+
+.notifications-note {
+  display: flex;
+  align-items: start;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--color-canvas-soft);
+  color: var(--color-source-official-ink);
+}
+
+.notifications-note svg {
+  flex: none;
+  width: 1.125rem;
+  height: 1.125rem;
+  margin-top: var(--space-1);
+}
+
+.notifications-note p {
+  margin: 0;
+  font-size: .8125rem;
+}
+
+.notifications-inline-link {
+  display: inline-flex;
+  min-height: var(--touch-target);
+  align-items: center;
+  justify-content: center;
+  justify-self: start;
+  gap: var(--space-2);
+  color: var(--color-primary-strong);
+  font-size: .875rem;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.notifications-inline-link:hover {
+  text-decoration: underline;
+  text-underline-offset: var(--space-1);
+}
+
+.notifications-inline-link svg {
+  flex: none;
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+.notifications-history .notifications-inline-link {
+  justify-self: center;
+}
+
+@media (max-width: 75rem) {
+  .notifications-hero__art { padding: 0; }
+}
+
+@media (max-width: 55rem) {
+  .notifications-hero { flex-wrap: wrap; }
+  .notifications-hero__copy { flex-basis: calc(100% - 13rem); }
+  .notifications-hero__actions { width: 100%; justify-items: start; }
+  .notifications-page__layout { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 35rem) {
+  .notifications-page { gap: var(--space-6); }
+  .notifications-hero { padding: var(--space-6); gap: var(--space-4); }
+  .notifications-hero__copy { flex-basis: 100%; }
+  .notifications-hero__art { position: absolute; top: var(--space-4); right: var(--space-4); opacity: .2; z-index: -1; }
+  .notifications-hero__tile--small { display: none; }
+  .notifications-hero__tile--bell { width: 4rem; height: 4rem; box-shadow: none; }
+  .notifications-history { padding: var(--space-6) var(--space-4); }
+  .notifications-card { padding: var(--space-6); }
+}

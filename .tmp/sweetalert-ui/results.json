@@ -1,0 +1,13 @@
+{
+  "checks": [
+    "desktop reference style, cancel-first focus, cancel-left, 44px targets, Escape cancellation, restored trigger focus, zero API calls on cancel",
+    "320px, 390px, 768px responsive dialogs without horizontal overflow",
+    "keyboard confirm, blocked cancellation while loading, one API request, success acknowledgement and overview navigation",
+    "mobile API failure message without false success",
+    "informational dialog honestly identifies demo-only password recovery",
+    "200% root text reflow in dialog and reduced motion"
+  ],
+  "errors": [],
+  "logoutCount": 2,
+  "fixtures": "isolated, no live flood or production services"
+}

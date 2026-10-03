@@ -22,7 +22,6 @@ DB_PASSWORD=your_secure_postgres_password
 MINIO_ACCESS_KEY=admin
 MINIO_SECRET_KEY=your_secure_minio_password
 CORS_ALLOWED_ORIGINS=https://floodwatch.example.com
-JWT_ISSUER=floodwatch.example.com
 JWT_SECRET=your_32_byte_secure_jwt_secret
 VAPID_PUBLIC_KEY=your_vapid_public_key
 VAPID_PRIVATE_KEY=your_vapid_private_key
@@ -30,6 +29,8 @@ VAPID_SUBSCRIBER=mailto:admin@example.com
 ```
 
 ### Generating Secrets
+
+Only `JWT_SECRET` is required for token configuration. The production backend defaults to issuer `floodwatch-ongkharak`, 15-minute access tokens, and 7-day refresh tokens. If an existing deployment uses a different issuer, retain its optional `JWT_ISSUER` setting to keep active access tokens valid.
 
 1. **JWT Secret**: Use a secure random string (at least 32 bytes).
    `openssl rand -hex 32`

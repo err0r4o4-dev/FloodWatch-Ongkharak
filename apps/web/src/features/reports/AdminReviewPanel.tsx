@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { confirmAction, notifyError } from "../../shared/alerts";
 import { ApiError, reportsApi } from "./api";
 import { ReportCard } from "./ReportCard";
 import type { CommunityReport } from "./types";
@@ -10,6 +11,7 @@ export function AdminReviewPanel() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const reviewPending = useRef(false);
 
   const load = async () => {
     setLoading(true);
@@ -33,22 +35,39 @@ export function AdminReviewPanel() {
       setReason("");
     } catch {
       setError("ไม่สามารถเปิดรายละเอียดรายงานได้");
+      void notifyError("เปิดรายงานไม่สำเร็จ", "ไม่สามารถเปิดรายละเอียดรายงานได้ กรุณาลองใหม่อีกครั้ง");
     }
   };
 
   const review = async (action: "verify" | "reject") => {
-    if (!selected) return;
+    if (!selected || reviewPending.current) return;
+    reviewPending.current = true;
     setSaving(true);
     setError(null);
+    const errorMessage = (cause: unknown) => cause instanceof ApiError && cause.status === 409 ? "รายงานมีการแก้ไขหรือเพิ่มภาพแล้ว โปรดเปิดรายละเอียดใหม่ก่อนตรวจสอบ" : cause instanceof ApiError ? cause.message : "ไม่สามารถบันทึกผลการตรวจสอบได้";
     try {
-      await reportsApi.review(selected.id, action, reason.trim(), selected.updatedAt);
-      setItems((current) => current.filter((report) => report.id !== selected.id));
-      setSelected(null);
-      setReason("");
-    } catch (cause) {
-      setError(cause instanceof ApiError && cause.status === 409 ? "รายงานมีการแก้ไขหรือเพิ่มภาพแล้ว โปรดเปิดรายละเอียดใหม่ก่อนตรวจสอบ" : cause instanceof ApiError ? cause.message : "ไม่สามารถบันทึกผลการตรวจสอบได้");
-      if (cause instanceof ApiError && cause.status === 409) setSelected(null);
+      await confirmAction({
+        title: action === "verify" ? "ยืนยันรายงานชุมชนหรือไม่?" : "ปฏิเสธรายงานชุมชนหรือไม่?",
+        text: action === "verify" ? "รายงานจะเผยแพร่ต่อสาธารณะหลังยืนยัน โปรดตรวจสอบรายละเอียดและภาพประกอบก่อนดำเนินการ" : "รายงานนี้จะไม่เผยแพร่ต่อสาธารณะ",
+        confirmText: action === "verify" ? "ยืนยันรายงาน" : "ปฏิเสธรายงาน",
+        danger: action === "reject",
+        action: async () => {
+          try {
+            await reportsApi.review(selected.id, action, reason.trim(), selected.updatedAt);
+            setItems((current) => current.filter((report) => report.id !== selected.id));
+            setSelected(null);
+            setReason("");
+          } catch (cause) {
+            setError(errorMessage(cause));
+            if (cause instanceof ApiError && cause.status === 409) setSelected(null);
+            throw cause;
+          }
+        },
+        successTitle: action === "verify" ? "ยืนยันรายงานแล้ว" : "ปฏิเสธรายงานแล้ว",
+        errorText: errorMessage
+      });
     } finally {
+      reviewPending.current = false;
       setSaving(false);
     }
   };

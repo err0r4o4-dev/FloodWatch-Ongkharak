@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { HeroImageCredit } from "../../shared/components/HeroImageCredit";
 import { DataTimestamp, FreshnessBadge, SourceBadge, StatusBadge } from "../../shared/components/DataStates";
 import { useRealtimeRevision } from "../realtime/RealtimeProvider";
 import { listPublicAlerts } from "./api";
@@ -53,6 +54,7 @@ export function AnnouncementsPage() {
         <h1>ประกาศและแจ้งเตือน</h1>
         <p>ติดตามประกาศที่เผยแพร่ พร้อมระดับความรุนแรง แหล่งข้อมูล และเวลาที่แจ้งเตือน</p>
       </div>
+      <HeroImageCredit />
     </header>
     <div className="announcements-page__layout">
         <div className="announcements-page__main">

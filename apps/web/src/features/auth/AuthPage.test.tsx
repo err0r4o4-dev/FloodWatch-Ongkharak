@@ -13,7 +13,7 @@ const alertMocks = vi.hoisted(() => ({
   notifyWarning: vi.fn().mockResolvedValue(undefined)
 }));
 
-vi.mock("../../shared/alerts", () => alertMocks, { virtual: true });
+vi.mock("../../shared/alerts", () => alertMocks);
 
 const account = { id: "user-1", email: "user@example.com", role: "USER" as const, createdAt: "2026-10-02T00:00:00Z" };
 
@@ -87,7 +87,7 @@ describe("AuthPage", () => {
     expect(alertMocks.notifySuccess).not.toHaveBeenCalled();
   });
 
-  it("keeps non-API failures inline without an error notification", async () => {
+  it("shows network failures inline and in an error notification", async () => {
     const api = {
       refresh: vi.fn().mockRejectedValue(new Error("anonymous")),
       me: vi.fn().mockResolvedValue(account),
@@ -102,7 +102,7 @@ describe("AuthPage", () => {
     fireEvent.click(screen.getByRole("button", { name: /เข้าสู่ระบบ/ }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("ไม่สามารถเข้าสู่ระบบได้");
-    expect(alertMocks.notifyError).not.toHaveBeenCalled();
+    expect(alertMocks.notifyError).toHaveBeenCalledWith("เข้าสู่ระบบไม่สำเร็จ", "ไม่สามารถเข้าสู่ระบบได้");
   });
 
   it("does not submit twice while the request is pending", async () => {

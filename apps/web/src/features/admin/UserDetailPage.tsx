@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { NavLink, useParams } from "react-router";
 import { adminApi } from "./api";
 import type { UserManagement, UserStats } from "./types";
+import { confirmAction } from "../../shared/alerts";
 
 export function UserDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -11,6 +12,7 @@ export function UserDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const actionPending = useRef(false);
 
   const loadUser = async () => {
     if (!id) return;
@@ -32,58 +34,56 @@ export function UserDetailPage() {
     void loadUser();
   }, [id]);
 
-  const handleUpdateRole = async (newRole: string) => {
-    if (!id || !user) return;
-    if (!confirm(`คุณแน่ใจหรือไม่ที่จะเปลี่ยนบทบาทของ ${user.email} เป็น ${newRole === "ADMIN" ? "ผู้ดูแลระบบ" : "ผู้ใช้งาน"}?`)) {
-      return;
-    }
-
+  const manageUser = async (options: Parameters<typeof confirmAction>[0]) => {
+    if (actionPending.current) return;
+    actionPending.current = true;
+    setActionLoading(true);
+    setActionError(null);
     try {
-      setActionLoading(true);
-      setActionError(null);
-      await adminApi.updateUserRole(id, newRole);
-      await loadUser();
-    } catch (err) {
-      setActionError(err instanceof Error ? err.message : "Failed to update role");
+      await confirmAction({ ...options, errorText: (cause) => {
+        const message = cause instanceof Error ? cause.message : "ไม่สามารถดำเนินการได้ กรุณาลองใหม่อีกครั้ง";
+        setActionError(message);
+        return message;
+      } });
     } finally {
+      actionPending.current = false;
       setActionLoading(false);
     }
+  };
+
+  const handleUpdateRole = async (newRole: string) => {
+    if (!id || !user) return;
+    await manageUser({
+      title: "เปลี่ยนบทบาทผู้ใช้งานหรือไม่?",
+      text: `เปลี่ยนบทบาทของ ${user.email} เป็น ${newRole === "ADMIN" ? "ผู้ดูแลระบบ" : "ผู้ใช้งาน"} การเปลี่ยนแปลงนี้มีผลต่อสิทธิ์เข้าถึงระบบ`,
+      confirmText: "เปลี่ยนบทบาท",
+      danger: true,
+      action: async () => { await adminApi.updateUserRole(id, newRole); await loadUser(); },
+      successTitle: "เปลี่ยนบทบาทแล้ว"
+    });
   };
 
   const handleDisable = async () => {
     if (!id || !user) return;
-    if (!confirm(`คุณแน่ใจหรือไม่ที่จะปิดการใช้งานบัญชีของ ${user.email}?`)) {
-      return;
-    }
-
-    try {
-      setActionLoading(true);
-      setActionError(null);
-      await adminApi.disableUser(id);
-      await loadUser();
-    } catch (err) {
-      setActionError(err instanceof Error ? err.message : "Failed to disable user");
-    } finally {
-      setActionLoading(false);
-    }
+    await manageUser({
+      title: "ปิดการใช้งานบัญชีหรือไม่?",
+      text: `บัญชี ${user.email} จะไม่สามารถใช้งานฟีเจอร์สมาชิกได้`,
+      confirmText: "ปิดการใช้งาน",
+      danger: true,
+      action: async () => { await adminApi.disableUser(id); await loadUser(); },
+      successTitle: "ปิดการใช้งานบัญชีแล้ว"
+    });
   };
 
   const handleEnable = async () => {
     if (!id || !user) return;
-    if (!confirm(`คุณแน่ใจหรือไม่ที่จะเปิดการใช้งานบัญชีของ ${user.email} อีกครั้ง?`)) {
-      return;
-    }
-
-    try {
-      setActionLoading(true);
-      setActionError(null);
-      await adminApi.enableUser(id);
-      await loadUser();
-    } catch (err) {
-      setActionError(err instanceof Error ? err.message : "Failed to enable user");
-    } finally {
-      setActionLoading(false);
-    }
+    await manageUser({
+      title: "เปิดการใช้งานบัญชีหรือไม่?",
+      text: `เปิดให้บัญชี ${user.email} กลับมาใช้งานฟีเจอร์สมาชิกอีกครั้ง`,
+      confirmText: "เปิดการใช้งาน",
+      action: async () => { await adminApi.enableUser(id); await loadUser(); },
+      successTitle: "เปิดการใช้งานบัญชีแล้ว"
+    });
   };
 
   const formatDate = (dateString: string | null) => {

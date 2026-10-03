@@ -3,6 +3,7 @@ package config
 import (
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestLoadRequiresValidAppEnvironment(t *testing.T) {
@@ -80,6 +81,66 @@ func TestLoadRejectsInvalidMinIOEndpoint(t *testing.T) {
 	_, err := Load()
 	if err == nil || !strings.Contains(err.Error(), "MINIO_ENDPOINT") {
 		t.Fatalf("Load() error = %v, want MINIO_ENDPOINT validation error", err)
+	}
+}
+
+func TestLoadDefaultsTokenConfiguration(t *testing.T) {
+	for _, environment := range []string{"development", "test", "production"} {
+		t.Run(environment, func(t *testing.T) {
+			setValidEnvironment(t)
+			t.Setenv("APP_ENV", environment)
+			t.Setenv("JWT_SECRET", "strong-production-example-secret-for-tests-only-42")
+			t.Setenv("COOKIE_SECURE", "true")
+			t.Setenv("JWT_ISSUER", "")
+			t.Setenv("JWT_ACCESS_TTL", "")
+			t.Setenv("REFRESH_TOKEN_TTL", "")
+
+			configuration, err := Load()
+			if err != nil {
+				t.Fatalf("Load() error = %v", err)
+			}
+			wantIssuer := "floodwatch-ongkharak-local"
+			if environment == "production" {
+				wantIssuer = "floodwatch-ongkharak"
+			}
+			if configuration.JWTIssuer != wantIssuer {
+				t.Errorf("JWTIssuer = %q, want %q", configuration.JWTIssuer, wantIssuer)
+			}
+			if configuration.JWTAccessTTL != 15*time.Minute {
+				t.Errorf("JWTAccessTTL = %s, want 15m", configuration.JWTAccessTTL)
+			}
+			if configuration.RefreshTokenTTL != 7*24*time.Hour {
+				t.Errorf("RefreshTokenTTL = %s, want 168h", configuration.RefreshTokenTTL)
+			}
+		})
+	}
+}
+
+func TestLoadPreservesTokenConfigurationOverrides(t *testing.T) {
+	setValidEnvironment(t)
+	t.Setenv("JWT_ISSUER", "custom-issuer")
+	t.Setenv("JWT_ACCESS_TTL", "10m")
+	t.Setenv("REFRESH_TOKEN_TTL", "24h")
+
+	configuration, err := Load()
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	if configuration.JWTIssuer != "custom-issuer" || configuration.JWTAccessTTL != 10*time.Minute || configuration.RefreshTokenTTL != 24*time.Hour {
+		t.Fatal("Load() did not preserve token configuration overrides")
+	}
+}
+
+func TestLoadRequiresJWTSecret(t *testing.T) {
+	setValidEnvironment(t)
+	t.Setenv("JWT_SECRET", "")
+	t.Setenv("JWT_ISSUER", "")
+	t.Setenv("JWT_ACCESS_TTL", "")
+	t.Setenv("REFRESH_TOKEN_TTL", "")
+
+	_, err := Load()
+	if err == nil || !strings.Contains(err.Error(), "JWT_SECRET") {
+		t.Fatalf("Load() error = %v, want JWT_SECRET validation error", err)
 	}
 }
 

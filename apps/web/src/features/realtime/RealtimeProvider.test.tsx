@@ -134,13 +134,21 @@ describe("public realtime subscription", () => {
     vi.stubGlobal("fetch", request);
     const view = render(<MemoryRouter><RealtimeProvider><OverviewPage /></RealtimeProvider></MemoryRouter>);
     expect(await screen.findByText("ยังไม่มีข้อมูลสถานการณ์ที่เผยแพร่")).toBeInTheDocument();
-    expect(request).toHaveBeenCalledTimes(4);
+    expect(request).toHaveBeenCalledTimes(6);
     act(() => FakeEventSource.connections[0].onopen?.());
-    await waitFor(() => expect(request).toHaveBeenCalledTimes(8));
+    await waitFor(() => expect(request).toHaveBeenCalledTimes(12));
     act(() => FakeEventSource.connections[0].send("water_level.updated", {
       eventType: "water_level.updated", eventId: "event-1", resourceId: "station-1", payloadVersion: 1, sourceType: "OFFICIAL"
     }));
-    await waitFor(() => expect(request).toHaveBeenCalledTimes(12));
+    await waitFor(() => expect(request).toHaveBeenCalledTimes(18));
+    act(() => FakeEventSource.connections[0].send("report.verified", {
+      eventType: "report.verified", eventId: "report-event-1", resourceId: "report-1", payloadVersion: 1, sourceType: "COMMUNITY"
+    }));
+    await waitFor(() => expect(request).toHaveBeenCalledTimes(24));
+    act(() => FakeEventSource.connections[0].send("alert.created", {
+      eventType: "alert.created", eventId: "alert-event-1", resourceId: "alert-1", payloadVersion: 1, sourceType: "OFFICIAL"
+    }));
+    await waitFor(() => expect(request).toHaveBeenCalledTimes(30));
     expect(screen.queryByText("ปลอดภัย")).not.toBeInTheDocument();
     view.unmount();
   });

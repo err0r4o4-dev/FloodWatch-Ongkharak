@@ -14,7 +14,7 @@ const alertMocks = vi.hoisted(() => ({
   notifyWarning: vi.fn().mockResolvedValue(undefined)
 }));
 
-vi.mock("../../shared/alerts", () => alertMocks, { virtual: true });
+vi.mock("../../shared/alerts", () => alertMocks);
 
 afterEach(() => {
   vi.clearAllMocks();
@@ -51,7 +51,13 @@ describe("Google login", () => {
   });
 
   it("requests only the password when linking and completes via bootstrap navigation", async () => {
-    const navigate = vi.fn();
+    const events: string[] = [];
+    alertMocks.notifySuccess.mockImplementation(() => Promise.resolve().then(() => {
+      events.push("notification-complete");
+    }));
+    const navigate = vi.fn(() => {
+      events.push("navigate");
+    });
     const api = { available: vi.fn(), link: vi.fn().mockResolvedValue({ returnTo: "/reports?mode=mine" }) };
     render(<MemoryRouter><GoogleLinkPage api={api} navigate={navigate} /></MemoryRouter>);
     fireEvent.change(screen.getByLabelText("รหัสผ่านบัญชีเดิม"), { target: { value: "correct-password" } });
@@ -59,6 +65,7 @@ describe("Google login", () => {
     await waitFor(() => expect(navigate).toHaveBeenCalledWith("/auth/complete?returnTo=%2Freports%3Fmode%3Dmine"));
     expect(api.link).toHaveBeenCalledWith("correct-password");
     expect(alertMocks.notifySuccess).toHaveBeenCalledWith("เชื่อมบัญชี Google สำเร็จ");
+    expect(events).toEqual(["notification-complete", "navigate"]);
   });
 
   it("shows link failure without success and blocks exhausted attempts", async () => {

@@ -1,105 +1,126 @@
-import { useState, useEffect } from 'react';
-import { useAuth } from '../auth/AuthProvider';
-import { notificationApi } from './api';
+import { useEffect, useState } from "react";
+import { Link } from "react-router";
+import { useOptionalAuth } from "../auth/AuthProvider";
+import { notificationApi } from "./api";
+import { notifyError, notifySuccess } from "../../shared/alerts";
+import "./NotificationToggle.css";
+
+type SubscriptionStatus = "checking" | "ready" | "unavailable" | "error";
+
+function applicationServerKey(publicKey: string) {
+  const padding = "=".repeat((4 - publicKey.length % 4) % 4);
+  const encoded = (publicKey + padding).replace(/-/g, "+").replace(/_/g, "/");
+  return Uint8Array.from(window.atob(encoded), (character) => character.charCodeAt(0));
+}
 
 export function NotificationToggle() {
-  const { account } = useAuth();
-  const [supported, setSupported] = useState(false);
+  const { account, status: authStatus } = useOptionalAuth();
+  const [status, setStatus] = useState<SubscriptionStatus>("checking");
   const [subscribed, setSubscribed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [revision, setRevision] = useState(0);
+  const supported = "serviceWorker" in navigator && typeof PushManager !== "undefined";
+  const permissionDenied = typeof Notification !== "undefined" && Notification.permission === "denied";
+  const accountId = account?.id;
 
   useEffect(() => {
-    if ('serviceWorker' in navigator && typeof window.PushManager !== 'undefined') {
-      setSupported(true);
-      checkSubscription();
-    }
-  }, []);
+    if (!supported || !accountId) return;
+    let active = true;
+    setStatus("checking");
+    setError(null);
+    setSubscribed(false);
 
-  const checkSubscription = async () => {
-    try {
-      const registration = await navigator.serviceWorker.ready;
-      const sub = await registration.pushManager.getSubscription();
-      setSubscribed(!!sub);
-    } catch (err) {
-      console.error('Error checking subscription', err);
-    }
-  };
+    const checkSubscription = async () => {
+      try {
+        const registration = await navigator.serviceWorker.getRegistration();
+        if (!registration?.active) {
+          if (active) setStatus("unavailable");
+          return;
+        }
+        const subscription = await registration.pushManager.getSubscription();
+        if (active) {
+          setSubscribed(Boolean(subscription));
+          setStatus("ready");
+        }
+      } catch {
+        if (active) {
+          setStatus("error");
+          setError("ตรวจสอบการแจ้งเตือนไม่สำเร็จ กรุณาลองอีกครั้ง");
+        }
+      }
+    };
 
-  const urlBase64ToUint8Array = (base64String: string) => {
-    const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
-    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-    const rawData = window.atob(base64);
-    const outputArray = new Uint8Array(rawData.length);
-    for (let i = 0; i < rawData.length; ++i) {
-      outputArray[i] = rawData.charCodeAt(i);
-    }
-    return outputArray;
-  };
+    void checkSubscription();
+    return () => { active = false; };
+  }, [supported, accountId, revision]);
 
   const handleToggle = async () => {
-    if (!account) {
-      setError('You must be logged in to manage notifications.');
-      return;
-    }
-
+    if (!account || loading || status !== "ready" || permissionDenied) return;
     setLoading(true);
     setError(null);
 
     try {
-      const registration = await navigator.serviceWorker.ready;
-      let subscription = await registration.pushManager.getSubscription();
-
-      if (subscribed && subscription) {
-        // Unsubscribe
-        await notificationApi.unsubscribe(subscription.endpoint);
-        await subscription.unsubscribe();
-        setSubscribed(false);
-      } else {
-        // Subscribe
-        const { publicKey } = await notificationApi.getPublicKey();
-        const applicationServerKey = urlBase64ToUint8Array(publicKey);
-
-        subscription = await registration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey,
-        });
-
-        await notificationApi.subscribe(subscription);
-        setSubscribed(true);
+      const registration = await navigator.serviceWorker.getRegistration();
+      if (!registration?.active) {
+        setStatus("unavailable");
+        return;
       }
-    } catch (err: any) {
-      console.error('Subscription error', err);
-      setError(err.message || 'An error occurred while toggling notifications.');
+      const existingSubscription = await registration.pushManager.getSubscription();
+
+      if (subscribed) {
+        if (existingSubscription) {
+          await notificationApi.unsubscribe(existingSubscription.endpoint);
+          if (!await existingSubscription.unsubscribe()) throw new Error("Browser unsubscribe failed");
+        }
+        setSubscribed(false);
+        void notifySuccess("ปิดการแจ้งเตือนแล้ว", "เบราว์เซอร์นี้จะไม่รับ Push จาก Flood Watch");
+      } else {
+        const { publicKey } = await notificationApi.getPublicKey();
+        const subscription = existingSubscription ?? await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: applicationServerKey(publicKey)
+        });
+        try {
+          await notificationApi.subscribe(subscription);
+        } catch (cause) {
+          if (!existingSubscription) await subscription.unsubscribe();
+          throw cause;
+        }
+        setSubscribed(true);
+        void notifySuccess("เปิดการแจ้งเตือนแล้ว", "เบราว์เซอร์นี้พร้อมรับ Push จาก Flood Watch");
+      }
+    } catch {
+      const message = "เปลี่ยนการตั้งค่าไม่สำเร็จ กรุณาตรวจสอบการเชื่อมต่อและสิทธิ์ของเบราว์เซอร์ แล้วลองอีกครั้ง";
+      setError(message);
+      void notifyError("เปลี่ยนการตั้งค่าไม่สำเร็จ", message);
     } finally {
       setLoading(false);
     }
   };
 
-  if (!supported) {
-    return <div className="text-sm text-gray-500">Push notifications are not supported by your browser.</div>;
-  }
+  if (authStatus === "loading") return <p className="notification-preference__message" role="status">กำลังตรวจสอบบัญชี…</p>;
 
-  return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center gap-3">
-        <label className="relative inline-flex items-center cursor-pointer">
-          <input
-            type="checkbox"
-            className="sr-only peer"
-            checked={subscribed}
-            onChange={handleToggle}
-            disabled={loading || !account}
-          />
-          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-          <span className="ml-3 text-sm font-medium text-gray-900 dark:text-gray-300">
-            {subscribed ? 'Notifications Enabled' : 'Enable Notifications'}
-          </span>
-        </label>
-        {loading && <span className="text-sm text-gray-500">Processing...</span>}
-      </div>
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      {!account && <p className="text-sm text-gray-500">Log in to receive push notifications.</p>}
-    </div>
-  );
+  if (!account) return <div className="notification-preference notification-preference--guest">
+    <p>เข้าสู่ระบบเพื่อจัดการการรับแจ้งเตือนบนอุปกรณ์นี้</p>
+    <Link className="notification-preference__login" to="/login">เข้าสู่ระบบเพื่อเปิดแจ้งเตือน<span aria-hidden="true">→</span></Link>
+    {!supported && <p className="notification-preference__message">เบราว์เซอร์นี้ไม่รองรับการแจ้งเตือนแบบ Push</p>}
+  </div>;
+
+  if (!supported) return <p className="notification-preference__message">เบราว์เซอร์นี้ไม่รองรับการแจ้งเตือนแบบ Push</p>;
+
+  return <div className="notification-preference" aria-busy={loading || status === "checking"}>
+    <label className="notification-preference__control">
+      <input type="checkbox" checked={subscribed} onChange={() => void handleToggle()} disabled={loading || status !== "ready" || permissionDenied} aria-describedby="notification-preference-status" />
+      <span className="notification-preference__switch" aria-hidden="true" />
+      <span>รับการแจ้งเตือนผ่านเบราว์เซอร์</span>
+    </label>
+    <p id="notification-preference-status" className="notification-preference__message" role="status">
+      {loading ? "กำลังบันทึกการตั้งค่า…" : permissionDenied ? "เบราว์เซอร์ปิดกั้นการแจ้งเตือนอยู่" : status === "checking" ? "กำลังตรวจสอบการแจ้งเตือน…" : status === "unavailable" ? "ระบบแจ้งเตือนบนเบราว์เซอร์ยังไม่พร้อมใช้งาน" : status === "error" ? "ยังไม่สามารถยืนยันการตั้งค่าบนเบราว์เซอร์นี้ได้" : subscribed ? "เปิดการแจ้งเตือนในเบราว์เซอร์นี้แล้ว" : "ยังไม่ได้เปิดการแจ้งเตือนในเบราว์เซอร์นี้"}
+    </p>
+    {permissionDenied && <p className="notification-preference__message">อนุญาตการแจ้งเตือนในการตั้งค่าเว็บไซต์ของเบราว์เซอร์ แล้วตรวจสอบอีกครั้ง</p>}
+    {status === "unavailable" && <p className="notification-preference__message">ต้องมี Service Worker ที่พร้อมทำงานก่อนเปิดรับ Push โดยโหมดพัฒนายังไม่เปิดใช้งานส่วนนี้</p>}
+    {error && <p className="notification-preference__error" role="alert">{error}</p>}
+    {(status === "unavailable" || status === "error" || permissionDenied) && <button type="button" className="notification-preference__retry" disabled={loading || status === "checking"} onClick={() => setRevision((previous) => previous + 1)}>ตรวจสอบอีกครั้ง</button>}
+  </div>;
 }

@@ -5,6 +5,7 @@ import { AuthProvider } from "../auth/AuthProvider";
 import { RealtimeProvider } from "../realtime/RealtimeProvider";
 import { reportsApi } from "./api";
 import { ReportsPage } from "./ReportsPage";
+vi.mock("../../shared/alerts", () => ({ notifyError: vi.fn(), notifySuccess: vi.fn(), notifyWarning: vi.fn(), confirmAction: vi.fn() }));
 
 vi.mock("./ReportLocationPicker", async () => {
   const React = await import("react");
@@ -92,6 +93,21 @@ describe("report review API", () => {
 });
 
 describe("ReportsPage public list", () => {
+  it("does not silently substitute another report when the linked report is unavailable", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response({ items: [verifiedReport], limit: 20, offset: 0 })));
+    render(<MemoryRouter initialEntries={["/reports?report=missing"]}><ReportsPage /></MemoryRouter>);
+    expect(await screen.findByRole("heading", { name: "รายงานที่เลือกไม่พร้อมใช้งาน" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: verifiedReport.description })).not.toBeInTheDocument();
+  });
+
+  it("opens the verified report requested from the overview link", async () => {
+    const second = { ...verifiedReport, id: "report-2", description: "รายงานที่เลือกจากภาพรวม" };
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response({ items: [verifiedReport, second], limit: 20, offset: 0 })));
+    render(<MemoryRouter initialEntries={["/reports?report=report-2"]}><ReportsPage /></MemoryRouter>);
+    expect(await screen.findByRole("heading", { name: second.description })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: verifiedReport.description })).not.toBeInTheDocument();
+  });
+
   it("accepts a verified public report without private reviewer identity", async () => {
     const publicReport = Object.fromEntries(Object.entries(verifiedReport).filter(([key]) => key !== "verifiedBy"));
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response({ items: [publicReport], limit: 20, offset: 0 })));

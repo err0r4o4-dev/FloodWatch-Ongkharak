@@ -1,0 +1,610 @@
+diff --git a/apps/web/src/features/admin/AIEvidenceReview.tsx b/apps/web/src/features/admin/AIEvidenceReview.tsx
+index 3634da1..0d6f9b5 100644
+--- a/apps/web/src/features/admin/AIEvidenceReview.tsx
++++ b/apps/web/src/features/admin/AIEvidenceReview.tsx
+@@ -1,4 +1,5 @@
+-import { useEffect, useState } from "react";
++import { useEffect, useRef, useState } from "react";
++import { confirmAction } from "../../shared/alerts";
+ import { apiConfig } from "../../shared/config/api";
+ import { StatusBadge } from "../../shared/components/DataStates";
+ import type { FloodEvent } from "../../shared/types/flood";
+@@ -6,6 +7,9 @@ import type { FloodEvent } from "../../shared/types/flood";
+ export function AIEvidenceReview() {
+   const [events, setEvents] = useState<FloodEvent[]>([]);
+   const [loading, setLoading] = useState(true);
++  const [loadError, setLoadError] = useState<string | null>(null);
++  const [reviewing, setReviewing] = useState(false);
++  const reviewPending = useRef(false);
+ 
+   useEffect(() => {
+     loadAIEvidence();
+@@ -13,36 +17,46 @@ export function AIEvidenceReview() {
+ 
+   const loadAIEvidence = async () => {
+     setLoading(true);
++    setLoadError(null);
+     try {
+       const response = await fetch(`${apiConfig.baseUrl}/flood-events?source=AI_VISION_V1`);
+       if (response.ok) {
+          const data = await response.json();
+          setEvents(data.items || []);
+-      }
++      } else throw new Error("Evidence unavailable");
+     } catch (e) {
+-      console.error(e);
++      setLoadError("ไม่สามารถโหลดหลักฐาน AI ได้ กรุณาลองใหม่อีกครั้ง");
+     } finally {
+       setLoading(false);
+     }
+   };
+ 
+   const verifyEvidence = async (id: string, accept: boolean) => {
++    if (reviewPending.current) return;
++    reviewPending.current = true;
++    setReviewing(true);
+     try {
+-      const response = await fetch(`${apiConfig.baseUrl}/admin/flood-events/${id}/${accept ? 'verify' : 'reject'}`, {
+-        method: "POST",
++      await confirmAction({
++        title: accept ? "อนุมัติหลักฐาน AI หรือไม่?" : "ปฏิเสธหลักฐาน AI หรือไม่?",
++        text: "โปรดตรวจสอบหลักฐานก่อนบันทึกผล การดำเนินการนี้ไม่เปลี่ยนแหล่งที่มาของข้อมูล AI",
++        confirmText: accept ? "อนุมัติหลักฐาน" : "ปฏิเสธหลักฐาน",
++        danger: !accept,
++        action: async () => {
++          const response = await fetch(`${apiConfig.baseUrl}/admin/flood-events/${id}/${accept ? 'verify' : 'reject'}`, { method: "POST" });
++          if (!response.ok) throw new Error("Failed to review evidence");
++          setEvents((current) => current.filter((event) => event.id !== id));
++        },
++        successTitle: accept ? "อนุมัติหลักฐานแล้ว" : "ปฏิเสธหลักฐานแล้ว",
++        errorText: "ไม่สามารถบันทึกผลการตรวจสอบหลักฐาน AI ได้ กรุณาลองใหม่อีกครั้ง"
+       });
+-      if (response.ok) {
+-         setEvents(events.filter(e => e.id !== id));
+-      } else {
+-         alert("Failed to review evidence");
+-      }
+-    } catch (e) {
+-      console.error(e);
+-      alert("Failed to review evidence");
++    } finally {
++      reviewPending.current = false;
++      setReviewing(false);
+     }
+   };
+ 
+   if (loading) return <div className="p-8 text-center text-gray-500">กำลังโหลด...</div>;
++  if (loadError) return <div className="p-8" role="alert"><p>{loadError}</p><button type="button" className="action-button" onClick={() => void loadAIEvidence()}>ลองอีกครั้ง</button></div>;
+ 
+   if (events.length === 0) return <div className="p-8 text-center text-gray-500">ไม่มีหลักฐาน AI ที่รอการตรวจสอบ</div>;
+ 
+@@ -73,12 +87,14 @@ export function AIEvidenceReview() {
+ 
+             <div className="flex flex-col gap-2 justify-center border-l pl-4 border-gray-200 dark:border-gray-700">
+               <button
++                disabled={reviewing}
+                 onClick={() => verifyEvidence(event.id, true)}
+                 className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+               >
+                 ยืนยัน (อนุมัติ)
+               </button>
+               <button
++                disabled={reviewing}
+                 onClick={() => verifyEvidence(event.id, false)}
+                 className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+               >
+diff --git a/apps/web/src/features/admin/SettingsPage.tsx b/apps/web/src/features/admin/SettingsPage.tsx
+index dc2a415..00c7a09 100644
+--- a/apps/web/src/features/admin/SettingsPage.tsx
++++ b/apps/web/src/features/admin/SettingsPage.tsx
+@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
+ import { NavLink } from "react-router";
+ import { adminApi } from "./api";
+ import type { SystemSetting, SettingCategory } from "./types";
++import { notifyError, notifySuccess } from "../../shared/alerts";
+ 
+ export function SettingsPage() {
+   const [settings, setSettings] = useState<SystemSetting[]>([]);
+@@ -45,6 +46,7 @@ export function SettingsPage() {
+   };
+ 
+   const handleSave = async (key: string) => {
++    if (saveLoading) return;
+     try {
+       setSaveLoading(true);
+       setSaveError(null);
+@@ -53,8 +55,11 @@ export function SettingsPage() {
+       await loadSettings();
+       setEditingKey(null);
+       setEditValue("");
++      void notifySuccess("บันทึกการตั้งค่าแล้ว", `อัปเดต ${key} สำเร็จ`);
+     } catch (err) {
+-      setSaveError(err instanceof Error ? err.message : "Failed to save setting");
++      const message = err instanceof SyntaxError ? "กรุณาใส่ค่าในรูปแบบ JSON ที่ถูกต้อง" : err instanceof Error ? err.message : "ไม่สามารถบันทึกการตั้งค่าได้";
++      setSaveError(message);
++      if (!(err instanceof SyntaxError)) void notifyError("บันทึกการตั้งค่าไม่สำเร็จ", message);
+     } finally {
+       setSaveLoading(false);
+     }
+diff --git a/apps/web/src/features/admin/UserDetailPage.tsx b/apps/web/src/features/admin/UserDetailPage.tsx
+index 5d4b37d..a3e8063 100644
+--- a/apps/web/src/features/admin/UserDetailPage.tsx
++++ b/apps/web/src/features/admin/UserDetailPage.tsx
+@@ -1,7 +1,8 @@
+-import { useEffect, useState } from "react";
++import { useEffect, useRef, useState } from "react";
+ import { NavLink, useParams } from "react-router";
+ import { adminApi } from "./api";
+ import type { UserManagement, UserStats } from "./types";
++import { confirmAction } from "../../shared/alerts";
+ 
+ export function UserDetailPage() {
+   const { id } = useParams<{ id: string }>();
+@@ -11,6 +12,7 @@ export function UserDetailPage() {
+   const [error, setError] = useState<string | null>(null);
+   const [actionLoading, setActionLoading] = useState(false);
+   const [actionError, setActionError] = useState<string | null>(null);
++  const actionPending = useRef(false);
+ 
+   const loadUser = async () => {
+     if (!id) return;
+@@ -32,58 +34,56 @@ export function UserDetailPage() {
+     void loadUser();
+   }, [id]);
+ 
+-  const handleUpdateRole = async (newRole: string) => {
+-    if (!id || !user) return;
+-    if (!confirm(`คุณแน่ใจหรือไม่ที่จะเปลี่ยนบทบาทของ ${user.email} เป็น ${newRole === "ADMIN" ? "ผู้ดูแลระบบ" : "ผู้ใช้งาน"}?`)) {
+-      return;
+-    }
+-
++  const manageUser = async (options: Parameters<typeof confirmAction>[0]) => {
++    if (actionPending.current) return;
++    actionPending.current = true;
++    setActionLoading(true);
++    setActionError(null);
+     try {
+-      setActionLoading(true);
+-      setActionError(null);
+-      await adminApi.updateUserRole(id, newRole);
+-      await loadUser();
+-    } catch (err) {
+-      setActionError(err instanceof Error ? err.message : "Failed to update role");
++      await confirmAction({ ...options, errorText: (cause) => {
++        const message = cause instanceof Error ? cause.message : "ไม่สามารถดำเนินการได้ กรุณาลองใหม่อีกครั้ง";
++        setActionError(message);
++        return message;
++      } });
+     } finally {
++      actionPending.current = false;
+       setActionLoading(false);
+     }
+   };
+ 
+-  const handleDisable = async () => {
++  const handleUpdateRole = async (newRole: string) => {
+     if (!id || !user) return;
+-    if (!confirm(`คุณแน่ใจหรือไม่ที่จะปิดการใช้งานบัญชีของ ${user.email}?`)) {
+-      return;
+-    }
++    await manageUser({
++      title: "เปลี่ยนบทบาทผู้ใช้งานหรือไม่?",
++      text: `เปลี่ยนบทบาทของ ${user.email} เป็น ${newRole === "ADMIN" ? "ผู้ดูแลระบบ" : "ผู้ใช้งาน"} การเปลี่ยนแปลงนี้มีผลต่อสิทธิ์เข้าถึงระบบ`,
++      confirmText: "เปลี่ยนบทบาท",
++      danger: true,
++      action: async () => { await adminApi.updateUserRole(id, newRole); await loadUser(); },
++      successTitle: "เปลี่ยนบทบาทแล้ว"
++    });
++  };
+ 
+-    try {
+-      setActionLoading(true);
+-      setActionError(null);
+-      await adminApi.disableUser(id);
+-      await loadUser();
+-    } catch (err) {
+-      setActionError(err instanceof Error ? err.message : "Failed to disable user");
+-    } finally {
+-      setActionLoading(false);
+-    }
++  const handleDisable = async () => {
++    if (!id || !user) return;
++    await manageUser({
++      title: "ปิดการใช้งานบัญชีหรือไม่?",
++      text: `บัญชี ${user.email} จะไม่สามารถใช้งานฟีเจอร์สมาชิกได้`,
++      confirmText: "ปิดการใช้งาน",
++      danger: true,
++      action: async () => { await adminApi.disableUser(id); await loadUser(); },
++      successTitle: "ปิดการใช้งานบัญชีแล้ว"
++    });
+   };
+ 
+   const handleEnable = async () => {
+     if (!id || !user) return;
+-    if (!confirm(`คุณแน่ใจหรือไม่ที่จะเปิดการใช้งานบัญชีของ ${user.email} อีกครั้ง?`)) {
+-      return;
+-    }
+-
+-    try {
+-      setActionLoading(true);
+-      setActionError(null);
+-      await adminApi.enableUser(id);
+-      await loadUser();
+-    } catch (err) {
+-      setActionError(err instanceof Error ? err.message : "Failed to enable user");
+-    } finally {
+-      setActionLoading(false);
+-    }
++    await manageUser({
++      title: "เปิดการใช้งานบัญชีหรือไม่?",
++      text: `เปิดให้บัญชี ${user.email} กลับมาใช้งานฟีเจอร์สมาชิกอีกครั้ง`,
++      confirmText: "เปิดการใช้งาน",
++      action: async () => { await adminApi.enableUser(id); await loadUser(); },
++      successTitle: "เปิดการใช้งานบัญชีแล้ว"
++    });
+   };
+ 
+   const formatDate = (dateString: string | null) => {
+diff --git a/apps/web/src/features/auth/AuthPage.tsx b/apps/web/src/features/auth/AuthPage.tsx
+index 88e7c94..62eb745 100644
+--- a/apps/web/src/features/auth/AuthPage.tsx
++++ b/apps/web/src/features/auth/AuthPage.tsx
+@@ -40,9 +40,7 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
+     } catch (cause) {
+       const message = cause instanceof ApiError ? cause.message : registering ? "ไม่สามารถสมัครสมาชิกได้" : "ไม่สามารถเข้าสู่ระบบได้";
+       setError(message);
+-      if (cause instanceof ApiError) {
+-        void notifyError(registering ? "สมัครสมาชิกไม่สำเร็จ" : "เข้าสู่ระบบไม่สำเร็จ", message);
+-      }
++      void notifyError(registering ? "สมัครสมาชิกไม่สำเร็จ" : "เข้าสู่ระบบไม่สำเร็จ", message);
+     } finally {
+       setSubmitting(false);
+     }
+diff --git a/apps/web/src/features/auth/GoogleAuthPages.tsx b/apps/web/src/features/auth/GoogleAuthPages.tsx
+index 3dc505b..5c9dbc6 100644
+--- a/apps/web/src/features/auth/GoogleAuthPages.tsx
++++ b/apps/web/src/features/auth/GoogleAuthPages.tsx
+@@ -35,11 +35,11 @@ export function GoogleLinkPage({ api = googleAuthApi, navigate = (url: string) =
+     try {
+       const result = await api.link(password);
+       setPassword("");
+-      void notifySuccess("เชื่อมบัญชี Google สำเร็จ");
++      await notifySuccess("เชื่อมบัญชี Google สำเร็จ");
+       navigate(`/auth/complete?returnTo=${encodeURIComponent(safeReturnTo(result.returnTo))}`);
+     } catch (failure) {
+       const code = failure instanceof ApiError ? failure.code ?? "GOOGLE_LOGIN_FAILED" : "GOOGLE_LOGIN_FAILED";
+-      const message = googleErrorMessage(code);
++      const message = googleErrorMessage(code) ?? "เชื่อมบัญชี Google ไม่สำเร็จ กรุณาลองใหม่";
+       setError(message);
+       void notifyError("เชื่อมบัญชี Google ไม่สำเร็จ", message);
+       setBlocked(failure instanceof ApiError && [429, 409, 503].includes(failure.status));
+diff --git a/apps/web/src/features/notifications/NotificationToggle.tsx b/apps/web/src/features/notifications/NotificationToggle.tsx
+index a1d0586..aba7fca 100644
+--- a/apps/web/src/features/notifications/NotificationToggle.tsx
++++ b/apps/web/src/features/notifications/NotificationToggle.tsx
+@@ -1,105 +1,126 @@
+-import { useState, useEffect } from 'react';
+-import { useAuth } from '../auth/AuthProvider';
+-import { notificationApi } from './api';
++import { useEffect, useState } from "react";
++import { Link } from "react-router";
++import { useOptionalAuth } from "../auth/AuthProvider";
++import { notificationApi } from "./api";
++import { notifyError, notifySuccess } from "../../shared/alerts";
++import "./NotificationToggle.css";
++
++type SubscriptionStatus = "checking" | "ready" | "unavailable" | "error";
++
++function applicationServerKey(publicKey: string) {
++  const padding = "=".repeat((4 - publicKey.length % 4) % 4);
++  const encoded = (publicKey + padding).replace(/-/g, "+").replace(/_/g, "/");
++  return Uint8Array.from(window.atob(encoded), (character) => character.charCodeAt(0));
++}
+ 
+ export function NotificationToggle() {
+-  const { account } = useAuth();
+-  const [supported, setSupported] = useState(false);
++  const { account, status: authStatus } = useOptionalAuth();
++  const [status, setStatus] = useState<SubscriptionStatus>("checking");
+   const [subscribed, setSubscribed] = useState(false);
+   const [loading, setLoading] = useState(false);
+   const [error, setError] = useState<string | null>(null);
++  const [revision, setRevision] = useState(0);
++  const supported = "serviceWorker" in navigator && typeof PushManager !== "undefined";
++  const permissionDenied = typeof Notification !== "undefined" && Notification.permission === "denied";
++  const accountId = account?.id;
+ 
+   useEffect(() => {
+-    if ('serviceWorker' in navigator && typeof window.PushManager !== 'undefined') {
+-      setSupported(true);
+-      checkSubscription();
+-    }
+-  }, []);
++    if (!supported || !accountId) return;
++    let active = true;
++    setStatus("checking");
++    setError(null);
++    setSubscribed(false);
+ 
+-  const checkSubscription = async () => {
+-    try {
+-      const registration = await navigator.serviceWorker.ready;
+-      const sub = await registration.pushManager.getSubscription();
+-      setSubscribed(!!sub);
+-    } catch (err) {
+-      console.error('Error checking subscription', err);
+-    }
+-  };
++    const checkSubscription = async () => {
++      try {
++        const registration = await navigator.serviceWorker.getRegistration();
++        if (!registration?.active) {
++          if (active) setStatus("unavailable");
++          return;
++        }
++        const subscription = await registration.pushManager.getSubscription();
++        if (active) {
++          setSubscribed(Boolean(subscription));
++          setStatus("ready");
++        }
++      } catch {
++        if (active) {
++          setStatus("error");
++          setError("ตรวจสอบการแจ้งเตือนไม่สำเร็จ กรุณาลองอีกครั้ง");
++        }
++      }
++    };
+ 
+-  const urlBase64ToUint8Array = (base64String: string) => {
+-    const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+-    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+-    const rawData = window.atob(base64);
+-    const outputArray = new Uint8Array(rawData.length);
+-    for (let i = 0; i < rawData.length; ++i) {
+-      outputArray[i] = rawData.charCodeAt(i);
+-    }
+-    return outputArray;
+-  };
++    void checkSubscription();
++    return () => { active = false; };
++  }, [supported, accountId, revision]);
+ 
+   const handleToggle = async () => {
+-    if (!account) {
+-      setError('You must be logged in to manage notifications.');
+-      return;
+-    }
+-
++    if (!account || loading || status !== "ready" || permissionDenied) return;
+     setLoading(true);
+     setError(null);
+ 
+     try {
+-      const registration = await navigator.serviceWorker.ready;
+-      let subscription = await registration.pushManager.getSubscription();
++      const registration = await navigator.serviceWorker.getRegistration();
++      if (!registration?.active) {
++        setStatus("unavailable");
++        return;
++      }
++      const existingSubscription = await registration.pushManager.getSubscription();
+ 
+-      if (subscribed && subscription) {
+-        // Unsubscribe
+-        await notificationApi.unsubscribe(subscription.endpoint);
+-        await subscription.unsubscribe();
++      if (subscribed) {
++        if (existingSubscription) {
++          await notificationApi.unsubscribe(existingSubscription.endpoint);
++          if (!await existingSubscription.unsubscribe()) throw new Error("Browser unsubscribe failed");
++        }
+         setSubscribed(false);
++        void notifySuccess("ปิดการแจ้งเตือนแล้ว", "เบราว์เซอร์นี้จะไม่รับ Push จาก Flood Watch");
+       } else {
+-        // Subscribe
+         const { publicKey } = await notificationApi.getPublicKey();
+-        const applicationServerKey = urlBase64ToUint8Array(publicKey);
+-
+-        subscription = await registration.pushManager.subscribe({
++        const subscription = existingSubscription ?? await registration.pushManager.subscribe({
+           userVisibleOnly: true,
+-          applicationServerKey,
++          applicationServerKey: applicationServerKey(publicKey)
+         });
+-
+-        await notificationApi.subscribe(subscription);
++        try {
++          await notificationApi.subscribe(subscription);
++        } catch (cause) {
++          if (!existingSubscription) await subscription.unsubscribe();
++          throw cause;
++        }
+         setSubscribed(true);
++        void notifySuccess("เปิดการแจ้งเตือนแล้ว", "เบราว์เซอร์นี้พร้อมรับ Push จาก Flood Watch");
+       }
+-    } catch (err: any) {
+-      console.error('Subscription error', err);
+-      setError(err.message || 'An error occurred while toggling notifications.');
++    } catch {
++      const message = "เปลี่ยนการตั้งค่าไม่สำเร็จ กรุณาตรวจสอบการเชื่อมต่อและสิทธิ์ของเบราว์เซอร์ แล้วลองอีกครั้ง";
++      setError(message);
++      void notifyError("เปลี่ยนการตั้งค่าไม่สำเร็จ", message);
+     } finally {
+       setLoading(false);
+     }
+   };
+ 
+-  if (!supported) {
+-    return <div className="text-sm text-gray-500">Push notifications are not supported by your browser.</div>;
+-  }
++  if (authStatus === "loading") return <p className="notification-preference__message" role="status">กำลังตรวจสอบบัญชี…</p>;
++
++  if (!account) return <div className="notification-preference notification-preference--guest">
++    <p>เข้าสู่ระบบเพื่อจัดการการรับแจ้งเตือนบนอุปกรณ์นี้</p>
++    <Link className="notification-preference__login" to="/login">เข้าสู่ระบบเพื่อเปิดแจ้งเตือน<span aria-hidden="true">→</span></Link>
++    {!supported && <p className="notification-preference__message">เบราว์เซอร์นี้ไม่รองรับการแจ้งเตือนแบบ Push</p>}
++  </div>;
++
++  if (!supported) return <p className="notification-preference__message">เบราว์เซอร์นี้ไม่รองรับการแจ้งเตือนแบบ Push</p>;
+ 
+-  return (
+-    <div className="flex flex-col gap-2">
+-      <div className="flex items-center gap-3">
+-        <label className="relative inline-flex items-center cursor-pointer">
+-          <input
+-            type="checkbox"
+-            className="sr-only peer"
+-            checked={subscribed}
+-            onChange={handleToggle}
+-            disabled={loading || !account}
+-          />
+-          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+-          <span className="ml-3 text-sm font-medium text-gray-900 dark:text-gray-300">
+-            {subscribed ? 'Notifications Enabled' : 'Enable Notifications'}
+-          </span>
+-        </label>
+-        {loading && <span className="text-sm text-gray-500">Processing...</span>}
+-      </div>
+-      {error && <p className="text-sm text-red-600">{error}</p>}
+-      {!account && <p className="text-sm text-gray-500">Log in to receive push notifications.</p>}
+-    </div>
+-  );
++  return <div className="notification-preference" aria-busy={loading || status === "checking"}>
++    <label className="notification-preference__control">
++      <input type="checkbox" checked={subscribed} onChange={() => void handleToggle()} disabled={loading || status !== "ready" || permissionDenied} aria-describedby="notification-preference-status" />
++      <span className="notification-preference__switch" aria-hidden="true" />
++      <span>รับการแจ้งเตือนผ่านเบราว์เซอร์</span>
++    </label>
++    <p id="notification-preference-status" className="notification-preference__message" role="status">
++      {loading ? "กำลังบันทึกการตั้งค่า…" : permissionDenied ? "เบราว์เซอร์ปิดกั้นการแจ้งเตือนอยู่" : status === "checking" ? "กำลังตรวจสอบการแจ้งเตือน…" : status === "unavailable" ? "ระบบแจ้งเตือนบนเบราว์เซอร์ยังไม่พร้อมใช้งาน" : status === "error" ? "ยังไม่สามารถยืนยันการตั้งค่าบนเบราว์เซอร์นี้ได้" : subscribed ? "เปิดการแจ้งเตือนในเบราว์เซอร์นี้แล้ว" : "ยังไม่ได้เปิดการแจ้งเตือนในเบราว์เซอร์นี้"}
++    </p>
++    {permissionDenied && <p className="notification-preference__message">อนุญาตการแจ้งเตือนในการตั้งค่าเว็บไซต์ของเบราว์เซอร์ แล้วตรวจสอบอีกครั้ง</p>}
++    {status === "unavailable" && <p className="notification-preference__message">ต้องมี Service Worker ที่พร้อมทำงานก่อนเปิดรับ Push โดยโหมดพัฒนายังไม่เปิดใช้งานส่วนนี้</p>}
++    {error && <p className="notification-preference__error" role="alert">{error}</p>}
++    {(status === "unavailable" || status === "error" || permissionDenied) && <button type="button" className="notification-preference__retry" disabled={loading || status === "checking"} onClick={() => setRevision((previous) => previous + 1)}>ตรวจสอบอีกครั้ง</button>}
++  </div>;
+ }
+diff --git a/apps/web/src/features/reports/AdminReviewPanel.tsx b/apps/web/src/features/reports/AdminReviewPanel.tsx
+index e2d9197..8541998 100644
+--- a/apps/web/src/features/reports/AdminReviewPanel.tsx
++++ b/apps/web/src/features/reports/AdminReviewPanel.tsx
+@@ -1,4 +1,5 @@
+-import { useEffect, useState } from "react";
++import { useEffect, useRef, useState } from "react";
++import { confirmAction, notifyError } from "../../shared/alerts";
+ import { ApiError, reportsApi } from "./api";
+ import { ReportCard } from "./ReportCard";
+ import type { CommunityReport } from "./types";
+@@ -10,6 +11,7 @@ export function AdminReviewPanel() {
+   const [error, setError] = useState<string | null>(null);
+   const [loading, setLoading] = useState(true);
+   const [saving, setSaving] = useState(false);
++  const reviewPending = useRef(false);
+ 
+   const load = async () => {
+     setLoading(true);
+@@ -33,22 +35,39 @@ export function AdminReviewPanel() {
+       setReason("");
+     } catch {
+       setError("ไม่สามารถเปิดรายละเอียดรายงานได้");
++      void notifyError("เปิดรายงานไม่สำเร็จ", "ไม่สามารถเปิดรายละเอียดรายงานได้ กรุณาลองใหม่อีกครั้ง");
+     }
+   };
+ 
+   const review = async (action: "verify" | "reject") => {
+-    if (!selected) return;
++    if (!selected || reviewPending.current) return;
++    reviewPending.current = true;
+     setSaving(true);
+     setError(null);
++    const errorMessage = (cause: unknown) => cause instanceof ApiError && cause.status === 409 ? "รายงานมีการแก้ไขหรือเพิ่มภาพแล้ว โปรดเปิดรายละเอียดใหม่ก่อนตรวจสอบ" : cause instanceof ApiError ? cause.message : "ไม่สามารถบันทึกผลการตรวจสอบได้";
+     try {
+-      await reportsApi.review(selected.id, action, reason.trim(), selected.updatedAt);
+-      setItems((current) => current.filter((report) => report.id !== selected.id));
+-      setSelected(null);
+-      setReason("");
+-    } catch (cause) {
+-      setError(cause instanceof ApiError && cause.status === 409 ? "รายงานมีการแก้ไขหรือเพิ่มภาพแล้ว โปรดเปิดรายละเอียดใหม่ก่อนตรวจสอบ" : cause instanceof ApiError ? cause.message : "ไม่สามารถบันทึกผลการตรวจสอบได้");
+-      if (cause instanceof ApiError && cause.status === 409) setSelected(null);
++      await confirmAction({
++        title: action === "verify" ? "ยืนยันรายงานชุมชนหรือไม่?" : "ปฏิเสธรายงานชุมชนหรือไม่?",
++        text: action === "verify" ? "รายงานจะเผยแพร่ต่อสาธารณะหลังยืนยัน โปรดตรวจสอบรายละเอียดและภาพประกอบก่อนดำเนินการ" : "รายงานนี้จะไม่เผยแพร่ต่อสาธารณะ",
++        confirmText: action === "verify" ? "ยืนยันรายงาน" : "ปฏิเสธรายงาน",
++        danger: action === "reject",
++        action: async () => {
++          try {
++            await reportsApi.review(selected.id, action, reason.trim(), selected.updatedAt);
++            setItems((current) => current.filter((report) => report.id !== selected.id));
++            setSelected(null);
++            setReason("");
++          } catch (cause) {
++            setError(errorMessage(cause));
++            if (cause instanceof ApiError && cause.status === 409) setSelected(null);
++            throw cause;
++          }
++        },
++        successTitle: action === "verify" ? "ยืนยันรายงานแล้ว" : "ปฏิเสธรายงานแล้ว",
++        errorText: errorMessage
++      });
+     } finally {
++      reviewPending.current = false;
+       setSaving(false);
+     }
+   };
+diff --git a/apps/web/src/features/reports/ReportForm.tsx b/apps/web/src/features/reports/ReportForm.tsx
+index ce2f424..e941812 100644
+--- a/apps/web/src/features/reports/ReportForm.tsx
++++ b/apps/web/src/features/reports/ReportForm.tsx
+@@ -1,4 +1,5 @@
+ import { useEffect, useState } from "react";
++import { notifyError, notifySuccess, notifyWarning } from "../../shared/alerts";
+ import { ApiError, reportsApi } from "./api";
+ import { ReportLocationPicker } from "./ReportLocationPicker";
+ import type { CommunityReport, ReportInput, ReportLocation, ReportType } from "./types";
+@@ -47,6 +48,7 @@ export function ReportForm({ editing, onComplete, onCancel }: {
+ 
+   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
+     event.preventDefault();
++    if (submitting) return;
+     const description = input.description.trim();
+     const depth = waterDepth === "" ? undefined : Number(waterDepth);
+     if (!retryReportId) {
+@@ -81,6 +83,7 @@ export function ReportForm({ editing, onComplete, onCancel }: {
+         setRetryReportId(reportId);
+         setFiles(failedFiles);
+         setError("บันทึกรายงานแล้ว แต่บางไฟล์อัปโหลดไม่สำเร็จ ลองอัปโหลดเฉพาะไฟล์ที่เหลืออีกครั้ง");
++        void notifyWarning("บันทึกรายงานแล้ว แต่ภาพยังไม่ครบ", "บางไฟล์อัปโหลดไม่สำเร็จ คุณสามารถลองอัปโหลดเฉพาะไฟล์ที่เหลือได้ โดยไม่สร้างรายงานใหม่");
+         onComplete(true);
+       } else {
+         setRetryReportId(null);
+@@ -91,10 +94,13 @@ export function ReportForm({ editing, onComplete, onCancel }: {
+           setWaterDepth("");
+           setLocationResetKey((key) => key + 1);
+         }
++        void notifySuccess(editing ? "บันทึกการแก้ไขแล้ว" : "ส่งรายงานแล้ว", "รายงานยังรอการตรวจสอบ และยังไม่เผยแพร่ต่อสาธารณะ");
+         onComplete();
+       }
+     } catch (cause) {
+-      setError(cause instanceof ApiError ? cause.message : "ไม่สามารถบันทึกรายงานได้");
++      const message = cause instanceof ApiError ? cause.message : "ไม่สามารถบันทึกรายงานได้";
++      setError(message);
++      void notifyError("บันทึกรายงานไม่สำเร็จ", message);
+     } finally {
+       setSubmitting(false);
+     }
+diff --git a/apps/web/src/shared/alerts.css b/apps/web/src/shared/alerts.css
+index 4a2804b..dc234d5 100644
+--- a/apps/web/src/shared/alerts.css
++++ b/apps/web/src/shared/alerts.css
+@@ -31,6 +31,11 @@
+   border-color: var(--color-alert-warning);
+ }
+ 
++.fw-alert .swal2-icon.swal2-success {
++  width: 5rem;
++  height: 5rem;
++}
++
+ .fw-alert .fw-alert__title {
+   padding: 1rem 0 0;
+   color: var(--color-ink);

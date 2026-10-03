@@ -34,10 +34,10 @@ services:
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-local-minio-user}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-local-only-change-me}
       MINIO_BUCKET: ${MINIO_BUCKET:-floodwatch-dev}
-      JWT_ISSUER: ${JWT_ISSUER:-floodwatch-ongkharak-local}
+      JWT_ISSUER: ${JWT_ISSUER:-}
       JWT_SECRET: ${JWT_SECRET:-dev-only-change-me-to-a-long-random-value-before-exposing-service}
-      JWT_ACCESS_TTL: ${JWT_ACCESS_TTL:-15m}
-      REFRESH_TOKEN_TTL: ${REFRESH_TOKEN_TTL:-168h}
+      JWT_ACCESS_TTL: ${JWT_ACCESS_TTL:-}
+      REFRESH_TOKEN_TTL: ${REFRESH_TOKEN_TTL:-}
       COOKIE_NAME: ${COOKIE_NAME:-fw_refresh}
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
       COOKIE_SAMESITE: ${COOKIE_SAMESITE:-Lax}

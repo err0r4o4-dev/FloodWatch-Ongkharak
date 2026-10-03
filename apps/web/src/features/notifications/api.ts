@@ -1,37 +1,25 @@
-import { apiConfig } from "../../shared/config/api";
+import { apiClient } from "../auth/api";
 
 export const notificationApi = {
   getPublicKey: async (): Promise<{ publicKey: string }> => {
-    const response = await fetch(`${apiConfig.baseUrl}/notifications/public-key`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-    if (!response.ok) throw new Error("Failed to fetch public key");
-    return response.json();
+    const value = await apiClient.request<unknown>("/notifications/public-key", {}, { authenticate: false, retryUnauthorized: false });
+    if (!value || typeof value !== "object" || !("publicKey" in value) || typeof value.publicKey !== "string" || !value.publicKey.trim()) {
+      throw new Error("Push notifications are not configured");
+    }
+    return { publicKey: value.publicKey };
   },
 
   subscribe: async (subscription: PushSubscription): Promise<void> => {
-    const subJSON = subscription.toJSON();
-    const response = await fetch(`${apiConfig.baseUrl}/notifications/subscribe`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        endpoint: subJSON.endpoint,
-        keys: subJSON.keys,
-      }),
+    const { endpoint, keys } = subscription.toJSON();
+    await apiClient.request<void>("/notifications/subscribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ endpoint, keys })
     });
-    if (!response.ok) throw new Error("Failed to subscribe");
   },
 
   unsubscribe: async (endpoint: string): Promise<void> => {
     const searchParams = new URLSearchParams({ endpoint });
-    const response = await fetch(`${apiConfig.baseUrl}/notifications/unsubscribe?${searchParams}`, {
-      method: 'DELETE',
-    });
-    if (!response.ok) throw new Error("Failed to unsubscribe");
-  },
+    await apiClient.request<void>(`/notifications/unsubscribe?${searchParams}`, { method: "DELETE" });
+  }
 };

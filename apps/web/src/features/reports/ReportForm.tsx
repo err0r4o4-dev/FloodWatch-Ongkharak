@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { notifyError, notifySuccess, notifyWarning } from "../../shared/alerts";
 import { ApiError, reportsApi } from "./api";
 import { ReportLocationPicker } from "./ReportLocationPicker";
 import type { CommunityReport, ReportInput, ReportLocation, ReportType } from "./types";
@@ -47,6 +48,7 @@ export function ReportForm({ editing, onComplete, onCancel }: {
 
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (submitting) return;
     const description = input.description.trim();
     const depth = waterDepth === "" ? undefined : Number(waterDepth);
     if (!retryReportId) {
@@ -81,6 +83,7 @@ export function ReportForm({ editing, onComplete, onCancel }: {
         setRetryReportId(reportId);
         setFiles(failedFiles);
         setError("บันทึกรายงานแล้ว แต่บางไฟล์อัปโหลดไม่สำเร็จ ลองอัปโหลดเฉพาะไฟล์ที่เหลืออีกครั้ง");
+        void notifyWarning("บันทึกรายงานแล้ว แต่ภาพยังไม่ครบ", "บางไฟล์อัปโหลดไม่สำเร็จ คุณสามารถลองอัปโหลดเฉพาะไฟล์ที่เหลือได้ โดยไม่สร้างรายงานใหม่");
         onComplete(true);
       } else {
         setRetryReportId(null);
@@ -91,10 +94,13 @@ export function ReportForm({ editing, onComplete, onCancel }: {
           setWaterDepth("");
           setLocationResetKey((key) => key + 1);
         }
+        void notifySuccess(editing ? "บันทึกการแก้ไขแล้ว" : "ส่งรายงานแล้ว", "รายงานยังรอการตรวจสอบ และยังไม่เผยแพร่ต่อสาธารณะ");
         onComplete();
       }
     } catch (cause) {
-      setError(cause instanceof ApiError ? cause.message : "ไม่สามารถบันทึกรายงานได้");
+      const message = cause instanceof ApiError ? cause.message : "ไม่สามารถบันทึกรายงานได้";
+      setError(message);
+      void notifyError("บันทึกรายงานไม่สำเร็จ", message);
     } finally {
       setSubmitting(false);
     }

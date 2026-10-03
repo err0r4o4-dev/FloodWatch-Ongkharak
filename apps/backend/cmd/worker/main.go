@@ -43,6 +43,12 @@ func (store registeredSourceStore) Sources(ctx context.Context) ([]flood.DataSou
 	registered := make([]flood.DataSource, 0, len(sources))
 	for _, source := range sources {
 		if _, found := store.registeredCodes[source.Code]; !found {
+			if source.Code == "AI_VISION_V1" && source.SourceType == flood.SourceAI {
+				if store.logger != nil {
+					store.logger.Debug("internal AI evidence source is not polled by ingestion worker", "source_id", source.ID, "source_code", source.Code)
+				}
+				continue
+			}
 			if store.logger != nil {
 				store.logger.Warn("ingestion source has no registered adapter", "source_id", source.ID, "source_code", source.Code)
 			}

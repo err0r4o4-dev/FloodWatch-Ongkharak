@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router";
+import { HeroImageCredit } from "../../shared/components/HeroImageCredit";
 import { LayerControl } from "./components/LayerControl";
 import { MapSidePanel } from "./components/MapSidePanel";
 import { MapToolbar } from "./components/MapToolbar";
@@ -109,6 +110,7 @@ export function MapPage() {
         <h1 id="situation-map-title">แผนที่สถานการณ์น้ำ</h1>
         <p>สำรวจสถานีวัดน้ำ พื้นที่เสี่ยง และรายงานจากชุมชนในแผนที่เดียว</p>
       </div>
+      <HeroImageCredit />
     </header>
     <div className={`map-page__workspace${panelOpen ? " has-panel" : ""}`}>
       <SituationMap key={`${initialRiskId ?? ""}:${params.get("bbox") ?? ""}`} items={data.items} visible={visible} mode={mode} points={points} picking={picking} onBoundsChange={onBoundsChange} onMapPoint={onMapPoint} onSelect={setSelection} onPreview={(item) => { setSelectedRiskId(item?.layer === "risk" ? item.feature.id : null); }} enablePopups focusSelection={focusSelection} initialBounds={initialBounds} initialRiskId={initialRiskId} />

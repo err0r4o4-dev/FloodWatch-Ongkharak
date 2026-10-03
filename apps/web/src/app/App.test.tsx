@@ -51,7 +51,7 @@ describe("public routes", () => {
     render(<MemoryRouter initialEntries={["/system-status"]}><AppRoutes /></MemoryRouter>);
     expect(screen.getByText("ศูนย์ติดตามสถานการณ์น้ำ อำเภอองครักษ์ จังหวัดนครนายก")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "EN" })).toBeDisabled();
-    expect(screen.getByRole("link", { name: "ตั้งค่าการแจ้งเตือน" })).toHaveAttribute("href", "/#notification-settings");
+    expect(screen.getByRole("link", { name: "การแจ้งเตือน" })).toHaveAttribute("href", "/notifications");
     fireEvent.click(screen.getByLabelText("เมนูบัญชี"));
     expect(screen.getByRole("link", { name: "เข้าสู่ระบบ" })).toHaveAttribute("href", "/login");
   });
@@ -84,11 +84,25 @@ describe("public routes", () => {
     expect(screen.getAllByRole("link", { name: "จัดการระบบ" })).toHaveLength(2);
   });
 
-  it("moves focus to notification settings after following the header link", async () => {
+  it("opens notifications from the header without inventing an unread count", async () => {
     render(<MemoryRouter initialEntries={["/system-status"]}><AppRoutes /></MemoryRouter>);
-    fireEvent.click(screen.getByRole("link", { name: "ตั้งค่าการแจ้งเตือน" }));
-    expect(await screen.findByRole("heading", { name: "ภาพรวมสถานการณ์น้ำ" })).toBeInTheDocument();
-    await waitFor(() => expect(document.getElementById("notification-settings")).toHaveFocus());
+    fireEvent.click(screen.getByRole("link", { name: "การแจ้งเตือน" }));
+    expect(await screen.findByRole("heading", { level: 1, name: "การแจ้งเตือน" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "การแจ้งเตือน" })).toHaveFocus();
+    expect(screen.getByRole("link", { name: "การแจ้งเตือน" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "การแจ้งเตือน" })).not.toHaveTextContent(/\d/);
+  });
+
+  it("opens the notifications bookmark and distinguishes unavailable history from an empty inbox", () => {
+    render(<MemoryRouter initialEntries={["/notifications"]}><AppRoutes /></MemoryRouter>);
+    expect(screen.getByRole("heading", { level: 1, name: "การแจ้งเตือน" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "ประวัติการแจ้งเตือนยังไม่พร้อมใช้งาน" })).toBeInTheDocument();
+    expect(screen.queryByText("ไม่มีการแจ้งเตือน")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "อ่านทั้งหมดแล้ว" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "อ่านทั้งหมดแล้ว" })).toHaveAccessibleDescription("ยังไม่สามารถบันทึกสถานะอ่านแล้วได้");
+    expect(screen.getByRole("link", { name: "ดูประกาศล่าสุด" })).toHaveAttribute("href", "/announcements");
+    expect(screen.getByText("ไม่มีการแจ้งเตือนไม่ได้หมายความว่าพื้นที่ปลอดภัย")).toBeInTheDocument();
+    expect(screen.getByRole("main")).toBeInTheDocument();
   });
 
   it("keeps the situation map free of camera controls", () => {

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { HeroImageCredit } from "../../shared/components/HeroImageCredit";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { DataTimestamp, EmptyState, ErrorState, FreshnessBadge, LoadingState, SourceBadge, StatusBadge } from "../../shared/components/DataStates";
 import { FeatureDetails } from "../map/components/FeatureDetails";
@@ -137,6 +138,7 @@ export function RiskPage() {
         <p>ประเมินพื้นที่จากข้อมูลที่เผยแพร่พร้อมแหล่งที่มาและช่วงเวลาที่มีผล</p>
         <small>ข้อมูลที่ขาดหายหรือเก่าไม่ใช่หลักฐานว่าปลอดภัย แสดงสูงสุด 20 รายการล่าสุดจาก API สาธารณะ</small>
       </div>
+      <HeroImageCredit />
     </header>
     <RiskSummary items={items} />
     <div className="overview-sections risk-dashboard">

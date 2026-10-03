@@ -1,0 +1,21 @@
+{
+  "checks": [
+    "1440px responsive layout, 44px header bell, no overflow, navigation clearance",
+    "1280px responsive layout, 44px header bell, no overflow, navigation clearance",
+    "1024px responsive layout, 44px header bell, no overflow, navigation clearance",
+    "820px responsive layout, 44px header bell, no overflow, navigation clearance",
+    "768px responsive layout, 44px header bell, no overflow, navigation clearance",
+    "390px responsive layout, 44px header bell, no overflow, navigation clearance",
+    "320px responsive layout, 44px header bell, no overflow, navigation clearance",
+    "bookmark/reload, keyboard Enter from header, heading focus, disabled mark-all-read, guest page makes no push/history calls",
+    "notification content fits at 200% root text size on 320px",
+    "no-worker: rendered mobile state, no automatic permission request, retry where supported",
+    "unsupported: rendered mobile state, no automatic permission request, retry where supported",
+    "denied: rendered mobile state, no automatic permission request, retry where supported",
+    "checking: rendered mobile state, no automatic permission request, retry where supported",
+    "check-error: rendered mobile state, no automatic permission request, retry where supported",
+    "keyboard Space toggle, visible focus, reduced motion, authenticated server requests, failure/rollback/retry, success and unsubscribe dialogs"
+  ],
+  "runtimeErrors": [],
+  "isolatedFixturesOnly": true
+}

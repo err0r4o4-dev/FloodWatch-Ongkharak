@@ -32,10 +32,8 @@ services:
       - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
       - MINIO_BUCKET=floodwatch-media
       - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS}
-      - JWT_ISSUER=${JWT_ISSUER}
+      - JWT_ISSUER=${JWT_ISSUER:-}
       - JWT_SECRET=${JWT_SECRET}
-      - JWT_ACCESS_TTL=15m
-      - REFRESH_TOKEN_TTL=168h
       - COOKIE_NAME=fw_refresh
       - COOKIE_SECURE=true
       - COOKIE_SAMESITE=Lax
