@@ -752,29 +752,6 @@ code {
   color: var(--color-primary-strong);
 }
 
-.admin-info-panel {
-  margin-top: var(--space-6);
-  padding: var(--space-6);
-  background: var(--color-warning-soft);
-  border: var(--border-width) solid var(--color-warning-ink);
-  color: var(--color-warning-ink);
-}
-
-.admin-info-panel h3 {
-  margin-top: 0;
-  font-size: 1.125rem;
-}
-
-.admin-info-panel ul {
-  list-style: none;
-  padding: 0;
-  margin: var(--space-4) 0;
-}
-
-.admin-info-panel li {
-  margin-block: var(--space-2);
-}
-
 .admin-nav-divider {
   margin-top: var(--space-4);
   padding-top: var(--space-4);

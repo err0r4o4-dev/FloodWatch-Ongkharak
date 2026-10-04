@@ -70,8 +70,16 @@ const ActivityIcon = () => (
   </svg>
 );
 
+const LogoutIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+    <polyline points="16 17 21 12 16 7"></polyline>
+    <line x1="21" y1="12" x2="9" y2="12"></line>
+  </svg>
+);
+
 export function AdminDashboardPage() {
-  const { account } = useAuth();
+  const { account, logout } = useAuth();
   const { locale, t } = useTranslation({ th, en });
   const [stats, setStats] = useState<AdminDashboardStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(false);
@@ -259,18 +267,20 @@ export function AdminDashboardPage() {
             <span className="admin-module-card__action">{t("dashboard.cards.system.action")} &rarr;</span>
           </div>
         </NavLink>
-      </div>
 
-      <aside className="admin-info-panel panel" style={{ marginTop: '3rem' }}>
-        <h3>{t("dashboard.important.title")}</h3>
-        <ul>
-          <li><strong>{t("common.account")}</strong> {account.email}</li>
-          <li><strong>{t("common.role")}</strong> {t("dashboard.important.role")}</li>
-        </ul>
-        <p className="muted small" style={{ margin: 0, opacity: 0.85 }}>
-          {t("dashboard.important.note")}
-        </p>
-      </aside>
+        <button
+          onClick={() => void logout()}
+          className="admin-module-card"
+          style={{ textAlign: 'left', cursor: 'pointer', outline: 'none' }}
+        >
+          <div className="admin-module-card__icon" style={{ color: 'var(--color-alert-danger)', background: 'var(--color-alert-danger-soft, #ffeaf0)' }}><LogoutIcon /></div>
+          <div className="admin-module-card__content">
+            <h2>{t("dashboard.cards.logout.title")}</h2>
+            <p>{t("dashboard.cards.logout.description")}</p>
+            <span className="admin-module-card__action" style={{ color: 'var(--color-alert-danger)' }}>{t("dashboard.cards.logout.action")} &rarr;</span>
+          </div>
+        </button>
+      </div>
     </div>
   );
 }
