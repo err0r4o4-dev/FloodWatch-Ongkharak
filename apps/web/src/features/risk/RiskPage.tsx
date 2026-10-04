@@ -36,23 +36,78 @@ function levelCount(items: RiskArea[], level: string) {
 function RiskSummary({ items }: { items: RiskArea[] | null }) {
   const unavailable = !items?.length;
   const cards = [
-    { level: "VERY_HIGH", label: "ความเสี่ยงสูงมาก", description: "ตรวจสอบประกาศและหลีกเลี่ยงพื้นที่ที่ได้รับผลกระทบ" },
-    { level: "HIGH", label: "ความเสี่ยงสูง", description: "ต้องตรวจสอบหลักฐานล่าสุดก่อนเดินทาง" },
-    { level: "MODERATE", label: "ความเสี่ยงปานกลาง", description: "ควรติดตามสถานการณ์และประกาศ" },
-    { level: "LOW", label: "ความเสี่ยงต่ำ", description: "ไม่ใช่การยืนยันว่าพื้นที่ปลอดภัย" },
-    { level: "UNKNOWN", label: "ไม่ทราบสถานะ", description: "ข้อมูลเก่าหรือไม่พร้อมใช้งาน" }
+    { 
+      level: "VERY_HIGH", 
+      label: "ความเสี่ยงสูงมาก", 
+      description: "ตรวจสอบประกาศและหลีกเลี่ยงพื้นที่ที่ได้รับผลกระทบ",
+      icon: "⚠",
+      gradient: "linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)",
+      iconBg: "linear-gradient(135deg, #fca5a5 0%, #f87171 100%)",
+      color: "#991b1b"
+    },
+    { 
+      level: "HIGH", 
+      label: "ความเสี่ยงสูง", 
+      description: "ต้องตรวจสอบหลักฐานล่าสุดก่อนเดินทาง",
+      icon: "!",
+      gradient: "linear-gradient(135deg, #ffedd5 0%, #fed7aa 100%)",
+      iconBg: "linear-gradient(135deg, #fdba74 0%, #fb923c 100%)",
+      color: "#9a3412"
+    },
+    { 
+      level: "MODERATE", 
+      label: "ความเสี่ยงปานกลาง", 
+      description: "ควรติดตามสถานการณ์และประกาศ",
+      icon: "⚡",
+      gradient: "linear-gradient(135deg, #fef9c3 0%, #fef08a 100%)",
+      iconBg: "linear-gradient(135deg, #fde047 0%, #facc15 100%)",
+      color: "#854d0e"
+    },
+    { 
+      level: "LOW", 
+      label: "ความเสี่ยงต่ำ", 
+      description: "ไม่ใช่การยืนยันว่าพื้นที่ปลอดภัย",
+      icon: "✓",
+      gradient: "linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)",
+      iconBg: "linear-gradient(135deg, #6ee7b7 0%, #34d399 100%)",
+      color: "#065f46"
+    },
+    { 
+      level: "UNKNOWN", 
+      label: "ไม่ทราบสถานะ", 
+      description: "ข้อมูลเก่าหรือไม่พร้อมใช้งาน",
+      icon: "?",
+      gradient: "linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)",
+      iconBg: "linear-gradient(135deg, #cbd5e1 0%, #94a3b8 100%)",
+      color: "#475569"
+    }
   ];
 
   return <section className="summary-metrics" aria-label="สรุประดับความเสี่ยงจากรายการที่เรียกดู">
     {cards.map((card) => {
-      let iconClass = "summary-metric__icon--sky";
-      if (card.level === "VERY_HIGH" || card.level === "HIGH") iconClass = "summary-metric__icon--danger";
-      else if (card.level === "MODERATE") iconClass = "summary-metric__icon--warning";
-      else if (card.level === "LOW") iconClass = "summary-metric__icon--success";
-
-      return <article className="summary-metric" key={card.level}>
-        <span className={`summary-metric__icon ${iconClass}`}>{card.level === "VERY_HIGH" ? "!" : card.level === "HIGH" ? "!" : card.level === "MODERATE" ? "≈" : card.level === "LOW" ? "✓" : "?"}</span>
-        <span>{card.label}<strong>{unavailable ? "—" : levelCount(items, card.level)}</strong><small>{card.description}</small></span>
+      const count = unavailable ? "—" : levelCount(items, card.level);
+      return <article 
+        className={`summary-metric summary-metric--${card.level.toLowerCase()}`} 
+        key={card.level}
+        style={{ 
+          background: card.gradient,
+          borderColor: card.color + "40"
+        }}
+      >
+        <span 
+          className="summary-metric__icon"
+          style={{ 
+            background: card.iconBg,
+            color: "white"
+          }}
+        >
+          {card.icon}
+        </span>
+        <div className="summary-metric__content">
+          <span className="summary-metric__label">{card.label}</span>
+          <strong className="summary-metric__count" style={{ color: card.color }}>{count}</strong>
+          <small className="summary-metric__description">{card.description}</small>
+        </div>
       </article>;
     })}
   </section>;

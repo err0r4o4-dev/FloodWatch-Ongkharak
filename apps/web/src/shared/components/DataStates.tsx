@@ -21,7 +21,32 @@ export function StatusBadge({ status }: { status: string }) {
   const { t } = useTranslation(messages);
   const statuses = ["INFO", "WATCH", "WARNING", "CRITICAL", "ACTIVE", "RESOLVED", "LOW", "MODERATE", "HIGH", "VERY_HIGH", "PASSABLE", "SMALL_VEHICLE_NOT_RECOMMENDED", "CLOSED", "UNKNOWN"] as const;
   const key = statuses.find((value) => value === status) ?? "UNKNOWN";
-  return <span className={`badge badge--status-${status.toLowerCase().replace(/[^a-z_]/g, "")}`}>{t(key)}</span>;
+  
+  // Icon mapping for risk levels
+  const icons: Record<string, string> = {
+    VERY_HIGH: "⚠",
+    HIGH: "!",
+    MODERATE: "⚡",
+    LOW: "✓",
+    UNKNOWN: "?",
+    CRITICAL: "⚠",
+    WARNING: "!",
+    WATCH: "👁",
+    INFO: "ℹ",
+    ACTIVE: "●",
+    RESOLVED: "✓",
+    PASSABLE: "✓",
+    CLOSED: "✕"
+  };
+  
+  const icon = icons[status];
+  
+  return (
+    <span className={`badge badge--status-${status.toLowerCase().replace(/[^a-z_]/g, "")}`}>
+      {icon && <span className="badge__icon" aria-hidden="true">{icon}</span>}
+      {t(key)}
+    </span>
+  );
 }
 
 export function DataTimestamp({ value, label }: { value: string | null; label?: string }) {
