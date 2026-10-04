@@ -64,7 +64,22 @@ func TestRepositoryPersistsPoint4326AndListsVerifiedOnly(t *testing.T) {
 	if _, err := pool.Exec(ctx, `INSERT INTO users (id, email, password_hash, role) VALUES ($1,$2,'test-only-hash','ADMIN')`, reviewerID, "report-reviewer-"+uuid.NewString()[:8]+"@example.test"); err != nil {
 		t.Fatal(err)
 	}
-	updated, err := repository.UpdatePending(ctx, pending.ID, report.Input{Type: report.TypeFlood, Description: "Synthetic edited report", Location: report.Location{Type: "Point", Coordinates: []float64{100.99, 14.02}}, LocationName: "Edited market", LocationNote: "Updated landmark"})
+	preserved, err := repository.UpdatePending(ctx, pending.ID, report.Input{Type: report.TypeFlood, Description: "Synthetic edited report", Location: report.Location{Type: "Point", Coordinates: []float64{100.99, 14.02}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if preserved.LocationName != "Synthetic market" || preserved.LocationNote != "Near the bridge" {
+		t.Fatalf("UpdatePending() omitted location metadata = %+v", preserved)
+	}
+	empty := ""
+	cleared, err := repository.UpdatePending(ctx, pending.ID, report.Input{Type: report.TypeFlood, Description: "Synthetic edited report", Location: report.Location{Type: "Point", Coordinates: []float64{100.99, 14.02}}, LocationName: &empty, LocationNote: &empty})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cleared.LocationName != "" || cleared.LocationNote != "" {
+		t.Fatalf("UpdatePending() explicit empty location metadata = %+v", cleared)
+	}
+	updated, err := repository.UpdatePending(ctx, pending.ID, report.Input{Type: report.TypeFlood, Description: "Synthetic edited report", Location: report.Location{Type: "Point", Coordinates: []float64{100.99, 14.02}}, LocationName: stringPointer("Edited market"), LocationNote: stringPointer("Updated landmark")})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -94,6 +109,8 @@ func TestRepositoryPersistsPoint4326AndListsVerifiedOnly(t *testing.T) {
 		t.Fatalf("ListVerified() = %+v, %v", items, err)
 	}
 }
+
+func stringPointer(value string) *string { return &value }
 
 func TestRepositoryPersistsGuestReportAndCapabilityScopedMedia(t *testing.T) {
 	databaseURL := os.Getenv("TEST_DATABASE_URL")

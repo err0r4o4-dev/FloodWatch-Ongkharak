@@ -1,4 +1,5 @@
 .create-report-page {
+  --color-ink-muted: var(--color-nav-muted);
   width: 100%;
   max-width: 58rem;
   margin-inline: auto;
@@ -75,7 +76,7 @@
   cursor: pointer;
 }
 
-.report-depth-option span {
+.report-depth-option > span {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -96,8 +97,12 @@
   box-shadow: inset 0 0 0 1px var(--color-primary-strong);
 }
 
-.report-depth-option input:checked + span::before {
-  content: "✓";
+.report-depth-check {
+  display: none;
+}
+
+.report-depth-option input:checked + span > .report-depth-check {
+  display: inline;
   margin-inline-end: var(--space-1);
 }
 
@@ -120,6 +125,6 @@
   }
 
   .report-depth-options {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 6rem), 1fr));
   }
 }

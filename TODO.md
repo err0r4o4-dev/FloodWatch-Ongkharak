@@ -307,3 +307,17 @@ Release boundary: running application services and database are not changed by t
 ## Future Skills
 
 - [ ] Add narrower skills only when a later phase exposes meaningful recurring practices not covered by the Phase 0 core.
+
+## Approved feature — Dedicated report creation and location labels (2026-10-04)
+
+- [x] Move anonymous report creation to `/reports/new`, link from `/reports`, and order the form as reporter name, event type, map, place name, optional landmark, optional depth, description and images.
+- [x] Remove visible coordinate inputs; add on-demand GPS centring, a separate explicit current-position selection, accuracy display, manual/keyboard selection and error fallback without continuous tracking or separate user-position persistence.
+- [x] Add button-styled single-select depth radios and custom centimetre input, converting to the existing metre contract; unspecified remains missing information, not zero or SAFE.
+- [x] Persist bounded, trimmed COMMUNITY place metadata with migration 19 and display it in report cards/details; historical records keep an explicit missing-name fallback. Omitted legacy PATCH metadata is preserved, while explicit empty strings clear it.
+- [x] Complete independent review and fix omitted-label data loss and GPS-loading cancellation regressions.
+
+Verification: focused reports/routes Vitest passes 69/69 across ten files. The latest full frontend suite passes 335/338; three existing AppShell logout-confirmation tests fail. Typecheck/full build remain blocked by existing unused `signingOut` and `handleLogout` in `AppShell.tsx`; standalone Vite bundling passes with the existing chunk-size warning. Headless Edge verifies synthetic report submission/PENDING, new-route/back navigation, GPS versus incident separation, manual pin changes, preset/custom depth, keyboard selection, permission-denied fallback and 44px controls at 320/390/768/1440. The form fits 200% text; the unchanged institutional header overflows at 390px/200% on both the new and existing reports pages, so the UI script exits 2 for that reported global gap rather than claiming a fully passing zoom check. Screenshots and logs: `.tmp/report-create-ui`, `.tmp/report-create-ui.txt`, `.tmp/report-create-focused-final.txt`, `.tmp/report-create-web-full-final.txt`, `.tmp/report-create-typecheck-final.txt` and `.tmp/report-create-vite.txt`.
+
+Backend verification: fresh `go test ./... -count=1` and `go vet ./...` pass. Isolated PostgreSQL `floodwatch_report_labels_test` applies migrations 1–19 and passes two report-repository tests plus one HTTP report integration test. Migration 19 down preserves report rows while removing metadata; reapplying restores empty defaults and both length constraints, and integration tests pass again. Independent re-review confirms both reported P2 findings are closed.
+
+Release boundary: the running application database and services were not migrated or restarted by this task. Apply the existing migrations through `000019_report_location_labels` before deploying the matching API/frontend. Migration 19 rollback permanently removes stored place metadata. Browser API/tile/position fixtures are explicitly synthetic, not live flood evidence; real devices, Safari and production deployment remain unverified. Concurrent weather, AppShell and Git-baseline changes were preserved without reverting them.

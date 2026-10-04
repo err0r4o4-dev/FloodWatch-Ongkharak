@@ -1,0 +1,45 @@
+
+> @floodwatch/web@0.0.0 test D:\!Project\FloodWatch-Ongkharak(Web_Application)\apps\web
+> vitest run "src/features/reports/ReportLocationPicker.test.tsx"
+
+
+ RUN  v5.0.3 D:/!Project/FloodWatch-Ongkharak(Web_Application)/apps/web
+
+ ❯ src/features/reports/ReportLocationPicker.test.tsx (14 tests | 1 failed) 243ms
+   ❯ ReportLocationPicker (14)
+     × keeps the incident pin when refreshing the user position 13ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/features/reports/ReportLocationPicker.test.tsx > ReportLocationPicker > keeps the incident pin when refreshing the user position
+AssertionError: expected undefined to match object { position: [ 14.2, 101.1 ], …(1) }
+
+- Expected:
+{
+  "interactive": false,
+  "position": [
+    14.2,
+    101.1,
+  ],
+}
+
++ Received:
+undefined
+
+ ❯ src/features/reports/ReportLocationPicker.test.tsx:147:28
+    145|
+    146|     expect(onSelect).not.toHaveBeenCalled();
+    147|     expect(markers.at(-1)).toMatchObject({ position: [14.2, 101.1], in…
+       |                            ^
+    148|     expect(markers.at(-1)?.icon).toMatchObject({ options: { className:…
+    149|     expect(circleMarkers.some((props) => Array.isArray(props.center) &…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 13 passed (14)
+   Start at  15:43:16
+   Duration  1.71s (environment 57%, setup 18%, tests 15%, transform 7%, import 3%, worker 1%)
+
+ ELIFECYCLE  Test failed. See above for more details.

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Map as LeafletMap } from "leaflet";
-import { Circle, CircleMarker, MapContainer, TileLayer, useMap, useMapEvents } from "react-leaflet";
+import { divIcon } from "leaflet";
+import { Circle, CircleMarker, MapContainer, Marker, TileLayer, useMap, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { useTranslation } from "../../i18n";
 import th from "../../i18n/locales/th/reports";
@@ -9,6 +10,13 @@ import type { ReportLocation } from "./types";
 import "./ReportLocationPicker.css";
 
 const initialCenter: [number, number] = [14.1, 101.0];
+const incidentPinPath = "M16 1C8.3 1 2 7.3 2 15c0 10 14 24 14 24s14-14 14-24C30 7.3 23.7 1 16 1Z";
+const incidentPinIcon = divIcon({
+  className: "report-incident-pin",
+  html: `<svg viewBox="0 0 32 40" aria-hidden="true"><path d="${incidentPinPath}"/><circle class="report-incident-pin__center" cx="16" cy="15" r="5"/></svg>`,
+  iconSize: [32, 40],
+  iconAnchor: [16, 39]
+});
 const geolocationOptions: PositionOptions = { enableHighAccuracy: true, timeout: 10_000, maximumAge: 0 };
 type GeolocationIntent = "locate" | "select";
 type LocationErrorKey = "location.denied" | "location.timeout" | "location.unavailable" | "location.unsupported";
@@ -91,6 +99,7 @@ export function ReportLocationPicker({ location, onChange, resetKey }: {
 
   const selectIncident = useCallback((next: ReportLocation) => {
     requestIdRef.current += 1;
+    setLocating(false);
     if (location && (location.coordinates[0] !== next.coordinates[0] || location.coordinates[1] !== next.coordinates[1])) setIncidentChanged(true);
     setLocationError(null);
     onChange(next);
@@ -159,7 +168,7 @@ export function ReportLocationPicker({ location, onChange, resetKey }: {
           <Circle center={[userPosition.latitude, userPosition.longitude]} radius={userPosition.accuracy} pathOptions={{ color: "var(--color-primary-strong)", fillColor: "var(--color-primary-strong)", fillOpacity: 0.12, weight: 2 }} />
           <CircleMarker center={[userPosition.latitude, userPosition.longitude]} radius={7} pathOptions={{ color: "var(--color-surface)", fillColor: "var(--color-primary-strong)", fillOpacity: 1, weight: 3 }} />
         </>}
-        {location && <CircleMarker center={[location.coordinates[1], location.coordinates[0]]} radius={9} pathOptions={{ color: "var(--color-status-warning)", fillColor: "var(--color-status-warning)", fillOpacity: 0, weight: 3 }} />}
+        {location && <Marker position={[location.coordinates[1], location.coordinates[0]]} icon={incidentPinIcon} title={t("location.incidentLegend")} interactive={false} keyboard={false} />}
       </MapContainer>
       <MapLocationControl locating={locating} label={t("location.locate")} loadingLabel={t("location.locating")} onLocate={() => requestPosition("locate")} />
     </div>
@@ -179,7 +188,7 @@ export function ReportLocationPicker({ location, onChange, resetKey }: {
     </div>}
     <div className="report-location-picker__legend" aria-label={t("location.legend")}>
       <span><i className="report-location-picker__shape report-location-picker__shape--user" aria-hidden="true" />{t("location.userLegend")}</span>
-      <span><i className="report-location-picker__shape report-location-picker__shape--incident" aria-hidden="true" />{t("location.incidentLegend")}</span>
+      <span><svg className="report-location-picker__incident-legend" viewBox="0 0 32 40" aria-hidden="true"><path d={incidentPinPath} /><circle className="report-incident-pin__center" cx="16" cy="15" r="5" /></svg>{t("location.incidentLegend")}</span>
     </div>
   </fieldset>;
 }

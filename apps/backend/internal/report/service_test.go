@@ -47,8 +47,8 @@ func TestCreateTrimsLocationMetadataAndPreservesIt(t *testing.T) {
 		Type:         TypeFlood,
 		Description:  "Water",
 		Location:     Location{Type: "Point", Coordinates: []float64{100.99, 14.02}},
-		LocationName: "  ตลาดองครักษ์  ",
-		LocationNote: "  Near the bridge  ",
+		LocationName: stringPointer("  ตลาดองครักษ์  "),
+		LocationNote: stringPointer("  Near the bridge  "),
 	})
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)
@@ -68,8 +68,8 @@ func TestReportLocationMetadataRejectsRuneLimit(t *testing.T) {
 		name  string
 		input Input
 	}{
-		{name: "location name", input: Input{Type: base.Type, Description: base.Description, Location: base.Location, LocationName: strings.Repeat("ก", 201)}},
-		{name: "location note", input: Input{Type: base.Type, Description: base.Description, Location: base.Location, LocationNote: strings.Repeat("ก", 501)}},
+		{name: "location name", input: Input{Type: base.Type, Description: base.Description, Location: base.Location, LocationName: stringPointer(strings.Repeat("ก", 201))}},
+		{name: "location note", input: Input{Type: base.Type, Description: base.Description, Location: base.Location, LocationNote: stringPointer(strings.Repeat("ก", 501))}},
 	} {
 		t.Run(testCase.name, func(t *testing.T) {
 			if _, err := service.Create(context.Background(), "7b6a2a68-688a-4c59-82cf-0b541dfa0d49", testCase.input); !errors.Is(err, ErrInvalid) {
@@ -147,8 +147,8 @@ func TestCreateGuestTrimsLocationMetadata(t *testing.T) {
 		Type:         TypeFlood,
 		Description:  "Water",
 		Location:     Location{Type: "Point", Coordinates: []float64{101, 14}},
-		LocationName: "  โรงเรียน  ",
-		LocationNote: "  Main entrance  ",
+		LocationName: stringPointer("  โรงเรียน  "),
+		LocationNote: stringPointer("  Main entrance  "),
 	}})
 	if err != nil {
 		t.Fatalf("CreateGuest() error = %v", err)
@@ -231,7 +231,7 @@ func TestUpdateAndReviewEnforceOwnershipAndImmutability(t *testing.T) {
 	if _, err := service.Update(context.Background(), reportID, adminID, Input{Type: TypeRoad, Description: "Changed", Location: Location{Type: "Point", Coordinates: []float64{101, 14}}}); !errors.Is(err, ErrForbidden) {
 		t.Fatalf("Update() cross-owner error = %v, want ErrForbidden", err)
 	}
-	updated, err := service.Update(context.Background(), reportID, ownerID, Input{Type: TypeRoad, Description: "Changed", Location: Location{Type: "Point", Coordinates: []float64{101, 14}}, LocationName: "  Updated place  ", LocationNote: "  Updated note  "})
+	updated, err := service.Update(context.Background(), reportID, ownerID, Input{Type: TypeRoad, Description: "Changed", Location: Location{Type: "Point", Coordinates: []float64{101, 14}}, LocationName: stringPointer("  Updated place  "), LocationNote: stringPointer("  Updated note  ")})
 	if err != nil || updated.LocationName != "Updated place" || updated.LocationNote != "Updated note" {
 		t.Fatalf("Update() location metadata = %+v, %v", updated, err)
 	}
@@ -247,6 +247,37 @@ func TestUpdateAndReviewEnforceOwnershipAndImmutability(t *testing.T) {
 	}
 	if _, err := service.Update(context.Background(), reportID, ownerID, Input{Type: TypeRoad, Description: "Changed", Location: Location{Type: "Point", Coordinates: []float64{101, 14}}}); !errors.Is(err, ErrConflict) {
 		t.Fatalf("Update() verified error = %v, want ErrConflict", err)
+	}
+}
+
+func TestUpdatePreservesOmittedLocationMetadataAndClearsExplicitEmptyValues(t *testing.T) {
+	ownerID := "7b6a2a68-688a-4c59-82cf-0b541dfa0d49"
+	reportID := "ddfd74fd-9561-4c5e-a304-b1cb704508d9"
+	repository := &fakeRepository{reports: map[string]Report{
+		reportID: {ID: reportID, UserID: ownerID, Type: TypeFlood, Description: "Water", Location: Location{Type: "Point", Coordinates: []float64{101, 14}}, LocationName: "Existing place", LocationNote: "Existing note", Status: StatusPending, VerificationStatus: StatusPending, SourceType: SourceCommunity},
+	}}
+	service, err := NewService(repository, &fakeStorage{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	base := Input{Type: TypeFlood, Description: "Updated", Location: Location{Type: "Point", Coordinates: []float64{101, 14}}}
+
+	updated, err := service.Update(context.Background(), reportID, ownerID, base)
+	if err != nil {
+		t.Fatalf("Update() omitted metadata error = %v", err)
+	}
+	if updated.LocationName != "Existing place" || updated.LocationNote != "Existing note" {
+		t.Fatalf("Update() omitted metadata = %+v", updated)
+	}
+
+	base.LocationName = stringPointer("")
+	base.LocationNote = stringPointer("")
+	updated, err = service.Update(context.Background(), reportID, ownerID, base)
+	if err != nil {
+		t.Fatalf("Update() explicit empty metadata error = %v", err)
+	}
+	if updated.LocationName != "" || updated.LocationNote != "" {
+		t.Fatalf("Update() explicit empty metadata = %+v", updated)
 	}
 }
 
@@ -376,7 +407,13 @@ func (repository *fakeRepository) ListAdmin(context.Context, Status, Page) ([]Re
 
 func (repository *fakeRepository) UpdatePending(_ context.Context, id string, input Input) (Report, error) {
 	item := repository.reports[id]
-	item.Type, item.Description, item.Location, item.LocationName, item.LocationNote, item.EstimatedWaterDepthM = input.Type, input.Description, input.Location, input.LocationName, input.LocationNote, input.EstimatedWaterDepthM
+	item.Type, item.Description, item.Location, item.EstimatedWaterDepthM = input.Type, input.Description, input.Location, input.EstimatedWaterDepthM
+	if input.LocationName != nil {
+		item.LocationName = *input.LocationName
+	}
+	if input.LocationNote != nil {
+		item.LocationNote = *input.LocationNote
+	}
 	repository.reports[id] = item
 	return item, nil
 }
@@ -441,3 +478,5 @@ func (storage *fakeStorage) Delete(_ context.Context, key string) error {
 func pngFixture() []byte {
 	return []byte{0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00}
 }
+
+func stringPointer(value string) *string { return &value }

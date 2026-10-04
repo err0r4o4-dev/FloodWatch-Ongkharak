@@ -179,7 +179,7 @@ export function ReportForm({ editing, onComplete, onCancel }: {
               setDepthChoice(value);
               setWaterDepth(value === "custom" ? customDepthCm.trim() === "" ? "" : (Number(customDepthCm) / 100).toString() : value);
             }} />
-            <span>{value === "" ? t("form.depthUnspecified") : value === "custom" ? t("form.depthCustom") : value === "1" ? t("form.depthOneMeter") : t("form.depthCentimeters", { value: Number(value) * 100 })}</span>
+            <span><span className="report-depth-check" aria-hidden="true">✓</span>{value === "" ? t("form.depthUnspecified") : value === "custom" ? t("form.depthCustom") : value === "1" ? t("form.depthOneMeter") : t("form.depthCentimeters", { value: Number(value) * 100 })}</span>
           </label>)}
         </div>
         {depthChoice === "custom" && <label>{t("form.depthCustomLabel")}<input type="number" inputMode="decimal" min="0" max={maximumDepthM * 100} step="any" value={customDepthCm} onChange={(event) => {

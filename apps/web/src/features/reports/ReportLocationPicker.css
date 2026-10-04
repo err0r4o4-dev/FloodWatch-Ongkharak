@@ -44,6 +44,12 @@
   height: 100%;
 }
 
+.report-location-map .leaflet-control-zoom a {
+  width: var(--touch-target);
+  height: var(--touch-target);
+  line-height: var(--touch-target);
+}
+
 .report-location-map__locate,
 .report-location-picker__action {
   display: inline-flex;
@@ -167,9 +173,29 @@
   background: var(--color-primary-strong);
 }
 
-.report-location-picker__shape--incident {
-  color: var(--color-status-warning);
-  background: transparent;
+.report-incident-pin svg,
+.report-location-picker__incident-legend {
+  display: block;
+  fill: var(--color-status-warning);
+  stroke: var(--color-ink);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}
+
+.report-incident-pin svg {
+  width: 100%;
+  height: 100%;
+}
+
+.report-location-picker__incident-legend {
+  width: 1rem;
+  height: 1.25rem;
+  flex: none;
+}
+
+.report-incident-pin__center {
+  fill: var(--color-surface);
+  stroke: none;
 }
 
 @media (max-width: 40rem) {

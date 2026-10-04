@@ -91,7 +91,7 @@ func (repository *Repository) ListAdmin(ctx context.Context, status report.Statu
 }
 
 func (repository *Repository) UpdatePending(ctx context.Context, id string, input report.Input) (report.Report, error) {
-	command, err := repository.pool.Exec(ctx, `UPDATE community_reports SET type=$2, description=$3, location_name=$4, location_note=$5, location=ST_SetSRID(ST_MakePoint($6,$7),4326), estimated_water_depth_m=$8, updated_at=GREATEST(clock_timestamp(), updated_at + interval '1 microsecond')
+	command, err := repository.pool.Exec(ctx, `UPDATE community_reports SET type=$2, description=$3, location_name=COALESCE($4, location_name), location_note=COALESCE($5, location_note), location=ST_SetSRID(ST_MakePoint($6,$7),4326), estimated_water_depth_m=$8, updated_at=GREATEST(clock_timestamp(), updated_at + interval '1 microsecond')
 		WHERE id=$1 AND status='PENDING'`, id, input.Type, input.Description, input.LocationName, input.LocationNote, input.Location.Coordinates[0], input.Location.Coordinates[1], input.EstimatedWaterDepthM)
 	if err != nil {
 		return report.Report{}, fmt.Errorf("update report: %w", mapped(err))

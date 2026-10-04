@@ -63,8 +63,37 @@ func TestReportCreateGuestReturnsPublicReportAndUploadToken(t *testing.T) {
 	if _, ok := reportBody["userId"]; ok {
 		t.Fatalf("CreateGuest() leaked userId: %s", response.Body)
 	}
-	if service.guestInput.DisplayName != "" || service.guestInput.LocationName != "  ตลาดองครักษ์  " || service.guestInput.LocationNote != "  Near the bridge  " {
+	if service.guestInput.DisplayName != "" || service.guestInput.LocationName == nil || *service.guestInput.LocationName != "  ตลาดองครักษ์  " || service.guestInput.LocationNote == nil || *service.guestInput.LocationNote != "  Near the bridge  " {
 		t.Fatalf("CreateGuest() input metadata = %+v", service.guestInput)
+	}
+}
+
+func TestReportUpdateDistinguishesOmittedAndExplicitEmptyLocationMetadata(t *testing.T) {
+	service := &fakeReportService{item: report.Report{ID: "ddfd74fd-9561-4c5e-a304-b1cb704508d9", LocationName: "Existing place", LocationNote: "Existing note"}}
+	handler := NewReportHandler(service)
+
+	request := httptest.NewRequest(http.MethodPatch, "/api/v1/reports/"+service.item.ID, strings.NewReader(`{"type":"FLOOD","description":"Updated","location":{"type":"Point","coordinates":[101,14]}}`))
+	request.Header.Set("Authorization", "Bearer valid")
+	request.Header.Set("Content-Type", "application/json")
+	response := httptest.NewRecorder()
+	middleware.RequireAuthentication(fakeReportAuthenticator{})(http.HandlerFunc(handler.Update)).ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("Update() omitted metadata status = %d: %s", response.Code, response.Body)
+	}
+	if service.updateInput.LocationName != nil || service.updateInput.LocationNote != nil {
+		t.Fatalf("Update() omitted metadata input = %+v", service.updateInput)
+	}
+
+	request = httptest.NewRequest(http.MethodPatch, "/api/v1/reports/"+service.item.ID, strings.NewReader(`{"type":"FLOOD","description":"Updated","location":{"type":"Point","coordinates":[101,14]},"locationName":"","locationNote":""}`))
+	request.Header.Set("Authorization", "Bearer valid")
+	request.Header.Set("Content-Type", "application/json")
+	response = httptest.NewRecorder()
+	middleware.RequireAuthentication(fakeReportAuthenticator{})(http.HandlerFunc(handler.Update)).ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("Update() explicit empty metadata status = %d: %s", response.Code, response.Body)
+	}
+	if service.updateInput.LocationName == nil || *service.updateInput.LocationName != "" || service.updateInput.LocationNote == nil || *service.updateInput.LocationNote != "" {
+		t.Fatalf("Update() explicit empty metadata input = %+v", service.updateInput)
 	}
 }
 
@@ -198,6 +227,7 @@ type fakeReportService struct {
 	item            report.Report
 	guestCreation   report.GuestCreation
 	guestInput      report.GuestInput
+	updateInput     report.Input
 	guestUserID     string
 	guestMediaToken string
 }
@@ -225,7 +255,9 @@ func (service *fakeReportService) ListAdmin(context.Context, report.Status, repo
 func (service *fakeReportService) GetAdmin(context.Context, string) (report.Report, error) {
 	return service.item, nil
 }
-func (service *fakeReportService) Update(context.Context, string, string, report.Input) (report.Report, error) {
+
+func (service *fakeReportService) Update(_ context.Context, _ string, _ string, input report.Input) (report.Report, error) {
+	service.updateInput = input
 	return service.item, nil
 }
 func (service *fakeReportService) Verify(context.Context, string, string, time.Time) (report.Report, error) {

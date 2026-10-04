@@ -54,6 +54,8 @@ const fixture = { id: '00000000-0000-4000-8000-000000000001', displayName: 'Synt
       assert.match(await page.locator('.report-location-picker__status').innerText(), /ยังไม่ได้เลือก/);
       await page.getByRole('button', { name: 'ใช้ตำแหน่งของฉันเป็นจุดเกิดเหตุ', exact: true }).click();
       await page.getByText('เลือกจุดเกิดเหตุแล้ว', { exact: true }).waitFor();
+      assert(await page.locator('.report-incident-pin svg').isVisible());
+      assert.equal(await page.locator('.report-incident-pin').getAttribute('title'), 'จุดที่รายงาน');
       const map = page.locator('.report-location-map');
       const bounds = await map.boundingBox();
       await map.click({ position: { x: bounds.width * 0.7, y: bounds.height * 0.35 } });
@@ -67,7 +69,13 @@ const fixture = { id: '00000000-0000-4000-8000-000000000001', displayName: 'Synt
       assert(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
       assert((await locate.boundingBox()).height >= 44);
       for (const option of await page.locator('.report-depth-option').all()) assert((await option.boundingBox()).height >= 44);
+      for (const zoomControl of await page.locator('.leaflet-control-zoom a').all()) {
+        const control = await zoomControl.boundingBox();
+        assert(control.height >= 44 && control.width >= 44);
+      }
       await page.screenshot({ path: path.join(output, `form-${width}.png`), fullPage: true });
+      await page.getByRole('heading', { name: 'เพิ่มรายงานสถานการณ์', exact: true }).scrollIntoViewIfNeeded();
+      await page.screenshot({ path: path.join(output, `selected-map-${width}.png`), fullPage: true });
       await page.getByRole('button', { name: 'ส่งรายงาน', exact: true }).click();
       await page.locator('.form-success').waitFor();
       assert.equal(submitted.locationName, 'อาคารทดสอบ (ข้อมูลจำลอง)');
@@ -101,14 +109,27 @@ const fixture = { id: '00000000-0000-4000-8000-000000000001', displayName: 'Synt
     await page.getByRole('button', { name: 'ไปยังตำแหน่งของฉัน', exact: true }).click();
     await page.getByText(/ไม่ได้รับอนุญาตให้ใช้ตำแหน่ง/).waitFor();
     assert.equal(await page.getByLabel('ชื่อสถานที่ / ชื่อซอย *').inputValue(), 'เก็บข้อความเมื่อค้นหาตำแหน่งไม่ได้');
+    await page.locator('.report-location-picker__error').scrollIntoViewIfNeeded();
+    await page.screenshot({ path: path.join(output, 'permission-error.png'), fullPage: true });
     await page.getByRole('button', { name: 'เลือกจุดกึ่งกลางแผนที่', exact: true }).click();
     await page.getByText('เลือกจุดเกิดเหตุแล้ว', { exact: true }).waitFor();
     await page.setViewportSize({ width: 390, height: 980 });
     await page.evaluate(() => { document.documentElement.style.fontSize = '200%'; });
-    assert(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
-    await page.screenshot({ path: path.join(output, 'permission-error-zoom.png'), fullPage: true });
+    await page.screenshot({ path: path.join(output, 'manual-fallback-zoom.png'), fullPage: true });
+    assert(await page.locator('.create-report-page').evaluate((element) => element.getBoundingClientRect().right <= window.innerWidth));
+    const zoomLayout = await page.evaluate(() => ({ viewport: window.innerWidth, scroll: document.documentElement.scrollWidth, header: document.querySelector('.institution-header__actions').getBoundingClientRect().right }));
+    if (zoomLayout.scroll > zoomLayout.viewport) {
+      await page.goto(origin + '/reports');
+      await page.getByRole('link', { name: 'ส่งรายงานสถานการณ์' }).waitFor();
+      await page.evaluate(() => { document.documentElement.style.fontSize = '200%'; });
+      await page.screenshot({ path: path.join(output, 'existing-shell-zoom.png'), fullPage: true });
+      const baseline = await page.evaluate(() => ({ viewport: window.innerWidth, scroll: document.documentElement.scrollWidth, header: document.querySelector('.institution-header__actions').getBoundingClientRect().right }));
+      assert(baseline.scroll > baseline.viewport);
+      console.warn('KNOWN GLOBAL GAP: unchanged institutional header overflows at 200% text on both creation and existing reports pages.', { creation: zoomLayout, existingReports: baseline });
+      process.exitCode = 2;
+    }
     assert.deepEqual(errors, []);
-    console.log('PASS: new route/back, ordered form, locate-only without moving incident, explicit current location, map pin/change warning, metadata persistence payload, preset/custom depth, PENDING notice, keyboard centre/radios, permission denial fallback, 320/390/768/1440 widths and 200% mobile text; no page errors. All API data, map tiles and positions are synthetic fixtures; no live database writes.');
+    console.log('PASS scoped UI: new route/back, ordered form, locate-only without moving incident, explicit current location, map pin/change warning, metadata persistence payload, preset/custom depth, PENDING notice, keyboard centre/radios, permission denial fallback, 320/390/768/1440 widths and creation form fitting 200% mobile text; no page errors. Global zoom gap is reported separately. All API data, map tiles and positions are synthetic fixtures; no live database writes.');
   } finally {
     if (browser) await browser.close();
     await new Promise((resolve) => server.close(resolve));

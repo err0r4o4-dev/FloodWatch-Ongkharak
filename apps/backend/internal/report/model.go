@@ -41,8 +41,8 @@ type Input struct {
 	Type                 Type     `json:"type"`
 	Description          string   `json:"description"`
 	Location             Location `json:"location"`
-	LocationName         string   `json:"locationName"`
-	LocationNote         string   `json:"locationNote"`
+	LocationName         *string  `json:"locationName"`
+	LocationNote         *string  `json:"locationNote"`
 	EstimatedWaterDepthM *float64 `json:"estimatedWaterDepthM"`
 }
 

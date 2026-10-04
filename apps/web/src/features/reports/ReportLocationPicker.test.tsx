@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { ReportLocationPicker } from "./ReportLocationPicker";
 import type { ReportLocation } from "./types";
 
-const { map, mapEvents, circleMarkers, circles } = vi.hoisted(() => ({
+const { map, mapEvents, circleMarkers, circles, markers } = vi.hoisted(() => ({
   map: {
     getCenter: vi.fn(() => ({ lat: 14.4, lng: 101.4 })),
     getZoom: vi.fn(() => 11),
@@ -13,10 +13,15 @@ const { map, mapEvents, circleMarkers, circles } = vi.hoisted(() => ({
   },
   mapEvents: [] as Array<{ click?: (event: { latlng: { lng: number; lat: number } }) => void }>,
   circleMarkers: [] as Array<Record<string, unknown>>,
-  circles: [] as Array<Record<string, unknown>>
+  circles: [] as Array<Record<string, unknown>>,
+  markers: [] as Array<Record<string, unknown>>
 }));
 
 vi.mock("react-leaflet", () => ({
+  Marker: (props: Record<string, unknown>) => {
+    markers.push(props);
+    return null;
+  },
   Circle: (props: Record<string, unknown>) => {
     circles.push(props);
     return null;
@@ -72,6 +77,7 @@ afterEach(() => {
   mapEvents.length = 0;
   circleMarkers.length = 0;
   circles.length = 0;
+  markers.length = 0;
 });
 
 describe("ReportLocationPicker", () => {
@@ -138,8 +144,9 @@ describe("ReportLocationPicker", () => {
     act(() => callbacks[0].success(position(14.5, 101.5)));
 
     expect(onSelect).not.toHaveBeenCalled();
-    expect(circleMarkers.some((props) => Array.isArray(props.center) && props.center[0] === 14.2 && props.center[1] === 101.1)).toBe(true);
-    expect(circleMarkers.find((props) => Array.isArray(props.center) && props.center[0] === 14.2 && props.center[1] === 101.1)?.pathOptions).toMatchObject({ fillOpacity: 0 });
+    expect(markers.at(-1)).toMatchObject({ position: [14.2, 101.1], interactive: false });
+    expect(markers.at(-1)?.icon).toMatchObject({ options: { className: "report-incident-pin", iconSize: [32, 40], iconAnchor: [16, 39] } });
+    expect(circleMarkers.some((props) => Array.isArray(props.center) && props.center[0] === 14.2 && props.center[1] === 101.1)).toBe(false);
     expect(screen.getByRole("status")).toHaveTextContent("เลือกจุดเกิดเหตุแล้ว");
   });
 
@@ -219,13 +226,19 @@ describe("ReportLocationPicker", () => {
   });
 
   it("does not let a late explicit-use response overwrite a manual map selection", () => {
-    const { callbacks } = installGeolocation();
+    const { callbacks, getCurrentPosition } = installGeolocation();
     const onSelect = vi.fn();
     render(<PickerHarness onSelect={onSelect} />);
 
     fireEvent.click(screen.getByRole("button", { name: "ใช้ตำแหน่งของฉันเป็นจุดเกิดเหตุ" }));
     act(() => mapEvents.at(-1)?.click?.({ latlng: { lng: 101.2, lat: 14.3 } }));
     expect(onSelect).toHaveBeenLastCalledWith({ type: "Point", coordinates: [101.2, 14.3] });
+    expect(screen.getByRole("button", { name: "ไปยังตำแหน่งของฉัน" })).not.toBeDisabled();
+    expect(screen.getByRole("button", { name: "ไปยังตำแหน่งของฉัน" })).toHaveAttribute("aria-busy", "false");
+    expect(screen.getByRole("button", { name: "ใช้ตำแหน่งของฉันเป็นจุดเกิดเหตุ" })).not.toBeDisabled();
+
+    fireEvent.click(screen.getByRole("button", { name: "ไปยังตำแหน่งของฉัน" }));
+    expect(getCurrentPosition).toHaveBeenCalledTimes(2);
 
     act(() => callbacks[0].success(position(14.6, 101.6)));
     expect(onSelect).toHaveBeenCalledTimes(1);
