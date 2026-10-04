@@ -22,6 +22,15 @@ describe("AppRoutes", () => {
 });
 
 describe("public routes", () => {
+  it("opens the dedicated report creation route without a login", () => {
+    render(<MemoryRouter initialEntries={["/reports/new"]}><AppRoutes /></MemoryRouter>);
+    expect(screen.getByRole("heading", { name: "เพิ่มรายงานสถานการณ์" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "ส่งรายงาน" })).toBeInTheDocument();
+    expect(screen.getByLabelText("ชื่อผู้รายงาน (ไม่บังคับ)")).toBeInTheDocument();
+    expect(screen.queryByLabelText("ลองจิจูด")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("ละติจูด")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "กลับไปหน้ารายงานสถานการณ์" })).toHaveAttribute("href", "/reports");
+  });
   it("opens the unified map risk panel from legacy links", async () => {
     render(<MemoryRouter initialEntries={["/risk?risk=missing-area&bbox=101,14,101.1,14.1"]}><AppRoutes /></MemoryRouter>);
     expect(await screen.findByRole("heading", { level: 1, name: "แผนที่สถานการณ์น้ำ" })).toBeInTheDocument();

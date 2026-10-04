@@ -1,0 +1,125 @@
+.create-report-page {
+  width: 100%;
+  max-width: 58rem;
+  margin-inline: auto;
+  display: grid;
+  gap: var(--space-6);
+}
+
+.create-report-back {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch-target);
+  gap: var(--space-2);
+  color: var(--color-primary-strong);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.report-form-fields {
+  min-width: 0;
+  display: grid;
+  gap: var(--space-6);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.report-field, .report-place-fields {
+  min-width: 0;
+  display: grid;
+  gap: var(--space-3);
+}
+
+.report-field-hint {
+  margin: 0;
+  color: var(--color-ink-muted);
+  font-size: 0.8125rem;
+  font-weight: 400;
+}
+
+.report-depth-picker {
+  min-width: 0;
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: var(--space-4);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.report-depth-picker legend {
+  padding-inline: var(--space-1);
+  font-weight: 800;
+}
+
+.report-depth-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.report-form .report-depth-option {
+  position: relative;
+  display: block;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.report-form .report-depth-option input {
+  position: absolute;
+  opacity: 0;
+  inset: 0;
+  height: 100%;
+  margin: 0;
+  cursor: pointer;
+}
+
+.report-depth-option span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--touch-target);
+  padding: var(--space-2);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-ink-muted);
+  background: var(--color-surface);
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.report-depth-option input:checked + span {
+  border-color: var(--color-primary-strong);
+  color: var(--color-primary-strong);
+  background: var(--color-canvas-soft);
+  box-shadow: inset 0 0 0 1px var(--color-primary-strong);
+}
+
+.report-depth-option input:checked + span::before {
+  content: "✓";
+  margin-inline-end: var(--space-1);
+}
+
+.report-depth-option input:focus-visible + span {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 3px;
+}
+
+.report-form-fields:disabled {
+  opacity: 0.7;
+}
+
+.create-report-page .report-form > button[type="submit"] {
+  min-height: var(--touch-target);
+}
+
+@media (max-width: 40rem) {
+  .create-report-page .report-form-section {
+    padding: var(--space-4);
+  }
+
+  .report-depth-options {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

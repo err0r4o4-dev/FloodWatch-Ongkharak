@@ -1,0 +1,7 @@
+
+> @floodwatch/web@0.0.0 build D:\!Project\FloodWatch-Ongkharak(Web_Application)\apps\web
+> tsc -b && vite build
+
+src/app/AppShell.tsx(53,10): error TS6133: 'signingOut' is declared but its value is never read.
+src/app/AppShell.tsx(55,9): error TS6133: 'handleLogout' is declared but its value is never read.
+ ELIFECYCLE  Command failed with exit code 1.

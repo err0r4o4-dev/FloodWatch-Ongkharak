@@ -17,6 +17,8 @@ export type CommunityReport = {
   displayName?: string;
   type: ReportType;
   description: string;
+  locationName?: string;
+  locationNote?: string;
   location: ReportLocation;
   estimatedWaterDepthM: number | null;
   status: ReportStatus;
@@ -30,6 +32,8 @@ export type CommunityReport = {
 };
 
 export type ReportInput = Pick<CommunityReport, "type" | "description" | "location"> & {
+  locationName?: string;
+  locationNote?: string;
   displayName?: string;
   estimatedWaterDepthM?: number;
 };

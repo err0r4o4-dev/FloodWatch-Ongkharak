@@ -21,8 +21,8 @@ type Repository struct{ pool *pgxpool.Pool }
 func New(pool *pgxpool.Pool) *Repository { return &Repository{pool: pool} }
 
 func (repository *Repository) Create(ctx context.Context, item report.Report) (report.Report, error) {
-	_, err := repository.pool.Exec(ctx, `INSERT INTO community_reports (id, user_id, display_name, type, description, location, estimated_water_depth_m, status, source_type, created_at, updated_at)
-        VALUES ($1,$2,COALESCE(NULLIF($3,''),'Guest'),$4,$5,ST_SetSRID(ST_MakePoint($6,$7),4326),$8,$9,'COMMUNITY',$10,$11)`, item.ID, nullableUserID(item.UserID), item.DisplayName, item.Type, item.Description, item.Location.Coordinates[0], item.Location.Coordinates[1], item.EstimatedWaterDepthM, item.Status, item.CreatedAt, item.UpdatedAt)
+	_, err := repository.pool.Exec(ctx, `INSERT INTO community_reports (id, user_id, display_name, type, description, location_name, location_note, location, estimated_water_depth_m, status, source_type, created_at, updated_at)
+		VALUES ($1,$2,COALESCE(NULLIF($3,''),'Guest'),$4,$5,$6,$7,ST_SetSRID(ST_MakePoint($8,$9),4326),$10,$11,'COMMUNITY',$12,$13)`, item.ID, nullableUserID(item.UserID), item.DisplayName, item.Type, item.Description, item.LocationName, item.LocationNote, item.Location.Coordinates[0], item.Location.Coordinates[1], item.EstimatedWaterDepthM, item.Status, item.CreatedAt, item.UpdatedAt)
 	if err != nil {
 		return report.Report{}, fmt.Errorf("create report: %w", mapped(err))
 	}
@@ -30,8 +30,8 @@ func (repository *Repository) Create(ctx context.Context, item report.Report) (r
 }
 
 func (repository *Repository) CreateGuest(ctx context.Context, item report.Report, tokenHash []byte, expiresAt time.Time) (report.Report, error) {
-	_, err := repository.pool.Exec(ctx, `INSERT INTO community_reports (id, user_id, display_name, type, description, location, estimated_water_depth_m, status, source_type, guest_upload_token_hash, guest_upload_token_expires_at, created_at, updated_at)
-        VALUES ($1,$2,$3,$4,$5,ST_SetSRID(ST_MakePoint($6,$7),4326),$8,$9,'COMMUNITY',$10,$11,$12,$13)`, item.ID, nullableUserID(item.UserID), item.DisplayName, item.Type, item.Description, item.Location.Coordinates[0], item.Location.Coordinates[1], item.EstimatedWaterDepthM, item.Status, tokenHash, expiresAt, item.CreatedAt, item.UpdatedAt)
+	_, err := repository.pool.Exec(ctx, `INSERT INTO community_reports (id, user_id, display_name, type, description, location_name, location_note, location, estimated_water_depth_m, status, source_type, guest_upload_token_hash, guest_upload_token_expires_at, created_at, updated_at)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,ST_SetSRID(ST_MakePoint($8,$9),4326),$10,$11,'COMMUNITY',$12,$13,$14,$15)`, item.ID, nullableUserID(item.UserID), item.DisplayName, item.Type, item.Description, item.LocationName, item.LocationNote, item.Location.Coordinates[0], item.Location.Coordinates[1], item.EstimatedWaterDepthM, item.Status, tokenHash, expiresAt, item.CreatedAt, item.UpdatedAt)
 	if err != nil {
 		return report.Report{}, fmt.Errorf("create guest report: %w", mapped(err))
 	}
@@ -91,8 +91,8 @@ func (repository *Repository) ListAdmin(ctx context.Context, status report.Statu
 }
 
 func (repository *Repository) UpdatePending(ctx context.Context, id string, input report.Input) (report.Report, error) {
-	command, err := repository.pool.Exec(ctx, `UPDATE community_reports SET type=$2, description=$3, location=ST_SetSRID(ST_MakePoint($4,$5),4326), estimated_water_depth_m=$6, updated_at=GREATEST(clock_timestamp(), updated_at + interval '1 microsecond')
-        WHERE id=$1 AND status='PENDING'`, id, input.Type, input.Description, input.Location.Coordinates[0], input.Location.Coordinates[1], input.EstimatedWaterDepthM)
+	command, err := repository.pool.Exec(ctx, `UPDATE community_reports SET type=$2, description=$3, location_name=$4, location_note=$5, location=ST_SetSRID(ST_MakePoint($6,$7),4326), estimated_water_depth_m=$8, updated_at=GREATEST(clock_timestamp(), updated_at + interval '1 microsecond')
+		WHERE id=$1 AND status='PENDING'`, id, input.Type, input.Description, input.LocationName, input.LocationNote, input.Location.Coordinates[0], input.Location.Coordinates[1], input.EstimatedWaterDepthM)
 	if err != nil {
 		return report.Report{}, fmt.Errorf("update report: %w", mapped(err))
 	}
@@ -268,16 +268,16 @@ func (repository *Repository) listMedia(ctx context.Context, reportID string) ([
 	return items, nil
 }
 
-const reportSelect = `SELECT r.id, r.user_id, r.display_name, r.type, r.description, ST_AsGeoJSON(r.location), r.estimated_water_depth_m::double precision,
+const reportSelect = `SELECT r.id, r.user_id, r.display_name, r.type, r.description, r.location_name, r.location_note, ST_AsGeoJSON(r.location), r.estimated_water_depth_m::double precision,
     r.status, r.source_type, r.created_at, r.updated_at, r.verified_at, r.verified_by, r.reviewed_at, r.reviewed_by, r.rejection_reason FROM community_reports r`
 
 type rowScanner interface{ Scan(...any) error }
 
 func scanReport(row rowScanner) (report.Report, error) {
 	var item report.Report
-	var userID, displayName sql.NullString
+	var userID, displayName, locationName, locationNote sql.NullString
 	var locationJSON []byte
-	err := row.Scan(&item.ID, &userID, &displayName, &item.Type, &item.Description, &locationJSON, &item.EstimatedWaterDepthM, &item.Status, &item.SourceType, &item.CreatedAt, &item.UpdatedAt, &item.VerifiedAt, &item.VerifiedBy, &item.ReviewedAt, &item.ReviewedBy, &item.RejectionReason)
+	err := row.Scan(&item.ID, &userID, &displayName, &item.Type, &item.Description, &locationName, &locationNote, &locationJSON, &item.EstimatedWaterDepthM, &item.Status, &item.SourceType, &item.CreatedAt, &item.UpdatedAt, &item.VerifiedAt, &item.VerifiedBy, &item.ReviewedAt, &item.ReviewedBy, &item.RejectionReason)
 	if err != nil {
 		return report.Report{}, err
 	}
@@ -285,6 +285,8 @@ func scanReport(row rowScanner) (report.Report, error) {
 		item.UserID = userID.String
 	}
 	item.DisplayName = displayName.String
+	item.LocationName = locationName.String
+	item.LocationNote = locationNote.String
 	if item.DisplayName == "" {
 		item.DisplayName = "Guest"
 	}

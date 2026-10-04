@@ -37,6 +37,8 @@ servers:
   - url: /
     description: Public API through Caddy or Go directly; resource paths include /api where required
 tags:
+  - name: Weather
+    description: Fixed-location model weather, separate from canonical flood evidence.
   - name: Notifications
     description: Account-scoped inbox and independent browser Push subscriptions.
   - name: System
@@ -68,6 +70,41 @@ tags:
   - name: Flood Domain
     description: Flood events and assessed risk areas.
 paths:
+  /api/v1/weather/ongkharak:
+    get:
+      tags: [Weather]
+      operationId: getOngkharakWeather
+      summary: Read model-based weather at the Ongkharak reference point
+      description: |
+        Public, fixed-location Open-Meteo model weather, not a station observation,
+        OFFICIAL flood evidence, or a flood-safety decision. No provider URL or location
+        override is accepted. Reference coordinates are 14.1 N, 101.0 E, matching the
+        map center; this is not a district-wide measurement. The API fetches on demand,
+        caches successful responses for 10 minutes per process, coalesces concurrent
+        requests, and backs off for one minute after failure. Observations over one
+        hour old or retained during an upstream outage are STALE; cached evidence over
+        six hours old is omitted. No cached data or disabled configuration returns 503
+        with UNKNOWN and null current. Precipitation is over intervalSeconds, not 24h.
+      security: []
+      responses:
+        '200':
+          description: Fresh weather or explicitly labeled stale cached weather.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WeatherSnapshot'
+        '503':
+          description: Weather unavailable; current and retrievedAt are null, freshness is UNKNOWN.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WeatherSnapshot'
+        '429':
+          description: Public weather read rate limit exceeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /health:
     get:
       tags: [System]
@@ -2319,6 +2356,8 @@ components:
         type: { $ref: '#/components/schemas/ReportType' }
         description: { type: string, minLength: 1, maxLength: 2000 }
         location: { $ref: '#/components/schemas/PointGeometry' }
+        locationName: { type: string, maxLength: 200, description: 'Optional user-supplied COMMUNITY location label; no geocoding.' }
+        locationNote: { type: string, maxLength: 500, description: 'Optional user-supplied COMMUNITY location note; no geocoding.' }
         estimatedWaterDepthM: { type: [number, 'null'], minimum: 0, maximum: 100 }
     GuestReportInput:
       type: object
@@ -2329,6 +2368,8 @@ components:
         type: { $ref: '#/components/schemas/ReportType' }
         description: { type: string, minLength: 1, maxLength: 2000 }
         location: { $ref: '#/components/schemas/PointGeometry' }
+        locationName: { type: string, maxLength: 200, description: 'Optional user-supplied COMMUNITY location label; no geocoding.' }
+        locationNote: { type: string, maxLength: 500, description: 'Optional user-supplied COMMUNITY location note; no geocoding.' }
         estimatedWaterDepthM: { type: [number, 'null'], minimum: 0, maximum: 100 }
     GuestReportResponse:
       type: object
@@ -2369,6 +2410,8 @@ components:
         type: { $ref: '#/components/schemas/ReportType' }
         description: { type: string }
         location: { $ref: '#/components/schemas/PointGeometry' }
+        locationName: { type: string, maxLength: 200, description: 'Optional user-supplied COMMUNITY location label; empty for historical records.' }
+        locationNote: { type: string, maxLength: 500, description: 'Optional user-supplied COMMUNITY location note; empty for historical records.' }
         estimatedWaterDepthM: { type: [number, 'null'], minimum: 0, maximum: 100 }
         status: { $ref: '#/components/schemas/ReportStatus' }
         verificationStatus: { $ref: '#/components/schemas/ReportStatus' }
@@ -2865,6 +2908,55 @@ components:
         status:
           type: string
           enum: [ok, unavailable]
+    WeatherSnapshot:
+      type: object
+      additionalProperties: false
+      required: [location, source, freshness, retrievedAt, reason, current]
+      properties:
+        location:
+          type: object
+          additionalProperties: false
+          required: [name, latitude, longitude]
+          properties:
+            name: {type: string, const: Ongkharak}
+            latitude: {type: number, const: 14.1}
+            longitude: {type: number, const: 101}
+        source:
+          type: object
+          additionalProperties: false
+          required: [name, url, kind]
+          properties:
+            name: {type: string, const: Open-Meteo}
+            url: {type: string, format: uri, const: 'https://open-meteo.com/'}
+            kind: {type: string, const: MODEL}
+        freshness:
+          type: string
+          enum: [FRESH, STALE, UNKNOWN]
+        retrievedAt:
+          type: [string, 'null']
+          format: date-time
+        reason:
+          type: [string, 'null']
+          enum: [UPSTREAM_UNAVAILABLE, NOT_CONFIGURED, DATA_STALE, REQUEST_CANCELED, null]
+        current:
+          oneOf:
+            - $ref: '#/components/schemas/CurrentWeather'
+            - type: 'null'
+    CurrentWeather:
+      type: object
+      additionalProperties: false
+      required: [observedAt, intervalSeconds, temperatureC, apparentTemperatureC, humidityPercent, precipitationMm, weatherCode, windSpeedKmh, windDirectionDegrees, isDay]
+      properties:
+        observedAt: {type: string, format: date-time}
+        intervalSeconds: {type: integer, minimum: 60, maximum: 3600}
+        temperatureC: {type: number, minimum: -100, maximum: 70}
+        apparentTemperatureC: {type: number, minimum: -100, maximum: 100}
+        humidityPercent: {type: number, minimum: 0, maximum: 100}
+        precipitationMm: {type: number, minimum: 0, maximum: 1000}
+        weatherCode: {type: integer, minimum: 0, maximum: 99}
+        windSpeedKmh: {type: number, minimum: 0, maximum: 500}
+        windDirectionDegrees: {type: number, minimum: 0, maximum: 360}
+        isDay: {type: boolean}
     ReadinessResponse:
       type: object
       required: [status, dependencies]

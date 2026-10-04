@@ -35,6 +35,7 @@ import (
 	"github.com/floodwatch-ongkharak/backend/internal/postgres/reportrepo"
 	"github.com/floodwatch-ongkharak/backend/internal/realtime"
 	"github.com/floodwatch-ongkharak/backend/internal/report"
+	"github.com/floodwatch-ongkharak/backend/internal/weather"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
 )
@@ -138,6 +139,14 @@ func run() error {
 			Timeout:  configuration.ReadinessTimeout,
 		},
 	})
+	weatherService := weather.NewService(nil)
+	if configuration.WeatherEnabled {
+		provider, err := weather.NewOpenMeteoProvider()
+		if err != nil {
+			return fmt.Errorf("configure weather provider: %w", err)
+		}
+		weatherService = weather.NewService(provider)
+	}
 	server := &http.Server{
 		Addr: fmt.Sprintf(":%d", configuration.APIPort),
 		Handler: router.New(router.Dependencies{
@@ -147,6 +156,7 @@ func run() error {
 			RecoveryService: recoveryService,
 			GoogleService:   googleService, AuthFrontendOrigin: configuration.AuthFrontendOrigin,
 			FloodService:              floodService,
+			WeatherService:            weatherService,
 			ReportService:             reportService,
 			AlertService:              alertService,
 			AdminService:              adminService,

@@ -1,0 +1,16 @@
+{
+  "checks": [
+    "fresh TH no overflow 1440",
+    "fresh TH no overflow 768",
+    "fresh TH no overflow 390",
+    "fresh TH no overflow 320",
+    "stale labeled",
+    "unknown, keyboard retry recovery",
+    "transport failure no measurements",
+    "loading",
+    "EN model, interval, attribution",
+    "320px 200% text no panel overflow"
+  ],
+  "errors": [],
+  "evidence": "Synthetic weather responses, not live flood or local station evidence"
+}

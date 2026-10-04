@@ -882,6 +882,71 @@
         ],
         "type": "object"
       },
+      "CurrentWeather": {
+        "additionalProperties": false,
+        "properties": {
+          "apparentTemperatureC": {
+            "maximum": 100,
+            "minimum": -100,
+            "type": "number"
+          },
+          "humidityPercent": {
+            "maximum": 100,
+            "minimum": 0,
+            "type": "number"
+          },
+          "intervalSeconds": {
+            "maximum": 3600,
+            "minimum": 60,
+            "type": "integer"
+          },
+          "isDay": {
+            "type": "boolean"
+          },
+          "observedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "precipitationMm": {
+            "maximum": 1000,
+            "minimum": 0,
+            "type": "number"
+          },
+          "temperatureC": {
+            "maximum": 70,
+            "minimum": -100,
+            "type": "number"
+          },
+          "weatherCode": {
+            "maximum": 99,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "windDirectionDegrees": {
+            "maximum": 360,
+            "minimum": 0,
+            "type": "number"
+          },
+          "windSpeedKmh": {
+            "maximum": 500,
+            "minimum": 0,
+            "type": "number"
+          }
+        },
+        "required": [
+          "observedAt",
+          "intervalSeconds",
+          "temperatureC",
+          "apparentTemperatureC",
+          "humidityPercent",
+          "precipitationMm",
+          "weatherCode",
+          "windSpeedKmh",
+          "windDirectionDegrees",
+          "isDay"
+        ],
+        "type": "object"
+      },
       "DataSource": {
         "properties": {
           "code": {
@@ -1180,6 +1245,16 @@
           },
           "location": {
             "$ref": "#/components/schemas/PointGeometry"
+          },
+          "locationName": {
+            "description": "Optional user-supplied COMMUNITY location label; no geocoding.",
+            "maxLength": 200,
+            "type": "string"
+          },
+          "locationNote": {
+            "description": "Optional user-supplied COMMUNITY location note; no geocoding.",
+            "maxLength": 500,
+            "type": "string"
           },
           "type": {
             "$ref": "#/components/schemas/ReportType"
@@ -1935,6 +2010,16 @@
           "location": {
             "$ref": "#/components/schemas/PointGeometry"
           },
+          "locationName": {
+            "description": "Optional user-supplied COMMUNITY location label; empty for historical records.",
+            "maxLength": 200,
+            "type": "string"
+          },
+          "locationNote": {
+            "description": "Optional user-supplied COMMUNITY location note; empty for historical records.",
+            "maxLength": 500,
+            "type": "string"
+          },
           "media": {
             "items": {
               "$ref": "#/components/schemas/ReportMedia"
@@ -2039,6 +2124,16 @@
           },
           "location": {
             "$ref": "#/components/schemas/PointGeometry"
+          },
+          "locationName": {
+            "description": "Optional user-supplied COMMUNITY location label; no geocoding.",
+            "maxLength": 200,
+            "type": "string"
+          },
+          "locationNote": {
+            "description": "Optional user-supplied COMMUNITY location note; no geocoding.",
+            "maxLength": 500,
+            "type": "string"
           },
           "type": {
             "$ref": "#/components/schemas/ReportType"
@@ -2900,6 +2995,105 @@
           "active",
           "createdAt",
           "updatedAt"
+        ],
+        "type": "object"
+      },
+      "WeatherSnapshot": {
+        "additionalProperties": false,
+        "properties": {
+          "current": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/CurrentWeather"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "freshness": {
+            "enum": [
+              "FRESH",
+              "STALE",
+              "UNKNOWN"
+            ],
+            "type": "string"
+          },
+          "location": {
+            "additionalProperties": false,
+            "properties": {
+              "latitude": {
+                "const": 14.1,
+                "type": "number"
+              },
+              "longitude": {
+                "const": 101,
+                "type": "number"
+              },
+              "name": {
+                "const": "Ongkharak",
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "latitude",
+              "longitude"
+            ],
+            "type": "object"
+          },
+          "reason": {
+            "enum": [
+              "UPSTREAM_UNAVAILABLE",
+              "NOT_CONFIGURED",
+              "DATA_STALE",
+              "REQUEST_CANCELED",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "retrievedAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "source": {
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "const": "MODEL",
+                "type": "string"
+              },
+              "name": {
+                "const": "Open-Meteo",
+                "type": "string"
+              },
+              "url": {
+                "const": "https://open-meteo.com/",
+                "format": "uri",
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "url",
+              "kind"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "location",
+          "source",
+          "freshness",
+          "retrievedAt",
+          "reason",
+          "current"
         ],
         "type": "object"
       }
@@ -5992,6 +6186,49 @@
         ]
       }
     },
+    "/api/v1/weather/ongkharak": {
+      "get": {
+        "description": "Public, fixed-location Open-Meteo model weather, not a station observation,\nOFFICIAL flood evidence, or a flood-safety decision. No provider URL or location\noverride is accepted. Reference coordinates are 14.1 N, 101.0 E, matching the\nmap center; this is not a district-wide measurement. The API fetches on demand,\ncaches successful responses for 10 minutes per process, coalesces concurrent\nrequests, and backs off for one minute after failure. Observations over one\nhour old or retained during an upstream outage are STALE; cached evidence over\nsix hours old is omitted. No cached data or disabled configuration returns 503\nwith UNKNOWN and null current. Precipitation is over intervalSeconds, not 24h.\n",
+        "operationId": "getOngkharakWeather",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeatherSnapshot"
+                }
+              }
+            },
+            "description": "Fresh weather or explicitly labeled stale cached weather."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Public weather read rate limit exceeded."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeatherSnapshot"
+                }
+              }
+            },
+            "description": "Weather unavailable; current and retrievedAt are null, freshness is UNKNOWN."
+          }
+        },
+        "security": [],
+        "summary": "Read model-based weather at the Ongkharak reference point",
+        "tags": [
+          "Weather"
+        ]
+      }
+    },
     "/health": {
       "get": {
         "operationId": "getHealth",
@@ -6074,6 +6311,10 @@
     }
   ],
   "tags": [
+    {
+      "description": "Fixed-location model weather, separate from canonical flood evidence.",
+      "name": "Weather"
+    },
     {
       "description": "Account-scoped inbox and independent browser Push subscriptions.",
       "name": "Notifications"

@@ -36,7 +36,8 @@ export function ReportCard({ report, showOwnerControls = false, onEdit, showDeta
     <OriginalContentNote />
     <p>{report.description}</p>
     <p className="data-card__meta">{t("detail.reportedBy")}: {report.displayName || t("detail.reporterNotProvided")}</p>
-    <div className="badge-row"><SourceBadge type="COMMUNITY" /><span className="badge">{t("detail.location")} {report.location.coordinates[1].toFixed(5)}, {report.location.coordinates[0].toFixed(5)}</span></div>
+    <div className="badge-row"><SourceBadge type="COMMUNITY" /><span className="badge">{t("detail.location")}: {report.locationName || t("detail.locationUnknown")}</span></div>
+    {report.locationNote && <p className="data-card__meta">{t("detail.locationNote")}: {report.locationNote}</p>}
     {report.estimatedWaterDepthM !== null && <p className="reading-values">{t("detail.depth")} {formatNumber(report.estimatedWaterDepthM, locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {t("detail.meters")}</p>}
     <p className="data-card__meta"><DataTimestamp value={report.createdAt} label={t("detail.submittedLabel")} /></p>
     {report.media.length > 0 && <ul className="report-media" aria-label={t("detail.mediaLabel")}>{(showDetailsControl ? report.media.slice(0, 1) : report.media).map((media) => <li key={media.id}><ReportMediaImage media={media} /></li>)}</ul>}

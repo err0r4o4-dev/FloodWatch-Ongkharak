@@ -16,11 +16,13 @@ import (
 )
 
 const (
-	maxDescriptionRunes = 2000
-	maxReasonRunes      = 500
-	maxDisplayNameRunes = 80
-	maxMediaBytes       = 5 * 1024 * 1024
-	guestUploadTokenTTL = 15 * time.Minute
+	maxDescriptionRunes  = 2000
+	maxReasonRunes       = 500
+	maxDisplayNameRunes  = 80
+	maxLocationNameRunes = 200
+	maxLocationNoteRunes = 500
+	maxMediaBytes        = 5 * 1024 * 1024
+	guestUploadTokenTTL  = 15 * time.Minute
 )
 
 const defaultDisplayName = "Guest"
@@ -44,7 +46,7 @@ func (service *Service) Create(ctx context.Context, userID string, input Input) 
 	}
 	now := service.now()
 	created, err := service.repository.Create(ctx, Report{
-		ID: uuid.NewString(), UserID: userID, Type: input.Type, Description: input.Description, Location: input.Location,
+		ID: uuid.NewString(), UserID: userID, Type: input.Type, Description: input.Description, Location: input.Location, LocationName: input.LocationName, LocationNote: input.LocationNote,
 		DisplayName:          defaultDisplayName,
 		EstimatedWaterDepthM: input.EstimatedWaterDepthM, Status: StatusPending, VerificationStatus: StatusPending,
 		SourceType: SourceCommunity, CreatedAt: now, UpdatedAt: now,
@@ -70,7 +72,7 @@ func (service *Service) CreateGuest(ctx context.Context, userID string, input Gu
 	now := service.now()
 	expiresAt := now.Add(guestUploadTokenTTL)
 	created, err := guestRepository.CreateGuest(ctx, Report{
-		ID: uuid.NewString(), UserID: userID, DisplayName: input.DisplayName, Type: input.Type, Description: input.Description, Location: input.Location,
+		ID: uuid.NewString(), UserID: userID, DisplayName: input.DisplayName, Type: input.Type, Description: input.Description, Location: input.Location, LocationName: input.LocationName, LocationNote: input.LocationNote,
 		EstimatedWaterDepthM: input.EstimatedWaterDepthM, Status: StatusPending, VerificationStatus: StatusPending,
 		SourceType: SourceCommunity, CreatedAt: now, UpdatedAt: now,
 	}, tokenHash, expiresAt)
@@ -259,7 +261,9 @@ func (service *Service) OpenMedia(ctx context.Context, reportID, mediaID string,
 
 func normalizeInput(input *Input) bool {
 	input.Description = strings.TrimSpace(input.Description)
-	return validType(input.Type) && input.Description != "" && utf8.RuneCountInString(input.Description) <= maxDescriptionRunes && validLocation(input.Location) && (input.EstimatedWaterDepthM == nil || validDepth(*input.EstimatedWaterDepthM))
+	input.LocationName = strings.TrimSpace(input.LocationName)
+	input.LocationNote = strings.TrimSpace(input.LocationNote)
+	return validType(input.Type) && input.Description != "" && utf8.RuneCountInString(input.Description) <= maxDescriptionRunes && utf8.RuneCountInString(input.LocationName) <= maxLocationNameRunes && utf8.RuneCountInString(input.LocationNote) <= maxLocationNoteRunes && validLocation(input.Location) && (input.EstimatedWaterDepthM == nil || validDepth(*input.EstimatedWaterDepthM))
 }
 
 func normalizeGuestInput(input *GuestInput) bool {

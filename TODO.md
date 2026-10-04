@@ -291,6 +291,19 @@ Rendered checks: isolated headless Edge verifies Guest save/Escape/name synchron
 
 Release boundary: the running application database has NOT received migration 18, and application services have NOT been rebuilt/restarted. Apply prior migrations then `000018_guest_reports` with the matching API/frontend release before using the new flow on the running application. Anonymous Web Push, private tracking links and guest text editing are excluded; real provider delivery, physical devices and Safari remain unverified. No commit/push or existing user deletion occurred.
 
+## Approved feature — Ongkharak Model Weather (2026-10-04)
+
+- [x] Add a fixed-location Open-Meteo adapter and public `GET /api/v1/weather/ongkharak` with explicit units, model time/receipt time, protected networking, request coalescing, cache and failure cooldown.
+- [x] Keep MODEL weather separate from canonical OFFICIAL/COMMUNITY/AI flood evidence, station rainfall, alerts and database migrations. Expired/unavailable data is UNKNOWN, never SAFE.
+- [x] Add `WEATHER_ENABLED` with production disabled by default, matching Compose settings and documented non-commercial/attribution restrictions; align OpenAPI and architecture documentation.
+- [x] Finish localized Overview panel integration and final rendered/regression checks; retain separate weather error/retry and freshness states without blocking flood data.
+
+Verification: real public Open-Meteo response and Go adapter smoke test passed on 2026-10-04; response interval was 900 seconds. `go test ./... -count=1`, `go vet ./...`, API build and OpenAPI parity passed; database/Redis integration checks skip without their test environment. Normal tests skip live weather networking; `TEST_LIVE_WEATHER=true` opts in. Focused weather/Overview/realtime Vitest passes 35/35 across eight files. An isolated Vite bundle and headless Edge checks pass widths 320/390/768/1440, Thai/English, loading/stale/unavailable, keyboard retry, provider-link visibility and mobile 200% text without overflow. UI screenshots use synthetic intercepted weather, not live local conditions; evidence is in `.tmp/weather-ui`. The initial 200% overflow and oversized icon were fixed and rechecked.
+
+Whole-workspace frontend verification is not green: the latest full suite passes 324/328, with three AppShell logout-confirmation failures and one existing guest report-form expectation failure outside the weather change. Typecheck/full production build remain blocked by unused `signingOut` and `handleLogout` in the concurrently edited `AppShell.tsx`; the weather/Overview/realtime files have no reported type errors. Logs: `.tmp/weather-web-full.json`, `.tmp/weather-typecheck.txt` and `.tmp/weather-build-final.txt`. No unrelated fixes are included.
+
+Release boundary: running application services and database are not changed by this work; prior guest-flow migration/release boundaries remain in force. No migration, dependency, canonical water adapter or flood-safety decision is added. The free endpoint requires non-commercial eligibility and production activation is an explicit operator decision. Cache coordination is per API process. Physical devices, Safari, commercial-provider integration and production deployment remain unverified. No commit/push occurred.
+
 ## Future Skills
 
 - [ ] Add narrower skills only when a later phase exposes meaningful recurring practices not covered by the Phase 0 core.

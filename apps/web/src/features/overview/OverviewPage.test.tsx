@@ -75,6 +75,19 @@ describe("OverviewPage", () => {
     expect(await screen.findByText("ข้อมูลทดสอบ")).toBeInTheDocument();
     expect(request.mock.calls.filter(([url]) => url.includes("/reports"))).toHaveLength(2);
   });
+
+  it("keeps flood panels available when the independent weather panel fails", async () => {
+    const request = vi.fn((url: string) => url === "/api/v1/weather/ongkharak"
+      ? Promise.reject(new Error("weather offline"))
+      : Promise.resolve({ ok: true, json: () => Promise.resolve({ items: url.includes("flood-events") ? [event()] : [], limit: 20, offset: 0 }) }));
+    vi.stubGlobal("fetch", request);
+    render(<OverviewPage />);
+
+    expect(await screen.findByText("ข้อมูลทดสอบ")).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "สภาพอากาศองครักษ์" })).toHaveTextContent("ไม่สามารถโหลดข้อมูลสภาพอากาศได้");
+    expect(screen.getByRole("region", { name: "เหตุการณ์น้ำที่รายงาน" })).toHaveTextContent("ข้อมูลทดสอบ");
+  });
+
   it("loads guest public endpoints and displays empty data", async () => {
     const request = mockCollections({});
     render(<OverviewPage />);
@@ -83,6 +96,7 @@ describe("OverviewPage", () => {
     expect(screen.getByRole("region", { name: "ระดับน้ำ (จุดสำคัญ)" })).toHaveTextContent("ยังไม่มีสถานีในรายการที่เรียกดู");
     expect(screen.getByRole("region", { name: "ประกาศล่าสุด" })).toHaveTextContent("ยังไม่มีประกาศที่เผยแพร่");
     expect(request.mock.calls.map(([url]) => url)).toEqual([
+      "/api/v1/weather/ongkharak",
       "/api/v1/flood-events?limit=20", "/api/v1/risk-areas?limit=20", "/api/v1/roads?limit=20", "/api/v1/water-stations?limit=5",
       "/api/v1/alerts?limit=20&offset=0", "/api/v1/reports?limit=20&offset=0"
     ]);

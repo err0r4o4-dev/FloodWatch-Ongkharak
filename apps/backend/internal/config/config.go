@@ -41,6 +41,7 @@ type Config struct {
 	SMTPFrom                   string
 	SMTPRequireTLS             bool
 	SwaggerEnabled             bool
+	WeatherEnabled             bool
 	ReadinessTimeout           time.Duration
 	IngestionFixtureURL        string
 	IngestionFixtureSourceCode string
@@ -170,6 +171,10 @@ func Load() (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
+	weatherEnabled, err := weatherEnabled(environment)
+	if err != nil {
+		return Config{}, err
+	}
 	fixtureURL, fixtureSourceCode, err := ingestionFixture(environment)
 	if err != nil {
 		return Config{}, err
@@ -215,6 +220,7 @@ func Load() (Config, error) {
 		SMTPFrom:                   smtpSettings.From,
 		SMTPRequireTLS:             smtpSettings.RequireTLS,
 		SwaggerEnabled:             swaggerEnabled,
+		WeatherEnabled:             weatherEnabled,
 		ReadinessTimeout:           defaultReadinessTimeout,
 		IngestionFixtureURL:        fixtureURL,
 		IngestionFixtureSourceCode: fixtureSourceCode,

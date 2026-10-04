@@ -1,0 +1,672 @@
+
+> @floodwatch/web@0.0.0 test D:\!Project\FloodWatch-Ongkharak(Web_Application)\apps\web
+> vitest run "src/features/reports/ReportForm.test.tsx" "src/features/reports/ReportCard.test.tsx" "src/features/reports/ReportsPage.test.tsx"
+
+
+ RUN  v5.0.3 D:/!Project/FloodWatch-Ongkharak(Web_Application)/apps/web
+
+ ❯ src/features/reports/ReportCard.test.tsx (2 tests | 1 failed) 107ms
+   × shows user-supplied place labels instead of coordinates 8ms
+stderr | src/features/reports/ReportForm.test.tsx > ReportForm uploads > requires a place name and submits trimmed location labels with a selected depth
+An update to ReportForm inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to ReportForm inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to ReportForm inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to ReportForm inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to ReportForm inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to ReportForm inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to ReportForm inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to ReportForm inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to ReportForm inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to ReportForm inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to ReportForm inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ ❯ src/features/reports/ReportForm.test.tsx (6 tests | 2 failed) 252ms
+   ❯ ReportForm uploads (6)
+     × requires a place name and submits trimmed location labels with a selected depth 128ms
+     × converts a custom depth to metres and clears it when unspecified is selected 22ms
+ ❯ src/features/reports/ReportsPage.test.tsx (13 tests | 1 failed) 827ms
+   ❯ ReportsPage public list (10)
+     × shows verified community reports and lets a guest submit directly 37ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/features/reports/ReportCard.test.tsx > shows user-supplied place labels instead of coordinates
+TestingLibraryElementError: Unable to find an element with the text: /อาคารทดสอบ/. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <article
+      class="data-card report-card report-card--with-media"
+    >
+      <div
+        class="data-card__heading"
+      >
+        <h3>
+          น้ำท่วม
+        </h3>
+        <span
+          class="badge badge--report-verified"
+        >
+          ยืนยันแล้ว
+        </span>
+      </div>
+      <p
+        class="section-caption"
+      >
+        เนื้อหาต้นฉบับ · ไม่ได้แปลอัตโนมัติ
+      </p>
+      <p>
+        น้ำขังหน้าตลาด
+      </p>
+      <p
+        class="data-card__meta"
+      >
+        ผู้รายงาน
+        : 
+        ไม่ระบุชื่อ
+      </p>
+      <div
+        class="badge-row"
+      >
+        <span
+          class="badge badge--source-community"
+        >
+          รายงานชุมชน
+        </span>
+        <span
+          class="badge"
+        >
+          ตำแหน่ง
+           
+          14.20000
+          , 
+          101.10000
+        </span>
+      </div>
+      <p
+        class="data-card__meta"
+      >
+        <span
+          class="data-timestamp"
+        >
+          ส่งรายงาน
+          : 
+          <time
+            datetime="2026-10-02T08:00:00Z"
+          >
+            2 ต.ค. 2569 15:00
+          </time>
+        </span>
+      </p>
+      <ul
+        aria-label="ภาพประกอบรายงานที่เลือก"
+        class="report-media"
+      >
+        <li>
+          <span
+            data-testid="report-thumbnail"
+          >
+            first
+          </span>
+        </li>
+        <li>
+          <span
+            data-testid="report-thumbnail"
+          >
+            second
+          </span>
+        </li>
+      </ul>
+    </article>
+  </div>
+</body>
+ ❯ Object.getElementError ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/features/reports/ReportCard.test.tsx:26:17
+     24| it("shows user-supplied place labels instead of coordinates", () => {
+     25|   render(<ReportCard report={{ ...report, locationName: "อาคารทดสอบ", …
+     26|   expect(screen.getByText(/อาคารทดสอบ/)).toBeInTheDocument();
+       |                 ^
+     27|   expect(screen.getByText(/ฝั่งประตู/)).toBeInTheDocument();
+     28|   expect(screen.queryByText(/14\.20000/)).not.toBeInTheDocument();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/features/reports/ReportForm.test.tsx > ReportForm uploads > requires a place name and submits trimmed location labels with a selected depth
+TestingLibraryElementError: Unable to find an accessible element with the role "alert"
+
+Here are the accessible roles:
+
+  region:
+
+  Name "ส่งรายงานชุมชน":
+  <section
+    aria-labelledby="report-form-heading"
+    class="data-section report-form-section"
+  />
+
+  --------------------------------------------------
+  heading:
+
+  Name "ส่งรายงานชุมชน":
+  <h2
+    id="report-form-heading"
+  />
+
+  --------------------------------------------------
+  paragraph:
+
+  Name "":
+  <p
+    class="section-caption"
+  />
+
+  --------------------------------------------------
+  textbox:
+
+  Name "ชื่อที่แสดง (ไม่ใช่บัญชีผู้ใช้งาน)":
+  <input
+    maxlength="160"
+    value="Guest"
+  />
+
+  Name "รายละเอียด":
+  <textarea
+    maxlength="2000"
+  />
+
+  --------------------------------------------------
+  combobox:
+
+  Name "ประเภทเหตุการณ์":
+  <select />
+
+  --------------------------------------------------
+  option:
+
+  Name "น้ำท่วม":
+  <option
+    value="FLOOD"
+  />
+
+  Name "สภาพถนน":
+  <option
+    value="ROAD"
+  />
+
+  Name "อื่น ๆ":
+  <option
+    value="OTHER"
+  />
+
+  --------------------------------------------------
+  spinbutton:
+
+  Name "ระดับน้ำโดยประมาณ (เมตร, ไม่บังคับ)":
+  <input
+    inputmode="decimal"
+    max="100"
+    min="0"
+    step="0.01"
+    type="number"
+    value=""
+  />
+
+  --------------------------------------------------
+  button:
+
+  Name "เลือกพิกัด":
+  <button
+    type="button"
+  />
+
+  Name "กำลังบันทึก...":
+  <button
+    class="action-button"
+    disabled=""
+    type="submit"
+  />
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <section
+      aria-labelledby="report-form-heading"
+      class="data-section report-form-section"
+    >
+      <div
+        class="data-card__heading"
+      >
+        <div>
+          <h2
+            id="report-form-heading"
+          >
+            ส่งรายงานชุมชน
+          </h2>
+          <p
+            class="section-caption"
+          >
+            รายงานจะยังไม่เผยแพร่จนกว่าจะผ่านการตรวจสอบ
+          </p>
+        </div>
+      </div>
+      <form
+        class="report-form"
+        novalidate=""
+      >
+        <label>
+          ชื่อที่แสดง (ไม่ใช่บัญชีผู้ใช้งาน)
+          <input
+            maxlength="160"
+            value="Guest"
+          />
+        </label>
+        <label>
+          ประเภทเหตุการณ์
+          <select>
+            <option
+              value="FLOOD"
+            >
+              น้ำท่วม
+            </option>
+            <option
+              value="ROAD"
+            >
+              สภาพถนน
+            </option>
+            <option
+              value="OTHER"
+            >
+              อื่น ๆ
+            </option>
+          </select>
+        </label>
+        <label>
+          รายละเอียด
+          <textarea
+            maxlength="2000"
+          >
+            น้ำขัง
+          </textarea>
+        </label>
+        <label>
+          ระดับน้ำโดยประมาณ (เมตร, ไม่บังคับ)
+          <input
+            inputmode="decimal"
+            max="100"
+            min="0"
+            step="0.01"
+            type="number"
+            value=""
+          />
+        </label>
+        <button
+          type="button"
+        >
+          เลือกพิกัด
+        </button>
+        <label>
+          ภาพประกอบ (JPEG, PNG หรือ WebP; ไม่บังคับ)
+          <input
+            accept="image/jpeg,image/png,image/webp"
+            multiple=""
+            type="file"
+          />
+        </label>
+        <button
+          class="action-button"
+          disabled=""
+          type="submit"
+        >
+          กำลังบันทึก...
+        </button>
+      </form>
+    </section>
+  </div>
+</body>
+ ❯ Object.getElementError ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/features/reports/ReportForm.test.tsx:35:19
+     33|     fireEvent.click(screen.getByRole("button", { name: "เลือกพิกัด" })…
+     34|     fireEvent.click(screen.getByRole("button", { name: "ส่งรายงาน" }));
+     35|     expect(screen.getByRole("alert")).toHaveTextContent("กรอกชื่อสถานท…
+       |                   ^
+     36|     expect(reportsApi.create).not.toHaveBeenCalled();
+     37|     fireEvent.change(screen.getByLabelText("ชื่อสถานที่ / ชื่อซอย *"),…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/features/reports/ReportForm.test.tsx > ReportForm uploads > converts a custom depth to metres and clears it when unspecified is selected
+TestingLibraryElementError: Unable to find an accessible element with the role "radio" and name "ไม่ระบุ"
+
+Here are the accessible roles:
+
+  region:
+
+  Name "ส่งรายงานชุมชน":
+  <section
+    aria-labelledby="report-form-heading"
+    class="data-section report-form-section"
+  />
+
+  --------------------------------------------------
+  heading:
+
+  Name "ส่งรายงานชุมชน":
+  <h2
+    id="report-form-heading"
+  />
+
+  --------------------------------------------------
+  paragraph:
+
+  Name "":
+  <p
+    class="section-caption"
+  />
+
+  --------------------------------------------------
+  textbox:
+
+  Name "ชื่อที่แสดง (ไม่ใช่บัญชีผู้ใช้งาน)":
+  <input
+    maxlength="160"
+    value="Guest"
+  />
+
+  Name "รายละเอียด":
+  <textarea
+    maxlength="2000"
+  />
+
+  --------------------------------------------------
+  combobox:
+
+  Name "ประเภทเหตุการณ์":
+  <select />
+
+  --------------------------------------------------
+  option:
+
+  Name "น้ำท่วม":
+  <option
+    value="FLOOD"
+  />
+
+  Name "สภาพถนน":
+  <option
+    value="ROAD"
+  />
+
+  Name "อื่น ๆ":
+  <option
+    value="OTHER"
+  />
+
+  --------------------------------------------------
+  spinbutton:
+
+  Name "ระดับน้ำโดยประมาณ (เมตร, ไม่บังคับ)":
+  <input
+    inputmode="decimal"
+    max="100"
+    min="0"
+    step="0.01"
+    type="number"
+    value=""
+  />
+
+  --------------------------------------------------
+  button:
+
+  Name "เลือกพิกัด":
+  <button
+    type="button"
+  />
+
+  Name "ส่งรายงาน":
+  <button
+    class="action-button"
+    type="submit"
+  />
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <section
+      aria-labelledby="report-form-heading"
+      class="data-section report-form-section"
+    >
+      <div
+        class="data-card__heading"
+      >
+        <div>
+          <h2
+            id="report-form-heading"
+          >
+            ส่งรายงานชุมชน
+          </h2>
+          <p
+            class="section-caption"
+          >
+            รายงานจะยังไม่เผยแพร่จนกว่าจะผ่านการตรวจสอบ
+          </p>
+        </div>
+      </div>
+      <form
+        class="report-form"
+        novalidate=""
+      >
+        <label>
+          ชื่อที่แสดง (ไม่ใช่บัญชีผู้ใช้งาน)
+          <input
+            maxlength="160"
+            value="Guest"
+          />
+        </label>
+        <label>
+          ประเภทเหตุการณ์
+          <select>
+            <option
+              value="FLOOD"
+            >
+              น้ำท่วม
+            </option>
+            <option
+              value="ROAD"
+            >
+              สภาพถนน
+            </option>
+            <option
+              value="OTHER"
+            >
+              อื่น ๆ
+            </option>
+          </select>
+        </label>
+        <label>
+          รายละเอียด
+          <textarea
+            maxlength="2000"
+          />
+        </label>
+        <label>
+          ระดับน้ำโดยประมาณ (เมตร, ไม่บังคับ)
+          <input
+            inputmode="decimal"
+            max="100"
+            min="0"
+            step="0.01"
+            type="number"
+            value=""
+          />
+        </label>
+        <button
+          type="button"
+        >
+          เลือกพิกัด
+        </button>
+        <label>
+          ภาพประกอบ (JPEG, PNG หรือ WebP; ไม่บังคับ)
+          <input
+            accept="image/jpeg,image/png,image/webp"
+            multiple=""
+            type="file"
+          />
+        </label>
+        <button
+          class="action-button"
+          type="submit"
+        >
+          ส่งรายงาน
+        </button>
+      </form>
+    </section>
+  </div>
+</body>
+ ❯ Object.getElementError ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/features/reports/ReportForm.test.tsx:47:19
+     45|     reportsApi.create.mockReset().mockResolvedValue({ ...pendingReport…
+     46|     render(<ReportForm editing={null} onComplete={vi.fn()} onCancel={v…
+     47|     expect(screen.getByRole("radio", { name: "ไม่ระบุ" })).toBeChecked…
+       |                   ^
+     48|     fireEvent.click(screen.getByRole("radio", { name: "ระบุค่าอื่น" })…
+     49|     fireEvent.change(screen.getByLabelText("ระดับน้ำ (เซนติเมตร)"), { …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  src/features/reports/ReportsPage.test.tsx > ReportsPage public list > shows verified community reports and lets a guest submit directly
+Error: expect(element).toHaveAttribute("href", "/reports/new") // element.getAttribute("href") === "/reports/new"
+
+Expected the element to have attribute:
+  href="/reports/new"
+Received:
+  href="#submit-report"
+ ❯ src/features/reports/ReportsPage.test.tsx:159:70
+    157|     expect(await screen.findAllByText(verifiedReport.description)).not…
+    158|     expect(screen.getAllByText("ยืนยันแล้ว")).not.toHaveLength(0);
+    159|     expect(screen.getByRole("link", { name: "ส่งรายงานสถานการณ์" })).t…
+       |                                                                      ^
+    160|     expect(screen.queryByRole("button", { name: "ส่งรายงาน" })).not.to…
+    161|     expect(fetchMock).toHaveBeenCalledWith(
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+
+
+ Test Files  3 failed (3)
+      Tests  4 failed | 17 passed (21)
+   Start at  15:03:35
+   Duration  2.73s (environment 55%, tests 19%, setup 16%, transform 4%, import 4%, worker 1%)
+
+ ELIFECYCLE  Test failed. See above for more details.

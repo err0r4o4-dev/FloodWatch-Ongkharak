@@ -35,9 +35,12 @@ func TestRepositoryPersistsPoint4326AndListsVerifiedOnly(t *testing.T) {
 
 	reviewerID := uuid.NewString()
 	repository := New(pool)
-	pending, err := repository.Create(ctx, report.Report{ID: uuid.NewString(), UserID: userID, Type: report.TypeFlood, Description: "Synthetic pending report", Location: report.Location{Type: "Point", Coordinates: []float64{100.99, 14.02}}, Status: report.StatusPending, VerificationStatus: report.StatusPending, SourceType: report.SourceCommunity})
+	pending, err := repository.Create(ctx, report.Report{ID: uuid.NewString(), UserID: userID, Type: report.TypeFlood, Description: "Synthetic pending report", Location: report.Location{Type: "Point", Coordinates: []float64{100.99, 14.02}}, LocationName: "Synthetic market", LocationNote: "Near the bridge", Status: report.StatusPending, VerificationStatus: report.StatusPending, SourceType: report.SourceCommunity})
 	if err != nil {
 		t.Fatal(err)
+	}
+	if pending.LocationName != "Synthetic market" || pending.LocationNote != "Near the bridge" {
+		t.Fatalf("Create() location metadata = %+v", pending)
 	}
 	t.Cleanup(func() {
 		if _, err := pool.Exec(context.Background(), `DELETE FROM community_reports WHERE id=$1`, pending.ID); err != nil {
@@ -61,9 +64,12 @@ func TestRepositoryPersistsPoint4326AndListsVerifiedOnly(t *testing.T) {
 	if _, err := pool.Exec(ctx, `INSERT INTO users (id, email, password_hash, role) VALUES ($1,$2,'test-only-hash','ADMIN')`, reviewerID, "report-reviewer-"+uuid.NewString()[:8]+"@example.test"); err != nil {
 		t.Fatal(err)
 	}
-	updated, err := repository.UpdatePending(ctx, pending.ID, report.Input{Type: report.TypeFlood, Description: "Synthetic edited report", Location: report.Location{Type: "Point", Coordinates: []float64{100.99, 14.02}}})
+	updated, err := repository.UpdatePending(ctx, pending.ID, report.Input{Type: report.TypeFlood, Description: "Synthetic edited report", Location: report.Location{Type: "Point", Coordinates: []float64{100.99, 14.02}}, LocationName: "Edited market", LocationNote: "Updated landmark"})
 	if err != nil {
 		t.Fatal(err)
+	}
+	if updated.LocationName != "Edited market" || updated.LocationNote != "Updated landmark" {
+		t.Fatalf("UpdatePending() location metadata = %+v", updated)
 	}
 	if _, err := repository.Review(ctx, pending.ID, report.StatusVerified, reviewerID, "", pending.UpdatedAt); !errors.Is(err, report.ErrConflict) {
 		t.Fatalf("Review() accepted stale content revision: %v", err)
@@ -104,7 +110,7 @@ func TestRepositoryPersistsGuestReportAndCapabilityScopedMedia(t *testing.T) {
 	reportID := uuid.NewString()
 	createdAt := time.Now().UTC()
 	tokenHash := bytes.Repeat([]byte{0x4a}, 32)
-	created, err := repository.CreateGuest(ctx, report.Report{ID: reportID, DisplayName: "Guest", Type: report.TypeFlood, Description: "Synthetic guest report", Location: report.Location{Type: "Point", Coordinates: []float64{100.99, 14.02}}, Status: report.StatusPending, VerificationStatus: report.StatusPending, SourceType: report.SourceCommunity, CreatedAt: createdAt, UpdatedAt: createdAt}, tokenHash, createdAt.Add(15*time.Minute))
+	created, err := repository.CreateGuest(ctx, report.Report{ID: reportID, DisplayName: "Guest", Type: report.TypeFlood, Description: "Synthetic guest report", Location: report.Location{Type: "Point", Coordinates: []float64{100.99, 14.02}}, LocationName: "Guest market", LocationNote: "At the bridge", Status: report.StatusPending, VerificationStatus: report.StatusPending, SourceType: report.SourceCommunity, CreatedAt: createdAt, UpdatedAt: createdAt}, tokenHash, createdAt.Add(15*time.Minute))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -115,6 +121,9 @@ func TestRepositoryPersistsGuestReportAndCapabilityScopedMedia(t *testing.T) {
 	})
 	if created.UserID != "" || created.DisplayName != "Guest" {
 		t.Fatalf("guest report identity = %+v", created)
+	}
+	if created.LocationName != "Guest market" || created.LocationNote != "At the bridge" {
+		t.Fatalf("guest report location metadata = %+v", created)
 	}
 	if err := repository.ValidateGuestUpload(ctx, reportID, bytes.Repeat([]byte{0x4b}, 32), time.Now().UTC()); !errors.Is(err, report.ErrForbidden) {
 		t.Fatalf("ValidateGuestUpload() wrong capability error = %v, want ErrForbidden", err)

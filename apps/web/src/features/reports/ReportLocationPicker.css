@@ -1,0 +1,191 @@
+.report-location-picker {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: var(--space-3);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-md);
+  text-align: left;
+}
+
+.report-location-picker legend {
+  padding-inline: var(--space-1);
+  color: var(--color-ink);
+  font-weight: 800;
+}
+
+.report-location-picker__description,
+.report-location-picker__status,
+.report-location-picker__accuracy p {
+  margin: 0;
+}
+
+.report-location-picker__description,
+.report-location-picker__status,
+.report-location-picker__accuracy {
+  color: var(--color-ink-muted);
+  font-size: 0.83rem;
+}
+
+.report-location-map {
+  isolation: isolate;
+  position: relative;
+  height: 18rem;
+  overflow: hidden;
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-canvas-soft);
+}
+
+.report-location-map .leaflet-container {
+  position: relative;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.report-location-map__locate,
+.report-location-picker__action {
+  display: inline-flex;
+  min-height: var(--touch-target);
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-primary-strong);
+  background: var(--color-surface);
+  font: inherit;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.report-location-map__locate {
+  position: absolute;
+  right: var(--space-3);
+  bottom: var(--space-8);
+  z-index: 1;
+  width: var(--touch-target);
+  min-width: var(--touch-target);
+  height: var(--touch-target);
+  padding: 0;
+  box-shadow: var(--shadow-surface);
+}
+
+.report-location-picker__visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.report-location-map__locate:hover,
+.report-location-picker__action:hover {
+  border-color: var(--color-primary);
+  background: var(--color-canvas-soft);
+}
+
+.report-location-map__locate:disabled,
+.report-location-picker__action:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.report-location-map__locate:focus-visible,
+.report-location-picker__action:focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.report-location-picker__actions {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.report-location-picker__action {
+  width: 100%;
+}
+
+.report-location-picker__action--secondary {
+  color: var(--color-ink);
+  background: var(--color-canvas-soft);
+}
+
+.report-location-picker__error,
+.report-location-picker__accuracy-warning {
+  margin: 0;
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  color: var(--color-danger-ink);
+  background: var(--color-danger-soft);
+  font-size: 0.83rem;
+  font-weight: 700;
+}
+
+.report-location-picker__accuracy {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.report-location-picker__accuracy-warning {
+  color: var(--color-warning-ink);
+  background: var(--color-warning-soft);
+}
+
+.report-location-picker__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  color: var(--color-ink-muted);
+  font-size: 0.78rem;
+}
+
+.report-location-picker__legend span {
+  display: inline-flex;
+  min-height: var(--touch-target);
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.report-location-picker__shape {
+  display: inline-block;
+  width: 0.8rem;
+  height: 0.8rem;
+  flex: none;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+}
+
+.report-location-picker__shape--user {
+  color: var(--color-primary-strong);
+  background: var(--color-primary-strong);
+}
+
+.report-location-picker__shape--incident {
+  color: var(--color-status-warning);
+  background: transparent;
+}
+
+@media (max-width: 40rem) {
+  .report-location-map {
+    height: 16rem;
+  }
+
+  .report-location-map__locate {
+    right: var(--space-2);
+    bottom: var(--space-8);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .report-location-map__locate,
+  .report-location-picker__action {
+    transition: none;
+  }
+}

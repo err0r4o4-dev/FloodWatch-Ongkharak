@@ -36,6 +36,49 @@ func TestCreateKeepsCommunityProvenanceAndPendingStatus(t *testing.T) {
 	}
 }
 
+func TestCreateTrimsLocationMetadataAndPreservesIt(t *testing.T) {
+	repository := &fakeRepository{}
+	service, err := NewService(repository, &fakeStorage{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	created, err := service.Create(context.Background(), "7b6a2a68-688a-4c59-82cf-0b541dfa0d49", Input{
+		Type:         TypeFlood,
+		Description:  "Water",
+		Location:     Location{Type: "Point", Coordinates: []float64{100.99, 14.02}},
+		LocationName: "  ตลาดองครักษ์  ",
+		LocationNote: "  Near the bridge  ",
+	})
+	if err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
+	if created.LocationName != "ตลาดองครักษ์" || created.LocationNote != "Near the bridge" {
+		t.Fatalf("Create() location metadata = %+v", created)
+	}
+}
+
+func TestReportLocationMetadataRejectsRuneLimit(t *testing.T) {
+	service, err := NewService(&fakeRepository{}, &fakeStorage{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	base := Input{Type: TypeFlood, Description: "Water", Location: Location{Type: "Point", Coordinates: []float64{101, 14}}}
+	for _, testCase := range []struct {
+		name  string
+		input Input
+	}{
+		{name: "location name", input: Input{Type: base.Type, Description: base.Description, Location: base.Location, LocationName: strings.Repeat("ก", 201)}},
+		{name: "location note", input: Input{Type: base.Type, Description: base.Description, Location: base.Location, LocationNote: strings.Repeat("ก", 501)}},
+	} {
+		t.Run(testCase.name, func(t *testing.T) {
+			if _, err := service.Create(context.Background(), "7b6a2a68-688a-4c59-82cf-0b541dfa0d49", testCase.input); !errors.Is(err, ErrInvalid) {
+				t.Fatalf("Create() error = %v, want ErrInvalid", err)
+			}
+		})
+	}
+}
+
 func TestCreateRejectsWaterDepthAboveSupportedRange(t *testing.T) {
 	service, err := NewService(&fakeRepository{}, &fakeStorage{})
 	if err != nil {
@@ -90,6 +133,28 @@ func TestCreateGuestTrimsAndBoundsDisplayName(t *testing.T) {
 		if _, err := service.CreateGuest(context.Background(), "", GuestInput{DisplayName: displayName, Input: Input{Type: TypeFlood, Description: "Water", Location: Location{Type: "Point", Coordinates: []float64{101, 14}}}}); !errors.Is(err, ErrInvalid) {
 			t.Fatalf("CreateGuest(%q) error = %v, want ErrInvalid", displayName, err)
 		}
+	}
+}
+
+func TestCreateGuestTrimsLocationMetadata(t *testing.T) {
+	repository := &fakeRepository{}
+	service, err := NewService(repository, &fakeStorage{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	created, err := service.CreateGuest(context.Background(), "", GuestInput{Input: Input{
+		Type:         TypeFlood,
+		Description:  "Water",
+		Location:     Location{Type: "Point", Coordinates: []float64{101, 14}},
+		LocationName: "  โรงเรียน  ",
+		LocationNote: "  Main entrance  ",
+	}})
+	if err != nil {
+		t.Fatalf("CreateGuest() error = %v", err)
+	}
+	if created.Report.LocationName != "โรงเรียน" || created.Report.LocationNote != "Main entrance" {
+		t.Fatalf("CreateGuest() location metadata = %+v", created.Report)
 	}
 }
 
@@ -165,6 +230,10 @@ func TestUpdateAndReviewEnforceOwnershipAndImmutability(t *testing.T) {
 
 	if _, err := service.Update(context.Background(), reportID, adminID, Input{Type: TypeRoad, Description: "Changed", Location: Location{Type: "Point", Coordinates: []float64{101, 14}}}); !errors.Is(err, ErrForbidden) {
 		t.Fatalf("Update() cross-owner error = %v, want ErrForbidden", err)
+	}
+	updated, err := service.Update(context.Background(), reportID, ownerID, Input{Type: TypeRoad, Description: "Changed", Location: Location{Type: "Point", Coordinates: []float64{101, 14}}, LocationName: "  Updated place  ", LocationNote: "  Updated note  "})
+	if err != nil || updated.LocationName != "Updated place" || updated.LocationNote != "Updated note" {
+		t.Fatalf("Update() location metadata = %+v, %v", updated, err)
 	}
 	if _, err := service.Verify(context.Background(), reportID, ownerID, updatedAt); !errors.Is(err, ErrForbidden) {
 		t.Fatalf("Verify() own report error = %v, want ErrForbidden", err)
@@ -307,7 +376,7 @@ func (repository *fakeRepository) ListAdmin(context.Context, Status, Page) ([]Re
 
 func (repository *fakeRepository) UpdatePending(_ context.Context, id string, input Input) (Report, error) {
 	item := repository.reports[id]
-	item.Type, item.Description, item.Location, item.EstimatedWaterDepthM = input.Type, input.Description, input.Location, input.EstimatedWaterDepthM
+	item.Type, item.Description, item.Location, item.LocationName, item.LocationNote, item.EstimatedWaterDepthM = input.Type, input.Description, input.Location, input.LocationName, input.LocationNote, input.EstimatedWaterDepthM
 	repository.reports[id] = item
 	return item, nil
 }

@@ -16,6 +16,8 @@ function validPoint(value: unknown): boolean {
 function validReport(value: unknown): value is CommunityReport {
   if (!record(value) || typeof value.id !== "string" || (value.userId !== undefined && typeof value.userId !== "string") ||
     (value.displayName !== undefined && typeof value.displayName !== "string") ||
+    (value.locationName !== undefined && typeof value.locationName !== "string") ||
+    (value.locationNote !== undefined && typeof value.locationNote !== "string") ||
     !["FLOOD", "ROAD", "OTHER"].includes(String(value.type)) || typeof value.description !== "string" ||
     !validPoint(value.location) || !["PENDING", "VERIFIED", "REJECTED"].includes(String(value.status)) ||
     !["PENDING", "VERIFIED", "REJECTED"].includes(String(value.verificationStatus)) ||

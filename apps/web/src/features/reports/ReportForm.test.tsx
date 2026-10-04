@@ -26,6 +26,68 @@ const pendingReport = {
 
 describe("ReportForm uploads", () => {
   beforeEach(() => { vi.clearAllMocks(); });
+  it("rejects empty or excessive custom depths while preserving the draft", () => {
+    reportsApi.create.mockReset();
+    render(<ReportForm editing={null} onComplete={vi.fn()} onCancel={vi.fn()} />);
+    fireEvent.change(screen.getByLabelText("ชื่อสถานที่ / ชื่อซอย *"), { target: { value: "อาคารทดสอบ" } });
+    fireEvent.change(screen.getByLabelText("รายละเอียด"), { target: { value: "น้ำขัง" } });
+    fireEvent.click(screen.getByRole("button", { name: "เลือกพิกัด" }));
+    fireEvent.click(screen.getByRole("radio", { name: "ระบุค่าอื่น" }));
+    fireEvent.click(screen.getByRole("button", { name: "ส่งรายงาน" }));
+    expect(screen.getByRole("alert")).toHaveTextContent("ระบุระดับน้ำ");
+    for (const value of ["-1", "10001"]) {
+      fireEvent.change(screen.getByLabelText("ระดับน้ำ (เซนติเมตร)"), { target: { value } });
+      fireEvent.click(screen.getByRole("button", { name: "ส่งรายงาน" }));
+      expect(screen.getByRole("alert")).toHaveTextContent("ระบุระดับน้ำ");
+    }
+    expect(reportsApi.create).not.toHaveBeenCalled();
+    expect(screen.getByLabelText("ชื่อสถานที่ / ชื่อซอย *")).toHaveValue("อาคารทดสอบ");
+  });
+
+  it("retains a historical non-preset depth and place metadata when editing", async () => {
+    const editing = { ...pendingReport, estimatedWaterDepthM: 0.75, locationName: "อาคารเดิม", locationNote: "ฝั่งประตู" };
+    reportsApi.update.mockReset().mockResolvedValue(editing);
+    render(<ReportForm editing={editing} onComplete={vi.fn()} onCancel={vi.fn()} />);
+    expect(screen.getByRole("radio", { name: "ระบุค่าอื่น" })).toBeChecked();
+    expect(screen.getByLabelText("ระดับน้ำ (เซนติเมตร)")).toHaveValue(75);
+    fireEvent.click(screen.getByRole("button", { name: "บันทึกการแก้ไข" }));
+    await waitFor(() => expect(reportsApi.update).toHaveBeenCalledWith("report-1", expect.objectContaining({ locationName: "อาคารเดิม", locationNote: "ฝั่งประตู", estimatedWaterDepthM: 0.75 })));
+  });
+  it("requires a place name and submits trimmed location labels with a selected depth", async () => {
+    reportsApi.create.mockReset().mockResolvedValue({ ...pendingReport, uploadToken: "private-upload-capability" });
+    render(<ReportForm editing={null} onComplete={vi.fn()} onCancel={vi.fn()} />);
+    fireEvent.change(screen.getByLabelText("รายละเอียด"), { target: { value: "น้ำขัง" } });
+    fireEvent.click(screen.getByRole("button", { name: "เลือกพิกัด" }));
+    fireEvent.click(screen.getByRole("button", { name: "ส่งรายงาน" }));
+    expect(screen.getByRole("alert")).toHaveTextContent("กรอกชื่อสถานที่หรือชื่อซอย");
+    expect(reportsApi.create).not.toHaveBeenCalled();
+    fireEvent.change(screen.getByLabelText("ชื่อสถานที่ / ชื่อซอย *"), { target: { value: "  อาคารทดสอบ  " } });
+    fireEvent.change(screen.getByLabelText("จุดเกิดเหตุ / จุดสังเกต (ไม่บังคับ)"), { target: { value: "  ฝั่งประตู  " } });
+    fireEvent.click(screen.getByRole("radio", { name: "30 ซม." }));
+    fireEvent.click(screen.getByRole("button", { name: "ส่งรายงาน" }));
+    await waitFor(() => expect(reportsApi.create).toHaveBeenCalledWith(expect.objectContaining({ locationName: "อาคารทดสอบ", locationNote: "ฝั่งประตู", estimatedWaterDepthM: 0.3 })));
+  });
+
+  it("converts a custom depth to metres and clears it when unspecified is selected", async () => {
+    reportsApi.create.mockReset().mockResolvedValue({ ...pendingReport, uploadToken: "private-upload-capability" });
+    render(<ReportForm editing={null} onComplete={vi.fn()} onCancel={vi.fn()} />);
+    expect(screen.getByRole("radio", { name: "ไม่ระบุ" })).toBeChecked();
+    fireEvent.click(screen.getByRole("radio", { name: "ระบุค่าอื่น" }));
+    fireEvent.change(screen.getByLabelText("ระดับน้ำ (เซนติเมตร)"), { target: { value: "75" } });
+    fireEvent.change(screen.getByLabelText("ชื่อสถานที่ / ชื่อซอย *"), { target: { value: "อาคารทดสอบ" } });
+    fireEvent.change(screen.getByLabelText("รายละเอียด"), { target: { value: "น้ำขัง" } });
+    fireEvent.click(screen.getByRole("button", { name: "เลือกพิกัด" }));
+    fireEvent.click(screen.getByRole("button", { name: "ส่งรายงาน" }));
+    await waitFor(() => expect(reportsApi.create).toHaveBeenCalledWith(expect.objectContaining({ estimatedWaterDepthM: 0.75 })));
+    fireEvent.change(screen.getByLabelText("ชื่อสถานที่ / ชื่อซอย *"), { target: { value: "อาคารทดสอบ" } });
+    fireEvent.change(screen.getByLabelText("รายละเอียด"), { target: { value: "น้ำขัง" } });
+    fireEvent.click(screen.getByRole("button", { name: "เลือกพิกัด" }));
+    fireEvent.click(screen.getByRole("radio", { name: "50 ซม." }));
+    fireEvent.click(screen.getByRole("radio", { name: "ไม่ระบุ" }));
+    fireEvent.click(screen.getByRole("button", { name: "ส่งรายงาน" }));
+    await waitFor(() => expect(reportsApi.create).toHaveBeenCalledTimes(2));
+    expect(reportsApi.create.mock.calls[1][0]).not.toHaveProperty("estimatedWaterDepthM");
+  });
   it("keeps a pending edit available when an uploaded file fails", async () => {
     reportsApi.update.mockClear();
     reportsApi.uploadMedia.mockReset();
@@ -53,6 +115,7 @@ describe("ReportForm uploads", () => {
     render(<ReportForm editing={null} onComplete={onComplete} onCancel={vi.fn()} />);
 
     fireEvent.change(screen.getByLabelText("รายละเอียด"), { target: { value: "น้ำท่วมขัง" } });
+    fireEvent.change(screen.getByLabelText("ชื่อสถานที่ / ชื่อซอย *"), { target: { value: "ตลาดทดสอบ" } });
     fireEvent.click(screen.getByRole("button", { name: "เลือกพิกัด" }));
     fireEvent.change(screen.getByLabelText("ภาพประกอบ (JPEG, PNG หรือ WebP; ไม่บังคับ)"), { target: { files: [
       successfulFile, failedFile
@@ -88,7 +151,8 @@ describe("ReportForm uploads", () => {
     let finish!: (value: typeof pendingReport & { uploadToken: string }) => void;
     reportsApi.create.mockReset().mockImplementation(() => new Promise((resolve) => { finish = resolve; }));
     render(<ReportForm editing={null} onComplete={vi.fn()} onCancel={vi.fn()} />);
-    fireEvent.change(screen.getByLabelText("ชื่อที่แสดง (ไม่ใช่บัญชีผู้ใช้งาน)"), { target: { value: "  ชุมชนทดสอบ  " } });
+    fireEvent.change(screen.getByLabelText("ชื่อผู้รายงาน (ไม่บังคับ)"), { target: { value: "  ชุมชนทดสอบ  " } });
+    fireEvent.change(screen.getByLabelText("ชื่อสถานที่ / ชื่อซอย *"), { target: { value: "อาคารทดสอบ" } });
     fireEvent.change(screen.getByLabelText("รายละเอียด"), { target: { value: "รายงานทดสอบ" } });
     fireEvent.click(screen.getByRole("button", { name: "เลือกพิกัด" }));
     const form = screen.getByLabelText("รายละเอียด").closest("form")!;

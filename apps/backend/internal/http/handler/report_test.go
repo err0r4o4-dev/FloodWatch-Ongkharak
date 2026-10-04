@@ -32,10 +32,10 @@ func TestReportCreateRejectsUnknownFields(t *testing.T) {
 
 func TestReportCreateGuestReturnsPublicReportAndUploadToken(t *testing.T) {
 	service := &fakeReportService{guestCreation: report.GuestCreation{
-		Report:      report.Report{ID: "ddfd74fd-9561-4c5e-a304-b1cb704508d9", DisplayName: "Guest", Status: report.StatusPending, VerificationStatus: report.StatusPending, SourceType: report.SourceCommunity},
+		Report:      report.Report{ID: "ddfd74fd-9561-4c5e-a304-b1cb704508d9", DisplayName: "Guest", LocationName: "ตลาดองครักษ์", LocationNote: "Near the bridge", Status: report.StatusPending, VerificationStatus: report.StatusPending, SourceType: report.SourceCommunity},
 		UploadToken: "opaque-upload-capability",
 	}}
-	request := httptest.NewRequest(http.MethodPost, "/api/v1/reports", strings.NewReader(`{"type":"FLOOD","description":"Water","location":{"type":"Point","coordinates":[101,14]}}`))
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/reports", strings.NewReader(`{"type":"FLOOD","description":"Water","location":{"type":"Point","coordinates":[101,14]},"locationName":"  ตลาดองครักษ์  ","locationNote":"  Near the bridge  "}`))
 	request.Header.Set("Content-Type", "application/json")
 	response := httptest.NewRecorder()
 
@@ -57,11 +57,14 @@ func TestReportCreateGuestReturnsPublicReportAndUploadToken(t *testing.T) {
 	if reportBody["displayName"] != "Guest" {
 		t.Fatalf("CreateGuest() displayName = %v", reportBody["displayName"])
 	}
+	if reportBody["locationName"] != "ตลาดองครักษ์" || reportBody["locationNote"] != "Near the bridge" {
+		t.Fatalf("CreateGuest() location metadata = %v", reportBody)
+	}
 	if _, ok := reportBody["userId"]; ok {
 		t.Fatalf("CreateGuest() leaked userId: %s", response.Body)
 	}
-	if service.guestInput.DisplayName != "" {
-		t.Fatalf("CreateGuest() input displayName = %q", service.guestInput.DisplayName)
+	if service.guestInput.DisplayName != "" || service.guestInput.LocationName != "  ตลาดองครักษ์  " || service.guestInput.LocationNote != "  Near the bridge  " {
+		t.Fatalf("CreateGuest() input metadata = %+v", service.guestInput)
 	}
 }
 

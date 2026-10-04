@@ -1,5 +1,7 @@
 # System overview
 
+The overview also reads `/api/v1/weather/ongkharak` for Open-Meteo model weather at the map reference point. Go owns the fixed upstream client and bounded per-process cache; React never calls the weather provider directly. This separate capability has MODEL provenance, no PostGIS writes or flood alerts, and explicitly labeled stale/unavailable states. `WEATHER_ENABLED` defaults off in production pending confirmation of free-API non-commercial eligibility. See `weather.md`.
+
 The current public identity boundary is the Guest flow in `guest-public-flow.md`: no public login/signup entry, a browser-local editable display name, anonymous pending reports with scoped image uploads, and a public notifications feed. `/admin` redirects unauthenticated administrators to `/admin/login`; `/admin/reports` owns report review. Existing accounts and protected legacy inbox APIs are preserved. Account-menu behavior described below applies inside the administration area only; public menus do not expose signed-in account identity.
 
 ```mermaid

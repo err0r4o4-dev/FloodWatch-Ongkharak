@@ -11,6 +11,7 @@ import { LandingPage } from "../features/landing/LandingPage";
 import { MapPage } from "../features/map/MapPage";
 import { OverviewPage } from "../features/overview/OverviewPage";
 import { ReportsPage } from "../features/reports/ReportsPage";
+import { CreateReportPage } from "../features/reports/CreateReportPage";
 import { AdminReviewPanel } from "../features/reports/AdminReviewPanel";
 import { NotificationsPage } from "../features/notifications/NotificationsPage";
 import { AdminDashboardPage } from "../features/admin/AdminDashboardPage";
@@ -55,6 +56,7 @@ export function AppRoutes() {
     <Route path="/risk" element={<LegacyRiskRedirect />} />
     <Route path="/map" element={<MapPage />} />
     <Route path="/reports" element={<ReportsPage />} />
+    <Route path="/reports/new" element={<CreateReportPage />} />
     <Route path="/admin/login" element={<AuthPage mode="login" adminMode />} />
     <Route path="/login" element={<LegacyAuthRedirect />} />
     <Route path="/register" element={<LegacyAuthRedirect />} />

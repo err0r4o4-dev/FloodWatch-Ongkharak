@@ -41,6 +41,8 @@ type Input struct {
 	Type                 Type     `json:"type"`
 	Description          string   `json:"description"`
 	Location             Location `json:"location"`
+	LocationName         string   `json:"locationName"`
+	LocationNote         string   `json:"locationNote"`
 	EstimatedWaterDepthM *float64 `json:"estimatedWaterDepthM"`
 }
 
@@ -78,6 +80,8 @@ type Report struct {
 	Type                 Type
 	Description          string
 	Location             Location
+	LocationName         string
+	LocationNote         string
 	EstimatedWaterDepthM *float64
 	Status               Status
 	VerificationStatus   Status

@@ -1,0 +1,3 @@
+JSON report written to D:/!Project/FloodWatch-Ongkharak(Web_Application)/.tmp/weather-web-full.json
+undefined
+ ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL  Command "vitest" not found

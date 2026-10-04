@@ -20,3 +20,16 @@ it("loads only the visible thumbnail and distinguishes the detail action", () =>
   expect(screen.getByTestId("report-thumbnail")).toHaveTextContent("first");
   expect(screen.getByRole("button", { name: "ดูรายละเอียด: น้ำท่วม · น้ำขังหน้าตลาด" })).toBeInTheDocument();
 });
+
+it("shows user-supplied place labels instead of coordinates", () => {
+  render(<ReportCard report={{ ...report, locationName: "อาคารทดสอบ", locationNote: "ฝั่งประตู" }} />);
+  expect(screen.getByText(/อาคารทดสอบ/)).toBeInTheDocument();
+  expect(screen.getByText(/ฝั่งประตู/)).toBeInTheDocument();
+  expect(screen.queryByText(/14\.20000/)).not.toBeInTheDocument();
+});
+
+it("does not invent a place name or show coordinates for historical records", () => {
+  render(<ReportCard report={report} />);
+  expect(screen.getByText(/ไม่ได้ระบุชื่อสถานที่/)).toBeInTheDocument();
+  expect(screen.queryByText(/14\.20000/)).not.toBeInTheDocument();
+});

@@ -1,0 +1,206 @@
+.weather-panel {
+  display: grid;
+  min-width: 0;
+  max-width: 100%;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, var(--color-surface), var(--color-canvas-soft));
+  box-shadow: var(--shadow-surface);
+}
+
+.weather-panel * {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.weather-panel__header,
+.weather-panel__heading,
+.weather-panel__provider,
+.weather-panel__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.weather-panel__heading h2 {
+  margin: 0;
+  color: var(--color-ink);
+  font-size: 1.15rem;
+  line-height: 1.35;
+}
+
+.weather-panel__heading p,
+.weather-panel__provider,
+.weather-panel__meta,
+.weather-panel__note,
+.weather-panel__state p {
+  margin: var(--space-1) 0 0;
+  color: var(--color-ink-muted);
+  font-size: .82rem;
+}
+
+.weather-panel__freshness {
+  flex: none;
+  padding: var(--space-1) var(--space-2);
+  border-radius: 999px;
+  background: var(--color-status-unknown);
+  color: var(--color-ink);
+  font-size: .78rem;
+  font-weight: 750;
+}
+
+.weather-panel__freshness--fresh {
+  background: var(--color-canvas-strong);
+  color: var(--color-primary-strong);
+}
+
+.weather-panel__freshness--stale {
+  background: var(--color-warning-soft);
+  color: var(--color-warning-ink);
+}
+
+.weather-panel__freshness--unknown {
+  background: var(--color-status-unknown);
+  color: var(--color-ink-muted);
+}
+
+.weather-panel__summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.weather-panel__condition {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.weather-panel__icon {
+  width: 3rem;
+  height: 3rem;
+  flex: none;
+  color: var(--color-primary-strong);
+}
+
+.weather-panel__condition strong {
+  color: var(--color-primary-strong);
+  font-size: clamp(1.2rem, 2.8vw, 1.65rem);
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.weather-panel__temperature {
+  display: block;
+  max-width: 100%;
+  color: var(--color-ink);
+  font-size: clamp(1.25rem, 12vw, 3.5rem);
+  font-weight: 800;
+  letter-spacing: -.04em;
+  line-height: 1;
+  overflow-wrap: anywhere;
+}
+
+.weather-panel__reading-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.weather-panel__reading {
+  min-width: 0;
+  padding: var(--space-3);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: rgb(255 255 255 / 65%);
+}
+
+.weather-panel__reading dt {
+  color: var(--color-ink-muted);
+  font-size: .75rem;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.weather-panel__reading dd {
+  margin: var(--space-1) 0 0;
+  color: var(--color-ink);
+  font-size: .9rem;
+  font-weight: 750;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.weather-panel__provider a {
+  color: var(--color-primary-strong);
+  font-weight: 750;
+  text-decoration: underline;
+}
+
+.weather-panel__note {
+  margin: 0;
+}
+
+.weather-panel__note--stale {
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--color-warning-soft);
+  color: var(--color-warning-ink);
+  font-weight: 700;
+}
+
+.weather-panel__state {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--color-canvas-soft);
+}
+
+.weather-panel__state h3 {
+  margin: 0;
+  color: var(--color-ink);
+  font-size: 1rem;
+}
+
+.weather-panel__state p {
+  margin: 0;
+}
+
+.weather-panel__state--error {
+  background: var(--color-danger-soft);
+}
+
+.weather-panel__state button {
+  justify-self: start;
+  min-height: var(--touch-target);
+  padding: var(--space-2) var(--space-4);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-primary-strong);
+  font: inherit;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+@media (max-width: 35rem) {
+  .weather-panel__summary,
+  .weather-panel__reading-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .weather-panel * {
+    scroll-behavior: auto;
+  }
+}

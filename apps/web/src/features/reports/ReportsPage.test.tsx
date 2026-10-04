@@ -5,22 +5,13 @@ import { AuthProvider } from "../auth/AuthProvider";
 import { RealtimeProvider } from "../realtime/RealtimeProvider";
 import { reportsApi } from "./api";
 import { ReportsPage } from "./ReportsPage";
+import { CreateReportPage } from "./CreateReportPage";
 vi.mock("../../shared/alerts", () => ({ notifyError: vi.fn(), notifySuccess: vi.fn(), notifyWarning: vi.fn(), confirmAction: vi.fn() }));
 
-vi.mock("./ReportLocationPicker", async () => {
-  const React = await import("react");
+vi.mock("./ReportLocationPicker", () => {
   return {
     ReportLocationPicker: ({ onChange }: { onChange: (location: { type: "Point"; coordinates: [number, number] } | null) => void }) => {
-      const [longitude, setLongitude] = React.useState("");
-      const [latitude, setLatitude] = React.useState("");
-      const change = (nextLongitude: string, nextLatitude: string) => {
-        setLongitude(nextLongitude);
-        setLatitude(nextLatitude);
-        const lng = Number(nextLongitude);
-        const lat = Number(nextLatitude);
-        onChange(nextLongitude !== "" && nextLatitude !== "" && Number.isFinite(lng) && Number.isFinite(lat) ? { type: "Point", coordinates: [lng, lat] } : null);
-      };
-      return <><label>ลองจิจูด<input value={longitude} onChange={(event) => change(event.target.value, latitude)} /></label><label>ละติจูด<input value={latitude} onChange={(event) => change(longitude, event.target.value)} /></label></>;
+      return <button type="button" onClick={() => onChange({ type: "Point", coordinates: [101.1, 14.2] })}>เลือกจุดเกิดเหตุ</button>;
     }
   };
 });
@@ -76,6 +67,13 @@ afterEach(() => {
 });
 
 describe("report review API", () => {
+  it("rejects incorrectly typed location labels at the public API boundary", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(response({ items: [{ ...verifiedReport, locationName: 123 }], limit: 20, offset: 0 }));
+    vi.stubGlobal("fetch", fetchMock);
+    await expect(reportsApi.listPublic()).rejects.toThrow("Invalid reports API response");
+    fetchMock.mockResolvedValue(response({ items: [{ ...verifiedReport, locationNote: {} }], limit: 20, offset: 0 }));
+    await expect(reportsApi.listPublic()).rejects.toThrow("Invalid reports API response");
+  });
   it("sends the reviewed revision when verifying and rejecting", async () => {
     const fetchMock = vi.fn().mockResolvedValue(response({ report: verifiedReport }));
     vi.stubGlobal("fetch", fetchMock);
@@ -156,7 +154,8 @@ describe("ReportsPage public list", () => {
     expect(screen.getByRole("status")).toHaveTextContent("กำลังโหลดข้อมูล");
     expect(await screen.findAllByText(verifiedReport.description)).not.toHaveLength(0);
     expect(screen.getAllByText("ยืนยันแล้ว")).not.toHaveLength(0);
-    expect(screen.getByRole("link", { name: "ส่งรายงานสถานการณ์" })).toHaveAttribute("href", "#submit-report");
+    expect(screen.getByRole("link", { name: "ส่งรายงานสถานการณ์" })).toHaveAttribute("href", "/reports/new");
+    expect(screen.queryByRole("button", { name: "ส่งรายงาน" })).not.toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/v1/reports?limit=20&offset=0",
       expect.objectContaining({ credentials: "same-origin" })
@@ -240,7 +239,7 @@ describe("ReportsPage public list", () => {
   });
 });
 
-describe("ReportsPage authenticated workflow", () => {
+describe("CreateReportPage guest workflow", () => {
   it("validates guest submission and uploads without exposing pending ownership", async () => {
     const api = {
       refresh: vi.fn().mockResolvedValue({ accessToken: "token" }),
@@ -250,13 +249,12 @@ describe("ReportsPage authenticated workflow", () => {
       register: vi.fn()
     };
     const fetchMock = vi.fn()
-      .mockResolvedValueOnce(response({ items: [], limit: 20, offset: 0 }))
       .mockResolvedValueOnce(response({ report: { ...verifiedReport, status: "PENDING", verificationStatus: "PENDING" }, uploadToken: "upload-capability" }))
       .mockResolvedValueOnce(response({ media: { id: "media-1", url: "/api/v1/reports/report-1/media/media-1" } }))
       .mockResolvedValueOnce(response({ items: [{ ...verifiedReport, status: "PENDING", verificationStatus: "PENDING" }], limit: 20, offset: 0 }));
     vi.stubGlobal("fetch", fetchMock);
 
-    render(<MemoryRouter><AuthProvider api={api}><ReportsPage /></AuthProvider></MemoryRouter>);
+    render(<MemoryRouter><AuthProvider api={api}><CreateReportPage /></AuthProvider></MemoryRouter>);
 
     await screen.findByRole("heading", { name: "ส่งรายงานชุมชน" });
     fireEvent.change(screen.getByLabelText("รายละเอียด"), { target: { value: "น้ำท่วมขังหน้าตลาด" } });
@@ -264,8 +262,8 @@ describe("ReportsPage authenticated workflow", () => {
     fireEvent.click(screen.getByRole("button", { name: "ส่งรายงาน" }));
     expect(screen.getByRole("alert")).toHaveTextContent("เลือกตำแหน่งบนแผนที่");
 
-    fireEvent.change(screen.getByLabelText("ลองจิจูด"), { target: { value: "101.1" } });
-    fireEvent.change(screen.getByLabelText("ละติจูด"), { target: { value: "14.2" } });
+    fireEvent.click(screen.getByRole("button", { name: "เลือกจุดเกิดเหตุ" }));
+    fireEvent.change(screen.getByLabelText("ชื่อสถานที่ / ชื่อซอย *"), { target: { value: "ตลาดทดสอบ" } });
     const file = new File(["evidence"], "water.jpg", { type: "image/jpeg" });
     fireEvent.change(screen.getByLabelText("ภาพประกอบ (JPEG, PNG หรือ WebP; ไม่บังคับ)"), { target: { files: [file] } });
     fireEvent.click(screen.getByRole("button", { name: "ส่งรายงาน" }));
@@ -289,11 +287,12 @@ describe("ReportsPage authenticated workflow", () => {
       logout: vi.fn(), login: vi.fn(), register: vi.fn()
     };
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response({ items: [], limit: 20, offset: 0 })));
-    render(<MemoryRouter><AuthProvider api={api}><ReportsPage /></AuthProvider></MemoryRouter>);
+    render(<MemoryRouter><AuthProvider api={api}><CreateReportPage /></AuthProvider></MemoryRouter>);
 
     await screen.findByRole("heading", { name: "ส่งรายงานชุมชน" });
     expect(screen.getByLabelText("รายละเอียด")).toHaveAttribute("maxlength", "2000");
-    expect(screen.getByLabelText("ระดับน้ำโดยประมาณ (เมตร, ไม่บังคับ)")).toHaveAttribute("max", "100");
+    fireEvent.click(screen.getByRole("radio", { name: "ระบุค่าอื่น" }));
+    expect(screen.getByLabelText("ระดับน้ำ (เซนติเมตร)")).toHaveAttribute("max", "10000");
     const files = ["a.jpg", "b.jpg", "c.jpg", "d.jpg"].map((name) => new File(["image"], name, { type: "image/jpeg" }));
     fireEvent.change(screen.getByLabelText("ภาพประกอบ (JPEG, PNG หรือ WebP; ไม่บังคับ)"), { target: { files } });
     expect(screen.getByRole("alert")).toHaveTextContent("เลือกภาพได้ไม่เกิน 3 ไฟล์");

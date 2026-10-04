@@ -1,0 +1,32 @@
+
+> @floodwatch/web@0.0.0 test D:\!Project\FloodWatch-Ongkharak(Web_Application)\apps\web
+> vitest run "src/features/realtime/RealtimeProvider.test.tsx"
+
+
+ RUN  v5.0.3 D:/!Project/FloodWatch-Ongkharak(Web_Application)/apps/web
+
+ ❯ src/features/realtime/RealtimeProvider.test.tsx (5 tests | 1 failed) 88ms
+   ❯ public realtime subscription (5)
+     × refetches the canonical overview after a relevant public event 53ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/features/realtime/RealtimeProvider.test.tsx > public realtime subscription > refetches the canonical overview after a relevant public event
+AssertionError: expected "vi.fn()" to be called 6 times, but got 7 times
+ ❯ src/features/realtime/RealtimeProvider.test.tsx:137:21
+    135|     const view = render(<MemoryRouter><RealtimeProvider><OverviewPage …
+    136|     expect(await screen.findByText("ยังไม่มีสถานีในรายการที่เรียกดู"))…
+    137|     expect(request).toHaveBeenCalledTimes(6);
+       |                     ^
+    138|     act(() => FakeEventSource.connections[0].onopen?.());
+    139|     await waitFor(() => expect(request).toHaveBeenCalledTimes(12));
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 4 passed (5)
+   Start at  15:06:21
+   Duration  1.73s (environment 53%, setup 16%, transform 14%, import 10%, tests 5%, worker 1%)
+
+ ELIFECYCLE  Test failed. See above for more details.

@@ -1,18 +1,61 @@
-import { useEffect, useState } from "react";
-import { CircleMarker, MapContainer, TileLayer, useMapEvents } from "react-leaflet";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { Map as LeafletMap } from "leaflet";
+import { Circle, CircleMarker, MapContainer, TileLayer, useMap, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { useTranslation } from "../../i18n";
 import th from "../../i18n/locales/th/reports";
 import en from "../../i18n/locales/en/reports";
 import type { ReportLocation } from "./types";
+import "./ReportLocationPicker.css";
 
 const initialCenter: [number, number] = [14.1, 101.0];
+const geolocationOptions: PositionOptions = { enableHighAccuracy: true, timeout: 10_000, maximumAge: 0 };
+type GeolocationIntent = "locate" | "select";
+type LocationErrorKey = "location.denied" | "location.timeout" | "location.unavailable" | "location.unsupported";
+type UserPosition = { latitude: number; longitude: number; accuracy: number };
+
+function reportLocation(longitude: number, latitude: number): ReportLocation | null {
+  if (!Number.isFinite(longitude) || !Number.isFinite(latitude) || Math.abs(longitude) > 180 || Math.abs(latitude) > 90) return null;
+  return { type: "Point", coordinates: [longitude, latitude] };
+}
+
+function validUserPosition(position: GeolocationPosition): UserPosition | null {
+  const { latitude, longitude, accuracy } = position.coords;
+  return Number.isFinite(latitude) && Number.isFinite(longitude) && Number.isFinite(accuracy) && accuracy >= 0 &&
+    Math.abs(latitude) <= 90 && Math.abs(longitude) <= 180
+    ? { latitude, longitude, accuracy }
+    : null;
+}
 
 function LocationEvents({ onSelect }: { onSelect: (location: ReportLocation) => void }) {
   useMapEvents({
-    click: (event) => onSelect({ type: "Point", coordinates: [event.latlng.lng, event.latlng.lat] })
+    click: (event) => {
+      const next = reportLocation(event.latlng.lng, event.latlng.lat);
+      if (next) onSelect(next);
+    }
   });
   return null;
+}
+
+function MapBridge({ userPosition, onReady }: { userPosition: UserPosition | null; onReady: (map: LeafletMap | null) => void }) {
+  const map = useMap();
+
+  useEffect(() => {
+    onReady(map);
+    return () => onReady(null);
+  }, [map, onReady]);
+
+  useEffect(() => {
+    if (userPosition) map.setView([userPosition.latitude, userPosition.longitude], Math.max(map.getZoom(), 16), { animate: false });
+  }, [map, userPosition]);
+
+  return null;
+}
+
+function MapLocationControl({ locating, label, loadingLabel, onLocate }: { locating: boolean; label: string; loadingLabel: string; onLocate: () => void }) {
+  return <button type="button" className="report-location-map__locate" title={locating ? loadingLabel : label} aria-busy={locating} disabled={locating} onClick={onLocate}>
+    <span aria-hidden="true">◎</span><span className="report-location-picker__visually-hidden">{locating ? loadingLabel : label}</span>
+  </button>;
 }
 
 export function ReportLocationPicker({ location, onChange, resetKey }: {
@@ -21,44 +64,122 @@ export function ReportLocationPicker({ location, onChange, resetKey }: {
   resetKey: string | number;
 }) {
   const { t } = useTranslation({ th, en });
-  const [longitudeDraft, setLongitudeDraft] = useState(location?.coordinates[0].toString() ?? "");
-  const [latitudeDraft, setLatitudeDraft] = useState(location?.coordinates[1].toString() ?? "");
+  const mapRef = useRef<LeafletMap | null>(null);
+  const mountedRef = useRef(false);
+  const requestIdRef = useRef(0);
+  const [userPosition, setUserPosition] = useState<UserPosition | null>(null);
+  const [locating, setLocating] = useState(false);
+  const [locationError, setLocationError] = useState<LocationErrorKey | null>(null);
+  const [incidentChanged, setIncidentChanged] = useState(false);
 
   useEffect(() => {
-    setLongitudeDraft(location?.coordinates[0].toString() ?? "");
-    setLatitudeDraft(location?.coordinates[1].toString() ?? "");
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
+
+  useEffect(() => {
+    requestIdRef.current += 1;
+    setUserPosition(null);
+    setLocating(false);
+    setLocationError(null);
+    setIncidentChanged(false);
   }, [resetKey]);
 
-  const selectMapLocation = (next: ReportLocation) => {
-    setLongitudeDraft(next.coordinates[0].toString());
-    setLatitudeDraft(next.coordinates[1].toString());
+  const onMapReady = useCallback((map: LeafletMap | null) => {
+    mapRef.current = map;
+  }, []);
+
+  const selectIncident = useCallback((next: ReportLocation) => {
+    requestIdRef.current += 1;
+    if (location && (location.coordinates[0] !== next.coordinates[0] || location.coordinates[1] !== next.coordinates[1])) setIncidentChanged(true);
+    setLocationError(null);
     onChange(next);
+  }, [location, onChange]);
+
+  const setError = (error: LocationErrorKey) => {
+    if (!mountedRef.current) return;
+    setUserPosition(null);
+    setLocating(false);
+    setLocationError(error);
   };
 
-  const changeCoordinate = (index: 0 | 1, value: string) => {
-    const nextLongitude = index === 0 ? value : longitudeDraft;
-    const nextLatitude = index === 1 ? value : latitudeDraft;
-    if (index === 0) setLongitudeDraft(value); else setLatitudeDraft(value);
-    const longitude = Number(nextLongitude);
-    const latitude = Number(nextLatitude);
-    onChange(nextLongitude !== "" && nextLatitude !== "" && Number.isFinite(longitude) && Number.isFinite(latitude) && Math.abs(longitude) <= 180 && Math.abs(latitude) <= 90
-      ? { type: "Point", coordinates: [longitude, latitude] }
-      : null);
+  const requestPosition = (intent: GeolocationIntent) => {
+    const requestId = ++requestIdRef.current;
+    const isCurrent = () => mountedRef.current && requestIdRef.current === requestId;
+    const unsupported = typeof navigator === "undefined" || !navigator.geolocation || (typeof window !== "undefined" && window.isSecureContext === false);
+    if (unsupported) {
+      setError("location.unsupported");
+      return;
+    }
+
+    setLocating(true);
+    setLocationError(null);
+    setUserPosition(null);
+    try {
+      navigator.geolocation.getCurrentPosition((position) => {
+        if (!isCurrent()) return;
+        const next = validUserPosition(position);
+        if (!next) {
+          setError("location.unavailable");
+          return;
+        }
+        setUserPosition(next);
+        setLocating(false);
+        setLocationError(null);
+        if (intent === "select") {
+          const incident = reportLocation(next.longitude, next.latitude);
+          if (incident) selectIncident(incident);
+        }
+      }, (error) => {
+        if (!isCurrent()) return;
+        setError(error.code === 1 ? "location.denied" : error.code === 3 ? "location.timeout" : "location.unavailable");
+      }, geolocationOptions);
+    } catch (error) {
+      if (!isCurrent()) return;
+      const errorName = error instanceof DOMException ? error.name : "";
+      setError(errorName === "NotAllowedError" || errorName === "PermissionDeniedError" ? "location.denied" : "location.unavailable");
+    }
+  };
+
+  const selectMapCenter = () => {
+    const center = mapRef.current?.getCenter();
+    const next = center ? reportLocation(center.lng, center.lat) : null;
+    if (next) selectIncident(next);
   };
 
   return <fieldset className="report-location-picker">
     <legend>{t("location.legend")}</legend>
-    <p>{t("location.description")}</p>
+    <p className="report-location-picker__description">{t("location.description")}</p>
     <div className="report-location-map" aria-label={t("location.mapLabel")}>
       <MapContainer center={location ? [location.coordinates[1], location.coordinates[0]] : initialCenter} zoom={11} minZoom={8} maxZoom={16} className="leaflet-map" scrollWheelZoom={false}>
         <TileLayer url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' />
-        <LocationEvents onSelect={selectMapLocation} />
-        {location && <CircleMarker center={[location.coordinates[1], location.coordinates[0]]} radius={9} pathOptions={{ color: "#2563eb", fillColor: "#ffffff", fillOpacity: 1, weight: 3 }} />}
+        <LocationEvents onSelect={selectIncident} />
+        <MapBridge userPosition={userPosition} onReady={onMapReady} />
+        {userPosition && <>
+          <Circle center={[userPosition.latitude, userPosition.longitude]} radius={userPosition.accuracy} pathOptions={{ color: "var(--color-primary-strong)", fillColor: "var(--color-primary-strong)", fillOpacity: 0.12, weight: 2 }} />
+          <CircleMarker center={[userPosition.latitude, userPosition.longitude]} radius={7} pathOptions={{ color: "var(--color-surface)", fillColor: "var(--color-primary-strong)", fillOpacity: 1, weight: 3 }} />
+        </>}
+        {location && <CircleMarker center={[location.coordinates[1], location.coordinates[0]]} radius={9} pathOptions={{ color: "var(--color-status-warning)", fillColor: "var(--color-status-warning)", fillOpacity: 0, weight: 3 }} />}
       </MapContainer>
+      <MapLocationControl locating={locating} label={t("location.locate")} loadingLabel={t("location.locating")} onLocate={() => requestPosition("locate")} />
     </div>
-    <div className="report-coordinate-fields">
-      <label>{t("location.longitude")}<input type="number" inputMode="decimal" step="any" value={longitudeDraft} onChange={(event) => changeCoordinate(0, event.target.value)} /></label>
-      <label>{t("location.latitude")}<input type="number" inputMode="decimal" step="any" value={latitudeDraft} onChange={(event) => changeCoordinate(1, event.target.value)} /></label>
+    <div className="report-location-picker__actions">
+      <button type="button" className="report-location-picker__action" disabled={locating} onClick={() => requestPosition("select")}>
+        <span aria-hidden="true">●</span>{locating ? t("location.locating") : t("location.useCurrent")}
+      </button>
+      <button type="button" className="report-location-picker__action report-location-picker__action--secondary" onClick={selectMapCenter}>{t("location.selectCenter")}</button>
+    </div>
+    <p className="report-location-picker__status" role="status" aria-live="polite">
+      {location ? t("location.selected") : t("location.notSelected")}{incidentChanged && <> {t("location.changed")}</>}
+    </p>
+    {locationError && <p className="report-location-picker__error" role="alert">{t(locationError)}</p>}
+    {userPosition && <div className="report-location-picker__accuracy">
+      <p>{t("location.accuracy", { meters: Math.round(userPosition.accuracy) })}</p>
+      {userPosition.accuracy > 100 && <p className="report-location-picker__accuracy-warning">{t("location.lowAccuracy")}</p>}
+    </div>}
+    <div className="report-location-picker__legend" aria-label={t("location.legend")}>
+      <span><i className="report-location-picker__shape report-location-picker__shape--user" aria-hidden="true" />{t("location.userLegend")}</span>
+      <span><i className="report-location-picker__shape report-location-picker__shape--incident" aria-hidden="true" />{t("location.incidentLegend")}</span>
     </div>
   </fieldset>;
 }

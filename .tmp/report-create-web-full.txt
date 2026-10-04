@@ -1,0 +1,3135 @@
+
+> @floodwatch/web@0.0.0 test D:\!Project\FloodWatch-Ongkharak(Web_Application)\apps\web
+> vitest run
+
+
+ RUN  v5.0.3 D:/!Project/FloodWatch-Ongkharak(Web_Application)/apps/web
+
+ ❯ src/app/AppShell.alerts.test.tsx (3 tests | 3 failed) 1099ms
+   ❯ sign out confirmation (3)
+     × requests confirmation without immediately logging out 679ms
+     × ignores duplicate clicks while a confirmation is active 250ms
+     × returns to the landing page only after successful sign out 167ms
+stderr | src/features/reports/guest.test.tsx > lets guests submit without login or private report access
+An update to ReportsPage inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to ReportsPage inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+ ❯ src/features/reports/guest.test.tsx (1 test | 1 failed) 115ms
+
+   × lets guests submit without login or private report access 112ms
+ ❯ src/features/auth/AccountMenu.test.tsx (15 tests | 1 failed) 2501ms
+   ❯ account dropdown (15)
+     × edits in place, normalizes and updates the account 219ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/app/AppShell.alerts.test.tsx > sign out confirmation > requests confirmation without immediately logging out
+TestingLibraryElementError: Unable to find an accessible element with the role "button" and name "ออกจากระบบ"
+
+Here are the accessible roles:
+
+  link:
+
+  Name "ข้ามไปยังเนื้อหาหลัก":
+  <a
+    class="skip-link"
+    href="#main-content"
+  />
+
+  Name "Flood Watch Ongkharak หน้าหลัก":
+  <a
+    aria-label="Flood Watch Ongkharak หน้าหลัก"
+    class="brand"
+    data-discover="true"
+    href="/"
+  />
+
+  Name "ภาพรวม":
+  <a
+    class="shell-nav-link"
+    data-discover="true"
+    href="/overview"
+  />
+
+  Name "ประกาศ":
+  <a
+    class="shell-nav-link"
+    data-discover="true"
+    href="/announcements"
+  />
+
+  Name "แผนที่และพื้นที่เสี่ยง":
+  <a
+    class="shell-nav-link"
+    data-discover="true"
+    href="/map"
+  />
+
+  Name "รายงาน":
+  <a
+    class="shell-nav-link"
+    data-discover="true"
+    href="/reports"
+  />
+
+  Name "การแจ้งเตือน":
+  <a
+    aria-label="การแจ้งเตือน"
+    class="header-icon"
+    data-discover="true"
+    href="/notifications"
+  />
+
+  Name "Flood Watch Ongkharak หน้าหลัก":
+  <a
+    aria-label="Flood Watch Ongkharak หน้าหลัก"
+    class="brand"
+    data-discover="true"
+    href="/"
+  />
+
+  Name "การแจ้งเตือน":
+  <a
+    aria-label="การแจ้งเตือน"
+    class="header-icon"
+    data-discover="true"
+    href="/notifications"
+  />
+
+  Name "ภาพรวม":
+  <a
+    class="shell-nav-link"
+    data-discover="true"
+    href="/overview"
+  />
+
+  Name "ประกาศ":
+  <a
+    class="shell-nav-link"
+    data-discover="true"
+    href="/announcements"
+  />
+
+  Name "แผนที่และพื้นที่เสี่ยง":
+  <a
+    class="shell-nav-link"
+    data-discover="true"
+    href="/map"
+  />
+
+  Name "รายงาน":
+  <a
+    class="shell-nav-link"
+    data-discover="true"
+    href="/reports"
+  />
+
+  --------------------------------------------------
+  complementary:
+
+  Name "":
+  <aside
+    class="desktop-sidebar"
+  />
+
+  Name "ข้อควรทราบ":
+  <aside
+    aria-labelledby="sidebar-status-title"
+    class="sidebar-status"
+  />
+
+  --------------------------------------------------
+  presentation:
+
+  Name "":
+  <img
+    alt=""
+    class="brand__image"
+    src="/flood-watch-mark.svg"
+  />
+
+  Name "":
+  <img
+    alt=""
+    class="brand__image"
+    src="/flood-watch-mark.svg"
+  />
+
+  --------------------------------------------------
+  strong:
+
+  Name "":
+  <strong />
+
+  Name "":
+  <strong
+    id="sidebar-status-title"
+  />
+
+  Name "":
+  <strong />
+
+  --------------------------------------------------
+  navigation:
+
+  Name "การนำทางหลัก":
+  <nav
+    aria-label="การนำทางหลัก"
+    class="sidebar-navigation"
+  />
+
+  Name "การนำทางมือถือ":
+  <nav
+    aria-label="การนำทางมือถือ"
+    class="bottom-navigation"
+  />
+
+  --------------------------------------------------
+  list:
+
+  Name "":
+  <ul />
+
+  Name "":
+  <ul />
+
+  --------------------------------------------------
+  listitem:
+
+  Name "":
+  <li />
+
+  Name "":
+  <li />
+
+  Name "":
+  <li />
+
+  Name "":
+  <li />
+
+  Name "":
+  <li />
+
+  Name "":
+  <li />
+
+  Name "":
+  <li />
+
+  Name "":
+  <li />
+
+  --------------------------------------------------
+  paragraph:
+
+  Name "":
+  <p />
+
+  --------------------------------------------------
+  banner:
+
+  Name "":
+  <header
+    class="institution-header"
+  />
+
+  Name "":
+  <header
+    class="mobile-header"
+  />
+
+  --------------------------------------------------
+  group:
+
+  Name "ภาษา":
+  <div
+    aria-label="ภาษา"
+    class="locale-toggle"
+    role="group"
+  />
+
+  Name "ภาษา":
+  <div
+    aria-label="ภาษา"
+    class="locale-toggle"
+    role="group"
+  />
+
+  --------------------------------------------------
+  button:
+
+  Name "TH":
+  <button
+    aria-pressed="true"
+    type="button"
+  />
+
+  Name "EN":
+  <button
+    aria-pressed="false"
+    type="button"
+  />
+
+  Name "TH":
+  <button
+    aria-pressed="true"
+    type="button"
+  />
+
+  Name "EN":
+  <button
+    aria-pressed="false"
+    type="button"
+  />
+
+  --------------------------------------------------
+  main:
+
+  Name "":
+  <main
+    class="page-content w-full"
+    id="main-content"
+    tabindex="-1"
+  />
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      class="app-shell public-shell"
+    >
+      <a
+        class="skip-link"
+        href="#main-content"
+      >
+        ข้ามไปยังเนื้อหาหลัก
+      </a>
+      <aside
+        class="desktop-sidebar"
+      >
+        <a
+          aria-label="Flood Watch Ongkharak หน้าหลัก"
+          class="brand"
+          data-discover="true"
+          href="/"
+        >
+          <img
+            alt=""
+            class="brand__image"
+            src="/flood-watch-mark.svg"
+          />
+          <span>
+            <strong>
+              Flood Watch
+            </strong>
+            <small>
+              Ongkharak
+            </small>
+          </span>
+        </a>
+        <nav
+          aria-label="การนำทางหลัก"
+          class="sidebar-navigation"
+        >
+          <ul>
+            <li>
+              <a
+                class="shell-nav-link"
+                data-discover="true"
+                href="/overview"
+              >
+                <span
+                  aria-hidden="true"
+                  class="shell-nav-symbol"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="none"
+                    height="20"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    viewBox="0 0 24 24"
+                    width="20"
+                  >
+                    <path
+                      d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"
+                    />
+                    <path
+                      d="M9 21v-8h6v8"
+                    />
+                  </svg>
+                </span>
+                <span>
+                  ภาพรวม
+                </span>
+              </a>
+            </li>
+            <li>
+              <a
+                class="shell-nav-link"
+                data-discover="true"
+                href="/announcements"
+              >
+                <span
+                  aria-hidden="true"
+                  class="shell-nav-symbol"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="none"
+                    height="20"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    viewBox="0 0 24 24"
+                    width="20"
+                  >
+                    <path
+                      d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"
+                    />
+                    <path
+                      d="M10 21h4"
+                    />
+                  </svg>
+                </span>
+                <span>
+                  ประกาศ
+                </span>
+              </a>
+            </li>
+            <li>
+              <a
+                class="shell-nav-link"
+                data-discover="true"
+                href="/map"
+              >
+                <span
+                  aria-hidden="true"
+                  class="shell-nav-symbol"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="none"
+                    height="20"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    viewBox="0 0 24 24"
+                    width="20"
+                  >
+                    <path
+                      d="m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2z"
+                    />
+                    <path
+                      d="M9 3v16M15 5v16"
+                    />
+                  </svg>
+                </span>
+                <span>
+                  แผนที่และพื้นที่เสี่ยง
+                </span>
+              </a>
+            </li>
+            <li>
+              <a
+                class="shell-nav-link"
+                data-discover="true"
+                href="/reports"
+              >
+                <span
+                  aria-hidden="true"
+                  class="shell-nav-symbol"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="none"
+                    height="20"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    viewBox="0 0 24 24"
+                    width="20"
+                  >
+                    <rect
+                      height="18"
+                      rx="2"
+                      width="14"
+                      x="5"
+                      y="3"
+                    />
+                    <path
+                      d="M9 8h6M9 12h6M9 16h4"
+                    />
+                  </svg>
+                </span>
+                <span>
+                  รายงาน
+                </span>
+              </a>
+            </li>
+          </ul>
+        </nav>
+        <aside
+          aria-labelledby="sidebar-status-title"
+          class="sidebar-status"
+        >
+          <span
+            aria-hidden="true"
+            class="sidebar-status__dot"
+          />
+          <div>
+            <strong
+              id="sidebar-status-title"
+            >
+              ข้อควรทราบ
+            </strong>
+            <p>
+              ข้อมูลไม่พร้อมใช้งานไม่ได้หมายถึงพื้นที่ปลอดภัย
+            </p>
+          </div>
+        </aside>
+      </aside>
+      <div
+        class="shell-main"
+      >
+        <div
+          class="shell-top"
+        >
+          <header
+            class="institution-header"
+          >
+            <div
+              class="w-full max-w-[1600px] mx-auto px-4 sm:px-5 md:px-5 lg:px-5 flex items-center justify-between gap-4"
+            >
+              <span
+                class="institution-header__name"
+              >
+                สถานการณ์น้ำ อำเภอองครักษ์ จังหวัดนครนายก
+              </span>
+              <div
+                class="institution-header__actions"
+              >
+                <div
+                  aria-label="ภาษา"
+                  class="locale-toggle"
+                  role="group"
+                >
+                  <button
+                    aria-pressed="true"
+                    type="button"
+                  >
+                    TH
+                  </button>
+                  <button
+                    aria-pressed="false"
+                    type="button"
+                  >
+                    EN
+                  </button>
+                </div>
+                <a
+                  aria-label="การแจ้งเตือน"
+                  class="header-icon"
+                  data-discover="true"
+                  href="/notifications"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="none"
+                    height="20"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    viewBox="0 0 24 24"
+                    width="20"
+                  >
+                    <path
+                      d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"
+                    />
+                    <path
+                      d="M10 21h4"
+                    />
+                  </svg>
+                </a>
+              </div>
+            </div>
+          </header>
+          <header
+            class="mobile-header"
+          >
+            <div
+              class="w-full max-w-[1600px] mx-auto px-4 sm:px-5 md:px-5 lg:px-5 flex items-center justify-between h-full w-full"
+            >
+              <a
+                aria-label="Flood Watch Ongkharak หน้าหลัก"
+                class="brand"
+                data-discover="true"
+                href="/"
+              >
+                <img
+                  alt=""
+                  class="brand__image"
+                  src="/flood-watch-mark.svg"
+                />
+                <span>
+                  <strong>
+                    Flood Watch
+                  </strong>
+                  <small>
+                    Ongkharak
+                  </small>
+                </span>
+              </a>
+              <div
+                class="institution-header__actions"
+              >
+                <div
+                  aria-label="ภาษา"
+                  class="locale-toggle"
+                  role="group"
+                >
+                  <button
+                    aria-pressed="true"
+                    type="button"
+                  >
+                    TH
+                  </button>
+                  <button
+                    aria-pressed="false"
+                    type="button"
+                  >
+                    EN
+                  </button>
+                </div>
+                <a
+                  aria-label="การแจ้งเตือน"
+                  class="header-icon"
+                  data-discover="true"
+                  href="/notifications"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="none"
+                    height="20"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    viewBox="0 0 24 24"
+                    width="20"
+                  >
+                    <path
+                      d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"
+                    />
+                    <path
+                      d="M10 21h4"
+                    />
+                  </svg>
+                </a>
+              </div>
+            </div>
+          </header>
+        </div>
+        <main
+          class="page-content w-full"
+          id="main-content"
+          tabindex="-1"
+        >
+          <div
+            class="page-content__inner w-full max-w-[1600px] mx-auto px-4 sm:px-5 md:px-5 lg:px-5"
+          >
+            Content
+          </div>
+        </main>
+      </div>
+      <nav
+        aria-label="การนำทางมือถือ"
+        class="bottom-navigation"
+      >
+        <ul>
+          <li>
+            <a
+              class="shell-nav-link"
+              data-discover="true"
+              href="/overview"
+            >
+              <span
+                aria-hidden="true"
+                class="shell-nav-symbol"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="none"
+                  height="20"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                  width="20"
+                >
+                  <path
+                    d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"
+                  />
+                  <path
+                    d="M9 21v-8h6v8"
+                  />
+                </svg>
+              </span>
+              <span>
+                ภาพรวม
+              </span>
+            </a>
+          </li>
+          <li>
+            <a
+              class="shell-nav-link"
+              data-discover="true"
+              href="/announcements"
+            >
+              <span
+                aria-hidden="true"
+                class="shell-nav-symbol"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="none"
+                  height="20"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                  width="20"
+                >
+                  <path
+                    d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"
+                  />
+                  <path
+                    d="M10 21h4"
+                  />
+                </svg>
+              </span>
+              <span>
+                ประกาศ
+              </span>
+            </a>
+          </li>
+          <li>
+            <a
+              class="shell-nav-link"
+              data-discover="true"
+              href="/map"
+            >
+              <span
+                aria-hidden="true"
+                class="shell-nav-symbol"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="none"
+                  height="20"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                  width="20"
+                >
+                  <path
+                    d="m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2z"
+                  />
+                  <path
+                    d="M9 3v16M15 5v16"
+                  />
+                </svg>
+              </span>
+              <span>
+                แผนที่และพื้นที่เสี่ยง
+              </span>
+            </a>
+          </li>
+          <li>
+            <a
+              class="shell-nav-link"
+              data-discover="true"
+              href="/reports"
+            >
+              <span
+                aria-hidden="true"
+                class="shell-nav-symbol"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="none"
+                  height="20"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                  width="20"
+                >
+                  <rect
+                    height="18"
+                    rx="2"
+                    width="14"
+                    x="5"
+                    y="3"
+                  />
+                  <path
+                    d="M9 8h6M9 12h6M9 16h4"
+                  />
+                </svg>
+              </span>
+              <span>
+                รายงาน
+              </span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </div>
+</body>
+ ❯ Object.getElementError ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/app/AppShell.alerts.test.tsx:18:28
+     16|   it("requests confirmation without immediately logging out", async ()…
+     17|     render(<MemoryRouter initialEntries={["/admin"]}><AppShell>Content…
+     18|     fireEvent.click(screen.getByRole("button", { name: "ออกจากระบบ" })…
+       |                            ^
+     19|     await waitFor(() => expect(confirmAction).toHaveBeenCalledTimes(1)…
+     20|     expect(logout).not.toHaveBeenCalled();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  src/app/AppShell.alerts.test.tsx > sign out confirmation > ignores duplicate clicks while a confirmation is active
+TestingLibraryElementError: Unable to find an accessible element with the role "button" and name "ออกจากระบบ"
+
+Here are the accessible roles:
+
+  link:
+
+  Name "ข้ามไปยังเนื้อหาหลัก":
+  <a
+    class="skip-link"
+    href="#main-content"
+  />
+
+  Name "Flood Watch Ongkharak หน้าหลัก":
+  <a
+    aria-label="Flood Watch Ongkharak หน้าหลัก"
+    class="brand"
+    data-discover="true"
+    href="/"
+  />
+
+  Name "ภาพรวม":
+  <a
+    class="shell-nav-link"
+    data-discover="true"
+    href="/overview"
+  />
+
+  Name "ประกาศ":
+  <a
+    class="shell-nav-link"
+    data-discover="true"
+    href="/announcements"
+  />
+
+  Name "แผนที่และพื้นที่เสี่ยง":
+  <a
+    class="shell-nav-link"
+    data-discover="true"
+    href="/map"
+  />
+
+  Name "รายงาน":
+  <a
+    class="shell-nav-link"
+    data-discover="true"
+    href="/reports"
+  />
+
+  Name "การแจ้งเตือน":
+  <a
+    aria-label="การแจ้งเตือน"
+    class="header-icon"
+    data-discover="true"
+    href="/notifications"
+  />
+
+  Name "Flood Watch Ongkharak หน้าหลัก":
+  <a
+    aria-label="Flood Watch Ongkharak หน้าหลัก"
+    class="brand"
+    data-discover="true"
+    href="/"
+  />
+
+  Name "การแจ้งเตือน":
+  <a
+    aria-label="การแจ้งเตือน"
+    class="header-icon"
+    data-discover="true"
+    href="/notifications"
+  />
+
+  Name "ภาพรวม":
+  <a
+    class="shell-nav-link"
+    data-discover="true"
+    href="/overview"
+  />
+
+  Name "ประกาศ":
+  <a
+    class="shell-nav-link"
+    data-discover="true"
+    href="/announcements"
+  />
+
+  Name "แผนที่และพื้นที่เสี่ยง":
+  <a
+    class="shell-nav-link"
+    data-discover="true"
+    href="/map"
+  />
+
+  Name "รายงาน":
+  <a
+    class="shell-nav-link"
+    data-discover="true"
+    href="/reports"
+  />
+
+  --------------------------------------------------
+  complementary:
+
+  Name "":
+  <aside
+    class="desktop-sidebar"
+  />
+
+  Name "ข้อควรทราบ":
+  <aside
+    aria-labelledby="sidebar-status-title"
+    class="sidebar-status"
+  />
+
+  --------------------------------------------------
+  presentation:
+
+  Name "":
+  <img
+    alt=""
+    class="brand__image"
+    src="/flood-watch-mark.svg"
+  />
+
+  Name "":
+  <img
+    alt=""
+    class="brand__image"
+    src="/flood-watch-mark.svg"
+  />
+
+  --------------------------------------------------
+  strong:
+
+  Name "":
+  <strong />
+
+  Name "":
+  <strong
+    id="sidebar-status-title"
+  />
+
+  Name "":
+  <strong />
+
+  --------------------------------------------------
+  navigation:
+
+  Name "การนำทางหลัก":
+  <nav
+    aria-label="การนำทางหลัก"
+    class="sidebar-navigation"
+  />
+
+  Name "การนำทางมือถือ":
+  <nav
+    aria-label="การนำทางมือถือ"
+    class="bottom-navigation"
+  />
+
+  --------------------------------------------------
+  list:
+
+  Name "":
+  <ul />
+
+  Name "":
+  <ul />
+
+  --------------------------------------------------
+  listitem:
+
+  Name "":
+  <li />
+
+  Name "":
+  <li />
+
+  Name "":
+  <li />
+
+  Name "":
+  <li />
+
+  Name "":
+  <li />
+
+  Name "":
+  <li />
+
+  Name "":
+  <li />
+
+  Name "":
+  <li />
+
+  --------------------------------------------------
+  paragraph:
+
+  Name "":
+  <p />
+
+  --------------------------------------------------
+  banner:
+
+  Name "":
+  <header
+    class="institution-header"
+  />
+
+  Name "":
+  <header
+    class="mobile-header"
+  />
+
+  --------------------------------------------------
+  group:
+
+  Name "ภาษา":
+  <div
+    aria-label="ภาษา"
+    class="locale-toggle"
+    role="group"
+  />
+
+  Name "ภาษา":
+  <div
+    aria-label="ภาษา"
+    class="locale-toggle"
+    role="group"
+  />
+
+  --------------------------------------------------
+  button:
+
+  Name "TH":
+  <button
+    aria-pressed="true"
+    type="button"
+  />
+
+  Name "EN":
+  <button
+    aria-pressed="false"
+    type="button"
+  />
+
+  Name "TH":
+  <button
+    aria-pressed="true"
+    type="button"
+  />
+
+  Name "EN":
+  <button
+    aria-pressed="false"
+    type="button"
+  />
+
+  --------------------------------------------------
+  main:
+
+  Name "":
+  <main
+    class="page-content w-full"
+    id="main-content"
+    tabindex="-1"
+  />
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      class="app-shell public-shell"
+    >
+      <a
+        class="skip-link"
+        href="#main-content"
+      >
+        ข้ามไปยังเนื้อหาหลัก
+      </a>
+      <aside
+        class="desktop-sidebar"
+      >
+        <a
+          aria-label="Flood Watch Ongkharak หน้าหลัก"
+          class="brand"
+          data-discover="true"
+          href="/"
+        >
+          <img
+            alt=""
+            class="brand__image"
+            src="/flood-watch-mark.svg"
+          />
+          <span>
+            <strong>
+              Flood Watch
+            </strong>
+            <small>
+              Ongkharak
+            </small>
+          </span>
+        </a>
+        <nav
+          aria-label="การนำทางหลัก"
+          class="sidebar-navigation"
+        >
+          <ul>
+            <li>
+              <a
+                class="shell-nav-link"
+                data-discover="true"
+                href="/overview"
+              >
+                <span
+                  aria-hidden="true"
+                  class="shell-nav-symbol"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="none"
+                    height="20"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    viewBox="0 0 24 24"
+                    width="20"
+                  >
+                    <path
+                      d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"
+                    />
+                    <path
+                      d="M9 21v-8h6v8"
+                    />
+                  </svg>
+                </span>
+                <span>
+                  ภาพรวม
+                </span>
+              </a>
+            </li>
+            <li>
+              <a
+                class="shell-nav-link"
+                data-discover="true"
+                href="/announcements"
+              >
+                <span
+                  aria-hidden="true"
+                  class="shell-nav-symbol"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="none"
+                    height="20"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    viewBox="0 0 24 24"
+                    width="20"
+                  >
+                    <path
+                      d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"
+                    />
+                    <path
+                      d="M10 21h4"
+                    />
+                  </svg>
+                </span>
+                <span>
+                  ประกาศ
+                </span>
+              </a>
+            </li>
+            <li>
+              <a
+                class="shell-nav-link"
+                data-discover="true"
+                href="/map"
+              >
+                <span
+                  aria-hidden="true"
+                  class="shell-nav-symbol"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="none"
+                    height="20"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    viewBox="0 0 24 24"
+                    width="20"
+                  >
+                    <path
+                      d="m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2z"
+                    />
+                    <path
+                      d="M9 3v16M15 5v16"
+                    />
+                  </svg>
+                </span>
+                <span>
+                  แผนที่และพื้นที่เสี่ยง
+                </span>
+              </a>
+            </li>
+            <li>
+              <a
+                class="shell-nav-link"
+                data-discover="true"
+                href="/reports"
+              >
+                <span
+                  aria-hidden="true"
+                  class="shell-nav-symbol"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="none"
+                    height="20"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    viewBox="0 0 24 24"
+                    width="20"
+                  >
+                    <rect
+                      height="18"
+                      rx="2"
+                      width="14"
+                      x="5"
+                      y="3"
+                    />
+                    <path
+                      d="M9 8h6M9 12h6M9 16h4"
+                    />
+                  </svg>
+                </span>
+                <span>
+                  รายงาน
+                </span>
+              </a>
+            </li>
+          </ul>
+        </nav>
+        <aside
+          aria-labelledby="sidebar-status-title"
+          class="sidebar-status"
+        >
+          <span
+            aria-hidden="true"
+            class="sidebar-status__dot"
+          />
+          <div>
+            <strong
+              id="sidebar-status-title"
+            >
+              ข้อควรทราบ
+            </strong>
+            <p>
+              ข้อมูลไม่พร้อมใช้งานไม่ได้หมายถึงพื้นที่ปลอดภัย
+            </p>
+          </div>
+        </aside>
+      </aside>
+      <div
+        class="shell-main"
+      >
+        <div
+          class="shell-top"
+        >
+          <header
+            class="institution-header"
+          >
+            <div
+              class="w-full max-w-[1600px] mx-auto px-4 sm:px-5 md:px-5 lg:px-5 flex items-center justify-between gap-4"
+            >
+              <span
+                class="institution-header__name"
+              >
+                สถานการณ์น้ำ อำเภอองครักษ์ จังหวัดนครนายก
+              </span>
+              <div
+                class="institution-header__actions"
+              >
+                <div
+                  aria-label="ภาษา"
+                  class="locale-toggle"
+                  role="group"
+                >
+                  <button
+                    aria-pressed="true"
+                    type="button"
+                  >
+                    TH
+                  </button>
+                  <button
+                    aria-pressed="false"
+                    type="button"
+                  >
+                    EN
+                  </button>
+                </div>
+                <a
+                  aria-label="การแจ้งเตือน"
+                  class="header-icon"
+                  data-discover="true"
+                  href="/notifications"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="none"
+                    height="20"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    viewBox="0 0 24 24"
+                    width="20"
+                  >
+                    <path
+                      d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"
+                    />
+                    <path
+                      d="M10 21h4"
+                    />
+                  </svg>
+                </a>
+              </div>
+            </div>
+          </header>
+          <header
+            class="mobile-header"
+          >
+            <div
+              class="w-full max-w-[1600px] mx-auto px-4 sm:px-5 md:px-5 lg:px-5 flex items-center justify-between h-full w-full"
+            >
+              <a
+                aria-label="Flood Watch Ongkharak หน้าหลัก"
+                class="brand"
+                data-discover="true"
+                href="/"
+              >
+                <img
+                  alt=""
+                  class="brand__image"
+                  src="/flood-watch-mark.svg"
+                />
+                <span>
+                  <strong>
+                    Flood Watch
+                  </strong>
+                  <small>
+                    Ongkharak
+                  </small>
+                </span>
+              </a>
+              <div
+                class="institution-header__actions"
+              >
+                <div
+                  aria-label="ภาษา"
+                  class="locale-toggle"
+                  role="group"
+                >
+                  <button
+                    aria-pressed="true"
+                    type="button"
+                  >
+                    TH
+                  </button>
+                  <button
+                    aria-pressed="false"
+                    type="button"
+                  >
+                    EN
+                  </button>
+                </div>
+                <a
+                  aria-label="การแจ้งเตือน"
+                  class="header-icon"
+                  data-discover="true"
+                  href="/notifications"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="none"
+                    height="20"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    viewBox="0 0 24 24"
+                    width="20"
+                  >
+                    <path
+                      d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"
+                    />
+                    <path
+                      d="M10 21h4"
+                    />
+                  </svg>
+                </a>
+              </div>
+            </div>
+          </header>
+        </div>
+        <main
+          class="page-content w-full"
+          id="main-content"
+          tabindex="-1"
+        >
+          <div
+            class="page-content__inner w-full max-w-[1600px] mx-auto px-4 sm:px-5 md:px-5 lg:px-5"
+          >
+            Content
+          </div>
+        </main>
+      </div>
+      <nav
+        aria-label="การนำทางมือถือ"
+        class="bottom-navigation"
+      >
+        <ul>
+          <li>
+            <a
+              class="shell-nav-link"
+              data-discover="true"
+              href="/overview"
+            >
+              <span
+                aria-hidden="true"
+                class="shell-nav-symbol"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="none"
+                  height="20"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                  width="20"
+                >
+                  <path
+                    d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"
+                  />
+                  <path
+                    d="M9 21v-8h6v8"
+                  />
+                </svg>
+              </span>
+              <span>
+                ภาพรวม
+              </span>
+            </a>
+          </li>
+          <li>
+            <a
+              class="shell-nav-link"
+              data-discover="true"
+              href="/announcements"
+            >
+              <span
+                aria-hidden="true"
+                class="shell-nav-symbol"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="none"
+                  height="20"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                  width="20"
+                >
+                  <path
+                    d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"
+                  />
+                  <path
+                    d="M10 21h4"
+                  />
+                </svg>
+              </span>
+              <span>
+                ประกาศ
+              </span>
+            </a>
+          </li>
+          <li>
+            <a
+              class="shell-nav-link"
+              data-discover="true"
+              href="/map"
+            >
+              <span
+                aria-hidden="true"
+                class="shell-nav-symbol"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="none"
+                  height="20"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                  width="20"
+                >
+                  <path
+                    d="m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2z"
+                  />
+                  <path
+                    d="M9 3v16M15 5v16"
+                  />
+                </svg>
+              </span>
+              <span>
+                แผนที่และพื้นที่เสี่ยง
+              </span>
+            </a>
+          </li>
+          <li>
+            <a
+              class="shell-nav-link"
+              data-discover="true"
+              href="/reports"
+            >
+              <span
+                aria-hidden="true"
+                class="shell-nav-symbol"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="none"
+                  height="20"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                  width="20"
+                >
+                  <rect
+                    height="18"
+                    rx="2"
+                    width="14"
+                    x="5"
+                    y="3"
+                  />
+                  <path
+                    d="M9 8h6M9 12h6M9 16h4"
+                  />
+                </svg>
+              </span>
+              <span>
+                รายงาน
+              </span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </div>
+</body>
+ ❯ Object.getElementError ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/app/AppShell.alerts.test.tsx:28:27
+     26|     vi.mocked(confirmAction).mockImplementation(() => new Promise((res…
+     27|     render(<MemoryRouter initialEntries={["/admin"]}><AppShell>Content…
+     28|     const button = screen.getByRole("button", { name: "ออกจากระบบ" });
+       |                           ^
+     29|     fireEvent.click(button);
+     30|     fireEvent.click(button);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  src/app/AppShell.alerts.test.tsx > sign out confirmation > returns to the landing page only after successful sign out
+TestingLibraryElementError: Unable to find an accessible element with the role "button" and name "ออกจากระบบ"
+
+Here are the accessible roles:
+
+  link:
+
+  Name "ข้ามไปยังเนื้อหาหลัก":
+  <a
+    class="skip-link"
+    href="#main-content"
+  />
+
+  Name "Flood Watch Ongkharak หน้าหลัก":
+  <a
+    aria-label="Flood Watch Ongkharak หน้าหลัก"
+    class="brand"
+    data-discover="true"
+    href="/"
+  />
+
+  Name "ภาพรวม":
+  <a
+    class="shell-nav-link"
+    data-discover="true"
+    href="/overview"
+  />
+
+  Name "ประกาศ":
+  <a
+    class="shell-nav-link"
+    data-discover="true"
+    href="/announcements"
+  />
+
+  Name "แผนที่และพื้นที่เสี่ยง":
+  <a
+    class="shell-nav-link"
+    data-discover="true"
+    href="/map"
+  />
+
+  Name "รายงาน":
+  <a
+    class="shell-nav-link"
+    data-discover="true"
+    href="/reports"
+  />
+
+  Name "การแจ้งเตือน":
+  <a
+    aria-label="การแจ้งเตือน"
+    class="header-icon"
+    data-discover="true"
+    href="/notifications"
+  />
+
+  Name "Flood Watch Ongkharak หน้าหลัก":
+  <a
+    aria-label="Flood Watch Ongkharak หน้าหลัก"
+    class="brand"
+    data-discover="true"
+    href="/"
+  />
+
+  Name "การแจ้งเตือน":
+  <a
+    aria-label="การแจ้งเตือน"
+    class="header-icon"
+    data-discover="true"
+    href="/notifications"
+  />
+
+  Name "ภาพรวม":
+  <a
+    class="shell-nav-link"
+    data-discover="true"
+    href="/overview"
+  />
+
+  Name "ประกาศ":
+  <a
+    class="shell-nav-link"
+    data-discover="true"
+    href="/announcements"
+  />
+
+  Name "แผนที่และพื้นที่เสี่ยง":
+  <a
+    class="shell-nav-link"
+    data-discover="true"
+    href="/map"
+  />
+
+  Name "รายงาน":
+  <a
+    class="shell-nav-link"
+    data-discover="true"
+    href="/reports"
+  />
+
+  --------------------------------------------------
+  complementary:
+
+  Name "":
+  <aside
+    class="desktop-sidebar"
+  />
+
+  Name "ข้อควรทราบ":
+  <aside
+    aria-labelledby="sidebar-status-title"
+    class="sidebar-status"
+  />
+
+  --------------------------------------------------
+  presentation:
+
+  Name "":
+  <img
+    alt=""
+    class="brand__image"
+    src="/flood-watch-mark.svg"
+  />
+
+  Name "":
+  <img
+    alt=""
+    class="brand__image"
+    src="/flood-watch-mark.svg"
+  />
+
+  --------------------------------------------------
+  strong:
+
+  Name "":
+  <strong />
+
+  Name "":
+  <strong
+    id="sidebar-status-title"
+  />
+
+  Name "":
+  <strong />
+
+  --------------------------------------------------
+  navigation:
+
+  Name "การนำทางหลัก":
+  <nav
+    aria-label="การนำทางหลัก"
+    class="sidebar-navigation"
+  />
+
+  Name "การนำทางมือถือ":
+  <nav
+    aria-label="การนำทางมือถือ"
+    class="bottom-navigation"
+  />
+
+  --------------------------------------------------
+  list:
+
+  Name "":
+  <ul />
+
+  Name "":
+  <ul />
+
+  --------------------------------------------------
+  listitem:
+
+  Name "":
+  <li />
+
+  Name "":
+  <li />
+
+  Name "":
+  <li />
+
+  Name "":
+  <li />
+
+  Name "":
+  <li />
+
+  Name "":
+  <li />
+
+  Name "":
+  <li />
+
+  Name "":
+  <li />
+
+  --------------------------------------------------
+  paragraph:
+
+  Name "":
+  <p />
+
+  Name "":
+  <p />
+
+  --------------------------------------------------
+  banner:
+
+  Name "":
+  <header
+    class="institution-header"
+  />
+
+  Name "":
+  <header
+    class="mobile-header"
+  />
+
+  --------------------------------------------------
+  group:
+
+  Name "ภาษา":
+  <div
+    aria-label="ภาษา"
+    class="locale-toggle"
+    role="group"
+  />
+
+  Name "ภาษา":
+  <div
+    aria-label="ภาษา"
+    class="locale-toggle"
+    role="group"
+  />
+
+  --------------------------------------------------
+  button:
+
+  Name "TH":
+  <button
+    aria-pressed="true"
+    type="button"
+  />
+
+  Name "EN":
+  <button
+    aria-pressed="false"
+    type="button"
+  />
+
+  Name "TH":
+  <button
+    aria-pressed="true"
+    type="button"
+  />
+
+  Name "EN":
+  <button
+    aria-pressed="false"
+    type="button"
+  />
+
+  --------------------------------------------------
+  main:
+
+  Name "":
+  <main
+    class="page-content w-full"
+    id="main-content"
+    tabindex="-1"
+  />
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      class="app-shell public-shell"
+    >
+      <a
+        class="skip-link"
+        href="#main-content"
+      >
+        ข้ามไปยังเนื้อหาหลัก
+      </a>
+      <aside
+        class="desktop-sidebar"
+      >
+        <a
+          aria-label="Flood Watch Ongkharak หน้าหลัก"
+          class="brand"
+          data-discover="true"
+          href="/"
+        >
+          <img
+            alt=""
+            class="brand__image"
+            src="/flood-watch-mark.svg"
+          />
+          <span>
+            <strong>
+              Flood Watch
+            </strong>
+            <small>
+              Ongkharak
+            </small>
+          </span>
+        </a>
+        <nav
+          aria-label="การนำทางหลัก"
+          class="sidebar-navigation"
+        >
+          <ul>
+            <li>
+              <a
+                class="shell-nav-link"
+                data-discover="true"
+                href="/overview"
+              >
+                <span
+                  aria-hidden="true"
+                  class="shell-nav-symbol"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="none"
+                    height="20"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    viewBox="0 0 24 24"
+                    width="20"
+                  >
+                    <path
+                      d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"
+                    />
+                    <path
+                      d="M9 21v-8h6v8"
+                    />
+                  </svg>
+                </span>
+                <span>
+                  ภาพรวม
+                </span>
+              </a>
+            </li>
+            <li>
+              <a
+                class="shell-nav-link"
+                data-discover="true"
+                href="/announcements"
+              >
+                <span
+                  aria-hidden="true"
+                  class="shell-nav-symbol"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="none"
+                    height="20"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    viewBox="0 0 24 24"
+                    width="20"
+                  >
+                    <path
+                      d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"
+                    />
+                    <path
+                      d="M10 21h4"
+                    />
+                  </svg>
+                </span>
+                <span>
+                  ประกาศ
+                </span>
+              </a>
+            </li>
+            <li>
+              <a
+                class="shell-nav-link"
+                data-discover="true"
+                href="/map"
+              >
+                <span
+                  aria-hidden="true"
+                  class="shell-nav-symbol"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="none"
+                    height="20"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    viewBox="0 0 24 24"
+                    width="20"
+                  >
+                    <path
+                      d="m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2z"
+                    />
+                    <path
+                      d="M9 3v16M15 5v16"
+                    />
+                  </svg>
+                </span>
+                <span>
+                  แผนที่และพื้นที่เสี่ยง
+                </span>
+              </a>
+            </li>
+            <li>
+              <a
+                class="shell-nav-link"
+                data-discover="true"
+                href="/reports"
+              >
+                <span
+                  aria-hidden="true"
+                  class="shell-nav-symbol"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="none"
+                    height="20"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    viewBox="0 0 24 24"
+                    width="20"
+                  >
+                    <rect
+                      height="18"
+                      rx="2"
+                      width="14"
+                      x="5"
+                      y="3"
+                    />
+                    <path
+                      d="M9 8h6M9 12h6M9 16h4"
+                    />
+                  </svg>
+                </span>
+                <span>
+                  รายงาน
+                </span>
+              </a>
+            </li>
+          </ul>
+        </nav>
+        <aside
+          aria-labelledby="sidebar-status-title"
+          class="sidebar-status"
+        >
+          <span
+            aria-hidden="true"
+            class="sidebar-status__dot"
+          />
+          <div>
+            <strong
+              id="sidebar-status-title"
+            >
+              ข้อควรทราบ
+            </strong>
+            <p>
+              ข้อมูลไม่พร้อมใช้งานไม่ได้หมายถึงพื้นที่ปลอดภัย
+            </p>
+          </div>
+        </aside>
+      </aside>
+      <div
+        class="shell-main"
+      >
+        <div
+          class="shell-top"
+        >
+          <header
+            class="institution-header"
+          >
+            <div
+              class="w-full max-w-[1600px] mx-auto px-4 sm:px-5 md:px-5 lg:px-5 flex items-center justify-between gap-4"
+            >
+              <span
+                class="institution-header__name"
+              >
+                สถานการณ์น้ำ อำเภอองครักษ์ จังหวัดนครนายก
+              </span>
+              <div
+                class="institution-header__actions"
+              >
+                <div
+                  aria-label="ภาษา"
+                  class="locale-toggle"
+                  role="group"
+                >
+                  <button
+                    aria-pressed="true"
+                    type="button"
+                  >
+                    TH
+                  </button>
+                  <button
+                    aria-pressed="false"
+                    type="button"
+                  >
+                    EN
+                  </button>
+                </div>
+                <a
+                  aria-label="การแจ้งเตือน"
+                  class="header-icon"
+                  data-discover="true"
+                  href="/notifications"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="none"
+                    height="20"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    viewBox="0 0 24 24"
+                    width="20"
+                  >
+                    <path
+                      d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"
+                    />
+                    <path
+                      d="M10 21h4"
+                    />
+                  </svg>
+                </a>
+              </div>
+            </div>
+          </header>
+          <header
+            class="mobile-header"
+          >
+            <div
+              class="w-full max-w-[1600px] mx-auto px-4 sm:px-5 md:px-5 lg:px-5 flex items-center justify-between h-full w-full"
+            >
+              <a
+                aria-label="Flood Watch Ongkharak หน้าหลัก"
+                class="brand"
+                data-discover="true"
+                href="/"
+              >
+                <img
+                  alt=""
+                  class="brand__image"
+                  src="/flood-watch-mark.svg"
+                />
+                <span>
+                  <strong>
+                    Flood Watch
+                  </strong>
+                  <small>
+                    Ongkharak
+                  </small>
+                </span>
+              </a>
+              <div
+                class="institution-header__actions"
+              >
+                <div
+                  aria-label="ภาษา"
+                  class="locale-toggle"
+                  role="group"
+                >
+                  <button
+                    aria-pressed="true"
+                    type="button"
+                  >
+                    TH
+                  </button>
+                  <button
+                    aria-pressed="false"
+                    type="button"
+                  >
+                    EN
+                  </button>
+                </div>
+                <a
+                  aria-label="การแจ้งเตือน"
+                  class="header-icon"
+                  data-discover="true"
+                  href="/notifications"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="none"
+                    height="20"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    viewBox="0 0 24 24"
+                    width="20"
+                  >
+                    <path
+                      d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"
+                    />
+                    <path
+                      d="M10 21h4"
+                    />
+                  </svg>
+                </a>
+              </div>
+            </div>
+          </header>
+        </div>
+        <main
+          class="page-content w-full"
+          id="main-content"
+          tabindex="-1"
+        >
+          <div
+            class="page-content__inner w-full max-w-[1600px] mx-auto px-4 sm:px-5 md:px-5 lg:px-5"
+          >
+            <p>
+              /admin
+            </p>
+          </div>
+        </main>
+      </div>
+      <nav
+        aria-label="การนำทางมือถือ"
+        class="bottom-navigation"
+      >
+        <ul>
+          <li>
+            <a
+              class="shell-nav-link"
+              data-discover="true"
+              href="/overview"
+            >
+              <span
+                aria-hidden="true"
+                class="shell-nav-symbol"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="none"
+                  height="20"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                  width="20"
+                >
+                  <path
+                    d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"
+                  />
+                  <path
+                    d="M9 21v-8h6v8"
+                  />
+                </svg>
+              </span>
+              <span>
+                ภาพรวม
+              </span>
+            </a>
+          </li>
+          <li>
+            <a
+              class="shell-nav-link"
+              data-discover="true"
+              href="/announcements"
+            >
+              <span
+                aria-hidden="true"
+                class="shell-nav-symbol"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="none"
+                  height="20"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                  width="20"
+                >
+                  <path
+                    d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"
+                  />
+                  <path
+                    d="M10 21h4"
+                  />
+                </svg>
+              </span>
+              <span>
+                ประกาศ
+              </span>
+            </a>
+          </li>
+          <li>
+            <a
+              class="shell-nav-link"
+              data-discover="true"
+              href="/map"
+            >
+              <span
+                aria-hidden="true"
+                class="shell-nav-symbol"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="none"
+                  height="20"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                  width="20"
+                >
+                  <path
+                    d="m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2z"
+                  />
+                  <path
+                    d="M9 3v16M15 5v16"
+                  />
+                </svg>
+              </span>
+              <span>
+                แผนที่และพื้นที่เสี่ยง
+              </span>
+            </a>
+          </li>
+          <li>
+            <a
+              class="shell-nav-link"
+              data-discover="true"
+              href="/reports"
+            >
+              <span
+                aria-hidden="true"
+                class="shell-nav-symbol"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="none"
+                  height="20"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                  width="20"
+                >
+                  <rect
+                    height="18"
+                    rx="2"
+                    width="14"
+                    x="5"
+                    y="3"
+                  />
+                  <path
+                    d="M9 8h6M9 12h6M9 16h4"
+                  />
+                </svg>
+              </span>
+              <span>
+                รายงาน
+              </span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </div>
+</body>
+ ❯ Object.getElementError ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/app/AppShell.alerts.test.tsx:40:28
+     38|     vi.mocked(confirmAction).mockImplementation(async (options) => { a…
+     39|     render(<MemoryRouter initialEntries={["/admin"]}><AppShell><Curren…
+     40|     fireEvent.click(screen.getByRole("button", { name: "ออกจากระบบ" })…
+       |                            ^
+     41|     await waitFor(() => expect(screen.getByText("/")).toBeInTheDocumen…
+     42|     expect(logout).toHaveBeenCalledTimes(1);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  src/features/auth/AccountMenu.test.tsx > account dropdown > edits in place, normalizes and updates the account
+TestingLibraryElementError: Unable to find an accessible element with the role "textbox" and name "ชื่อผู้ใช้งาน"
+
+Here are the accessible roles:
+
+  group:
+
+  Name "":
+  <details
+    class="account-menu"
+  />
+
+  --------------------------------------------------
+  button:
+
+  Name "แก้ไขชื่อผู้ใช้":
+  <button
+    aria-label="แก้ไขชื่อผู้ใช้"
+    type="button"
+  />
+
+  Name "ออกจากระบบ":
+  <button
+    class="account-menu__logout"
+    type="button"
+  />
+
+  --------------------------------------------------
+  status:
+
+  Name "":
+  <p
+    class="account-menu__message"
+    role="status"
+  />
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <details
+      class="account-menu"
+    >
+      <summary
+        aria-label="เมนูผู้ใช้งาน"
+        class="is-logged-in"
+      >
+        <span
+          aria-hidden="true"
+          class="account-user-icon"
+        >
+          <svg
+            fill="none"
+            height="22"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="1.8"
+            viewBox="0 0 24 24"
+            width="22"
+          >
+            <circle
+              cx="12"
+              cy="8"
+              r="4"
+            />
+            <path
+              d="M4 21a8 8 0 0 1 16 0"
+            />
+          </svg>
+          <svg
+            class="account-user-icon__check"
+            height="14"
+            viewBox="0 0 16 16"
+            width="14"
+          >
+            <circle
+              cx="8"
+              cy="8"
+              fill="currentColor"
+              r="7"
+            />
+            <path
+              d="m4.5 8 2.2 2.2 4.8-4.8"
+              fill="none"
+              stroke="white"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.8"
+            />
+          </svg>
+        </span>
+        <span
+          aria-hidden="true"
+          class="account-chevron"
+        >
+          <svg
+            fill="none"
+            height="20"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="20"
+          >
+            <path
+              d="m6 9 6 6 6-6"
+            />
+          </svg>
+        </span>
+        <span
+          class="sr-only"
+        >
+          เข้าสู่ระบบแล้ว
+        </span>
+      </summary>
+      <div
+        class="account-menu__content"
+      >
+        <div
+          class="account-menu__field"
+        >
+          <span
+            class="account-menu__label"
+          >
+            อีเมล
+          </span>
+          <span
+            class="account-menu__value"
+          >
+            a.very.long.email.address@example.test
+          </span>
+        </div>
+        <div
+          class="account-menu__field"
+        >
+          <span
+            class="account-menu__label"
+          >
+            ชื่อผู้ใช้งาน
+          </span>
+          <div
+            class="account-menu__username"
+          >
+            <span
+              class="account-menu__value"
+            >
+              original_user
+            </span>
+            <button
+              aria-label="แก้ไขชื่อผู้ใช้"
+              type="button"
+            >
+              แก้ไข
+            </button>
+          </div>
+        </div>
+        <p
+          class="account-menu__message"
+          role="status"
+        />
+        <button
+          class="account-menu__logout"
+          type="button"
+        >
+          <svg
+            aria-hidden="true"
+            fill="none"
+            height="18"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="1.8"
+            viewBox="0 0 24 24"
+            width="18"
+          >
+            <path
+              d="M9 5H4v14h5M9 12h12m-4-4 4 4-4 4"
+            />
+          </svg>
+          ออกจากระบบ
+        </button>
+      </div>
+    </details>
+  </div>
+</body>
+ ❯ Object.getElementError ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/features/auth/AccountMenu.test.tsx:90:26
+     88|     await openMenu();
+     89|     fireEvent.click(screen.getByRole("button", { name: "แก้ไขชื่อผู้ใช…
+     90|     const input = screen.getByRole("textbox", { name: "ชื่อผู้ใช้งาน" …
+       |                          ^
+     91|     expect(input).toHaveFocus();
+     92|     expect(input).toHaveValue("original_user");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  src/features/reports/guest.test.tsx > lets guests submit without login or private report access
+TestingLibraryElementError: Unable to find an element with the text: Guest report form. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <section
+      class="feature-page reports-page"
+    >
+      <header
+        class="page-hero reports-page__heading"
+      >
+        <div
+          class="page-hero__copy"
+        >
+          <p
+            class="eyebrow"
+          >
+            หลักฐานจากชุมชน
+          </p>
+          <h1>
+            รายงานสถานการณ์
+          </h1>
+          <p>
+            รายงานที่บุคคลส่งเข้ามา จะแสดงต่อสาธารณะเมื่อผ่านการตรวจสอบแล้วเท่านั้น
+          </p>
+          <a
+            class="reports-create-button"
+            data-discover="true"
+            href="/reports/new"
+          >
+            <svg
+              aria-hidden="true"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.7"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <path
+                d="M12 5v14 M5 12h14"
+              />
+            </svg>
+            ส่งรายงานสถานการณ์
+          </a>
+        </div>
+        <div
+          aria-hidden="true"
+          class="page-hero__art"
+        >
+          <span
+            class="page-hero__tile page-hero__tile--small"
+          >
+            <svg
+              aria-hidden="true"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.8"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <path
+                d="M3 7c3-4 6 4 9 0s6 4 9 0M3 12c3-4 6 4 9 0s6 4 9 0M3 17c3-4 6 4 9 0s6 4 9 0"
+              />
+            </svg>
+          </span>
+          <span
+            class="page-hero__tile page-hero__tile--large"
+          >
+            <svg
+              aria-hidden="true"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.8"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <rect
+                height="18"
+                rx="2"
+                width="14"
+                x="5"
+                y="3"
+              />
+              <path
+                d="M9 8h6M9 12h6M9 16h4"
+              />
+            </svg>
+          </span>
+          <span
+            class="page-hero__tile page-hero__tile--small"
+          >
+            <svg
+              aria-hidden="true"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.8"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <path
+                d="m4 10 14-5v14L4 14v-4ZM18 9l3-1v8l-3-1M7 15l2 5h3l-2-4"
+              />
+            </svg>
+          </span>
+        </div>
+      </header>
+      <section
+        aria-label="สรุปรายงานที่โหลดได้"
+        class="reports-summary"
+      >
+        <dl
+          class="reports-summary__grid"
+        >
+          <div
+            class="reports-summary__item reports-summary__item--total"
+          >
+            <dt>
+              <span
+                class="reports-summary__icon"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="none"
+                  height="24"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.7"
+                  viewBox="0 0 24 24"
+                  width="24"
+                >
+                  <path
+                    d="M8 3h8v4H8z M6 5H4v16h16V5h-2 M8 12h8 M8 16h5"
+                  />
+                </svg>
+              </span>
+              ทั้งหมด
+            </dt>
+            <dd>
+              —
+              <span>
+                 
+                รายงาน
+              </span>
+            </dd>
+          </div>
+          <div
+            class="reports-summary__item"
+          >
+            <dt>
+              <span
+                class="reports-summary__icon"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="none"
+                  height="24"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.7"
+                  viewBox="0 0 24 24"
+                  width="24"
+                >
+                  <path
+                    d="M12 3s-6 6.5-6 11a6 6 0 0 0 12 0c0-4.5-6-11-6-11z M9 15a3 3 0 0 0 3 3"
+                  />
+                </svg>
+              </span>
+              น้ำท่วม
+            </dt>
+            <dd>
+              —
+              <span>
+                 
+                รายงาน
+              </span>
+            </dd>
+          </div>
+          <div
+            class="reports-summary__item"
+          >
+            <dt>
+              <span
+                class="reports-summary__icon"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="none"
+                  height="24"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.7"
+                  viewBox="0 0 24 24"
+                  width="24"
+                >
+                  <path
+                    d="M7 3 3 21 M17 3l4 18 M12 4v3 M12 11v3 M12 18v3"
+                  />
+                </svg>
+              </span>
+              สภาพถนน
+            </dt>
+            <dd>
+              —
+              <span>
+                 
+                รายงาน
+              </span>
+            </dd>
+          </div>
+          <div
+            class="reports-summary__item"
+          >
+            <dt>
+              <span
+                class="reports-summary__icon"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="none"
+                  height="24"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.7"
+                  viewBox="0 0 24 24"
+                  width="24"
+                >
+                  <path
+                    d="M4 4h16v12H9l-5 4z M8 9h8 M8 12h5"
+                  />
+                </svg>
+              </span>
+              อื่น ๆ
+            </dt>
+            <dd>
+              —
+              <span>
+                 
+                รายงาน
+              </span>
+            </dd>
+          </div>
+        </dl>
+        <p
+          class="reports-summary__caption"
+        >
+          กำลังโหลดจำนวนรายงานที่ยืนยันแล้ว
+        </p>
+      </section>
+      <section
+        aria-labelledby="public-reports-heading"
+        class="data-section reports-public"
+      >
+        <div
+          class="reports-public__heading"
+        >
+          <div>
+            <p
+              class="eyebrow"
+            >
+              รายงานจากชุมชน
+            </p>
+            <h2
+              id="public-reports-heading"
+            >
+              รายงานที่ยืนยันแล้ว
+            </h2>
+            <p
+              class="section-caption"
+            >
+              แหล่งข้อมูล: รายงานชุมชนที่ตรวจสอบแล้ว
+            </p>
+          </div>
+          <label
+            class="reports-search"
+          >
+            <span>
+              ค้นหารายงาน
+            </span>
+            <span
+              class="reports-search__field"
+            >
+              <svg
+                aria-hidden="true"
+                fill="none"
+                height="24"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.7"
+                viewBox="0 0 24 24"
+                width="24"
+              >
+                <path
+                  d="M16 16l5 5 M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0"
+                />
+              </svg>
+              <input
+                placeholder="ค้นหาจากรายละเอียดรายงาน"
+                type="search"
+                value=""
+              />
+            </span>
+          </label>
+        </div>
+        <div
+          class="reports-toolbar"
+        >
+          <div
+            aria-label="กรองประเภทรายงาน"
+            class="reports-filters"
+          >
+            <button
+              aria-pressed="true"
+              type="button"
+            >
+              <svg
+                aria-hidden="true"
+                fill="none"
+                height="24"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.7"
+                viewBox="0 0 24 24"
+                width="24"
+              >
+                <path
+                  d="M8 3h8v4H8z M6 5H4v16h16V5h-2 M8 12h8 M8 16h5"
+                />
+              </svg>
+              ทั้งหมด
+              <span
+                aria-hidden="true"
+                class="reports-filter-count"
+              >
+                —
+              </span>
+            </button>
+            <button
+              aria-pressed="false"
+              type="button"
+            >
+              <svg
+                aria-hidden="true"
+                fill="none"
+                height="24"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.7"
+                viewBox="0 0 24 24"
+                width="24"
+              >
+                <path
+                  d="M12 3s-6 6.5-6 11a6 6 0 0 0 12 0c0-4.5-6-11-6-11z M9 15a3 3 0 0 0 3 3"
+                />
+              </svg>
+              น้ำท่วม
+              <span
+                aria-hidden="true"
+                class="reports-filter-count"
+              >
+                —
+              </span>
+            </button>
+            <button
+              aria-pressed="false"
+              type="button"
+            >
+              <svg
+                aria-hidden="true"
+                fill="none"
+                height="24"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.7"
+                viewBox="0 0 24 24"
+                width="24"
+              >
+                <path
+                  d="M7 3 3 21 M17 3l4 18 M12 4v3 M12 11v3 M12 18v3"
+                />
+              </svg>
+              สภาพถนน
+              <span
+                aria-hidden="true"
+                class="reports-filter-count"
+              >
+                —
+              </span>
+            </button>
+            <button
+              aria-pressed="false"
+              type="button"
+            >
+              <svg
+                aria-hidden="true"
+                fill="none"
+                height="24"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.7"
+                viewBox="0 0 24 24"
+                width="24"
+              >
+                <path
+                  d="M4 4h16v12H9l-5 4z M8 9h8 M8 12h5"
+                />
+              </svg>
+              อื่น ๆ
+              <span
+                aria-hidden="true"
+                class="reports-filter-count"
+              >
+                —
+              </span>
+            </button>
+          </div>
+          <p
+            aria-live="polite"
+            class="reports-result-count"
+          >
+            แสดงเฉพาะรายงานที่ผ่านการตรวจสอบ
+          </p>
+        </div>
+        <div
+          class="reports-browser"
+        >
+          <div
+            class="reports-list reports-list--state"
+          >
+            <div
+              class="reports-state-panel"
+              role="status"
+            >
+              <h3>
+                กำลังโหลดข้อมูล
+              </h3>
+              <p>
+                กำลังตรวจสอบรายงานชุมชนที่ยืนยันแล้ว
+              </p>
+            </div>
+          </div>
+          <aside
+            aria-labelledby="report-detail-heading"
+            class="reports-detail reports-detail--state"
+          >
+            <p
+              class="eyebrow"
+            >
+              รายละเอียดรายงาน
+            </p>
+            <h2
+              id="report-detail-heading"
+            >
+              ยังไม่มีรายละเอียดรายงาน
+            </h2>
+            <p>
+              กำลังรอข้อมูลรายงานเพื่อแสดงรายละเอียด
+            </p>
+          </aside>
+        </div>
+      </section>
+    </section>
+  </div>
+</body>
+ ❯ Object.getElementError ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/features/reports/guest.test.tsx:17:17
+     15| it("lets guests submit without login or private report access", async …
+     16|   render(<MemoryRouter><ReportsPage /></MemoryRouter>);
+     17|   expect(screen.getByText("Guest report form")).toBeInTheDocument();
+       |                 ^
+     18|   await waitFor(() => expect(api.listPublic).toHaveBeenCalled());
+     19|   expect(api.mine).not.toHaveBeenCalled();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+
+
+ Test Files  3 failed | 50 passed (53)
+      Tests  5 failed | 322 passed (327)
+   Start at  15:08:56
+   Duration  12.30s (environment 58%, tests 18%, setup 16%, import 5%, transform 2%)
+
+Environment  jsdom was created 53 times · 183.41s total, 58% of tracked time
+             create it once per worker with pool: 'vmThreads' (keeps per-file isolation) or isolate: false (shares it across files)
+             learn more: https://vitest.dev/guide/improving-performance#test-environments
+
+ ELIFECYCLE  Test failed. See above for more details.

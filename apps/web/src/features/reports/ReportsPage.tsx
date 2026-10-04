@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useSearchParams } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import { formatNumber, useTranslation } from "../../i18n";
 import th from "../../i18n/locales/th/reports";
 import en from "../../i18n/locales/en/reports";
@@ -8,7 +8,6 @@ import { DataTimestamp, OriginalContentNote, SourceBadge } from "../../shared/co
 import { useRealtimeRevision } from "../realtime/RealtimeProvider";
 import { reportsApi } from "./api";
 import { ReportCard } from "./ReportCard";
-import { ReportForm } from "./ReportForm";
 import { ReportMediaImage } from "./ReportMediaImage";
 import "./ReportsPage.css";
 import type { CommunityReport, ReportType } from "./types";
@@ -28,11 +27,6 @@ const reportTypeKeys: Record<ReportType, keyof typeof th> = {
   ROAD: "typeLabel.ROAD",
   OTHER: "typeLabel.OTHER"
 };
-
-function coordinateLabel(report: CommunityReport) {
-  const [longitude, latitude] = report.location.coordinates;
-  return `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
-}
 
 function ReportsIcon({ kind }: { kind: ReportFilter | "SEARCH" | "PLUS" }) {
   const paths = {
@@ -70,7 +64,8 @@ function ReportDetails({ report }: { report: CommunityReport }) {
       </ul>
     </section>}
     <dl className="reports-detail__facts">
-      <div><dt>{t("detail.location")}</dt><dd>{coordinateLabel(report)}</dd></div>
+      <div><dt>{t("detail.location")}</dt><dd>{report.locationName || t("detail.locationUnknown")}</dd></div>
+      {report.locationNote && <div><dt>{t("detail.locationNote")}</dt><dd>{report.locationNote}</dd></div>}
       <div><dt>{t("detail.submitted")}</dt><dd><DataTimestamp value={report.createdAt} label={t("detail.submittedLabel")} /></dd></div>
       {report.verifiedAt && <div><dt>{t("detail.reviewed")}</dt><dd><DataTimestamp value={report.verifiedAt} label={t("detail.reviewedLabel")} /></dd></div>}
       {report.estimatedWaterDepthM !== null && <div><dt>{t("detail.depth")}</dt><dd>{formatNumber(report.estimatedWaterDepthM, locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {t("detail.meters")}</dd></div>}
@@ -145,7 +140,7 @@ export function ReportsPage() {
         <p className="eyebrow">{t("eyebrow")}</p>
         <h1>{t("title")}</h1>
         <p>{t("description")}</p>
-        <a className="reports-create-button" href="#submit-report"><ReportsIcon kind="PLUS" />{t("create")}</a>
+        <Link className="reports-create-button" to="/reports/new"><ReportsIcon kind="PLUS" />{t("create")}</Link>
       </div>
       <PageHeroArt kind="report" />
     </header>
@@ -186,6 +181,5 @@ export function ReportsPage() {
             : selectedReport && <ReportDetails report={selectedReport} />}
       </div>
     </section>
-    <div className="reports-authenticated"><div id="submit-report" tabIndex={-1}><ReportForm editing={null} onComplete={() => undefined} onCancel={() => undefined} /></div></div>
   </section>;
 }

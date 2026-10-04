@@ -1,0 +1,52 @@
+
+> @floodwatch/web@0.0.0 test D:\!Project\FloodWatch-Ongkharak(Web_Application)\apps\web
+> vitest run "src/features/weather/api.test.ts" "src/features/realtime/RealtimeProvider.test.tsx"
+
+
+ RUN  v5.0.3 D:/!Project/FloodWatch-Ongkharak(Web_Application)/apps/web
+
+ ❯ src/features/weather/api.test.ts (6 tests | 2 failed) 8ms
+   ❯ weather API boundary (6)
+     × allows only the fixed Open-Meteo HTTPS provider origin 4ms
+     × accepts the backend one-minute model-time tolerance but rejects inconsistent receipt times 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/features/weather/api.test.ts > weather API boundary > allows only the fixed Open-Meteo HTTPS provider origin
+AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ src/features/weather/api.test.ts:56:62
+     54|     expect(isSafeProviderUrl("javascript:alert(1)")).toBe(false);
+     55|     expect(isSafeProviderUrl("https://example.com/weather")).toBe(fals…
+     56|     expect(isSafeProviderUrl("https://open-meteo.com:444/")).toBe(fals…
+       |                                                              ^
+     57|   });
+     58|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/features/weather/api.test.ts > weather API boundary > accepts the backend one-minute model-time tolerance but rejects inconsistent receipt times
+AssertionError: expected null not to be null
+ ❯ src/features/weather/api.test.ts:61:175
+     59|   it("accepts the backend one-minute model-time tolerance but rejects …
+     60|     const now = Date.now();
+     61|     expect(validateWeatherResponse({ ...response, retrievedAt: new Dat…
+       |                                                                                                                                                                               ^
+     62|     expect(validateWeatherResponse({ ...response, freshness: "UNKNOWN"…
+     63|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  2 failed | 9 passed (11)
+   Start at  15:07:28
+   Duration  1.97s (environment 61%, setup 21%, transform 7%, import 5%, tests 5%, worker 1%)
+
+ ELIFECYCLE  Test failed. See above for more details.

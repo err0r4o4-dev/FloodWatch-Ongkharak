@@ -1,0 +1,36 @@
+
+> @floodwatch/web@0.0.0 test D:\!Project\FloodWatch-Ongkharak(Web_Application)\apps\web
+> vitest run "src/features/reports" "src/app/App.test.tsx"
+
+
+ RUN  v5.0.3 D:/!Project/FloodWatch-Ongkharak(Web_Application)/apps/web
+
+ ❯ src/features/reports/ReportLocationPicker.test.tsx (14 tests | 1 failed) 364ms
+   ❯ ReportLocationPicker (14)
+     × keeps the compact locate control above the Leaflet stacking context 30ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/features/reports/ReportLocationPicker.test.tsx > ReportLocationPicker > keeps the compact locate control above the Leaflet stacking context
+AssertionError: expected 'auto' to be '1' // Object.is equality
+
+Expected: "1"
+Received: "auto"
+
+ ❯ src/features/reports/ReportLocationPicker.test.tsx:93:45
+     91|
+     92|     const locate = screen.getByRole("button", { name: "ไปยังตำแหน่งของ…
+     93|     expect(getComputedStyle(locate).zIndex).toBe("1");
+       |                                             ^
+     94|     expect(locate.querySelector(".report-location-picker__visually-hid…
+     95|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 9 passed (10)
+      Tests  1 failed | 68 passed (69)
+   Start at  15:16:25
+   Duration  4.61s (environment 56%, setup 17%, tests 15%, import 5%, transform 5%, worker 1%)
+
+ ELIFECYCLE  Test failed. See above for more details.
