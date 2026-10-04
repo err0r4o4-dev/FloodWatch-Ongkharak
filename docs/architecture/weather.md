@@ -1,6 +1,6 @@
 # Ongkharak model weather
 
-The public overview reads `GET /api/v1/weather/ongkharak` from Go. The API fetches Open-Meteo current model weather for the reference point 14.1 N, 101.0 E, matching the existing map center. Open-Meteo may select a nearby model grid cell. This is neither a district-wide measurement nor an observation from a local station. `source.kind=MODEL` deliberately does not claim OFFICIAL, COMMUNITY, or AI flood provenance.
+The public application shell reads `GET /api/v1/weather/ongkharak` from Go. The API fetches Open-Meteo current model weather for the reference point 14.1 N, 101.0 E, matching the existing map center. Open-Meteo may select a nearby model grid cell. This is neither a district-wide measurement nor an observation from a local station. `source.kind=MODEL` deliberately does not claim OFFICIAL, COMMUNITY, or AI flood provenance.
 
 ## Flow and bounds
 
@@ -15,6 +15,12 @@ Successful responses cache for ten minutes. One in-flight refresh serves concurr
 No usable cache produces HTTP 503, `freshness=UNKNOWN` and null measurements, not zeros. A failed refresh retains prior evidence as explicitly STALE. Cached model time older than one hour is also STALE; after six hours measurements are omitted and become UNKNOWN. Successful refresh restores FRESH. HTTP responses use `Cache-Control: no-store` so browsers/proxies do not hide a changed outage state. The public route is rate-limited to 60 reads/minute per limiter identity; trusted ingress configuration still determines that identity.
 
 This capability does not write water readings, create alerts, publish flood SSE events, modify flood thresholds, call Python AI, or add a schema migration. Weather outages do not affect API readiness or independent flood panels. The frontend shows loading, unavailable/retry and stale states independently and includes Thai/English labels, model-time/receipt-time context and Open-Meteo attribution.
+
+## Frontend presentation
+
+One shell-scoped `WeatherProvider` shares the request, refresh timers, retry state and age evaluation between the desktop Sidebar summary, the compact Overview summary at existing mobile/tablet breakpoints, and the native modal containing the full `WeatherPanel`. Public menu navigation keeps that provider mounted; opening details does not trigger another request. Landing and authentication pages remain outside this provider. The Sidebar summary stays within the Sidebar, below the preserved data caution, without overlaying the main content. Its minimize action becomes a keyboard-accessible reopen button; the mobile summary remains inline rather than floating above the map or bottom navigation.
+
+The compact summary includes model provenance, freshness, model time and provider attribution. Unknown or expired measurements remain hidden. Details retain source linking, full model/receipt timestamps, interval precipitation and the flood-safety caveat. The native dialog provides modal semantics and Escape dismissal; closing returns focus to its trigger. Each instance uses unique heading/dialog IDs and shared retries update all consumers.
 
 ## Configuration and licensing
 

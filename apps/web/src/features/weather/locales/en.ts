@@ -2,6 +2,14 @@ import type th from "./th";
 
 const en: Record<keyof typeof th, string> = {
   "title": "Ongkharak weather",
+  "widget.details": "View weather details",
+  "widget.dialogTitle": "Ongkharak weather details",
+  "widget.closeDetails": "Close weather details",
+  "widget.minimize": "Minimize weather card",
+  "widget.reopen": "Open weather card",
+  "widget.model": "Model data",
+  "widget.wind": "{value} km/h",
+  "widget.stale": "Stale data cannot confirm safety",
   "location": "Ongkharak District, Nakhon Nayok Province",
   "loading.aria": "Loading weather data",
   "loading.title": "Loading weather",

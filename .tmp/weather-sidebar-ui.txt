@@ -1,0 +1,19 @@
+zoom diagnostics { width: 248, scroll: 248, children: [] }
+{
+  "checks": [
+    "1440px: single request, card fit, dialog, focus trap, Escape, minimize/reopen",
+    "1280px: single request, card fit, dialog, focus trap, Escape, minimize/reopen",
+    "1200px: single request, card fit, dialog, focus trap, Escape, minimize/reopen",
+    "768px: single request, card fit, dialog, focus trap, Escape, minimize/reopen",
+    "390px: single request, card fit, dialog, focus trap, Escape, minimize/reopen",
+    "320px: single request, card fit, dialog, focus trap, Escape, minimize/reopen",
+    "public navigation preserves shared weather",
+    "stale state",
+    "unknown state",
+    "error state",
+    "loading state",
+    "English, 320px 200% text card/dialog fit"
+  ],
+  "errors": [],
+  "evidence": "Synthetic intercepted weather, not live local conditions"
+}

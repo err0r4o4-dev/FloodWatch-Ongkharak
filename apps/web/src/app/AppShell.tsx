@@ -7,6 +7,8 @@ import type { ReactNode } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router";
 import { useOptionalAuth } from "../features/auth/AuthProvider";
 import { confirmAction } from "../shared/alerts";
+import { WeatherProvider } from "../features/weather/WeatherProvider";
+import { WeatherWidget } from "../features/weather/WeatherWidget";
 
 const links = (t: (key: keyof typeof th) => string) => [
   { to: "/overview", label: t("overview"), symbol: "home" },
@@ -76,12 +78,15 @@ export function AppShell({ children }: { children: ReactNode }) {
   };
   if (location.pathname === "/") return <>{children}</>;
   if (["/admin/login", "/login", "/register", "/forgot-password", "/auth/complete", "/auth/google/link"].includes(location.pathname)) return <>{children}</>;
-  return <div className="app-shell public-shell">
+  return <WeatherProvider><div className="app-shell public-shell">
     <a className="skip-link" href="#main-content">{t("skipToMainContent")}</a>
     <aside className="desktop-sidebar">
       <NavLink to="/" className="brand" aria-label={t("floodWatchOngkharakHome")}><img className="brand__image" src="/flood-watch-mark.svg" alt="" /><span><strong>Flood Watch</strong><small>Ongkharak</small></span></NavLink>
       <Navigation />
-      <aside className="sidebar-status" aria-labelledby="sidebar-status-title"><span className="sidebar-status__dot" aria-hidden="true" /><div><strong id="sidebar-status-title">{t("pleaseNote")}</strong><p>{t("unavailableDataDoesNotMeanAnArea")}</p></div></aside>
+      <div className="sidebar-footer">
+        <aside className="sidebar-status" aria-labelledby="sidebar-status-title"><span className="sidebar-status__dot" aria-hidden="true" /><div><strong id="sidebar-status-title">{t("pleaseNote")}</strong><p>{t("unavailableDataDoesNotMeanAnArea")}</p></div></aside>
+        <WeatherWidget />
+      </div>
     </aside>
     <div className="shell-main"><div className="shell-top">
       <header className="institution-header"><div className="w-full max-w-[1600px] mx-auto px-4 sm:px-5 md:px-5 lg:px-5 flex items-center justify-between gap-4"><span className="institution-header__name">{t("waterSituationMonitoringCentreOngkharakNakhonNayok")}</span><div className="institution-header__actions"><LanguageSwitcher /></div></div></header>
@@ -92,5 +97,5 @@ export function AppShell({ children }: { children: ReactNode }) {
       </main>
     </div>
     <Navigation mobile />
-  </div>;
+  </div></WeatherProvider>;
 }

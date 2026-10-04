@@ -10,6 +10,7 @@
   --color-ink-muted: #475569;
   --color-border: #c9dcf7;
   --color-surface: #ffffff;
+  --color-overlay: rgb(15 23 42 / 40%);
   --color-glass: rgb(255 255 255 / 72%);
   --color-glass-fallback: #f4f9ff;
   --color-source-official: #e4efff;

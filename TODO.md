@@ -304,6 +304,14 @@ Whole-workspace frontend verification is not green: the latest full suite passes
 
 Release boundary: running application services and database are not changed by this work; prior guest-flow migration/release boundaries remain in force. No migration, dependency, canonical water adapter or flood-safety decision is added. The free endpoint requires non-commercial eligibility and production activation is an explicit operator decision. Cache coordination is per API process. Physical devices, Safari, commercial-provider integration and production deployment remain unverified. No commit/push occurred.
 
+### Approved UI follow-up — Sidebar weather summary (2026-10-04)
+
+- [x] Move the desktop weather summary into the Sidebar footer below the preserved data caution; keep a compact inline Overview card at existing mobile/tablet breakpoints.
+- [x] Share requests, refresh timers, age evaluation and retries through a shell-scoped provider. Add minimize/reopen and native modal details without another fetch; preserve model provenance, provider attribution, UNKNOWN/STALE handling and flood-safety caveats.
+- [x] Verify 54 focused weather/Overview/App tests, standalone Vite bundling, final diff checks and rendered Edge states at 320/390/768/1200/1280/1440, including keyboard dismissal/focus return, retries, Thai/English, short desktop height and 320px/200% text. Browser data is synthetic, not live local conditions. Evidence: `.tmp/weather-sidebar-ui`, `.tmp/weather-sidebar-ui.txt` and `.tmp/weather-sidebar-tests.txt`.
+
+Full frontend suite passes 341/344; the same three pre-existing AppShell logout-confirmation tests fail. Typecheck/full typechecked production build remain blocked by existing unused `signingOut` and `handleLogout` in `AppShell.tsx`; standalone Vite build passes with the existing chunk-size warning. No backend, dependencies, database, runtime configuration, migrations or production services are changed. The pre-existing `.env.example` edits are preserved. No commit/push occurred; physical devices and Safari remain unverified.
+
 ## Future Skills
 
 - [ ] Add narrower skills only when a later phase exposes meaningful recurring practices not covered by the Phase 0 core.

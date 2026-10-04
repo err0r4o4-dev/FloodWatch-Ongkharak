@@ -1,0 +1,9 @@
+
+ RUN  v5.0.3 D:/!Project/FloodWatch-Ongkharak(Web_Application)/apps/web
+
+
+ Test Files  9 passed (9)
+      Tests  54 passed (54)
+   Start at  16:26:24
+   Duration  4.17s (environment 57%, setup 17%, tests 15%, import 5%, transform 5%, worker 1%)
+

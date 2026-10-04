@@ -34,6 +34,8 @@ Node.js 24, Corepack/pnpm 10, Go (version in `apps/backend/go.mod`), Python 3.12
 
 ## Access from the same local network
 
+Postgres is available to local database clients at `127.0.0.1:5432`, using the credentials configured in `.env`; this port is not exposed to the LAN.
+
 Caddy publishes the website on all IPv4 interfaces by default; direct web/API debugging ports remain localhost-only. Apply the entry-point change with `docker compose up -d --no-deps caddy`, then open `http://<server-LAN-IP>/` from another device (include `:<CADDY_HTTP_PORT>` when it is not 80). Use Windows `ipconfig` to find the active adapter's IPv4 address; localhost on another device points to that device, not the server.
 
 Add the exact website origin, for example `http://192.168.0.101`, to the comma-separated `CORS_ALLOWED_ORIGINS` in your local `.env`, retaining localhost origins you use. Apply with `docker compose up -d --no-deps api`. This is needed for origin-checked requests such as admin login and report submission; do not use a wildcard. Apply required database migrations before enabling the matching API release.

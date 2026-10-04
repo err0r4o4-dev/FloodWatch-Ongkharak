@@ -1,5 +1,13 @@
 const th = {
   "title": "สภาพอากาศองครักษ์",
+  "widget.details": "ดูรายละเอียดสภาพอากาศ",
+  "widget.dialogTitle": "รายละเอียดสภาพอากาศองครักษ์",
+  "widget.closeDetails": "ปิดรายละเอียดสภาพอากาศ",
+  "widget.minimize": "ย่อการ์ดสภาพอากาศ",
+  "widget.reopen": "เปิดการ์ดสภาพอากาศ",
+  "widget.model": "ข้อมูลแบบจำลอง",
+  "widget.wind": "{value} กม./ชม.",
+  "widget.stale": "ข้อมูลเก่า ไม่ควรใช้ยืนยันความปลอดภัย",
   "location": "อำเภอองครักษ์ จังหวัดนครนายก",
   "loading.aria": "กำลังโหลดข้อมูลสภาพอากาศ",
   "loading.title": "กำลังโหลดสภาพอากาศ",
