@@ -14,6 +14,9 @@ import (
 
 type Repository struct{ pool *pgxpool.Pool }
 
+const thaiWaterStationScope = `(d.code NOT IN ('THAIWATER_WATER','THAIWATER_RAIN')
+	OR (btrim(COALESCE(s.district,''))='องครักษ์' AND btrim(COALESCE(s.province,''))='นครนายก'))`
+
 func New(pool *pgxpool.Pool) *Repository { return &Repository{pool: pool} }
 
 func mapped(err error) error {
@@ -74,6 +77,7 @@ func (repository *Repository) ListStations(ctx context.Context, filter flood.Lis
 	rows, err := repository.pool.Query(ctx, `SELECT s.id, d.id, d.code, d.name, d.source_type, s.external_id, s.code, s.name, ST_AsGeoJSON(s.location), s.district, s.province, s.active, s.created_at, s.updated_at
 		FROM water_stations s JOIN data_sources d ON d.id=s.source_id
 		WHERE (NOT $1::boolean OR ST_Intersects(s.location, ST_MakeEnvelope($2,$3,$4,$5,4326)))
+		AND `+thaiWaterStationScope+`
 		ORDER BY s.code, s.id LIMIT $6 OFFSET $7`, hasBox, minLng, minLat, maxLng, maxLat, filter.Page.Limit, filter.Page.Offset)
 	if err != nil {
 		return nil, fmt.Errorf("list water stations: %w", err)
@@ -95,7 +99,7 @@ func (repository *Repository) ListStations(ctx context.Context, filter flood.Lis
 
 func (repository *Repository) GetStation(ctx context.Context, id string) (flood.WaterStation, error) {
 	item, err := scanStation(repository.pool.QueryRow(ctx, `SELECT s.id, d.id, d.code, d.name, d.source_type, s.external_id, s.code, s.name, ST_AsGeoJSON(s.location), s.district, s.province, s.active, s.created_at, s.updated_at
-		FROM water_stations s JOIN data_sources d ON d.id=s.source_id WHERE s.id=$1`, id))
+		FROM water_stations s JOIN data_sources d ON d.id=s.source_id WHERE s.id=$1 AND `+thaiWaterStationScope, id))
 	if err != nil {
 		return flood.WaterStation{}, fmt.Errorf("get water station: %w", mapped(err))
 	}
@@ -125,6 +129,7 @@ func (repository *Repository) ListReadings(ctx context.Context, stationID string
 		r.water_level_m::double precision, r.flow_rate_m3s::double precision, r.rainfall_mm::double precision, r.verification_status, r.confidence::double precision, r.water_level_datum, r.rainfall_period_seconds
 		FROM water_readings r JOIN data_sources d ON d.id=r.source_id
 		WHERE r.station_id=$1 AND ($2::timestamptz IS NULL OR r.observed_at >= $2) AND ($3::timestamptz IS NULL OR r.observed_at <= $3)
+		AND EXISTS (SELECT 1 FROM water_stations s JOIN data_sources d ON d.id=s.source_id WHERE s.id=r.station_id AND `+thaiWaterStationScope+`)
 		ORDER BY r.observed_at DESC, r.id DESC LIMIT $4 OFFSET $5`, stationID, filter.From, filter.To, filter.Page.Limit, filter.Page.Offset)
 	if err != nil {
 		return nil, fmt.Errorf("list water readings: %w", err)

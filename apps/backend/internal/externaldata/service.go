@@ -187,6 +187,9 @@ func validateBatch(definition Definition, batch Batch, now time.Time) error {
 			if record.Station == nil || record.ObservedAt == nil || record.ObservedAt.IsZero() || record.ObservedAt.After(batch.RetrievedAt.Add(time.Minute)) || record.Station.Code == "" || record.Station.Name == "" || !validCoordinate(record.Station.Latitude, record.Station.Longitude) {
 				return errors.New("invalid station observation")
 			}
+			if (definition.Code == "THAIWATER_WATER" || definition.Code == "THAIWATER_RAIN" || definition.Code == "THAIWATER_GATE") && !IsOngkharakStation(record.Station) {
+				return errors.New("station observation outside Ongkharak scope")
+			}
 		}
 		if record.Kind == Forecast {
 			unverifiedRaster := definition.Code == "HII_WRF" && record.Model == "HII_WRF_ROMS" && record.Value == nil && record.Reason != "" && record.ValidFrom == nil && record.ValidTo == nil

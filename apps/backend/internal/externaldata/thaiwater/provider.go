@@ -73,9 +73,15 @@ func (provider *Provider) Fetch(ctx context.Context) (externaldata.Batch, error)
 	if err != nil {
 		return externaldata.Batch{}, err
 	}
+	localRecords := make([]externaldata.Record, 0, len(records))
+	for _, record := range records {
+		if externaldata.IsOngkharakStation(record.Station) {
+			localRecords = append(localRecords, record)
+		}
+	}
 	return externaldata.Batch{
 		RetrievedAt: retrievedAt,
-		Records:     records,
+		Records:     localRecords,
 		Raw: []externaldata.RawPayload{{
 			URL: thaiWaterBase + path, ContentType: "application/json", Body: append([]byte(nil), body...),
 		}},

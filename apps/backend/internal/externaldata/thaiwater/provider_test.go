@@ -70,15 +70,15 @@ func TestFetchThaiWaterAcceptsSyntheticActualStationCoordinatesAndMinuteTimestam
 	}{
 		{
 			name: "water", kind: "WATER", path: waterPath, want: 2,
-			payload: []byte(`{"result":"OK","data":[{"station":{"id":"189","tele_station_oldcode":"189","tele_station_name":{"th":"Synthetic actual station"},"tele_station_lat":"14.1000","tele_station_long":101.0000},"geocode":{"province_code":"26"},"waterlevel_datetime":"2026-09-29 10:00","waterlevel_msl":"1.25","waterlevel_m":"1.10"}]}`),
+			payload: []byte(`{"result":"OK","data":[{"station":{"id":"189","tele_station_oldcode":"189","tele_station_name":{"th":"Synthetic actual station"},"tele_station_lat":"14.1000","tele_station_long":101.0000},"geocode":{"province_code":"26","province_name":{"th":"นครนายก"},"amphoe_name":{"th":"องครักษ์"}},"waterlevel_datetime":"2026-09-29 10:00","waterlevel_msl":"1.25","waterlevel_m":"1.10"}]}`),
 		},
 		{
 			name: "rain", kind: "RAIN", path: rainPath, want: 2,
-			payload: []byte(`{"result":"OK","data":[{"station":{"id":"189","tele_station_oldcode":"189","tele_station_name":{"th":"Synthetic actual station"},"tele_station_lat":14.1,"tele_station_long":"101.0"},"geocode":{"province_code":"26"},"rainfall_datetime":"2026-09-29 10:00","rainfall_1h":"2.5","rainfall_24h":null}]}`),
+			payload: []byte(`{"result":"OK","data":[{"station":{"id":"189","tele_station_oldcode":"189","tele_station_name":{"th":"Synthetic actual station"},"tele_station_lat":14.1,"tele_station_long":"101.0"},"geocode":{"province_code":"26","province_name":{"th":"นครนายก"},"amphoe_name":{"th":"องครักษ์"}},"rainfall_datetime":"2026-09-29 10:00","rainfall_1h":"2.5","rainfall_24h":null}]}`),
 		},
 		{
 			name: "gate", kind: "GATE", path: gatePath, want: 4,
-			payload: []byte(`{"watergate_data":{"result":"OK","data":[{"station":{"id":"189","tele_station_oldcode":"189","tele_station_name":{"th":"Synthetic actual station"},"tele_station_lat":"14.1","tele_station_long":"101.0"},"geocode":{"province_code":"26"},"watergate_in":"1.0","watergate_out":"0.5","watergate_datetime_in":"2026-09-29 10:00","watergate_datetime_out":"2026-09-29 10:05","watergate_open":null,"watergate_pump":null}]}}`),
+			payload: []byte(`{"watergate_data":{"result":"OK","data":[{"station":{"id":"189","tele_station_oldcode":"189","tele_station_name":{"th":"Synthetic actual station"},"tele_station_lat":"14.1","tele_station_long":"101.0"},"geocode":{"province_code":"26","province_name":{"th":"นครนายก"},"amphoe_name":{"th":"องครักษ์"}},"watergate_in":"1.0","watergate_out":"0.5","watergate_datetime_in":"2026-09-29 10:00","watergate_datetime_out":"2026-09-29 10:05","watergate_open":null,"watergate_pump":null}]}}`),
 		},
 	}
 	for _, test := range tests {
@@ -100,7 +100,7 @@ func TestFetchThaiWaterAcceptsSyntheticActualStationCoordinatesAndMinuteTimestam
 
 func TestFetchRainSeparatesSyntheticAccumulations(t *testing.T) {
 	provider, err := NewWithFetcher("RAIN", syntheticFetcher{responses: map[string][]byte{
-		rainPath: []byte(`{"result":"OK","data":[{"station":{"id":"S1","tele_station_oldcode":"OLD-1","tele_station_name":{"th":"Synthetic rain"},"lat":14.1,"long":101},"geocode":{"province_code":"26"},"rainfall_1h":"2.5","rainfall_24h":null,"rainfall_datetime":"2026-10-03T12:00:00+07:00"}]}`),
+		rainPath: []byte(`{"result":"OK","data":[{"station":{"id":"S1","tele_station_oldcode":"OLD-1","tele_station_name":{"th":"Synthetic rain"},"lat":14.1,"long":101},"geocode":{"province_code":"26","province_name":{"th":"นครนายก"},"amphoe_name":{"th":"องครักษ์"}},"rainfall_1h":"2.5","rainfall_24h":null,"rainfall_datetime":"2026-10-03T12:00:00+07:00"}]}`),
 	}})
 	if err != nil {
 		t.Fatal(err)
@@ -130,7 +130,7 @@ func TestFetchRainSeparatesSyntheticAccumulations(t *testing.T) {
 
 func TestFetchGateKeepsNullOpenAndPumpUnknown(t *testing.T) {
 	provider, err := NewWithFetcher("GATE", syntheticFetcher{responses: map[string][]byte{
-		gatePath: []byte(`{"watergate_data":{"result":"OK","data":[{"station":{"id":"G1","tele_station_oldcode":"GATE-1","tele_station_name":{"th":"Synthetic gate"},"lat":"14.1","long":"101.0"},"geocode":{"province_code":"26"},"watergate_in":"1.0","watergate_out":"0.5","watergate_datetime_in":"2026-10-03 12:00:00","watergate_datetime_out":"2026-10-03 12:05:00","watergate_open":null,"watergate_pump":null}]}}`),
+		gatePath: []byte(`{"watergate_data":{"result":"OK","data":[{"station":{"id":"G1","tele_station_oldcode":"GATE-1","tele_station_name":{"th":"Synthetic gate"},"lat":"14.1","long":"101.0"},"geocode":{"province_code":"26","province_name":{"th":"นครนายก"},"amphoe_name":{"th":"องครักษ์"}},"watergate_in":"1.0","watergate_out":"0.5","watergate_datetime_in":"2026-10-03 12:00:00","watergate_datetime_out":"2026-10-03 12:05:00","watergate_open":null,"watergate_pump":null}]}}`),
 	}})
 	if err != nil {
 		t.Fatal(err)

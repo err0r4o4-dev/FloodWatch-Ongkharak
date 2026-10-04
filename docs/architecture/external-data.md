@@ -18,6 +18,14 @@ The public API reads stored snapshots, never calls providers on behalf of a visi
 
 ## Configuration and deployment boundary
 
+### Ongkharak station scope
+
+ThaiWater water, rain and gate adapters retain normalized station evidence only when the provider's district is `องครักษ์` and province is `นครนายก`, after trimming whitespace. Missing or contradictory labels are excluded; a station name mentioning Ongkharak or coordinates near the map center cannot establish district membership. The existing upstream requests still use `province_code=26`; no unverified district query parameter or administrative polygon is invented. Original provincial responses remain unchanged in the private raw archive for audit.
+
+Worker validation also rejects out-of-scope normalized ThaiWater stations. The snapshot repository filters older provincial evidence before counting and applying the record limit, so `recordCount` covers only eligible local evidence. Canonical ThaiWater projection accepts only local stations; public station lists, details and readings exclude historical imported stations outside this scope. Pending water-level evidence from those stations cannot create a new threshold alert. Existing records, station/reading history and previously created alerts are not deleted or rewritten. An empty local result is missing evidence, not an all-clear; freshness rules remain unchanged.
+
+This scope change is for external station evidence, not a new district-wide geofencing policy for community reports, manually entered resources or road/risk layers. Model weather/forecasts remain fixed-reference-point or nearby grid evidence, not measurements for every location in the district. TMD provincial warnings that cover Ongkharak remain relevant and preserve their original provincial codes/text; they are not relabeled district-specific. Applying the change requires deploying matching API and worker binaries, but no new migration or dependency. This change does not restart services or modify provider enablement.
+
 Retained TMD evidence now also feeds the separate public official-announcement lifecycle endpoint and panels described in `official-announcements.md`. This preserves update/cancel/expiry history without creating app-generated alerts or sending Push/email.
 
 Apply migration `000020_external_evidence` before deploying the matching API and worker. Providers are disabled by default. Set the same explicit allowlist in API and worker, for example `EXTERNAL_DATA_PROVIDERS=THAIWATER_WATER,THAIWATER_RAIN,TMD_CAP`. The canonical official data-source enabled flag also gates imported station readings. This task does not activate providers, apply application migrations or restart running services.
@@ -41,7 +49,7 @@ Repeated feed links are downloaded once per attempt. Different links carrying th
 
 Focused regressions cover the exact ten-minute boundary, outage recovery, overlapping polls, duplicate aliases, conflicting duplicates, repeated persisted CAP content and revised versions. On October 4, 2026, all twelve external-repository integration tests passed without skips against a fresh disposable PostGIS database with migrations 1–20. Two read-only live TMD checks also succeeded, each with five raw payloads and zero applicable records; the dedup assertions use explicitly synthetic alerts, not fabricated live warnings. Race-detector execution was unavailable because the current Go environment does not enable cgo. This follow-up does not modify `.env`, migrate the application database, restart services or send a notification.
 
-- ThaiWater adapters query Nakhon Nayok, retaining station location/district so provincial evidence is not mislabeled as an Ongkharak measurement. Public frontend endpoints are undocumented and may change. Rainfall 1-hour and 24-hour totals remain separate. Only 24-hour rainfall is projected to canonical rainfall readings.
+- ThaiWater adapters query Nakhon Nayok then retain only confirmed Ongkharak station evidence as described above. Public frontend endpoints are undocumented and may change. Rainfall 1-hour and 24-hour totals remain separate. Only 24-hour rainfall is projected to canonical rainfall readings.
 - Water level in metres MSL is elevation, not flood depth. Only explicit MSL water readings are projected. Imported readings remain UNVERIFIED. Water-level rules for MSL/LOCAL require an explicit station and matching datum; no threshold is automatically seeded. Old water evidence cannot trigger a new live warning.
 - Deterministic and ensemble rainfall use the preceding-hour accumulation window ending at the provider timestamp and retain ensemble members. GloFAS is river discharge in cubic metres per second, not rainfall or local flood depth. Grid forecasts are trend evidence, not street-level safety certification.
 - HII currently supplies metadata and LZW GeoTIFFs. Files decode, but rainfall unit, timezone and accumulation semantics remain unconfirmed. Three selected grid records intentionally have null values and UNKNOWN freshness until those meanings are verified.
@@ -53,4 +61,10 @@ Migration rollback removes the external evidence tables and datum/period metadat
 
 ## Live verification on October 4, 2026
 
+The following dry-run counts predate the Ongkharak station filter and include provincial records; they are not the current local record counts.
+
 Read-only dry-run fetched and validated all ten registered providers. ThaiWater returned 14 water records, 43 rainfall records and 22 gate records; deterministic models returned 72 hourly records each, ensemble 3,672 member-hour records, GloFAS seven daily records, HII three semantically unverified records and TMD zero geographically applicable records. These counts are a point-in-time observation, not permanent guarantees. The Ongkharak water sample was dated September 29, 2026 and gate examples July 17, 2023: both must remain stale. Dry-run sample freshness is deliberately UNKNOWN because the command does not represent a persisted live snapshot.
+
+## Station-scope verification
+
+Fresh full backend tests, vet and command builds pass. All 25 affected PostGIS integrations pass against separate fresh databases for external evidence (18), flood repository (1) and outbox (6), with migrations 1–21; the first shared-database attempt exposed cross-package leftover outbox fixtures, so no unrelated tests were weakened or changed. Regressions cover mixed/missing/contradictory geographic labels for all three ThaiWater adapters, private raw preservation, pre-limit local counts, no-local-evidence results, canonical projection, historical station/detail/read isolation and out-of-district alert-evidence exclusion. Canonical/embedded OpenAPI contracts match. Fixtures are synthetic; this verification does not claim live upstream success or deployment. No frontend code, provider settings, running services or application database were changed by this scope work.

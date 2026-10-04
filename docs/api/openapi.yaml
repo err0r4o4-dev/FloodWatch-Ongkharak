@@ -123,7 +123,9 @@ paths:
       summary: Read bounded, source-aware external evidence and provider health
       description: Database-only read; never fetches an upstream provider. All providers are opt-in. Disabled sources
         are NOT_CONFIGURED/UNKNOWN. Empty official alerts do not imply safety. Raw payloads remain private. Forecasts
-        retain MODEL provenance and never become station readings.
+        retain MODEL provenance and never become station readings. ThaiWater station records require confirmed
+        Ongkharak district and Nakhon Nayok province; filtering precedes record counts and limits, including retained
+        older evidence. Missing geographic labels are excluded; an empty local result is not an all-clear.
       security: []
       responses:
         '200':
@@ -699,6 +701,7 @@ paths:
     get:
       tags: [Water]
       summary: List stations; optional WGS84 bounding box
+      description: Imported ThaiWater stations are limited to confirmed Ongkharak district in Nakhon Nayok before pagination. Other sources retain their existing behavior.
       operationId: listWaterStations
       parameters: [{ $ref: '#/components/parameters/Limit' }, { $ref: '#/components/parameters/Offset' }, { $ref: '#/components/parameters/BBox' }]
       responses:
@@ -710,6 +713,7 @@ paths:
     get:
       tags: [Water]
       summary: Get a station
+      description: Historical imported ThaiWater stations outside the confirmed Ongkharak scope are not found; retained database history is not deleted.
       operationId: getWaterStation
       parameters: [{ $ref: '#/components/parameters/ResourceID' }]
       responses:
@@ -721,6 +725,7 @@ paths:
     get:
       tags: [Water]
       summary: List time-series observations for a station
+      description: An imported ThaiWater station outside the confirmed Ongkharak scope is not found, including requests by a previously retained station ID.
       operationId: listWaterReadings
       parameters: [{ $ref: '#/components/parameters/ResourceID' }, { $ref: '#/components/parameters/Limit' }, { $ref: '#/components/parameters/Offset' }, { $ref: '#/components/parameters/From' }, { $ref: '#/components/parameters/To' }]
       responses:

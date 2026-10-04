@@ -6804,6 +6804,7 @@
           }
         },
         "summary": "List stations; optional WGS84 bounding box",
+        "description": "Imported ThaiWater stations are limited to confirmed Ongkharak district in Nakhon Nayok before pagination. Other sources retain their existing behavior.",
         "tags": [
           "Water"
         ]
@@ -6841,6 +6842,7 @@
           }
         },
         "summary": "Get a station",
+        "description": "Historical imported ThaiWater stations outside the confirmed Ongkharak scope are not found; retained database history is not deleted.",
         "tags": [
           "Water"
         ]
@@ -6882,6 +6884,7 @@
           }
         },
         "summary": "List time-series observations for a station",
+        "description": "An imported ThaiWater station outside the confirmed Ongkharak scope is not found, including requests by a previously retained station ID.",
         "tags": [
           "Water"
         ]
@@ -7011,7 +7014,7 @@
         ],
         "operationId": "getOngkharakExternalData",
         "summary": "Read bounded, source-aware external evidence and provider health",
-        "description": "Database-only read; never fetches an upstream provider. All providers are opt-in. Disabled sources are NOT_CONFIGURED/UNKNOWN. Empty official alerts do not imply safety. Raw payloads remain private. Forecasts retain MODEL provenance and never become station readings.",
+        "description": "Database-only read; never fetches an upstream provider. All providers are opt-in. Disabled sources are NOT_CONFIGURED/UNKNOWN. Empty official alerts do not imply safety. Raw payloads remain private. Forecasts retain MODEL provenance and never become station readings. ThaiWater station records require confirmed Ongkharak district and Nakhon Nayok province; filtering precedes record counts and limits, including retained older evidence. Missing geographic labels are excluded; an empty local result is not an all-clear.",
         "security": [],
         "responses": {
           "200": {

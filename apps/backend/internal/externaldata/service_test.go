@@ -83,7 +83,7 @@ func (provider *fixedProvider) Fetch(context.Context) (Batch, error) {
 func testBatch(now time.Time) Batch {
 	value := 2.5
 	observed := now.Add(-time.Hour)
-	return Batch{RetrievedAt: now, Raw: []RawPayload{{URL: "https://api-v3.thaiwater.net/api/v1/thaiwater30/public/waterlevel?province_code=26", ContentType: "application/json", Body: []byte(`{"fixture":"SYNTHETIC_TEST_ONLY"}`)}}, Records: []Record{{Key: "synthetic:level", Kind: Observation, Provenance: "OFFICIAL", Station: &Station{Code: "SYNTH_NYK", ExternalID: "189", Name: "Synthetic Ongkharak", Latitude: 14.1, Longitude: 101}, ObservedAt: &observed, Metric: "water_level", Value: &value, Unit: "m", Datum: "MSL"}}}
+	return Batch{RetrievedAt: now, Raw: []RawPayload{{URL: "https://api-v3.thaiwater.net/api/v1/thaiwater30/public/waterlevel?province_code=26", ContentType: "application/json", Body: []byte(`{"fixture":"SYNTHETIC_TEST_ONLY"}`)}}, Records: []Record{{Key: "synthetic:level", Kind: Observation, Provenance: "OFFICIAL", Station: &Station{Code: "SYNTH_NYK", ExternalID: "189", Name: "Synthetic Ongkharak", District: "องครักษ์", Province: "นครนายก", Latitude: 14.1, Longitude: 101}, ObservedAt: &observed, Metric: "water_level", Value: &value, Unit: "m", Datum: "MSL"}}}
 }
 func TestPollArchivesBeforePersistAndHonoursInterval(t *testing.T) {
 	now := time.Date(2026, 10, 4, 10, 0, 0, 0, time.UTC)

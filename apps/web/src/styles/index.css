@@ -664,32 +664,92 @@ code {
 
 .admin-dashboard-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(18rem, 100%), 1fr));
-  gap: var(--space-6);
-  margin-block: var(--space-6);
+  grid-template-columns: repeat(auto-fill, minmax(min(22rem, 100%), 1fr));
+  gap: var(--space-4);
+  margin-block: var(--space-4);
 }
 
-.admin-card {
+.admin-module-card {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  background: white;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+  color: var(--color-ink);
+  box-shadow: 0 4px 14px rgb(51 100 151 / 4%);
+  transition: all 0.2s ease-in-out;
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-module-card:hover {
+  transform: translateY(-2px);
+  border-color: #9cc9ff;
+  box-shadow: 0 10px 25px rgb(51 100 151 / 10%);
+}
+
+.admin-module-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--color-primary-strong);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.admin-module-card:hover::before {
+  opacity: 1;
+}
+
+.admin-module-card__icon {
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  background: var(--color-canvas-soft);
+  color: var(--color-primary-strong);
+  font-size: 1.5rem;
+}
+
+.admin-module-card:hover .admin-module-card__icon {
+  background: var(--color-primary-strong);
+  color: white;
+}
+
+.admin-module-card__content {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
-  padding: var(--space-6);
+  min-width: 0;
 }
 
-.admin-card h2 {
+.admin-module-card__content h2 {
+  margin: 0 0 var(--space-1);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #06194f;
+}
+
+.admin-module-card__content p {
   margin: 0;
-  font-size: 1.25rem;
-  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--color-ink-muted);
+  line-height: 1.4;
 }
 
-.admin-card p {
-  margin: 0;
-  flex-grow: 1;
-}
-
-.admin-card .button {
-  align-self: flex-start;
+.admin-module-card__action {
   margin-top: var(--space-2);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-primary-strong);
 }
 
 .admin-info-panel {

@@ -58,6 +58,7 @@ const th = {
   "dashboard.stats.totalReports": "รายงานทั้งหมด",
   "dashboard.stats.pendingReports": "รายงานที่ยังไม่ตรวจสอบ",
   "dashboard.stats.recentActivity": "กิจกรรมใน 24 ชั่วโมงล่าสุด",
+  "dashboard.modules.title": "โมดูลการจัดการระบบ",
   "dashboard.cards.users.title": "จัดการผู้ใช้งาน",
   "dashboard.cards.users.description": "ดูรายชื่อผู้ใช้งาน เปลี่ยนบทบาท และจัดการสถานะบัญชี",
   "dashboard.cards.users.action": "เปิดการจัดการผู้ใช้งาน",

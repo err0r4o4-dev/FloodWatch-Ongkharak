@@ -60,6 +60,7 @@ const en = {
   "dashboard.stats.totalReports": "Total reports",
   "dashboard.stats.pendingReports": "Reports not yet reviewed",
   "dashboard.stats.recentActivity": "Activity in the last 24 hours",
+  "dashboard.modules.title": "System modules",
   "dashboard.cards.users.title": "User management",
   "dashboard.cards.users.description": "View users, change roles, and manage account status",
   "dashboard.cards.users.action": "Open user management",

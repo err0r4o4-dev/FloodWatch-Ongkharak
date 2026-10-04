@@ -167,7 +167,7 @@ export function SituationMap({ items, visible, mode, points, picking, onBoundsCh
   const [viewport] = useState(() => enablePopups && !initialBounds ? getMapSession().viewport : null);
 
   return <div className={`situation-map${picking ? " is-picking" : ""}`} aria-label={t("map.label")}>
-    <MapContainer center={viewport?.center ?? initialCenter} zoom={viewport?.zoom ?? initialZoom} minZoom={mapSettings.minZoom} maxZoom={mapSettings.maxZoom} zoomControl={false} scrollWheelZoom={false} className="leaflet-map">
+    <MapContainer center={viewport?.center ?? initialCenter} zoom={viewport?.zoom ?? initialZoom} minZoom={mapSettings.minZoom} maxZoom={mapSettings.maxZoom} zoomControl={false} scrollWheelZoom={true} className="leaflet-map">
       <SharedMapViewport enabled={enablePopups} observeResize={false} />
       <TileLayer url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' maxZoom={mapSettings.maxZoom} />
       <ViewportEvents onBoundsChange={onBoundsChange} onMapPoint={onMapPoint} initialBounds={initialBounds} />

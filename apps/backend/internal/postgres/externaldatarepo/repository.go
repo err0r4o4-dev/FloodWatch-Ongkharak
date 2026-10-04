@@ -375,6 +375,9 @@ WITH candidates AS (
 	FROM external_data_batch_records br
 	JOIN external_data_records r ON r.id=br.record_id
 	WHERE br.batch_id=$1
+	  AND (r.source_code NOT IN ('THAIWATER_WATER','THAIWATER_RAIN','THAIWATER_GATE')
+	       OR (r.kind='OBSERVATION' AND btrim(COALESCE(r.payload->'station'->>'district',''))='องครักษ์'
+	           AND btrim(COALESCE(r.payload->'station'->>'province',''))='นครนายก'))
 ), visible AS (
 	SELECT c.*
 	FROM candidates c
@@ -576,7 +579,7 @@ func projectCanonicalRecords(ctx context.Context, tx pgx.Tx, code string, receiv
 		return fmt.Errorf("read canonical ThaiWater source: %w", err)
 	}
 	for _, record := range records {
-		if record.Provenance != "OFFICIAL" || record.Station == nil || record.Value == nil || record.ObservedAt == nil || record.ObservedAt.After(receivedAt) {
+		if record.Provenance != "OFFICIAL" || !externaldata.IsOngkharakStation(record.Station) || record.Value == nil || record.ObservedAt == nil || record.ObservedAt.After(receivedAt) {
 			continue
 		}
 		water, datum, rain := false, "UNKNOWN", false

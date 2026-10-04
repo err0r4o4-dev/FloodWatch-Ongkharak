@@ -114,7 +114,7 @@ export function ReportLocationPicker({ location, onChange, resetKey }: {
     <legend id={titleId}>{t("location.legend")}</legend>
     <p className="report-location-picker__description">{t("location.description")}</p>
     <div className="report-location-map" aria-label={t("location.mapLabel")}>
-      <MapContainer center={viewport.center} zoom={viewport.zoom} minZoom={mapSettings.minZoom} maxZoom={mapSettings.maxZoom} zoomControl={false} className="leaflet-map" scrollWheelZoom={false}>
+      <MapContainer center={viewport.center} zoom={viewport.zoom} minZoom={mapSettings.minZoom} maxZoom={mapSettings.maxZoom} zoomControl={false} className="leaflet-map" scrollWheelZoom={true}>
         <TileLayer url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' maxZoom={mapSettings.maxZoom} />
         <SharedMapViewport />
         <MapBridge onReady={onMapReady} />
