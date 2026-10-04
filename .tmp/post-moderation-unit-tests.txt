@@ -1,0 +1,10 @@
+ok  	github.com/floodwatch-ongkharak/backend/internal/report	0.620s
+ok  	github.com/floodwatch-ongkharak/backend/internal/http/handler	0.742s
+ok  	github.com/floodwatch-ongkharak/backend/internal/realtime	0.478s
+--- FAIL: TestFeatureRoutesHaveOpenAPIContracts (0.00s)
+    openapi_contract_test.go:43: GET /api/v1/official-announcements has no OpenAPI operation
+--- FAIL: TestEmbeddedOpenAPIContractMatchesCanonicalDocument (0.02s)
+    openapi_contract_test.go:116: embedded OpenAPI contract differs from docs/api/openapi.yaml
+FAIL
+FAIL	github.com/floodwatch-ongkharak/backend/internal/http/router	0.195s
+FAIL

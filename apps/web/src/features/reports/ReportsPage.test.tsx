@@ -91,13 +91,13 @@ describe("report review API", () => {
 });
 
 describe("ReportsPage public list", () => {
-  it("summarizes loaded verified records and identifies the selected report", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response({ items: [verifiedReport, { ...verifiedReport, id: "road", type: "ROAD", description: "ถนนทดสอบ" }, { ...verifiedReport, id: "pending", status: "PENDING", verificationStatus: "PENDING" }], limit: 20, offset: 0 })));
+  it("summarizes published reviewed and unreviewed records and identifies the selected report", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response({ items: [verifiedReport, { ...verifiedReport, id: "road", type: "ROAD", description: "ถนนทดสอบ" }, { ...verifiedReport, id: "pending", description: "รายงานที่ยังไม่ตรวจสอบ", status: "PENDING", verificationStatus: "PENDING", verifiedAt: null }], limit: 20, offset: 0 })));
     renderReports();
     const summary = screen.getByRole("region", { name: "สรุปรายงานที่โหลดได้" });
-    await waitFor(() => expect(summary).toHaveTextContent("2"));
-    expect(Array.from(summary.querySelectorAll("dd"), (element) => element.textContent)).toEqual(["2 รายงาน", "1 รายงาน", "1 รายงาน", "0 รายงาน"]);
-    expect(summary).toHaveTextContent("เฉพาะรายงานที่ยืนยันแล้วในรายการที่โหลดได้ ไม่ใช่ยอดรวมทั้งพื้นที่");
+    await waitFor(() => expect(summary).toHaveTextContent("3"));
+    expect(Array.from(summary.querySelectorAll("dd"), (element) => element.textContent)).toEqual(["3 รายงาน", "2 รายงาน", "1 รายงาน", "0 รายงาน"]);
+    expect(summary).toHaveTextContent("รวมรายงาน COMMUNITY ที่ยังไม่ตรวจสอบและที่ตรวจสอบแล้วในรายการที่โหลดได้");
     const first = screen.getByRole("button", { name: `ดูรายละเอียด: น้ำท่วม · ${verifiedReport.description}` });
     expect(first).toHaveAttribute("aria-pressed", "true");
     const road = screen.getByRole("button", { name: "ดูรายละเอียด: สภาพถนน · ถนนทดสอบ" });
@@ -106,10 +106,10 @@ describe("ReportsPage public list", () => {
     expect(first).toHaveAttribute("aria-pressed", "false");
     await waitFor(() => expect(screen.getByRole("heading", { name: "ถนนทดสอบ" })).toHaveFocus());
     fireEvent.change(screen.getByRole("searchbox", { name: "ค้นหารายงาน" }), { target: { value: "ไม่ตรงกับรายงาน" } });
-    expect(screen.getByText("แสดง 0 จาก 2 รายงานที่โหลดได้")).toBeInTheDocument();
+    expect(screen.getByText("แสดง 0 จาก 3 รายงานที่โหลดได้")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "ล้างตัวกรอง" }));
     expect(screen.getByRole("searchbox", { name: "ค้นหารายงาน" })).toHaveValue("");
-    expect(screen.getByText("แสดง 2 จาก 2 รายงานที่โหลดได้")).toBeInTheDocument();
+    expect(screen.getByText("แสดง 3 จาก 3 รายงานที่โหลดได้")).toBeInTheDocument();
   });
 
   it("does not present unavailable summary counts as zero", async () => {
@@ -145,7 +145,7 @@ describe("ReportsPage public list", () => {
     expect(screen.queryByText("ไม่สามารถโหลดรายงานได้")).not.toBeInTheDocument();
   });
 
-  it("shows verified community reports and lets a guest submit directly", async () => {
+  it("shows published community reports and lets a guest submit directly", async () => {
     const fetchMock = vi.fn().mockResolvedValue(response({ items: [verifiedReport], limit: 20, offset: 0 }));
     vi.stubGlobal("fetch", fetchMock);
 
@@ -153,7 +153,7 @@ describe("ReportsPage public list", () => {
 
     expect(screen.getByRole("status")).toHaveTextContent("กำลังโหลดข้อมูล");
     expect(await screen.findAllByText(verifiedReport.description)).not.toHaveLength(0);
-    expect(screen.getAllByText("ยืนยันแล้ว")).not.toHaveLength(0);
+    expect(screen.getAllByText("ตรวจสอบแล้ว")).not.toHaveLength(0);
     expect(screen.getByRole("link", { name: "ส่งรายงานสถานการณ์" })).toHaveAttribute("href", "/reports/new");
     expect(screen.queryByRole("button", { name: "ส่งรายงาน" })).not.toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith(
@@ -162,9 +162,9 @@ describe("ReportsPage public list", () => {
     );
   });
 
-  it("keeps unverified items out of the public list", async () => {
+  it("shows unreviewed published items but never shows removed items", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response({
-      items: [verifiedReport, { ...verifiedReport, id: "pending", status: "PENDING", verificationStatus: "PENDING" }],
+      items: [verifiedReport, { ...verifiedReport, id: "pending", description: "รายงานที่ยังไม่ตรวจสอบ", status: "PENDING", verificationStatus: "PENDING", verifiedAt: null }, { ...verifiedReport, id: "removed", description: "รายงานที่ถูกนำออก", status: "REJECTED", verificationStatus: "REJECTED", verifiedAt: null }],
       limit: 20,
       offset: 0
     })));
@@ -172,7 +172,8 @@ describe("ReportsPage public list", () => {
     renderReports();
 
     expect(await screen.findAllByText(verifiedReport.description)).not.toHaveLength(0);
-    expect(screen.queryByText("pending")).not.toBeInTheDocument();
+    expect(screen.getByText("รายงานที่ยังไม่ตรวจสอบ")).toBeInTheDocument();
+    expect(screen.queryByText("รายงานที่ถูกนำออก")).not.toBeInTheDocument();
   });
 
   it("filters the verified list and shows details for the selected real report", async () => {

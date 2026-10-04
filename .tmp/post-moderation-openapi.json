@@ -1,0 +1,6902 @@
+{
+  "components": {
+    "headers": {
+      "ClearedRefreshTokenCookie": {
+        "description": "Expired refresh-token cookie with HttpOnly, configured SameSite Lax or Strict, and Secure in production.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "RefreshTokenCookie": {
+        "description": "Refresh-token cookie with HttpOnly, configured SameSite Lax or Strict, and Secure in production. The refresh token is never included in the response body.",
+        "schema": {
+          "type": "string"
+        }
+      }
+    },
+    "parameters": {
+      "BBox": {
+        "description": "WGS84 minLng,minLat,maxLng,maxLat. Required for efficient map-window queries at scale; omitted bbox still uses bounded pagination.",
+        "in": "query",
+        "name": "bbox",
+        "schema": {
+          "example": "101.0,14.0,101.1,14.1",
+          "type": "string"
+        }
+      },
+      "EventStatusFilter": {
+        "description": "Filter by raw event status, not derived effectiveStatus.",
+        "in": "query",
+        "name": "status",
+        "schema": {
+          "$ref": "#/components/schemas/EventStatus"
+        }
+      },
+      "From": {
+        "in": "query",
+        "name": "from",
+        "schema": {
+          "format": "date-time",
+          "type": "string"
+        }
+      },
+      "Limit": {
+        "description": "Default 20; maximum 100.",
+        "in": "query",
+        "name": "limit",
+        "schema": {
+          "default": 20,
+          "maximum": 100,
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "Offset": {
+        "description": "Default 0; maximum 100000.",
+        "in": "query",
+        "name": "offset",
+        "schema": {
+          "default": 0,
+          "maximum": 100000,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "OptionalRefreshTokenCookie": {
+        "description": "Optional HttpOnly refresh-token cookie. Logout clears it whether or not it identifies an active session.",
+        "in": "cookie",
+        "name": "fw_refresh",
+        "required": false,
+        "schema": {
+          "type": "string"
+        }
+      },
+      "RefreshTokenCookie": {
+        "description": "HttpOnly refresh-token cookie. It uses the configured SameSite Lax or Strict policy and Secure is enabled in production.",
+        "in": "cookie",
+        "name": "fw_refresh",
+        "required": true,
+        "schema": {
+          "type": "string"
+        }
+      },
+      "ReportedRoadStatusFilter": {
+        "description": "Filter by reportedStatus, not freshness-derived status. UNKNOWN also includes roads with no condition on the roads route.",
+        "in": "query",
+        "name": "status",
+        "schema": {
+          "$ref": "#/components/schemas/RoadStatus"
+        }
+      },
+      "ResourceID": {
+        "in": "path",
+        "name": "id",
+        "required": true,
+        "schema": {
+          "format": "uuid",
+          "type": "string"
+        }
+      },
+      "SeverityFilter": {
+        "description": "Filter by raw severity.",
+        "in": "query",
+        "name": "severity",
+        "schema": {
+          "$ref": "#/components/schemas/Severity"
+        }
+      },
+      "To": {
+        "in": "query",
+        "name": "to",
+        "schema": {
+          "format": "date-time",
+          "type": "string"
+        }
+      }
+    },
+    "responses": {
+      "DomainError": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        },
+        "description": "Invalid input (400), missing JWT (401), insufficient role (403), unknown resource (404), conflict (409), oversized upload (413), unsupported media type (415), rate limit (429), or service failure/capacity (500/503). The HTTP status disambiguates."
+      }
+    },
+    "schemas": {
+      "AIEvidence": {
+        "properties": {
+          "flood": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/AIFloodEstimate"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 10,
+            "minItems": 1,
+            "type": "array"
+          },
+          "mediaId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "modelVersion": {
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string"
+          },
+          "observedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "receivedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "reportId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "reportUpdatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "reviewedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "reviewedBy": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "road": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/AIRoadEstimate"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "sourceType": {
+            "const": "AI",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "UNVERIFIED",
+              "VERIFIED",
+              "REJECTED"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "reportId",
+          "mediaId",
+          "sourceType",
+          "modelVersion",
+          "flood",
+          "road",
+          "observedAt",
+          "receivedAt",
+          "limitations",
+          "status",
+          "reportUpdatedAt"
+        ],
+        "type": "object"
+      },
+      "AIEvidenceList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AIEvidence"
+            },
+            "type": "array"
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          }
+        },
+        "required": [
+          "items",
+          "pagination"
+        ],
+        "type": "object"
+      },
+      "AIEvidenceRejectInput": {
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "maxLength": 500,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "type": "object"
+      },
+      "AIEvidenceResponse": {
+        "properties": {
+          "evidence": {
+            "$ref": "#/components/schemas/AIEvidence"
+          }
+        },
+        "required": [
+          "evidence"
+        ],
+        "type": "object"
+      },
+      "AIEvidenceVerifyInput": {
+        "additionalProperties": false,
+        "properties": {
+          "roadId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "AIFloodEstimate": {
+        "properties": {
+          "bounding_box": {
+            "description": "Normalized ymin,xmin,ymax,xmax when available.",
+            "items": {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            "maxItems": 4,
+            "minItems": 4,
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "confidence": {
+            "maximum": 1,
+            "minimum": 0,
+            "type": "number"
+          },
+          "severity": {
+            "$ref": "#/components/schemas/Severity"
+          },
+          "water_depth_m": {
+            "maximum": 50,
+            "minimum": 0,
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "severity",
+          "water_depth_m",
+          "confidence",
+          "bounding_box"
+        ],
+        "type": "object"
+      },
+      "AIRoadEstimate": {
+        "properties": {
+          "bounding_box": {
+            "description": "Normalized ymin,xmin,ymax,xmax when available.",
+            "items": {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            "maxItems": 4,
+            "minItems": 4,
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "confidence": {
+            "maximum": 1,
+            "minimum": 0,
+            "type": "number"
+          },
+          "status": {
+            "$ref": "#/components/schemas/RoadStatus"
+          }
+        },
+        "required": [
+          "status",
+          "confidence",
+          "bounding_box"
+        ],
+        "type": "object"
+      },
+      "AdminDashboardStats": {
+        "properties": {
+          "activeUsers": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "pendingReports": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "recentActivity": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "totalReports": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "totalUsers": {
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "totalUsers",
+          "activeUsers",
+          "totalReports",
+          "pendingReports",
+          "recentActivity"
+        ],
+        "type": "object"
+      },
+      "AdminRoleInput": {
+        "additionalProperties": false,
+        "properties": {
+          "role": {
+            "enum": [
+              "USER",
+              "ADMIN"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "role"
+        ],
+        "type": "object"
+      },
+      "Alert": {
+        "additionalProperties": false,
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "resourceId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "resourceType": {
+            "enum": [
+              "WATER_STATION",
+              "ROAD",
+              "FLOOD_EVENT"
+            ],
+            "type": "string"
+          },
+          "ruleId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "severity": {
+            "enum": [
+              "INFO",
+              "WATCH",
+              "WARNING",
+              "CRITICAL"
+            ],
+            "type": "string"
+          },
+          "sourceType": {
+            "$ref": "#/components/schemas/SourceType"
+          },
+          "title": {
+            "type": "string"
+          },
+          "triggeredAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "ruleId",
+          "severity",
+          "title",
+          "message",
+          "sourceType",
+          "resourceType",
+          "resourceId",
+          "triggeredAt",
+          "createdAt"
+        ],
+        "type": "object"
+      },
+      "AlertList": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/Alert"
+            },
+            "type": "array"
+          },
+          "limit": {
+            "type": "integer"
+          },
+          "offset": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "limit",
+          "offset"
+        ],
+        "type": "object"
+      },
+      "AlertRule": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/AlertRuleInput"
+          },
+          {
+            "properties": {
+              "createdAt": {
+                "format": "date-time",
+                "type": "string"
+              },
+              "id": {
+                "format": "uuid",
+                "type": "string"
+              },
+              "updatedAt": {
+                "format": "date-time",
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "createdAt",
+              "updatedAt"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "AlertRuleInput": {
+        "additionalProperties": false,
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "message": {
+            "maxLength": 1000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "severity": {
+            "enum": [
+              "INFO",
+              "WATCH",
+              "WARNING",
+              "CRITICAL"
+            ],
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "WATER_LEVEL_THRESHOLD",
+              "ROAD_CLOSED",
+              "FLOOD_CRITICAL"
+            ],
+            "type": "string"
+          },
+          "waterLevelDatum": {
+            "default": "UNKNOWN",
+            "description": "MSL/LOCAL thresholds require an explicit station and match only the same datum. Legacy unspecified datum remains UNKNOWN.",
+            "enum": [
+              "UNKNOWN",
+              "MSL",
+              "LOCAL"
+            ],
+            "type": "string"
+          },
+          "waterLevelThresholdM": {
+            "description": "Required for WATER_LEVEL_THRESHOLD; absent/null for other rule types. Configured rule",
+            "minimum": 0,
+            "not an official default.": null,
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "waterStationId": {
+            "description": "Required and non-null for MSL/LOCAL water thresholds; optional for legacy UNKNOWN water rules; absent/null for other rule types.",
+            "format": "uuid",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "name",
+          "type",
+          "enabled",
+          "severity",
+          "title",
+          "message"
+        ],
+        "type": "object"
+      },
+      "AlertRuleList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AlertRule"
+            },
+            "type": "array"
+          },
+          "limit": {
+            "maximum": 50,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "offset": {
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "limit",
+          "offset"
+        ],
+        "type": "object"
+      },
+      "AlertRuleResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "rule": {
+            "$ref": "#/components/schemas/AlertRule"
+          }
+        },
+        "required": [
+          "rule"
+        ],
+        "type": "object"
+      },
+      "AuditLog": {
+        "properties": {
+          "action": {
+            "type": "string"
+          },
+          "actorEmail": {
+            "type": "string"
+          },
+          "actorId": {
+            "format": "uuid",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "actorRole": {
+            "enum": [
+              "USER",
+              "ADMIN",
+              "SYSTEM"
+            ],
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "ipAddress": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "metadata": {
+            "type": "object"
+          },
+          "targetId": {
+            "type": "string"
+          },
+          "targetType": {
+            "type": "string"
+          },
+          "userAgent": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "action",
+          "actorId",
+          "actorEmail",
+          "actorRole",
+          "targetType",
+          "targetId",
+          "metadata",
+          "ipAddress",
+          "userAgent",
+          "createdAt"
+        ],
+        "type": "object"
+      },
+      "AuditLogList": {
+        "properties": {
+          "logs": {
+            "items": {
+              "$ref": "#/components/schemas/AuditLog"
+            },
+            "type": "array"
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          }
+        },
+        "required": [
+          "logs",
+          "pagination"
+        ],
+        "type": "object"
+      },
+      "AuditLogResponse": {
+        "properties": {
+          "log": {
+            "$ref": "#/components/schemas/AuditLog"
+          }
+        },
+        "required": [
+          "log"
+        ],
+        "type": "object"
+      },
+      "ConditionList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RoadCondition"
+            },
+            "type": "array"
+          },
+          "limit": {
+            "type": "integer"
+          },
+          "offset": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "limit",
+          "offset"
+        ],
+        "type": "object"
+      },
+      "CreateDataSource": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$",
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "name": {
+            "maxLength": 200,
+            "type": "string"
+          },
+          "provider": {
+            "maxLength": 200,
+            "type": "string"
+          },
+          "sourceType": {
+            "$ref": "#/components/schemas/SourceType"
+          }
+        },
+        "required": [
+          "code",
+          "name",
+          "sourceType",
+          "provider",
+          "enabled"
+        ],
+        "type": "object"
+      },
+      "CreateRiskArea": {
+        "additionalProperties": false,
+        "properties": {
+          "description": {
+            "maxLength": 4000,
+            "type": "string"
+          },
+          "geometry": {
+            "$ref": "#/components/schemas/PolygonGeometry"
+          },
+          "name": {
+            "maxLength": 200,
+            "type": "string"
+          },
+          "riskLevel": {
+            "$ref": "#/components/schemas/RiskLevel"
+          },
+          "sourceId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "validFrom": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "validTo": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "sourceId",
+          "name",
+          "geometry",
+          "riskLevel"
+        ],
+        "type": "object"
+      },
+      "CreateRoadCondition": {
+        "additionalProperties": false,
+        "properties": {
+          "confidence": {
+            "maximum": 1,
+            "minimum": 0,
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "description": {
+            "maxLength": 4000,
+            "type": "string"
+          },
+          "observedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "roadId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "sourceId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/RoadStatus"
+          },
+          "validUntil": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "verificationStatus": {
+            "$ref": "#/components/schemas/VerificationStatus"
+          },
+          "waterDepthM": {
+            "minimum": 0,
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "roadId",
+          "sourceId",
+          "status",
+          "observedAt",
+          "verificationStatus"
+        ],
+        "type": "object"
+      },
+      "CredentialsRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "email": {
+            "description": "Email or case-insensitive username. The field name remains email for compatibility.",
+            "maxLength": 254,
+            "type": "string"
+          },
+          "password": {
+            "description": "Server bounds this value to 12–128 UTF-8 bytes.",
+            "format": "password",
+            "maxLength": 128,
+            "minLength": 12,
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ],
+        "type": "object"
+      },
+      "CurrentWeather": {
+        "additionalProperties": false,
+        "properties": {
+          "apparentTemperatureC": {
+            "maximum": 100,
+            "minimum": -100,
+            "type": "number"
+          },
+          "humidityPercent": {
+            "maximum": 100,
+            "minimum": 0,
+            "type": "number"
+          },
+          "intervalSeconds": {
+            "maximum": 3600,
+            "minimum": 60,
+            "type": "integer"
+          },
+          "isDay": {
+            "type": "boolean"
+          },
+          "observedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "precipitationMm": {
+            "maximum": 1000,
+            "minimum": 0,
+            "type": "number"
+          },
+          "temperatureC": {
+            "maximum": 70,
+            "minimum": -100,
+            "type": "number"
+          },
+          "weatherCode": {
+            "maximum": 99,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "windDirectionDegrees": {
+            "maximum": 360,
+            "minimum": 0,
+            "type": "number"
+          },
+          "windSpeedKmh": {
+            "maximum": 500,
+            "minimum": 0,
+            "type": "number"
+          }
+        },
+        "required": [
+          "observedAt",
+          "intervalSeconds",
+          "temperatureC",
+          "apparentTemperatureC",
+          "humidityPercent",
+          "precipitationMm",
+          "weatherCode",
+          "windSpeedKmh",
+          "windDirectionDegrees",
+          "isDay"
+        ],
+        "type": "object"
+      },
+      "DataSource": {
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "lastFailureAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lastSuccessfulFetchAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "provider": {
+            "type": "string"
+          },
+          "sourceType": {
+            "$ref": "#/components/schemas/SourceType"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "name",
+          "sourceType",
+          "provider",
+          "enabled",
+          "lastSuccessfulFetchAt",
+          "lastFailureAt",
+          "createdAt",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
+      "DataSourceList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DataSource"
+            },
+            "type": "array"
+          },
+          "limit": {
+            "type": "integer"
+          },
+          "offset": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "limit",
+          "offset"
+        ],
+        "type": "object"
+      },
+      "DependencyStatus": {
+        "properties": {
+          "status": {
+            "enum": [
+              "ok",
+              "unavailable"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "type": "object"
+      },
+      "ErrorDetail": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "type": "object"
+      },
+      "ErrorResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ErrorDetail"
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "type": "object"
+      },
+      "EventList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/FloodEvent"
+            },
+            "type": "array"
+          },
+          "limit": {
+            "type": "integer"
+          },
+          "offset": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "limit",
+          "offset"
+        ],
+        "type": "object"
+      },
+      "EventStatus": {
+        "enum": [
+          "ACTIVE",
+          "RESOLVED",
+          "UNKNOWN"
+        ],
+        "type": "string"
+      },
+      "ExternalDataSnapshot": {
+        "additionalProperties": false,
+        "properties": {
+          "retrievedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/ExternalSource"
+            },
+            "maxItems": 10,
+            "type": "array"
+          }
+        },
+        "required": [
+          "retrievedAt",
+          "sources"
+        ],
+        "type": "object"
+      },
+      "ExternalRecord": {
+        "additionalProperties": false,
+        "description": "A station measurement, model forecast or CAP lifecycle record. Time/units are capability-specific. HII records without verified semantics omit intervals and have null value with UNKNOWN freshness.",
+        "properties": {
+          "accumulationSeconds": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "alertIdentifier": {
+            "type": "string"
+          },
+          "alertMessageType": {
+            "type": "string"
+          },
+          "alertReferences": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "areaCodes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "datum": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "freshness": {
+            "enum": [
+              "FRESH",
+              "STALE",
+              "UNKNOWN"
+            ],
+            "type": "string"
+          },
+          "geometry": {
+            "type": "object"
+          },
+          "headline": {
+            "type": "string"
+          },
+          "issuedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "key": {
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "OBSERVATION",
+              "FORECAST",
+              "OFFICIAL_ALERT"
+            ],
+            "type": "string"
+          },
+          "latitude": {
+            "maximum": 90,
+            "minimum": -90,
+            "type": "number"
+          },
+          "longitude": {
+            "maximum": 180,
+            "minimum": -180,
+            "type": "number"
+          },
+          "member": {
+            "type": "string"
+          },
+          "metric": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "observedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "provenance": {
+            "enum": [
+              "OFFICIAL",
+              "MODEL"
+            ],
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "station": {
+            "$ref": "#/components/schemas/ExternalStation"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "validFrom": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "validTo": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "value": {
+            "description": "Missing, expired or semantically unverified evidence is null, never zero.",
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "key",
+          "kind",
+          "provenance",
+          "value",
+          "freshness"
+        ],
+        "type": "object"
+      },
+      "ExternalSource": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "errorCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "freshness": {
+            "description": "Provider retrieval health; does not establish freshness of every observation or safety.",
+            "enum": [
+              "FRESH",
+              "STALE",
+              "UNKNOWN"
+            ],
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "OBSERVATION",
+              "FORECAST",
+              "OFFICIAL_ALERT"
+            ],
+            "type": "string"
+          },
+          "lastAttemptAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lastSuccessAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "provenance": {
+            "enum": [
+              "OFFICIAL",
+              "MODEL"
+            ],
+            "type": "string"
+          },
+          "recordCount": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "records": {
+            "items": {
+              "$ref": "#/components/schemas/ExternalRecord"
+            },
+            "maxItems": 24,
+            "type": "array"
+          },
+          "status": {
+            "enum": [
+              "NOT_CONFIGURED",
+              "UNAVAILABLE",
+              "DEGRADED",
+              "AVAILABLE"
+            ],
+            "type": "string"
+          },
+          "url": {
+            "format": "uri",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "name",
+          "kind",
+          "provenance",
+          "url",
+          "enabled",
+          "status",
+          "freshness",
+          "lastAttemptAt",
+          "lastSuccessAt",
+          "errorCode",
+          "recordCount",
+          "records"
+        ],
+        "type": "object"
+      },
+      "ExternalStation": {
+        "additionalProperties": false,
+        "properties": {
+          "agency": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "district": {
+            "type": "string"
+          },
+          "externalId": {
+            "type": "string"
+          },
+          "latitude": {
+            "maximum": 90,
+            "minimum": -90,
+            "type": "number"
+          },
+          "longitude": {
+            "maximum": 180,
+            "minimum": -180,
+            "type": "number"
+          },
+          "name": {
+            "type": "string"
+          },
+          "province": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "externalId",
+          "name",
+          "province",
+          "district",
+          "agency",
+          "latitude",
+          "longitude"
+        ],
+        "type": "object"
+      },
+      "FloodEvent": {
+        "properties": {
+          "confidence": {
+            "maximum": 1,
+            "minimum": 0,
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "effectiveSeverity": {
+            "$ref": "#/components/schemas/Severity"
+          },
+          "effectiveStatus": {
+            "$ref": "#/components/schemas/EventStatus"
+          },
+          "endedAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "freshness": {
+            "$ref": "#/components/schemas/Freshness"
+          },
+          "geometry": {
+            "$ref": "#/components/schemas/FloodGeometry"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "observedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "receivedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "severity": {
+            "$ref": "#/components/schemas/Severity"
+          },
+          "source": {
+            "$ref": "#/components/schemas/SourceRef"
+          },
+          "startsAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/EventStatus"
+          },
+          "title": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "verificationStatus": {
+            "$ref": "#/components/schemas/VerificationStatus"
+          }
+        },
+        "required": [
+          "id",
+          "source",
+          "title",
+          "description",
+          "geometry",
+          "severity",
+          "effectiveSeverity",
+          "status",
+          "effectiveStatus",
+          "observedAt",
+          "receivedAt",
+          "startsAt",
+          "endedAt",
+          "verificationStatus",
+          "confidence",
+          "freshness",
+          "createdAt",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
+      "FloodGeometry": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/PointGeometry"
+          },
+          {
+            "$ref": "#/components/schemas/SimplePolygonGeometry"
+          },
+          {
+            "$ref": "#/components/schemas/MultiPolygonGeometry"
+          }
+        ]
+      },
+      "Freshness": {
+        "description": "Observation age is classified by domain policy. UNKNOWN never means safe.",
+        "enum": [
+          "FRESH",
+          "STALE",
+          "EXPIRED",
+          "UNKNOWN"
+        ],
+        "type": "string"
+      },
+      "GuestReportInput": {
+        "additionalProperties": false,
+        "properties": {
+          "description": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "displayName": {
+            "default": "Guest",
+            "description": "Trimmed Unicode display label",
+            "maxLength": 80,
+            "not a unique identity or ownership credential.": null,
+            "type": "string"
+          },
+          "estimatedWaterDepthM": {
+            "maximum": 100,
+            "minimum": 0,
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "location": {
+            "$ref": "#/components/schemas/PointGeometry"
+          },
+          "locationName": {
+            "description": "Optional user-supplied COMMUNITY location label; no geocoding.",
+            "maxLength": 200,
+            "type": "string"
+          },
+          "locationNote": {
+            "description": "Optional user-supplied COMMUNITY location note; no geocoding.",
+            "maxLength": 500,
+            "type": "string"
+          },
+          "type": {
+            "$ref": "#/components/schemas/ReportType"
+          }
+        },
+        "required": [
+          "type",
+          "description",
+          "location"
+        ],
+        "type": "object"
+      },
+      "GuestReportResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "report": {
+            "$ref": "#/components/schemas/Report"
+          },
+          "uploadToken": {
+            "description": "Private short-lived upload capability returned only at creation.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "report",
+          "uploadToken"
+        ],
+        "type": "object"
+      },
+      "HealthResponse": {
+        "properties": {
+          "status": {
+            "const": "ok",
+            "type": "string"
+          },
+          "time": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "time"
+        ],
+        "type": "object"
+      },
+      "LinearRing": {
+        "description": "Closed sequence of positions.",
+        "items": {
+          "$ref": "#/components/schemas/Position"
+        },
+        "minItems": 4,
+        "type": "array"
+      },
+      "ManagedUser": {
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "disabledAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "email": {
+            "format": "email",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "role": {
+            "enum": [
+              "USER",
+              "ADMIN"
+            ],
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "role",
+          "createdAt",
+          "updatedAt",
+          "disabledAt"
+        ],
+        "type": "object"
+      },
+      "ManagedUserDetail": {
+        "properties": {
+          "stats": {
+            "$ref": "#/components/schemas/UserActivityStats"
+          },
+          "user": {
+            "$ref": "#/components/schemas/ManagedUser"
+          }
+        },
+        "required": [
+          "user",
+          "stats"
+        ],
+        "type": "object"
+      },
+      "ManagedUserList": {
+        "properties": {
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          },
+          "users": {
+            "items": {
+              "$ref": "#/components/schemas/ManagedUser"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "users",
+          "pagination"
+        ],
+        "type": "object"
+      },
+      "MultiLineCoordinates": {
+        "items": {
+          "items": {
+            "$ref": "#/components/schemas/Position"
+          },
+          "minItems": 2,
+          "type": "array"
+        },
+        "minItems": 1,
+        "type": "array"
+      },
+      "MultiLineGeometry": {
+        "additionalProperties": false,
+        "properties": {
+          "coordinates": {
+            "$ref": "#/components/schemas/MultiLineCoordinates"
+          },
+          "type": {
+            "const": "MultiLineString",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "coordinates"
+        ],
+        "type": "object"
+      },
+      "MultiPolygonCoordinates": {
+        "items": {
+          "$ref": "#/components/schemas/PolygonCoordinates"
+        },
+        "minItems": 1,
+        "type": "array"
+      },
+      "MultiPolygonGeometry": {
+        "additionalProperties": false,
+        "properties": {
+          "coordinates": {
+            "$ref": "#/components/schemas/MultiPolygonCoordinates"
+          },
+          "type": {
+            "const": "MultiPolygon",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "coordinates"
+        ],
+        "type": "object"
+      },
+      "NotificationItem": {
+        "properties": {
+          "alertId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "readAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "severity": {
+            "enum": [
+              "INFO",
+              "WATCH",
+              "WARNING",
+              "CRITICAL"
+            ],
+            "type": "string"
+          },
+          "sourceType": {
+            "$ref": "#/components/schemas/SourceType"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "alertId",
+          "title",
+          "message",
+          "severity",
+          "sourceType",
+          "createdAt",
+          "readAt"
+        ],
+        "type": "object"
+      },
+      "NotificationList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/NotificationItem"
+            },
+            "type": "array"
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          }
+        },
+        "required": [
+          "items",
+          "pagination"
+        ],
+        "type": "object"
+      },
+      "Pagination": {
+        "properties": {
+          "limit": {
+            "maximum": 100,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "offset": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "total": {
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total",
+          "limit",
+          "offset"
+        ],
+        "type": "object"
+      },
+      "PasswordOTPChallenge": {
+        "additionalProperties": false,
+        "properties": {
+          "challengeId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "expiresIn": {
+            "const": 600,
+            "type": "integer"
+          },
+          "message": {
+            "description": "Account-neutral recovery notice, not an assertion that the account exists.",
+            "type": "string"
+          },
+          "resendAfter": {
+            "const": 60,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "challengeId",
+          "expiresIn",
+          "resendAfter",
+          "message"
+        ],
+        "type": "object"
+      },
+      "PasswordResetGrant": {
+        "additionalProperties": false,
+        "properties": {
+          "expiresIn": {
+            "const": 300,
+            "type": "integer"
+          },
+          "resetToken": {
+            "description": "Secret single-use reset-only authorization; never a bearer login token.",
+            "pattern": "^[A-Za-z0-9_-]{43}$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "resetToken",
+          "expiresIn"
+        ],
+        "type": "object"
+      },
+      "PointGeometry": {
+        "additionalProperties": false,
+        "properties": {
+          "coordinates": {
+            "$ref": "#/components/schemas/Position"
+          },
+          "type": {
+            "const": "Point",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "coordinates"
+        ],
+        "type": "object"
+      },
+      "PolygonCoordinates": {
+        "description": "Exterior ring followed by optional interior rings.",
+        "items": {
+          "$ref": "#/components/schemas/LinearRing"
+        },
+        "minItems": 1,
+        "type": "array"
+      },
+      "PolygonGeometry": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/SimplePolygonGeometry"
+          },
+          {
+            "$ref": "#/components/schemas/MultiPolygonGeometry"
+          }
+        ]
+      },
+      "Position": {
+        "description": "WGS84 longitude, latitude.",
+        "items": false,
+        "maxItems": 2,
+        "minItems": 2,
+        "prefixItems": [
+          {
+            "maximum": 180,
+            "minimum": -180,
+            "type": "number"
+          },
+          {
+            "maximum": 90,
+            "minimum": -90,
+            "type": "number"
+          }
+        ],
+        "type": "array"
+      },
+      "PublicEventEnvelope": {
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "sourceType": {
+                  "const": "MODEL"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "eventType": {
+                  "const": "external_data.updated"
+                },
+                "resourceType": {
+                  "const": "EXTERNAL_DATA"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "eventType": {
+                  "const": "external_data.updated"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "resourceType": {
+                  "const": "EXTERNAL_DATA"
+                },
+                "sourceType": {
+                  "enum": [
+                    "OFFICIAL",
+                    "MODEL"
+                  ],
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "properties": {
+          "eventId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "eventType": {
+            "enum": [
+              "water_level.updated",
+              "flood_event.created",
+              "flood_event.updated",
+              "road.status.changed",
+              "report.verified",
+              "report.updated",
+              "alert.created",
+              "external_data.updated"
+            ],
+            "type": "string"
+          },
+          "occurredAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "payload": {
+            "description": "Minimal change hint; refetch the canonical API.",
+            "type": "object"
+          },
+          "payloadVersion": {
+            "enum": [
+              1
+            ],
+            "type": "integer"
+          },
+          "publishedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "resourceId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "resourceType": {
+            "enum": [
+              "WATER_STATION",
+              "FLOOD_EVENT",
+              "ROAD",
+              "COMMUNITY_REPORT",
+              "ALERT",
+              "EXTERNAL_DATA"
+            ],
+            "type": "string"
+          },
+          "sourceType": {
+            "enum": [
+              "OFFICIAL",
+              "COMMUNITY",
+              "AI",
+              "MODEL"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "eventId",
+          "eventType",
+          "occurredAt",
+          "publishedAt",
+          "sourceType",
+          "resourceType",
+          "resourceId",
+          "payloadVersion",
+          "payload"
+        ],
+        "type": "object"
+      },
+      "PublicNotification": {
+        "additionalProperties": false,
+        "properties": {
+          "createdAt": {
+            "description": "Publication time for community reports.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "description": "Namespaced public notification identifier.",
+            "type": "string"
+          },
+          "location": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/PointGeometry"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "severity": {
+            "enum": [
+              "INFO",
+              "WATCH",
+              "WARNING",
+              "CRITICAL"
+            ],
+            "type": "string"
+          },
+          "sourceType": {
+            "enum": [
+              "OFFICIAL",
+              "COMMUNITY",
+              "AI"
+            ],
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "url": {
+            "description": "Internal report or announcement destination.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "severity",
+          "sourceType",
+          "createdAt",
+          "title",
+          "message",
+          "url",
+          "location"
+        ],
+        "type": "object"
+      },
+      "PublicNotificationPage": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PublicNotification"
+            },
+            "type": "array"
+          },
+          "pagination": {
+            "additionalProperties": false,
+            "properties": {
+              "limit": {
+                "maximum": 50,
+                "minimum": 1,
+                "type": "integer"
+              },
+              "offset": {
+                "maximum": 100000,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "total": {
+                "minimum": 0,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "total",
+              "limit",
+              "offset"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "items",
+          "pagination"
+        ],
+        "type": "object"
+      },
+      "PushLanguageInput": {
+        "additionalProperties": false,
+        "properties": {
+          "endpoint": {
+            "format": "uri",
+            "maxLength": 2048,
+            "type": "string"
+          },
+          "locale": {
+            "enum": [
+              "th",
+              "en"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "endpoint",
+          "locale"
+        ],
+        "type": "object"
+      },
+      "PushPublicKey": {
+        "properties": {
+          "publicKey": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "publicKey"
+        ],
+        "type": "object"
+      },
+      "PushSubscriptionInput": {
+        "additionalProperties": false,
+        "properties": {
+          "endpoint": {
+            "format": "uri",
+            "type": "string"
+          },
+          "keys": {
+            "additionalProperties": false,
+            "properties": {
+              "auth": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "p256dh": {
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "required": [
+              "p256dh",
+              "auth"
+            ],
+            "type": "object"
+          },
+          "locale": {
+            "default": "th",
+            "description": "Device language for system-generated Push summaries. Original announcements are not automatically translated.",
+            "enum": [
+              "th",
+              "en"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "endpoint",
+          "keys"
+        ],
+        "type": "object"
+      },
+      "ReadinessResponse": {
+        "properties": {
+          "dependencies": {
+            "properties": {
+              "minio": {
+                "$ref": "#/components/schemas/DependencyStatus"
+              },
+              "postgres": {
+                "$ref": "#/components/schemas/DependencyStatus"
+              },
+              "redis": {
+                "$ref": "#/components/schemas/DependencyStatus"
+              }
+            },
+            "required": [
+              "postgres",
+              "redis",
+              "minio"
+            ],
+            "type": "object"
+          },
+          "status": {
+            "enum": [
+              "ready",
+              "not_ready"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "dependencies"
+        ],
+        "type": "object"
+      },
+      "ReadingList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/WaterReading"
+            },
+            "type": "array"
+          },
+          "limit": {
+            "type": "integer"
+          },
+          "offset": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "limit",
+          "offset"
+        ],
+        "type": "object"
+      },
+      "RegistrationRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "email": {
+            "format": "email",
+            "maxLength": 254,
+            "type": "string"
+          },
+          "password": {
+            "description": "Server bounds this value to 12–128 UTF-8 bytes.",
+            "format": "password",
+            "type": "string"
+          },
+          "username": {
+            "description": "Trimmed and normalized to lowercase; globally unique. Legacy and Google-only accounts may have no username.",
+            "maxLength": 32,
+            "minLength": 3,
+            "pattern": "^[A-Za-z0-9_]{3,32}$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "username",
+          "password"
+        ],
+        "type": "object"
+      },
+      "RejectReportInput": {
+        "additionalProperties": false,
+        "properties": {
+          "expectedUpdatedAt": {
+            "description": "Revision from the latest report detail; a concurrent edit or upload returns 409.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "reason": {
+            "description": "Mandatory trimmed nonblank reason for removal or restoration; private to ADMIN/history and legacy owner latest removal.",
+            "maxLength": 500,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "expectedUpdatedAt",
+          "reason"
+        ],
+        "type": "object"
+      },
+      "Report": {
+        "additionalProperties": false,
+        "description": "COMMUNITY evidence publishes automatically while PENDING. Verification is separate from publication and does not make it OFFICIAL or prove safety. createdAt is submission time rather than a measured observation timestamp. ADMIN detail/actions include reviewHistory; public and owner responses omit history.",
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "displayName": {
+            "description": "Submitted display-name snapshot; not verified identity.",
+            "maxLength": 80,
+            "type": "string"
+          },
+          "estimatedWaterDepthM": {
+            "maximum": 100,
+            "minimum": 0,
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "location": {
+            "$ref": "#/components/schemas/PointGeometry"
+          },
+          "locationName": {
+            "description": "Optional user-supplied COMMUNITY location label; empty for historical records.",
+            "maxLength": 200,
+            "type": "string"
+          },
+          "locationNote": {
+            "description": "Optional user-supplied COMMUNITY location note; empty for historical records.",
+            "maxLength": 500,
+            "type": "string"
+          },
+          "media": {
+            "items": {
+              "$ref": "#/components/schemas/ReportMedia"
+            },
+            "maxItems": 3,
+            "type": "array"
+          },
+          "publicationStatus": {
+            "description": "Derived from status: PENDING/VERIFIED are PUBLISHED; REJECTED is REMOVED.",
+            "enum": [
+              "PUBLISHED",
+              "REMOVED"
+            ],
+            "type": "string"
+          },
+          "rejectionReason": {
+            "description": "Only shown to owner and ADMIN; null in public responses.",
+            "maxLength": 500,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "reviewHistory": {
+            "description": "ADMIN detail/actions only; append-only review history.",
+            "items": {
+              "$ref": "#/components/schemas/ReportReviewEvent"
+            },
+            "type": "array"
+          },
+          "reviewedAt": {
+            "description": "Owner/ADMIN only; time of verification or rejection.",
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "reviewedBy": {
+            "description": "Owner/ADMIN only; reviewer of verification or rejection.",
+            "format": "uuid",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sourceType": {
+            "const": "COMMUNITY",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ReportStatus"
+          },
+          "type": {
+            "$ref": "#/components/schemas/ReportType"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "userId": {
+            "description": "Only exposed for legacy owners in owner and ADMIN responses.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "verificationStatus": {
+            "$ref": "#/components/schemas/ReportStatus"
+          },
+          "verifiedAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "verifiedBy": {
+            "description": "Owner/ADMIN only; omitted in public responses.",
+            "format": "uuid",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "description",
+          "location",
+          "estimatedWaterDepthM",
+          "status",
+          "publicationStatus",
+          "verificationStatus",
+          "sourceType",
+          "createdAt",
+          "updatedAt",
+          "verifiedAt",
+          "media"
+        ],
+        "type": "object"
+      },
+      "ReportInput": {
+        "additionalProperties": false,
+        "description": "Client cannot assign owner, status, reviewer, provenance, or media metadata.",
+        "properties": {
+          "description": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "estimatedWaterDepthM": {
+            "maximum": 100,
+            "minimum": 0,
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "location": {
+            "$ref": "#/components/schemas/PointGeometry"
+          },
+          "locationName": {
+            "description": "Optional user-supplied COMMUNITY location label; no geocoding.",
+            "maxLength": 200,
+            "type": "string"
+          },
+          "locationNote": {
+            "description": "Optional user-supplied COMMUNITY location note; no geocoding.",
+            "maxLength": 500,
+            "type": "string"
+          },
+          "type": {
+            "$ref": "#/components/schemas/ReportType"
+          }
+        },
+        "required": [
+          "type",
+          "description",
+          "location"
+        ],
+        "type": "object"
+      },
+      "ReportList": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/Report"
+            },
+            "type": "array"
+          },
+          "limit": {
+            "maximum": 100,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "offset": {
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "limit",
+          "offset"
+        ],
+        "type": "object"
+      },
+      "ReportMedia": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "url": {
+            "description": "Guarded API path, not a public MinIO object URL.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "url"
+        ],
+        "type": "object"
+      },
+      "ReportMediaResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "media": {
+            "$ref": "#/components/schemas/ReportMedia"
+          }
+        },
+        "required": [
+          "media"
+        ],
+        "type": "object"
+      },
+      "ReportResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "report": {
+            "$ref": "#/components/schemas/Report"
+          }
+        },
+        "required": [
+          "report"
+        ],
+        "type": "object"
+      },
+      "ReportReviewEvent": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "enum": [
+              "VERIFY",
+              "REMOVE",
+              "RESTORE"
+            ],
+            "type": "string"
+          },
+          "actorId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "previousStatus": {
+            "$ref": "#/components/schemas/ReportStatus"
+          },
+          "reason": {
+            "description": "Empty for verification and possibly historical removal without a saved reason; new removal/restoration requires a reason.",
+            "maxLength": 500,
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ReportStatus"
+          }
+        },
+        "required": [
+          "id",
+          "action",
+          "previousStatus",
+          "status",
+          "actorId",
+          "reason",
+          "createdAt"
+        ],
+        "type": "object"
+      },
+      "ReportStatus": {
+        "enum": [
+          "PENDING",
+          "VERIFIED",
+          "REJECTED"
+        ],
+        "type": "string"
+      },
+      "ReportType": {
+        "enum": [
+          "FLOOD",
+          "ROAD",
+          "OTHER"
+        ],
+        "type": "string"
+      },
+      "RequestPasswordOTP": {
+        "additionalProperties": false,
+        "properties": {
+          "email": {
+            "format": "email",
+            "maxLength": 254,
+            "type": "string"
+          }
+        },
+        "required": [
+          "email"
+        ],
+        "type": "object"
+      },
+      "ResetPasswordRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "password": {
+            "description": "Server bounds this value to 12–128 UTF-8 bytes. Confirmation is checked by the UI and not sent to the API.",
+            "format": "password",
+            "type": "string"
+          },
+          "resetToken": {
+            "pattern": "^[A-Za-z0-9_-]{43}$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "resetToken",
+          "password"
+        ],
+        "type": "object"
+      },
+      "ReviewReportInput": {
+        "additionalProperties": false,
+        "properties": {
+          "expectedUpdatedAt": {
+            "description": "Revision from the latest report detail; a concurrent edit or upload returns 409.",
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "expectedUpdatedAt"
+        ],
+        "type": "object"
+      },
+      "RiskArea": {
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "effectiveRiskLevel": {
+            "$ref": "#/components/schemas/RiskLevel"
+          },
+          "freshness": {
+            "$ref": "#/components/schemas/Freshness"
+          },
+          "geometry": {
+            "$ref": "#/components/schemas/MultiPolygonGeometry"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "riskLevel": {
+            "$ref": "#/components/schemas/RiskLevel"
+          },
+          "source": {
+            "$ref": "#/components/schemas/SourceRef"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "validFrom": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "validTo": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "source",
+          "name",
+          "description",
+          "geometry",
+          "riskLevel",
+          "effectiveRiskLevel",
+          "freshness",
+          "validFrom",
+          "validTo",
+          "createdAt",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
+      "RiskLevel": {
+        "enum": [
+          "LOW",
+          "MODERATE",
+          "HIGH",
+          "VERY_HIGH",
+          "UNKNOWN"
+        ],
+        "type": "string"
+      },
+      "RiskList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RiskArea"
+            },
+            "type": "array"
+          },
+          "limit": {
+            "type": "integer"
+          },
+          "offset": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "limit",
+          "offset"
+        ],
+        "type": "object"
+      },
+      "Road": {
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "currentCondition": {
+            "$ref": "#/components/schemas/RoadCondition"
+          },
+          "geometry": {
+            "$ref": "#/components/schemas/MultiLineGeometry"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "roadClass": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "name",
+          "geometry",
+          "roadClass",
+          "currentCondition",
+          "createdAt",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
+      "RoadCondition": {
+        "properties": {
+          "confidence": {
+            "maximum": 1,
+            "minimum": 0,
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "freshness": {
+            "$ref": "#/components/schemas/Freshness"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "observedAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "receivedAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "reportedStatus": {
+            "$ref": "#/components/schemas/RoadStatus"
+          },
+          "roadId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "source": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/SourceRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/RoadStatus"
+          },
+          "validUntil": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "verificationStatus": {
+            "$ref": "#/components/schemas/VerificationStatus"
+          },
+          "waterDepthM": {
+            "minimum": 0,
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "source",
+          "status",
+          "observedAt",
+          "receivedAt",
+          "validUntil",
+          "waterDepthM",
+          "confidence",
+          "freshness"
+        ],
+        "type": "object"
+      },
+      "RoadList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/Road"
+            },
+            "type": "array"
+          },
+          "limit": {
+            "type": "integer"
+          },
+          "offset": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "limit",
+          "offset"
+        ],
+        "type": "object"
+      },
+      "RoadStatus": {
+        "enum": [
+          "PASSABLE",
+          "WATCH",
+          "SMALL_VEHICLE_NOT_RECOMMENDED",
+          "CLOSED",
+          "UNKNOWN"
+        ],
+        "type": "string"
+      },
+      "SessionResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "accessToken": {
+            "description": "Short-lived bearer access token.",
+            "type": "string"
+          },
+          "expiresIn": {
+            "description": "Seconds until the access token expires.",
+            "minimum": 1,
+            "type": "integer"
+          },
+          "user": {
+            "$ref": "#/components/schemas/User"
+          }
+        },
+        "required": [
+          "user",
+          "accessToken",
+          "expiresIn"
+        ],
+        "type": "object"
+      },
+      "Severity": {
+        "enum": [
+          "INFO",
+          "WATCH",
+          "WARNING",
+          "CRITICAL",
+          "UNKNOWN"
+        ],
+        "type": "string"
+      },
+      "SimplePolygonGeometry": {
+        "additionalProperties": false,
+        "properties": {
+          "coordinates": {
+            "$ref": "#/components/schemas/PolygonCoordinates"
+          },
+          "type": {
+            "const": "Polygon",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "coordinates"
+        ],
+        "type": "object"
+      },
+      "SourceRef": {
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "sourceType": {
+            "$ref": "#/components/schemas/SourceType"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "name",
+          "sourceType"
+        ],
+        "type": "object"
+      },
+      "SourceType": {
+        "enum": [
+          "OFFICIAL",
+          "COMMUNITY",
+          "AI"
+        ],
+        "type": "string"
+      },
+      "StationList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/WaterStation"
+            },
+            "type": "array"
+          },
+          "limit": {
+            "type": "integer"
+          },
+          "offset": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "limit",
+          "offset"
+        ],
+        "type": "object"
+      },
+      "SystemSetting": {
+        "properties": {
+          "category": {
+            "enum": [
+              "rate_limit",
+              "alert",
+              "ingestion",
+              "feature",
+              "security"
+            ],
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "editable": {
+            "type": "boolean"
+          },
+          "key": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedBy": {
+            "format": "uuid",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "value": {},
+          "valueType": {
+            "enum": [
+              "string",
+              "number",
+              "boolean",
+              "json"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "value",
+          "valueType",
+          "description",
+          "category",
+          "editable",
+          "createdAt",
+          "updatedAt",
+          "updatedBy"
+        ],
+        "type": "object"
+      },
+      "SystemSettingInput": {
+        "additionalProperties": false,
+        "properties": {
+          "value": {}
+        },
+        "required": [
+          "value"
+        ],
+        "type": "object"
+      },
+      "SystemSettingResponse": {
+        "properties": {
+          "setting": {
+            "$ref": "#/components/schemas/SystemSetting"
+          }
+        },
+        "required": [
+          "setting"
+        ],
+        "type": "object"
+      },
+      "SystemSettingsList": {
+        "properties": {
+          "settings": {
+            "items": {
+              "$ref": "#/components/schemas/SystemSetting"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "settings"
+        ],
+        "type": "object"
+      },
+      "UnreadNotificationCount": {
+        "properties": {
+          "count": {
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "count"
+        ],
+        "type": "object"
+      },
+      "User": {
+        "additionalProperties": false,
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "email": {
+            "format": "email",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "role": {
+            "enum": [
+              "USER",
+              "ADMIN"
+            ],
+            "type": "string"
+          },
+          "username": {
+            "description": "Omitted for legacy or Google-only accounts without a username.",
+            "pattern": "^[a-z0-9_]{3,32}$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "role",
+          "createdAt"
+        ],
+        "type": "object"
+      },
+      "UserActivityStats": {
+        "properties": {
+          "auditLogCount": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "lastActivity": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "refreshSessionCount": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "rejectedReports": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "reportCount": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "verifiedReports": {
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "reportCount",
+          "lastActivity",
+          "verifiedReports",
+          "rejectedReports",
+          "auditLogCount",
+          "refreshSessionCount"
+        ],
+        "type": "object"
+      },
+      "UserResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/User"
+          }
+        },
+        "required": [
+          "user"
+        ],
+        "type": "object"
+      },
+      "VerificationStatus": {
+        "enum": [
+          "UNVERIFIED",
+          "VERIFIED",
+          "REJECTED"
+        ],
+        "type": "string"
+      },
+      "VerifyPasswordOTP": {
+        "additionalProperties": false,
+        "properties": {
+          "challengeId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "otp": {
+            "pattern": "^[0-9]{6}$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "challengeId",
+          "otp"
+        ],
+        "type": "object"
+      },
+      "WaterReading": {
+        "properties": {
+          "confidence": {
+            "maximum": 1,
+            "minimum": 0,
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "flowRateM3s": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "freshness": {
+            "$ref": "#/components/schemas/Freshness"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "observedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "rainfallMm": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "rainfallPeriodSeconds": {
+            "description": "Accumulation window; null means unspecified, not instantaneous or 24 hours.",
+            "minimum": 1,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "receivedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "source": {
+            "$ref": "#/components/schemas/SourceRef"
+          },
+          "stationId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "verificationStatus": {
+            "$ref": "#/components/schemas/VerificationStatus"
+          },
+          "waterLevelDatum": {
+            "enum": [
+              "UNKNOWN",
+              "MSL",
+              "LOCAL"
+            ],
+            "type": "string"
+          },
+          "waterLevelM": {
+            "description": "Water level in metres with explicit datum. MSL is not flood depth on a road.",
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "stationId",
+          "source",
+          "observedAt",
+          "receivedAt",
+          "waterLevelM",
+          "flowRateM3s",
+          "rainfallMm",
+          "verificationStatus",
+          "confidence",
+          "freshness",
+          "waterLevelDatum",
+          "rainfallPeriodSeconds"
+        ],
+        "type": "object"
+      },
+      "WaterStation": {
+        "properties": {
+          "active": {
+            "type": "boolean"
+          },
+          "code": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "district": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "externalId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "location": {
+            "$ref": "#/components/schemas/PointGeometry"
+          },
+          "name": {
+            "type": "string"
+          },
+          "province": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "source": {
+            "$ref": "#/components/schemas/SourceRef"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "source",
+          "externalId",
+          "code",
+          "name",
+          "location",
+          "district",
+          "province",
+          "active",
+          "createdAt",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
+      "WeatherSnapshot": {
+        "additionalProperties": false,
+        "properties": {
+          "current": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/CurrentWeather"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "freshness": {
+            "enum": [
+              "FRESH",
+              "STALE",
+              "UNKNOWN"
+            ],
+            "type": "string"
+          },
+          "location": {
+            "additionalProperties": false,
+            "properties": {
+              "latitude": {
+                "const": 14.1,
+                "type": "number"
+              },
+              "longitude": {
+                "const": 101,
+                "type": "number"
+              },
+              "name": {
+                "const": "Ongkharak",
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "latitude",
+              "longitude"
+            ],
+            "type": "object"
+          },
+          "reason": {
+            "enum": [
+              "UPSTREAM_UNAVAILABLE",
+              "NOT_CONFIGURED",
+              "DATA_STALE",
+              "REQUEST_CANCELED",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "retrievedAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "source": {
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "const": "MODEL",
+                "type": "string"
+              },
+              "name": {
+                "const": "Open-Meteo",
+                "type": "string"
+              },
+              "url": {
+                "const": "https://open-meteo.com/",
+                "format": "uri",
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "url",
+              "kind"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "location",
+          "source",
+          "freshness",
+          "retrievedAt",
+          "reason",
+          "current"
+        ],
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "bearerFormat": "JWT",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "description": "# Introduction\nPublic REST API for Flood Watch Ongkharak. The Go API is the public backend.\n\n# Evidence and freshness\nKeep OFFICIAL, COMMUNITY, and AI provenance distinct.\nAvailability data that is stale or unavailable is UNKNOWN, never SAFE.\n\n# Authentication\nAccess tokens use JWT bearer authentication.\nRefresh tokens are sent only in an HttpOnly cookie. The cookie uses the configured\nSameSite Lax or Strict policy and Secure is enabled in production; refresh tokens\nare never returned in response bodies. Phase 2 flood-domain collections are empty\nuntil explicitly populated; no response implies current safe conditions. GUEST has\nno persisted role; only USER and ADMIN accounts exist. Authentication is required\nfor the Phase 1 demonstration routes.\n\n# Community reports\nCommunity reports are always COMMUNITY evidence. Valid submissions and their\nimages publish automatically while PENDING (not reviewed); VERIFIED means ADMIN\nreviewed, not OFFICIAL or SAFE. REJECTED means removed from public access.\nSubmission time is not a measured observation time. ADMIN removal/restoration\nrequires a reason and retains history; restoration returns to PENDING.\nAn ADMIN cannot verify their own report. An empty list never means SAFE.\n\n# Alerts and realtime\nPhase 7 alerts are created only by explicit structured rules; no threshold is\npreconfigured. Public SSE transports versioned change notifications, not canonical\nresource state. Redis outages do not roll back committed PostgreSQL data.\n\n# Errors\nOther auth failures use the ErrorResponse envelope (including 403 origin rejection,\n415 unsupported media type, 429 rate limiting, and 500 infrastructure failure).\n",
+    "title": "Flood Watch Ongkharak API",
+    "version": "0.5.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/admin/ai-evidence": {
+      "get": {
+        "description": "No real inference model is bundled. Unavailable analysis creates retryable jobs, not fabricated observations. Unverified and rejected evidence is private.",
+        "operationId": "listAIEvidence",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "schema": {
+              "default": 0,
+              "maximum": 100000,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "default": "UNVERIFIED",
+              "enum": [
+                "UNVERIFIED",
+                "VERIFIED",
+                "REJECTED"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AIEvidenceList"
+                }
+              }
+            },
+            "description": "Successful response."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "List private AI evidence (ADMIN only)",
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/admin/ai-evidence/{id}": {
+      "get": {
+        "operationId": "getAIEvidence",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AIEvidenceResponse"
+                }
+              }
+            },
+            "description": "Successful response."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get private AI evidence (ADMIN only)",
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/admin/ai-evidence/{id}/reject": {
+      "post": {
+        "description": "Records a private reviewed result and audit trail. Does not delete the original community report or publish rejected evidence.",
+        "operationId": "rejectAIEvidence",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceID"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AIEvidenceRejectInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful response."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Reject AI evidence with a reason (ADMIN only)",
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/admin/ai-evidence/{id}/verify": {
+      "post": {
+        "description": "Disallows self-review, stale report snapshots, and repeated/conflicting reviews. roadId is required when a road estimate exists. Approval preserves AI provenance and creates canonical observations transactionally; it is not an official observation or safety guarantee.",
+        "operationId": "verifyAIEvidence",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceID"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AIEvidenceVerifyInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful response."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Approve AI evidence (ADMIN only)",
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/admin/alert-rules": {
+      "get": {
+        "operationId": "listAlertRules",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "default": 20,
+              "maximum": 50,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "schema": {
+              "default": 0,
+              "maximum": 1000,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertRuleList"
+                }
+              }
+            },
+            "description": "Successful response."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "List enabled and disabled alert rules (ADMIN only)",
+        "tags": [
+          "Admin"
+        ]
+      },
+      "post": {
+        "operationId": "createAlertRule",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlertRuleInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertRuleResponse"
+                }
+              }
+            },
+            "description": "Stored rule; source provenance is supplied by evidence, not by this configuration."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Create a structured alert rule (ADMIN only)",
+        "tags": [
+          "Admin",
+          "Alerts"
+        ]
+      }
+    },
+    "/api/v1/admin/alert-rules/{id}": {
+      "get": {
+        "operationId": "getAlertRule",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertRuleResponse"
+                }
+              }
+            },
+            "description": "Successful response."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get an alert rule (ADMIN only)",
+        "tags": [
+          "Admin"
+        ]
+      },
+      "put": {
+        "operationId": "updateAlertRule",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceID"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlertRuleInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertRuleResponse"
+                }
+              }
+            },
+            "description": "Updated rule. Past alerts retain their recorded decision and provenance."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Replace a structured alert rule (ADMIN only)",
+        "tags": [
+          "Admin",
+          "Alerts"
+        ]
+      }
+    },
+    "/api/v1/admin/audit-logs": {
+      "get": {
+        "operationId": "listAuditLogs",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "schema": {
+              "default": 0,
+              "maximum": 100000,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "actorId",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "targetType",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "targetId",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "action",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "startTime",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "endTime",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditLogList"
+                }
+              }
+            },
+            "description": "Successful response."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "List audit records (ADMIN only)",
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/admin/audit-logs/{id}": {
+      "get": {
+        "operationId": "getAuditLog",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditLogResponse"
+                }
+              }
+            },
+            "description": "Successful response."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get an audit record (ADMIN only)",
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/admin/dashboard/stats": {
+      "get": {
+        "description": "Active users are enabled accounts, not online sessions. Recent activity counts audit records in the last 24 hours. Errors never become placeholder zeroes.",
+        "operationId": "getAdminDashboardStats",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminDashboardStats"
+                }
+              }
+            },
+            "description": "Successful response."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Database-backed dashboard statistics (ADMIN only)",
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/admin/ping": {
+      "get": {
+        "operationId": "pingAdmin",
+        "responses": {
+          "200": {
+            "description": "Bearer authentication and administrator authorization succeeded. This response has no body."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Authentication is required or the bearer token is invalid."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The authenticated user does not have the ADMIN role."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Verify administrator authorization",
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/admin/reports": {
+      "get": {
+        "operationId": "listReviewReports",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Limit"
+          },
+          {
+            "$ref": "#/components/parameters/Offset"
+          },
+          {
+            "description": "PENDING is published/unreviewed, VERIFIED is reviewed, REJECTED is removed.",
+            "in": "query",
+            "name": "status",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/ReportStatus"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportList"
+                }
+              }
+            },
+            "description": "Review queue."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "List reports for ADMIN review",
+        "tags": [
+          "Admin",
+          "Reports"
+        ]
+      }
+    },
+    "/api/v1/admin/reports/{id}": {
+      "get": {
+        "operationId": "getReviewReport",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportResponse"
+                }
+              }
+            },
+            "description": "Review detail including private append-only moderation history. History is omitted from public and owner responses."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Read a report for ADMIN review, regardless of publication state",
+        "tags": [
+          "Admin",
+          "Reports"
+        ]
+      }
+    },
+    "/api/v1/admin/reports/{id}/reject": {
+      "post": {
+        "operationId": "rejectReport",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceID"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectReportInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportResponse"
+                }
+              }
+            },
+            "description": "Removed report remains COMMUNITY and stored for ADMIN review. Public detail and media access return 404 for nonowners; a mandatory reason and reviewer are recorded atomically."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Remove a pending or verified report from public access",
+        "tags": [
+          "Admin",
+          "Reports"
+        ]
+      }
+    },
+    "/api/v1/admin/reports/{id}/restore": {
+      "post": {
+        "operationId": "restoreReport",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceID"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectReportInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportResponse"
+                }
+              }
+            },
+            "description": "Report returns to PENDING/PUBLISHED without verification. History is retained and the former guest upload capability is revoked. Reason and current expectedUpdatedAt are mandatory."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Restore a removed report as published but unreviewed",
+        "tags": [
+          "Admin",
+          "Reports"
+        ]
+      }
+    },
+    "/api/v1/admin/reports/{id}/verify": {
+      "post": {
+        "operationId": "verifyReport",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceID"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewReportInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportResponse"
+                }
+              }
+            },
+            "description": "Verified COMMUNITY report with reviewer and verification timestamp."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Mark an already published pending report reviewed (not one's own)",
+        "tags": [
+          "Admin",
+          "Reports"
+        ]
+      }
+    },
+    "/api/v1/admin/settings": {
+      "get": {
+        "description": "Stored settings do not imply every running component dynamically consumes them; runtime environment remains authoritative where documented.",
+        "operationId": "listSystemSettings",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "category",
+            "schema": {
+              "enum": [
+                "rate_limit",
+                "alert",
+                "ingestion",
+                "feature",
+                "security"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "editable",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemSettingsList"
+                }
+              }
+            },
+            "description": "Successful response."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "List stored system settings (ADMIN only)",
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/admin/settings/{key}": {
+      "get": {
+        "operationId": "getSystemSetting",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemSettingResponse"
+                }
+              }
+            },
+            "description": "Successful response."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get a stored setting (ADMIN only)",
+        "tags": [
+          "Admin"
+        ]
+      },
+      "put": {
+        "operationId": "updateSystemSetting",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SystemSettingInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful response."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Update an editable stored setting (ADMIN only)",
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/admin/users": {
+      "get": {
+        "operationId": "listManagedUsers",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "schema": {
+              "default": 0,
+              "maximum": 100000,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "role",
+            "schema": {
+              "enum": [
+                "USER",
+                "ADMIN"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "includeDisabled",
+            "schema": {
+              "default": false,
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManagedUserList"
+                }
+              }
+            },
+            "description": "Successful response."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "List user accounts (ADMIN only)",
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/admin/users/{id}": {
+      "get": {
+        "operationId": "getManagedUser",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManagedUserDetail"
+                }
+              }
+            },
+            "description": "Successful response."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get account and activity statistics (ADMIN only)",
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/admin/users/{id}/disable": {
+      "post": {
+        "operationId": "disableManagedUser",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceID"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful response."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Disable account (ADMIN only)",
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/admin/users/{id}/enable": {
+      "post": {
+        "operationId": "enableManagedUser",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceID"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful response."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Enable account (ADMIN only)",
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/admin/users/{id}/role": {
+      "patch": {
+        "operationId": "updateManagedUserRole",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceID"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminRoleInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful response."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Change account role (ADMIN only)",
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/alerts": {
+      "get": {
+        "description": "No alerts does not mean safe. Alert severity is a rule decision, not current resource status; clients must refetch canonical evidence.",
+        "operationId": "listPublicAlerts",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "default": 20,
+              "maximum": 50,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "schema": {
+              "default": 0,
+              "maximum": 1000,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertList"
+                }
+              }
+            },
+            "description": "Alert list in descending triggered order."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "summary": "List persisted public alerts from configured rules",
+        "tags": [
+          "Alerts"
+        ]
+      }
+    },
+    "/api/v1/auth/google/callback": {
+      "get": {
+        "description": "Requires matching browser transaction cookie and single-use state. Verifies Google's signed ID token before creating accounts or sessions. Email collisions redirect to password verification without issuing a session. Do not log callback query strings.",
+        "operationId": "completeGoogleLogin",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "state",
+            "required": true,
+            "schema": {
+              "maxLength": 43,
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "code",
+            "schema": {
+              "maxLength": 4096,
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "error",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Fixed-origin redirect to completion, pending link, or login with a safe error code. Clears OAuth cookie; success sets the regular refresh cookie. Tokens are never placed in the redirect URL. No-store/no-referrer apply.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Set-Cookie": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Callback rate limit exceeded; no state or identity is accepted."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Google login is not configured."
+          }
+        },
+        "security": [],
+        "summary": "Consume Google authorization callback",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/google/config": {
+      "get": {
+        "operationId": "getGoogleLoginConfig",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "enabled": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "enabled"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Availability only; no client configuration or secrets."
+          }
+        },
+        "security": [],
+        "summary": "Read optional Google login availability",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/google/link": {
+      "post": {
+        "description": "Requires a five-minute pending-link HttpOnly cookie from a verified Google callback and an approved browser Origin. Account and subject come from server-side state, never submitted IDs or email. Maximum five failed password attempts per pending link. This endpoint does not use bearer authentication.",
+        "operationId": "linkGoogleIdentity",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "password": {
+                    "format": "password",
+                    "maxLength": 128,
+                    "type": "string",
+                    "writeOnly": true
+                  }
+                },
+                "required": [
+                  "password"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "returnTo": {
+                      "maxLength": 2048,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "returnTo"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Identity linked, pending cookie cleared and ordinary refresh cookie set; browser navigates to completion and bootstraps refresh/me.",
+            "headers": {
+              "Set-Cookie": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid or unknown JSON fields."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Generic wrong password, invalid/expired/consumed pending state, or unavailable account."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Origin rejected."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Identity already belongs to another account or the account has a different Google identity."
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Expected application/json."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Password attempt or endpoint rate limit exceeded."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Identity or session persistence failure."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Google login is not configured."
+          }
+        },
+        "security": [],
+        "summary": "Verify an existing password before linking Google",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/google/start": {
+      "get": {
+        "operationId": "startGoogleLogin",
+        "parameters": [
+          {
+            "description": "Internal application destination only; external, encoded ambiguous and authentication-loop paths are rejected.",
+            "in": "query",
+            "name": "returnTo",
+            "schema": {
+              "default": "/reports",
+              "maxLength": 2048,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Redirect to Google with state, nonce and S256 PKCE; sets a five-minute host-only HttpOnly SameSite=Lax transaction cookie, Secure in production.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Set-Cookie": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid internal destination or duplicate query input."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Browser origin or fetch site rejected."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Start rate limit exceeded."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Challenge persistence failure."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Google login is not configured."
+          }
+        },
+        "security": [],
+        "summary": "Start browser-bound Google authorization",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "operationId": "login",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CredentialsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponse"
+                }
+              }
+            },
+            "description": "A session was created. The refresh token is sent only in the HttpOnly cookie.",
+            "headers": {
+              "Set-Cookie": {
+                "$ref": "#/components/headers/RefreshTokenCookie"
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid credentials. This response is intentionally generic for unknown, disabled, and incorrect-password accounts."
+          }
+        },
+        "summary": "Start an authenticated session using email or username",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "operationId": "logout",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/OptionalRefreshTokenCookie"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The session is revoked when present and the refresh cookie is cleared. This operation is idempotent and has no response body.",
+            "headers": {
+              "Set-Cookie": {
+                "$ref": "#/components/headers/ClearedRefreshTokenCookie"
+              }
+            }
+          }
+        },
+        "summary": "End the current refresh session",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "operationId": "getCurrentUser",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            },
+            "description": "The authenticated user."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Authentication is required or the bearer token is invalid."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get the current user",
+        "tags": [
+          "Auth"
+        ]
+      },
+      "patch": {
+        "operationId": "updateCurrentUsername",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "username": {
+                    "description": "Leading and trailing whitespace is trimmed before validation; the normalized username is lowercase, 3-32 ASCII letters, digits, or underscores and globally unique.",
+                    "pattern": "^\\s*[A-Za-z0-9_]{3,32}\\s*$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "username"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            },
+            "description": "The authenticated user after the username update."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid username or JSON body, including unknown fields (INVALID_REQUEST)."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Authentication is required, the bearer token is invalid, or the account is unavailable."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The normalized username is already registered (USERNAME_EXISTS)."
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Expected application/json."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Username persistence failure."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Update the current user's username",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/password/request-otp": {
+      "post": {
+        "description": "Sends a six-digit code to a valid supplied email without disclosing account eligibility. Unknown, disabled, and Google-only accounts cannot obtain a reset grant. Requires configured SMTP; never returns the OTP. A new accepted request invalidates the previous challenge and grant. Limited to one request per email per 60 seconds and five per hour, plus the direct-peer limit.",
+        "operationId": "requestPasswordOTP",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestPasswordOTP"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PasswordOTPChallenge"
+                }
+              }
+            },
+            "description": "SMTP accepted the account-neutral email; this does not prove inbox delivery or that an eligible account exists. Response is not cacheable."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid email or JSON body (INVALID_REQUEST)."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unapproved request origin."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Email cooldown/hour cap (RECOVERY_RATE_LIMITED) or direct-peer cap (RATE_LIMITED). Retry later; Retry-After does not guarantee eligibility when the hourly cap remains exhausted."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal recovery failure without diagnostic details."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "SMTP is disabled or delivery failed (RECOVERY_UNAVAILABLE). No fake success is returned."
+          }
+        },
+        "summary": "Request an account-neutral password recovery email",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/password/reset": {
+      "post": {
+        "description": "Atomically consumes the grant, updates the Argon2id hash, revokes all refresh sessions, and increments the account authentication version so old access tokens fail. Does not log the user in.",
+        "operationId": "resetPassword",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetPasswordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Password changed and the browser's old refresh cookie cleared. No response body; not cacheable."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid password/body (INVALID_REQUEST) or missing, malformed, expired, replayed, superseded, or ineligible grant (INVALID_RESET_TOKEN)."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unapproved request origin."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Direct-peer reset rate limit."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal recovery failure without diagnostic details."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Recovery service unavailable."
+          }
+        },
+        "summary": "Set a new password using a restricted reset grant",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/password/verify-otp": {
+      "post": {
+        "description": "Challenges expire after ten minutes and allow at most five well-formed failed attempts. Verification is single-use and does not create a login session. Keep the returned grant only in memory, not in URLs or persistent storage.",
+        "operationId": "verifyPasswordOTP",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyPasswordOTP"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PasswordResetGrant"
+                }
+              }
+            },
+            "description": "A five-minute, password-reset-only grant was created. Response is not cacheable."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Malformed JSON (INVALID_REQUEST) or wrong, expired, exhausted, replayed, or ineligible OTP (INVALID_OTP)."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unapproved request origin."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Direct-peer verification rate limit."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal recovery failure without diagnostic details."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Recovery service unavailable."
+          }
+        },
+        "summary": "Exchange a valid OTP for a restricted single-use reset grant",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "operationId": "refresh",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RefreshTokenCookie"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponse"
+                }
+              }
+            },
+            "description": "The refresh token was rotated and the replacement is sent only in the HttpOnly cookie.",
+            "headers": {
+              "Set-Cookie": {
+                "$ref": "#/components/headers/RefreshTokenCookie"
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The refresh token is missing, invalid, expired, revoked, or has already been used."
+          }
+        },
+        "summary": "Rotate the refresh session",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "operationId": "register",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegistrationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "REGISTRATION_DISABLED. Existing users are retained; visitors submit as Guest."
+          }
+        },
+        "summary": "Public registration is disabled in the Guest flow",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/data-sources": {
+      "get": {
+        "operationId": "listDataSources",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Limit"
+          },
+          {
+            "$ref": "#/components/parameters/Offset"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataSourceList"
+                }
+              }
+            },
+            "description": "Sources, including their immutable provenance classification."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "summary": "List provenance sources without authentication",
+        "tags": [
+          "Data Sources"
+        ]
+      },
+      "post": {
+        "operationId": "createDataSource",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDataSource"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "dataSource": {
+                      "$ref": "#/components/schemas/DataSource"
+                    }
+                  },
+                  "required": [
+                    "dataSource"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Source created. Never send credentials or secrets."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Create a source with explicit provenance classification",
+        "tags": [
+          "Data Sources"
+        ]
+      }
+    },
+    "/api/v1/events/stream": {
+      "get": {
+        "description": "Guest-accessible. `id` is a Redis stream cursor distinct from envelope `eventId`.\nReconnect with Last-Event-ID (or cursor query in browsers that cannot set headers).\n`replay.reset` requires a full canonical REST refetch after an expired cursor or\nbounded replay; initial subscription begins at the current stream tail.\nHeartbeats are SSE comments. Delivery can be duplicated and has bounded retention.\n`report.updated` signals creation, edits, image changes, removal and restoration;\nrefetch canonical REST. It carries only the report ID, never review reasons or\nremoved content. `report.verified` remains the additional review signal.\n",
+        "operationId": "streamPublicEvents",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Last-Event-ID",
+            "schema": {
+              "pattern": "^[0-9]+-[0-9]+$",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "schema": {
+              "pattern": "^[0-9]+-[0-9]+$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "SSE events with `event`, `id` and JSON `data`; heartbeat comments and replay.reset are control frames."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "summary": "Subscribe to public change notifications over SSE",
+        "tags": [
+          "Realtime"
+        ]
+      }
+    },
+    "/api/v1/external-data/ongkharak": {
+      "get": {
+        "description": "Database-only read; never fetches an upstream provider. All providers are opt-in. Disabled sources are NOT_CONFIGURED/UNKNOWN. Empty official alerts do not imply safety. Raw payloads remain private. Forecasts retain MODEL provenance and never become station readings.",
+        "operationId": "getOngkharakExternalData",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExternalDataSnapshot"
+                }
+              }
+            },
+            "description": "Snapshot including disabled/unavailable/stale sources; current conditions are not inferred from retrieval health.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/DomainError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [],
+        "summary": "Read bounded, source-aware external evidence and provider health",
+        "tags": [
+          "External data"
+        ]
+      }
+    },
+    "/api/v1/flood-events": {
+      "get": {
+        "operationId": "listFloodEvents",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Limit"
+          },
+          {
+            "$ref": "#/components/parameters/Offset"
+          },
+          {
+            "$ref": "#/components/parameters/BBox"
+          },
+          {
+            "$ref": "#/components/parameters/EventStatusFilter"
+          },
+          {
+            "$ref": "#/components/parameters/SeverityFilter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventList"
+                }
+              }
+            },
+            "description": "Raw and effective statuses are separate; stale evidence has UNKNOWN effective status."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "summary": "List source-aware flood events",
+        "tags": [
+          "Flood Domain"
+        ]
+      }
+    },
+    "/api/v1/flood-events/{id}": {
+      "get": {
+        "operationId": "getFloodEvent",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "event": {
+                      "$ref": "#/components/schemas/FloodEvent"
+                    }
+                  },
+                  "required": [
+                    "event"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Flood event found."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "summary": "Get a flood event",
+        "tags": [
+          "Flood Domain"
+        ]
+      }
+    },
+    "/api/v1/notifications": {
+      "get": {
+        "description": "Only current account entries are returned. History is independent of Push permissions and VAPID configuration. No historical alert backfill is performed.",
+        "operationId": "listNotifications",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "schema": {
+              "default": 0,
+              "maximum": 100000,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationList"
+                }
+              }
+            },
+            "description": "Successful response."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "List the current account inbox",
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/api/v1/notifications/language": {
+      "patch": {
+        "description": "Updates only locale and the subscription revision. Never creates or transfers a subscription; missing and foreign-owned endpoints both return 404. Does not require Push delivery to be configured.",
+        "operationId": "updatePushLanguage",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PushLanguageInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Language saved, including an unchanged preference."
+          },
+          "400": {
+            "$ref": "#/components/responses/DomainError"
+          },
+          "401": {
+            "$ref": "#/components/responses/DomainError"
+          },
+          "404": {
+            "$ref": "#/components/responses/DomainError"
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Update the language of an existing owned Push subscription",
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/api/v1/notifications/public": {
+      "get": {
+        "operationId": "listPublicNotifications",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Limit"
+          },
+          {
+            "$ref": "#/components/parameters/Offset"
+          },
+          {
+            "$ref": "#/components/parameters/BBox"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicNotificationPage"
+                }
+              }
+            },
+            "description": "Publication-ordered public feed. Global announcements remain visible with an area filter. Read state is browser-local, not server account data. No PENDING or REJECTED reports."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [],
+        "summary": "Read public announcements and verified community report notifications without login",
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/api/v1/notifications/public-key": {
+      "get": {
+        "description": "Push may be unavailable when VAPID is not configured; this does not disable the account inbox.",
+        "operationId": "getPushPublicKey",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PushPublicKey"
+                }
+              }
+            },
+            "description": "Successful response."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "summary": "Read the public VAPID key",
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/api/v1/notifications/read-all": {
+      "post": {
+        "operationId": "markAllNotificationsRead",
+        "responses": {
+          "204": {
+            "description": "Successful response."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Mark the current account inbox read",
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/api/v1/notifications/subscribe": {
+      "post": {
+        "operationId": "subscribePush",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PushSubscriptionInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful response."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Register a browser Push subscription",
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/api/v1/notifications/unread-count": {
+      "get": {
+        "operationId": "getUnreadNotificationCount",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnreadNotificationCount"
+                }
+              }
+            },
+            "description": "Successful response."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Count unread entries for the current account",
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/api/v1/notifications/unsubscribe": {
+      "delete": {
+        "operationId": "unsubscribePush",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "endpoint",
+            "required": true,
+            "schema": {
+              "format": "uri",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful response."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Remove an owned browser Push subscription",
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/api/v1/notifications/{id}/read": {
+      "patch": {
+        "description": "Idempotent for an already-read owned item. An unknown or another account item returns 404 without exposing its existence.",
+        "operationId": "markNotificationRead",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceID"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful response."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Mark an owned notification read",
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/api/v1/reports": {
+      "get": {
+        "operationId": "listPublicReports",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Limit"
+          },
+          {
+            "$ref": "#/components/parameters/Offset"
+          },
+          {
+            "$ref": "#/components/parameters/BBox"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportList"
+                }
+              }
+            },
+            "description": "Bounded published reports; an empty collection does not imply safe conditions."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "summary": "List published community reports, including unreviewed submissions",
+        "tags": [
+          "Reports"
+        ]
+      },
+      "post": {
+        "operationId": "createReport",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GuestReportInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GuestReportResponse"
+                }
+              }
+            },
+            "description": "Guest submission is PUBLISHED, PENDING and COMMUNITY, not verified fact. A short-lived report-scoped upload token is returned once; it does not permit reading removed data or editing text. Rate-limited per trusted client address."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [],
+        "summary": "Submit and automatically publish an unreviewed community report",
+        "tags": [
+          "Reports"
+        ]
+      }
+    },
+    "/api/v1/reports/mine": {
+      "get": {
+        "operationId": "listMyReports",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Limit"
+          },
+          {
+            "$ref": "#/components/parameters/Offset"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportList"
+                }
+              }
+            },
+            "description": "Owner-visible reports."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "List the authenticated user's reports including unpublished states",
+        "tags": [
+          "Reports"
+        ]
+      }
+    },
+    "/api/v1/reports/{id}": {
+      "get": {
+        "operationId": "getPublicReport",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportResponse"
+                }
+              }
+            },
+            "description": "PENDING and VERIFIED reports are public; REJECTED reports return 404. Private moderation history and reasons are omitted."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "summary": "Read a published community report, reviewed or unreviewed",
+        "tags": [
+          "Reports"
+        ]
+      },
+      "patch": {
+        "operationId": "updatePendingReport",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceID"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportResponse"
+                }
+              }
+            },
+            "description": "Updated pending report."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Edit an owned pending report only",
+        "tags": [
+          "Reports"
+        ]
+      }
+    },
+    "/api/v1/reports/{id}/media": {
+      "post": {
+        "operationId": "uploadReportImage",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceID"
+          },
+          {
+            "description": "Expiring capability from the create response. Kept in memory, never in URLs. Server checks its hash, report scope, expiry and PENDING state.",
+            "in": "header",
+            "name": "X-Report-Upload-Token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "file": {
+                    "description": "JPEG, PNG or WebP; maximum 5 MiB per file and three images per report.",
+                    "format": "binary",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "file"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportMediaResponse"
+                }
+              }
+            },
+            "description": "Image stored in private object storage; its guarded API URL is public while the report is PENDING or VERIFIED, and unavailable publicly after removal."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [],
+        "summary": "Upload an image to a pending report with its scoped upload capability",
+        "tags": [
+          "Reports"
+        ]
+      }
+    },
+    "/api/v1/reports/{id}/media/{mediaId}": {
+      "get": {
+        "operationId": "getReportImage",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceID"
+          },
+          {
+            "in": "path",
+            "name": "mediaId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              },
+              "image/png": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              },
+              "image/webp": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "PENDING and VERIFIED images are public; REJECTED images require legacy owner or ADMIN authorization. Responses are private/no-store."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {},
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Retrieve a report image subject to report visibility",
+        "tags": [
+          "Reports"
+        ]
+      }
+    },
+    "/api/v1/risk-areas": {
+      "get": {
+        "operationId": "listRiskAreas",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Limit"
+          },
+          {
+            "$ref": "#/components/parameters/Offset"
+          },
+          {
+            "$ref": "#/components/parameters/BBox"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RiskList"
+                }
+              }
+            },
+            "description": "Undated or expired assessment has UNKNOWN effective risk."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "summary": "List spatial risk areas",
+        "tags": [
+          "Flood Domain"
+        ]
+      },
+      "post": {
+        "operationId": "createRiskArea",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRiskArea"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "riskArea": {
+                      "$ref": "#/components/schemas/RiskArea"
+                    }
+                  },
+                  "required": [
+                    "riskArea"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Valid WGS84 Polygon or MultiPolygon stored as MultiPolygon."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Create a manually assessed risk area",
+        "tags": [
+          "Flood Domain"
+        ]
+      }
+    },
+    "/api/v1/road-conditions": {
+      "get": {
+        "operationId": "listRoadConditions",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Limit"
+          },
+          {
+            "$ref": "#/components/parameters/Offset"
+          },
+          {
+            "$ref": "#/components/parameters/ReportedRoadStatusFilter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConditionList"
+                }
+              }
+            },
+            "description": "Descending observation time with preserved reported and effective statuses."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "summary": "List road condition history",
+        "tags": [
+          "Roads"
+        ]
+      },
+      "post": {
+        "operationId": "createRoadCondition",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRoadCondition"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "roadCondition": {
+                      "$ref": "#/components/schemas/RoadCondition"
+                    }
+                  },
+                  "required": [
+                    "roadCondition"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Road condition with source type derived from the referenced source."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Record an ADMIN-reviewed condition for an existing road",
+        "tags": [
+          "Roads"
+        ]
+      }
+    },
+    "/api/v1/roads": {
+      "get": {
+        "operationId": "listRoads",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Limit"
+          },
+          {
+            "$ref": "#/components/parameters/Offset"
+          },
+          {
+            "$ref": "#/components/parameters/BBox"
+          },
+          {
+            "$ref": "#/components/parameters/ReportedRoadStatusFilter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoadList"
+                }
+              }
+            },
+            "description": "Missing, stale, or expired condition resolves to UNKNOWN, not PASSABLE."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "summary": "List roads and their most recently observed condition",
+        "tags": [
+          "Roads"
+        ]
+      }
+    },
+    "/api/v1/user/ping": {
+      "get": {
+        "operationId": "pingUser",
+        "responses": {
+          "200": {
+            "description": "Bearer authentication succeeded. This response has no body."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Authentication is required or the bearer token is invalid."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Verify user authentication",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/water-stations": {
+      "get": {
+        "operationId": "listWaterStations",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Limit"
+          },
+          {
+            "$ref": "#/components/parameters/Offset"
+          },
+          {
+            "$ref": "#/components/parameters/BBox"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StationList"
+                }
+              }
+            },
+            "description": "Stations with GeoJSON Point coordinates ordered longitude, latitude."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "summary": "List stations; optional WGS84 bounding box",
+        "tags": [
+          "Water"
+        ]
+      }
+    },
+    "/api/v1/water-stations/{id}": {
+      "get": {
+        "operationId": "getWaterStation",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "station": {
+                      "$ref": "#/components/schemas/WaterStation"
+                    }
+                  },
+                  "required": [
+                    "station"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Station found."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "summary": "Get a station",
+        "tags": [
+          "Water"
+        ]
+      }
+    },
+    "/api/v1/water-stations/{id}/readings": {
+      "get": {
+        "operationId": "listWaterReadings",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceID"
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
+          },
+          {
+            "$ref": "#/components/parameters/Offset"
+          },
+          {
+            "$ref": "#/components/parameters/From"
+          },
+          {
+            "$ref": "#/components/parameters/To"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadingList"
+                }
+              }
+            },
+            "description": "Descending observed time; waterLevelM is meters and nullable, never guessed."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "summary": "List time-series observations for a station",
+        "tags": [
+          "Water"
+        ]
+      }
+    },
+    "/api/v1/weather/ongkharak": {
+      "get": {
+        "description": "Public, fixed-location Open-Meteo model weather, not a station observation,\nOFFICIAL flood evidence, or a flood-safety decision. No provider URL or location\noverride is accepted. Reference coordinates are 14.1 N, 101.0 E, matching the\nmap center; this is not a district-wide measurement. The API fetches on demand,\ncaches successful responses for 10 minutes per process, coalesces concurrent\nrequests, and backs off for one minute after failure. Observations over one\nhour old or retained during an upstream outage are STALE; cached evidence over\nsix hours old is omitted. No cached data or disabled configuration returns 503\nwith UNKNOWN and null current. Precipitation is over intervalSeconds, not 24h.\n",
+        "operationId": "getOngkharakWeather",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeatherSnapshot"
+                }
+              }
+            },
+            "description": "Fresh weather or explicitly labeled stale cached weather."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Public weather read rate limit exceeded."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeatherSnapshot"
+                }
+              }
+            },
+            "description": "Weather unavailable; current and retrievedAt are null, freshness is UNKNOWN."
+          }
+        },
+        "security": [],
+        "summary": "Read model-based weather at the Ongkharak reference point",
+        "tags": [
+          "Weather"
+        ]
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "getHealth",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            },
+            "description": "The API process is accepting requests."
+          }
+        },
+        "summary": "Report API process liveness",
+        "tags": [
+          "System"
+        ]
+      }
+    },
+    "/metrics": {
+      "get": {
+        "description": "Operational endpoint; restrict access at the deployment ingress.",
+        "operationId": "getMetrics",
+        "responses": {
+          "200": {
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Prometheus exposition format."
+          }
+        },
+        "summary": "Prometheus process metrics",
+        "tags": [
+          "System"
+        ]
+      }
+    },
+    "/ready": {
+      "get": {
+        "operationId": "getReadiness",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadinessResponse"
+                }
+              }
+            },
+            "description": "PostgreSQL, Redis, and MinIO liveness checks pass."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadinessResponse"
+                }
+              }
+            },
+            "description": "At least one required dependency is unavailable or not configured."
+          }
+        },
+        "summary": "Report API dependency readiness",
+        "tags": [
+          "System"
+        ]
+      }
+    }
+  },
+  "servers": [
+    {
+      "description": "Public API through Caddy or Go directly; resource paths include /api where required",
+      "url": "/"
+    }
+  ],
+  "tags": [
+    {
+      "description": "Fixed-location model weather, separate from canonical flood evidence.",
+      "name": "Weather"
+    },
+    {
+      "description": "Account-scoped inbox and independent browser Push subscriptions.",
+      "name": "Notifications"
+    },
+    {
+      "description": "Service liveness and dependency readiness.",
+      "name": "System"
+    },
+    {
+      "description": "Account authentication and session lifecycle.",
+      "name": "Auth"
+    },
+    {
+      "description": "Aggregated flood situation overview.",
+      "name": "Overview"
+    },
+    {
+      "description": "Structured alerts and their evidence.",
+      "name": "Alerts"
+    },
+    {
+      "description": "Water stations and timestamped readings.",
+      "name": "Water"
+    },
+    {
+      "description": "Flood situation information.",
+      "name": "Flood"
+    },
+    {
+      "description": "Geospatial flood situation information.",
+      "name": "Map"
+    },
+    {
+      "description": "Roads and condition history; not a travel-safety guarantee.",
+      "name": "Roads"
+    },
+    {
+      "description": "Camera information and evidence.",
+      "name": "CCTV"
+    },
+    {
+      "description": "Community reports and public verified evidence.",
+      "name": "Reports"
+    },
+    {
+      "description": "Versioned server-sent change notifications.",
+      "name": "Realtime"
+    },
+    {
+      "description": "ADMIN-only management and moderation.",
+      "name": "Admin"
+    },
+    {
+      "description": "Data provider metadata and provenance.",
+      "name": "Data Sources"
+    },
+    {
+      "description": "Flood events and assessed risk areas.",
+      "name": "Flood Domain"
+    }
+  ]
+}

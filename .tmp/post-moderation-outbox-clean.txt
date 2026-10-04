@@ -1,0 +1,12 @@
+=== RUN   TestDispatchRetriesRedisFailureWithoutLosingEvent
+--- PASS: TestDispatchRetriesRedisFailureWithoutLosingEvent (0.06s)
+=== RUN   TestEvaluatorCreatesOneAlertFromConfiguredCommunityEvidence
+--- PASS: TestEvaluatorCreatesOneAlertFromConfiguredCommunityEvidence (0.13s)
+=== RUN   TestEvaluatorDoesNotApplyRuleCreatedAfterEventOccurrence
+--- PASS: TestEvaluatorDoesNotApplyRuleCreatedAfterEventOccurrence (0.09s)
+=== RUN   TestRoadEffectiveStatusChangesNotifyUnknownAndOnlyVerifiedClosedAlerts
+--- PASS: TestRoadEffectiveStatusChangesNotifyUnknownAndOnlyVerifiedClosedAlerts (0.12s)
+=== RUN   TestConcurrentRoadEvidenceSerializesStatusEvents
+--- PASS: TestConcurrentRoadEvidenceSerializesStatusEvents (0.17s)
+PASS
+ok  	github.com/floodwatch-ongkharak/backend/internal/postgres/outbox	1.384s

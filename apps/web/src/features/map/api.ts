@@ -35,7 +35,8 @@ function validItem(key: LayerKey, value: unknown): boolean {
     typeof value.effectiveRiskLevel === "string" && freshnessValues.includes(String(value.freshness));
   if (key === "reports") return geometry.type === "Point" && ["FLOOD", "ROAD", "OTHER"].includes(String(value.type)) &&
     typeof value.description === "string" && (value.estimatedWaterDepthM === null || typeof value.estimatedWaterDepthM === "number") &&
-    value.status === "VERIFIED" && value.verificationStatus === "VERIFIED" && value.sourceType === "COMMUNITY" &&
+    ["PENDING", "VERIFIED"].includes(String(value.status)) && value.verificationStatus === value.status && value.sourceType === "COMMUNITY" &&
+    (value.publicationStatus === undefined || value.publicationStatus === "PUBLISHED") &&
     typeof value.createdAt === "string" && typeof value.updatedAt === "string" && (value.verifiedAt === null || typeof value.verifiedAt === "string") &&
     (value.verifiedBy === undefined || value.verifiedBy === null || typeof value.verifiedBy === "string") && Array.isArray(value.media) &&
     value.media.every((media) => record(media) && typeof media.id === "string" && typeof media.url === "string");

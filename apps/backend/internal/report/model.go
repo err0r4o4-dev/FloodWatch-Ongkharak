@@ -32,6 +32,47 @@ const (
 
 const SourceCommunity = "COMMUNITY"
 
+type PublicationStatus string
+
+const (
+	PublicationPublished PublicationStatus = "PUBLISHED"
+	PublicationRemoved   PublicationStatus = "REMOVED"
+)
+
+type ReviewEvent struct {
+	ID             string    `json:"id"`
+	Action         string    `json:"action"`
+	PreviousStatus Status    `json:"previousStatus"`
+	Status         Status    `json:"status"`
+	ActorID        string    `json:"actorId"`
+	Reason         string    `json:"reason"`
+	CreatedAt      time.Time `json:"createdAt"`
+}
+
+func IsPublished(status Status) bool {
+	return status == StatusPending || status == StatusVerified
+}
+
+func CanReview(previous, next Status) bool {
+	switch next {
+	case StatusVerified:
+		return previous == StatusPending
+	case StatusRejected:
+		return IsPublished(previous)
+	case StatusPending:
+		return previous == StatusRejected
+	default:
+		return false
+	}
+}
+
+func (item Report) PublicationStatus() PublicationStatus {
+	if IsPublished(item.Status) {
+		return PublicationPublished
+	}
+	return PublicationRemoved
+}
+
 type Location struct {
 	Type        string    `json:"type"`
 	Coordinates []float64 `json:"coordinates"`
@@ -94,6 +135,7 @@ type Report struct {
 	ReviewedBy           *string
 	RejectionReason      *string
 	Media                []Media
+	ReviewHistory        []ReviewEvent
 }
 
 type Media struct {
@@ -123,7 +165,8 @@ type MediaFile struct {
 type Repository interface {
 	Create(context.Context, Report) (Report, error)
 	Get(context.Context, string) (Report, error)
-	ListVerified(context.Context, ListFilter) ([]Report, error)
+	GetAdmin(context.Context, string) (Report, error)
+	ListPublic(context.Context, ListFilter) ([]Report, error)
 	ListMine(context.Context, string, Page) ([]Report, error)
 	ListAdmin(context.Context, Status, Page) ([]Report, error)
 	UpdatePending(context.Context, string, Input) (Report, error)

@@ -32,7 +32,7 @@ class FakeEventSource {
 
 function Consumer() {
   const status = useRealtimeStatus();
-  const revision = useRealtimeRevision(["report.verified"]);
+  const revision = useRealtimeRevision(["report.verified", "report.updated"]);
   return <div><span>{status}</span><span>revision {revision}</span></div>;
 }
 
@@ -66,12 +66,14 @@ describe("public realtime subscription", () => {
     const connection = FakeEventSource.connections[0];
     act(() => connection.onopen?.());
     expect(screen.getByText("CONNECTED")).toBeInTheDocument();
-    expect(screen.getByText("revision 1")).toBeInTheDocument();
-    act(() => connection.send("report.verified", { eventType: "report.verified", eventId: "id-1", resourceId: "report-1", payloadVersion: 1, sourceType: "COMMUNITY" }));
     expect(screen.getByText("revision 2")).toBeInTheDocument();
+    act(() => connection.send("report.verified", { eventType: "report.verified", eventId: "id-1", resourceId: "report-1", payloadVersion: 1, sourceType: "COMMUNITY" }));
+    expect(screen.getByText("revision 3")).toBeInTheDocument();
+    act(() => connection.send("report.updated", { eventType: "report.updated", eventId: "id-3", resourceId: "report-3", payloadVersion: 1, sourceType: "COMMUNITY" }));
+    expect(screen.getByText("revision 4")).toBeInTheDocument();
     act(() => connection.send("report.verified", { eventType: "report.verified", eventId: "id-1", resourceId: "report-1", payloadVersion: 1, sourceType: "COMMUNITY" }));
     act(() => connection.send("report.verified", { eventType: "report.verified", eventId: "id-2", resourceId: "report-2", payloadVersion: 2, sourceType: "COMMUNITY" }));
-    expect(screen.getByText("revision 2")).toBeInTheDocument();
+    expect(screen.getByText("revision 4")).toBeInTheDocument();
     view.rerender(<RealtimeProvider><Consumer /></RealtimeProvider>);
     expect(FakeEventSource.connections).toHaveLength(1);
     view.unmount();
@@ -92,9 +94,9 @@ describe("public realtime subscription", () => {
     expect(FakeEventSource.connections).toHaveLength(2);
     expect(FakeEventSource.connections[1].url).toContain("cursor=1740000000000-0");
     act(() => FakeEventSource.connections[1].onopen?.());
-    expect(screen.getByText("revision 3")).toBeInTheDocument();
+    expect(screen.getByText("revision 5")).toBeInTheDocument();
     act(() => FakeEventSource.connections[1].listeners.get("replay.reset")?.(new Event("replay.reset")));
-    expect(screen.getByText("revision 4")).toBeInTheDocument();
+    expect(screen.getByText("revision 7")).toBeInTheDocument();
     view.unmount();
     act(() => vi.advanceTimersByTime(30_000));
     expect(FakeEventSource.connections).toHaveLength(2);
@@ -152,21 +154,26 @@ describe("public realtime subscription", () => {
     vi.stubGlobal("fetch", request);
     const view = render(<MemoryRouter><RealtimeProvider><WeatherProvider><OverviewPage /><WeatherWidget /></WeatherProvider></RealtimeProvider></MemoryRouter>);
     expect(await screen.findByText("ยังไม่มีสถานีในรายการที่เรียกดู")).toBeInTheDocument();
-    expect(request).toHaveBeenCalledTimes(8);
+    const reportRequests = () => request.mock.calls.filter(([url]) => String(url).startsWith("/api/v1/reports?")).length;
+    expect(reportRequests()).toBe(1);
     act(() => FakeEventSource.connections[0].onopen?.());
-    await waitFor(() => expect(request).toHaveBeenCalledTimes(15));
+    await waitFor(() => expect(reportRequests()).toBe(2));
     act(() => FakeEventSource.connections[0].send("water_level.updated", {
       eventType: "water_level.updated", eventId: "event-1", resourceId: "station-1", payloadVersion: 1, sourceType: "OFFICIAL"
     }));
-    await waitFor(() => expect(request).toHaveBeenCalledTimes(21));
+    await waitFor(() => expect(reportRequests()).toBe(3));
     act(() => FakeEventSource.connections[0].send("report.verified", {
       eventType: "report.verified", eventId: "report-event-1", resourceId: "report-1", payloadVersion: 1, sourceType: "COMMUNITY"
     }));
-    await waitFor(() => expect(request).toHaveBeenCalledTimes(27));
+    await waitFor(() => expect(reportRequests()).toBe(4));
+    act(() => FakeEventSource.connections[0].send("report.updated", {
+      eventType: "report.updated", eventId: "report-updated-1", resourceId: "report-1", payloadVersion: 1, sourceType: "COMMUNITY"
+    }));
+    await waitFor(() => expect(reportRequests()).toBe(5));
     act(() => FakeEventSource.connections[0].send("alert.created", {
       eventType: "alert.created", eventId: "alert-event-1", resourceId: "alert-1", payloadVersion: 1, sourceType: "OFFICIAL"
     }));
-    await waitFor(() => expect(request).toHaveBeenCalledTimes(33));
+    await waitFor(() => expect(reportRequests()).toBe(6));
     expect(request.mock.calls.filter(([url]) => url === "/api/v1/weather/ongkharak")).toHaveLength(1);
     expect(screen.queryByText("ปลอดภัย")).not.toBeInTheDocument();
     view.unmount();

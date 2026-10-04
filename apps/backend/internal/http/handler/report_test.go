@@ -223,7 +223,60 @@ func TestReportVerifyRejectsChunkedRequestBody(t *testing.T) {
 	}
 }
 
+func TestPublicReportAndImageVisibilityErrorsAreNotCacheable(t *testing.T) {
+	handler := NewReportHandler(&fakeReportService{readError: report.ErrNotFound})
+	for _, operation := range []struct {
+		name   string
+		handle http.HandlerFunc
+	}{
+		{name: "report", handle: handler.Get},
+		{name: "image", handle: handler.Media},
+	} {
+		t.Run(operation.name, func(t *testing.T) {
+			response := httptest.NewRecorder()
+			operation.handle(response, httptest.NewRequest(http.MethodGet, "/api/v1/reports/removed", nil))
+			if response.Code != http.StatusNotFound || !strings.Contains(response.Header().Get("Cache-Control"), "no-store") {
+				t.Fatalf("removed %s visibility = %d, cache %q", operation.name, response.Code, response.Header().Get("Cache-Control"))
+			}
+		})
+	}
+}
+
+func TestPublicationIsDistinctFromVerificationAndHistoryIsAdminOnly(t *testing.T) {
+	service := &fakeReportService{item: report.Report{
+		ID: "ddfd74fd-9561-4c5e-a304-b1cb704508d9", Status: report.StatusPending,
+		VerificationStatus: report.StatusPending, SourceType: report.SourceCommunity,
+		RejectionReason: stringPointer("private-removal-reason"),
+		ReviewHistory:   []report.ReviewEvent{{ID: "history", Action: "RESTORE", ActorID: "private-actor", Reason: "private-reason"}},
+	}}
+	handler := NewReportHandler(service)
+	publicResponse := httptest.NewRecorder()
+	handler.Get(publicResponse, httptest.NewRequest(http.MethodGet, "/api/v1/reports/report", nil))
+	var public map[string]any
+	if err := json.Unmarshal(publicResponse.Body.Bytes(), &public); err != nil {
+		t.Fatal(err)
+	}
+	item := public["report"].(map[string]any)
+	if item["publicationStatus"] != "PUBLISHED" || item["verificationStatus"] != "PENDING" {
+		t.Fatalf("publication/verification = %s", publicResponse.Body)
+	}
+	if strings.Contains(publicResponse.Body.String(), "private-") || item["reviewHistory"] != nil {
+		t.Fatalf("public history leak = %s", publicResponse.Body)
+	}
+	private := reportPayload(service.item, true)
+	privateJSON, err := json.Marshal(private)
+	if err != nil || bytes.Contains(privateJSON, []byte("private-")) {
+		t.Fatalf("owner moderation detail leak = %s, %v", privateJSON, err)
+	}
+	adminResponse := httptest.NewRecorder()
+	handler.GetAdmin(adminResponse, httptest.NewRequest(http.MethodGet, "/api/v1/admin/reports/report", nil))
+	if !strings.Contains(adminResponse.Body.String(), "private-reason") || !strings.Contains(adminResponse.Body.String(), "private-actor") {
+		t.Fatalf("admin history missing = %s", adminResponse.Body)
+	}
+}
+
 type fakeReportService struct {
+	readError       error
 	item            report.Report
 	guestCreation   report.GuestCreation
 	guestInput      report.GuestInput
@@ -240,10 +293,10 @@ func (service *fakeReportService) CreateGuest(_ context.Context, userID string, 
 	service.guestInput = input
 	return service.guestCreation, nil
 }
-func (service *fakeReportService) GetVerified(context.Context, string) (report.Report, error) {
-	return service.item, nil
+func (service *fakeReportService) GetPublic(context.Context, string) (report.Report, error) {
+	return service.item, service.readError
 }
-func (service *fakeReportService) ListVerified(context.Context, report.ListFilter) ([]report.Report, error) {
+func (service *fakeReportService) ListPublic(context.Context, report.ListFilter) ([]report.Report, error) {
 	return nil, nil
 }
 func (service *fakeReportService) ListMine(context.Context, string, report.Page) ([]report.Report, error) {
@@ -266,6 +319,9 @@ func (service *fakeReportService) Verify(context.Context, string, string, time.T
 func (service *fakeReportService) Reject(context.Context, string, string, string, time.Time) (report.Report, error) {
 	return service.item, nil
 }
+func (service *fakeReportService) Restore(context.Context, string, string, string, time.Time) (report.Report, error) {
+	return service.item, nil
+}
 func (service *fakeReportService) UploadMedia(context.Context, string, string, report.Image) (report.Media, error) {
 	return report.Media{}, nil
 }
@@ -274,7 +330,7 @@ func (service *fakeReportService) UploadGuestMedia(_ context.Context, _ string, 
 	return report.Media{}, nil
 }
 func (service *fakeReportService) OpenMedia(context.Context, string, string, report.Access) (report.MediaFile, error) {
-	return report.MediaFile{}, nil
+	return report.MediaFile{}, service.readError
 }
 
 type fakeReportAuthenticator struct{}

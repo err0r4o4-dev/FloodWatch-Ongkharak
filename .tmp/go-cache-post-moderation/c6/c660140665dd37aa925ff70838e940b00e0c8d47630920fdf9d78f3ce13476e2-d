@@ -1,0 +1,3 @@
+./provider.go
+./pipeline_integration_test.go
+./provider_test.go

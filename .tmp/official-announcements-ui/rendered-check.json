@@ -1,0 +1,26 @@
+[
+  {
+    "width": 320,
+    "scrollWidth": 320,
+    "headingId": "_r_0_",
+    "focus": "SUMMARY",
+    "historyOpen": true,
+    "screenshot": ".tmp/official-announcements-ui/announcements-320.png"
+  },
+  {
+    "width": 390,
+    "scrollWidth": 390,
+    "headingId": "_r_0_",
+    "focus": "SUMMARY",
+    "historyOpen": true,
+    "screenshot": ".tmp/official-announcements-ui/announcements-390.png"
+  },
+  {
+    "width": 1440,
+    "scrollWidth": 1440,
+    "headingId": "_r_0_",
+    "focus": "SUMMARY",
+    "historyOpen": true,
+    "screenshot": ".tmp/official-announcements-ui/announcements-1440.png"
+  }
+]

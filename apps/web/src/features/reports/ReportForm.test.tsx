@@ -99,7 +99,7 @@ describe("ReportForm uploads", () => {
     fireEvent.change(screen.getByLabelText("ภาพประกอบ (JPEG, PNG หรือ WebP; ไม่บังคับ)"), { target: { files: [new File(["image"], "water.png", { type: "image/png" })] } });
     fireEvent.click(screen.getByRole("button", { name: "บันทึกการแก้ไข" }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("บางไฟล์อัปโหลดไม่สำเร็จ");
+    expect(await screen.findByRole("alert")).toHaveTextContent("รายงานเผยแพร่แล้ว แต่บางภาพอัปโหลดไม่สำเร็จ");
     expect(onComplete).toHaveBeenCalledWith(true);
     expect(notifyWarning).toHaveBeenCalledTimes(1);
     expect(notifySuccess).not.toHaveBeenCalled();
@@ -121,7 +121,7 @@ describe("ReportForm uploads", () => {
       successfulFile, failedFile
     ] } });
     fireEvent.click(screen.getByRole("button", { name: "ส่งรายงาน" }));
-    expect(await screen.findByRole("alert")).toHaveTextContent("บางไฟล์อัปโหลดไม่สำเร็จ");
+    expect(await screen.findByRole("alert")).toHaveTextContent("รายงานเผยแพร่แล้ว แต่บางภาพอัปโหลดไม่สำเร็จ");
     expect(onComplete).toHaveBeenCalledWith(true);
     expect(reportsApi.create).toHaveBeenCalledTimes(1);
     expect(reportsApi.uploadMedia).toHaveBeenCalledTimes(2);
@@ -161,6 +161,6 @@ describe("ReportForm uploads", () => {
     expect(reportsApi.create).toHaveBeenCalledTimes(1);
     expect(reportsApi.create).toHaveBeenCalledWith(expect.objectContaining({ displayName: "ชุมชนทดสอบ" }));
     finish({ ...pendingReport, uploadToken: "private-upload-capability" });
-    expect(await screen.findByRole("status")).toHaveTextContent("รายงานยังรอการตรวจสอบ");
+    expect(await screen.findByRole("status")).toHaveTextContent("รายงานเผยแพร่แล้วในฐานะข้อมูล COMMUNITY");
   });
 });

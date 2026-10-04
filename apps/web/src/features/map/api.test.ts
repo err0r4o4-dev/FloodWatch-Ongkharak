@@ -33,11 +33,12 @@ describe("map API boundary", () => {
     expect(url.searchParams.get("offset")).toBe("0");
   });
 
-  it("requests only verified COMMUNITY report points within the viewport", async () => {
-    const request = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({ items: [report], limit: 100, offset: 0 }) });
+  it("requests published COMMUNITY report points, including unreviewed reports, within the viewport", async () => {
+    const pending = { ...report, id: "report-pending", status: "PENDING", verificationStatus: "PENDING", verifiedAt: null };
+    const request = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({ items: [report, pending], limit: 100, offset: 0 }) });
     vi.stubGlobal("fetch", request);
 
-    await expect(fetchMapLayer("reports", { west: 100.9, south: 14, east: 101.2, north: 14.3 }, new AbortController().signal)).resolves.toEqual({ items: [report], hasMore: false });
+    await expect(fetchMapLayer("reports", { west: 100.9, south: 14, east: 101.2, north: 14.3 }, new AbortController().signal)).resolves.toEqual({ items: [report, pending], hasMore: false });
     const url = new URL(request.mock.calls[0][0], "http://localhost");
     expect(url.pathname).toBe("/api/v1/reports");
     expect(url.searchParams.get("bbox")).toBe("100.9,14,101.2,14.3");

@@ -1,7 +1,8 @@
 import { ApiError, apiClient } from "../auth/api";
-import type { CommunityReport, ReportInput, ReportMedia } from "./types";
+import { derivePublicationStatus } from "./types";
+import type { CommunityReport, ReportInput, ReportMedia, ReportReviewHistory, ReportStatus } from "./types";
 
-type ReportPage = { items: CommunityReport[]; limit: number; offset: number };
+export type ReportPage = { items: CommunityReport[]; limit: number; offset: number; total?: number };
 
 function record(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -20,26 +21,42 @@ function validReport(value: unknown): value is CommunityReport {
     (value.locationNote !== undefined && typeof value.locationNote !== "string") ||
     !["FLOOD", "ROAD", "OTHER"].includes(String(value.type)) || typeof value.description !== "string" ||
     !validPoint(value.location) || !["PENDING", "VERIFIED", "REJECTED"].includes(String(value.status)) ||
-    !["PENDING", "VERIFIED", "REJECTED"].includes(String(value.verificationStatus)) ||
-    value.sourceType !== "COMMUNITY" || typeof value.createdAt !== "string" || typeof value.updatedAt !== "string" ||
+    !["PENDING", "VERIFIED", "REJECTED"].includes(String(value.verificationStatus)) || value.verificationStatus !== value.status ||
+    value.sourceType !== "COMMUNITY" || (value.publicationStatus !== undefined && value.publicationStatus !== derivePublicationStatus(value.status as ReportStatus)) ||
+    typeof value.createdAt !== "string" || typeof value.updatedAt !== "string" ||
     !Array.isArray(value.media)) return false;
 
   return (value.estimatedWaterDepthM === null || typeof value.estimatedWaterDepthM === "number") &&
     (value.verifiedAt === null || typeof value.verifiedAt === "string") &&
     (value.verifiedBy === undefined || value.verifiedBy === null || typeof value.verifiedBy === "string") &&
+    (value.reviewedAt === undefined || value.reviewedAt === null || typeof value.reviewedAt === "string") &&
+    (value.reviewedBy === undefined || value.reviewedBy === null || typeof value.reviewedBy === "string") &&
+    (value.rejectionReason === undefined || value.rejectionReason === null || typeof value.rejectionReason === "string") &&
+    (value.reviewHistory === undefined || Array.isArray(value.reviewHistory) && value.reviewHistory.every(validReviewHistory)) &&
     value.media.every((media) => record(media) && typeof media.id === "string" && typeof media.url === "string");
 }
 
+function validReviewHistory(value: unknown): value is ReportReviewHistory {
+  return record(value) && typeof value.id === "string" && ["VERIFY", "REMOVE", "RESTORE"].includes(String(value.action)) &&
+    ["PENDING", "VERIFIED", "REJECTED"].includes(String(value.previousStatus)) && ["PENDING", "VERIFIED", "REJECTED"].includes(String(value.status)) &&
+    typeof value.actorId === "string" && (value.reason === null || typeof value.reason === "string") && typeof value.createdAt === "string";
+}
+
+function normalizeReport(value: CommunityReport): CommunityReport {
+  return { ...value, publicationStatus: derivePublicationStatus(value.status) };
+}
+
 function page(value: unknown): ReportPage {
-  if (!record(value) || !Array.isArray(value.items) || typeof value.limit !== "number" || typeof value.offset !== "number" || !value.items.every(validReport)) {
+  if (!record(value) || !Array.isArray(value.items) || typeof value.limit !== "number" || typeof value.offset !== "number" ||
+    (value.total !== undefined && typeof value.total !== "number") || !value.items.every(validReport)) {
     throw new Error("Invalid reports API response");
   }
-  return value as ReportPage;
+  return { items: value.items.map((item) => normalizeReport(item)), limit: value.limit, offset: value.offset, ...(value.total === undefined ? {} : { total: value.total }) };
 }
 
 function reportResponse(value: unknown): CommunityReport {
   if (!record(value) || !validReport(value.report)) throw new Error("Invalid report API response");
-  return value.report;
+  return normalizeReport(value.report);
 }
 
 function mediaResponse(value: unknown): ReportMedia {
@@ -92,9 +109,14 @@ export const reportsApi = {
     }, { authenticate: false, retryUnauthorized: false }));
   },
 
-  async listPending(signal?: AbortSignal) {
-    const result = await apiClient.request<unknown>("/admin/reports?status=PENDING", { signal });
+  async listAdmin(status: ReportStatus, limit = 20, offset = 0, signal?: AbortSignal) {
+    const query = new URLSearchParams({ status, limit: String(limit), offset: String(offset) });
+    const result = await apiClient.request<unknown>(`/admin/reports?${query}`, { signal });
     return page(result);
+  },
+
+  async listPending(signal?: AbortSignal) {
+    return this.listAdmin("PENDING", 20, 0, signal);
   },
 
   async getAdminReport(id: string) {
@@ -104,6 +126,14 @@ export const reportsApi = {
   async review(id: string, action: "verify" | "reject", reason: string, expectedUpdatedAt: string) {
     return reportResponse(await apiClient.request<unknown>(`/admin/reports/${encodeURIComponent(id)}/${action}`, {
       body: JSON.stringify({ expectedUpdatedAt, ...(action === "reject" && reason ? { reason } : {}) }),
+      headers: { "Content-Type": "application/json" },
+      method: "POST"
+    }));
+  },
+
+  async restore(id: string, reason: string, expectedUpdatedAt: string) {
+    return reportResponse(await apiClient.request<unknown>(`/admin/reports/${encodeURIComponent(id)}/restore`, {
+      body: JSON.stringify({ expectedUpdatedAt, reason }),
       headers: { "Content-Type": "application/json" },
       method: "POST"
     }));

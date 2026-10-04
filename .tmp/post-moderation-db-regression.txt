@@ -1,0 +1,35 @@
+=== RUN   TestRepositoryDedupesAlertsAndCanonicalTriggersQueuePublicEvents
+--- PASS: TestRepositoryDedupesAlertsAndCanonicalTriggersQueuePublicEvents (0.28s)
+=== RUN   TestRuleReadIncludesDisabledAndMissingRules
+--- PASS: TestRuleReadIncludesDisabledAndMissingRules (0.02s)
+PASS
+ok  	github.com/floodwatch-ongkharak/backend/internal/postgres/alertrepo	0.946s
+?   	github.com/floodwatch-ongkharak/backend/internal/postgres/airepo	[no test files]
+=== RUN   TestPublicRepositoryListsAlertsAndVerifiedReportsInChronologicalOrder
+--- PASS: TestPublicRepositoryListsAlertsAndVerifiedReportsInChronologicalOrder (0.10s)
+=== RUN   TestRepository_UpsertAndList
+--- PASS: TestRepository_UpsertAndList (0.04s)
+=== RUN   TestRepositoryDeliveryCleanupRequiresCurrentLeaseAndSubscriptionRevision
+--- PASS: TestRepositoryDeliveryCleanupRequiresCurrentLeaseAndSubscriptionRevision (0.08s)
+=== RUN   TestRepositoryUpdateSubscriptionLocaleIsOwnerScopedAndDoesNotResurrect
+--- PASS: TestRepositoryUpdateSubscriptionLocaleIsOwnerScopedAndDoesNotResurrect (0.06s)
+=== RUN   TestRepositoryCleanupAndRenewalUseSubscriptionThenJobLockOrder
+--- PASS: TestRepositoryCleanupAndRenewalUseSubscriptionThenJobLockOrder (0.08s)
+=== RUN   TestRepositoryMaterializesAlertAndMaintainsReadStateIdempotently
+--- PASS: TestRepositoryMaterializesAlertAndMaintainsReadStateIdempotently (0.10s)
+PASS
+ok  	github.com/floodwatch-ongkharak/backend/internal/postgres/notificationrepo	0.590s
+=== RUN   TestDispatchRetriesRedisFailureWithoutLosingEvent
+    dispatcher_integration_test.go:37: outbox event = {ID:035444b7-8867-42bd-ba5b-4e3c5696a97b EventType:report.updated OccurredAt:2026-10-04 19:46:21.181079 +0700 +07 SourceType:COMMUNITY ResourceType:COMMUNITY_REPORT ResourceID:44caee32-916a-46a4-a68f-b5b60fb244e2 PayloadVersion:1 Payload:[123 125]}
+--- FAIL: TestDispatchRetriesRedisFailureWithoutLosingEvent (0.05s)
+=== RUN   TestEvaluatorCreatesOneAlertFromConfiguredCommunityEvidence
+--- PASS: TestEvaluatorCreatesOneAlertFromConfiguredCommunityEvidence (0.19s)
+=== RUN   TestEvaluatorDoesNotApplyRuleCreatedAfterEventOccurrence
+--- PASS: TestEvaluatorDoesNotApplyRuleCreatedAfterEventOccurrence (0.14s)
+=== RUN   TestRoadEffectiveStatusChangesNotifyUnknownAndOnlyVerifiedClosedAlerts
+--- PASS: TestRoadEffectiveStatusChangesNotifyUnknownAndOnlyVerifiedClosedAlerts (0.23s)
+=== RUN   TestConcurrentRoadEvidenceSerializesStatusEvents
+--- PASS: TestConcurrentRoadEvidenceSerializesStatusEvents (0.22s)
+FAIL
+FAIL	github.com/floodwatch-ongkharak/backend/internal/postgres/outbox	1.807s
+FAIL

@@ -82,7 +82,7 @@ func (service *Service) CreateGuest(ctx context.Context, userID string, input Gu
 	return GuestCreation{Report: created, UploadToken: token}, nil
 }
 
-func (service *Service) GetVerified(ctx context.Context, id string) (Report, error) {
+func (service *Service) GetPublic(ctx context.Context, id string) (Report, error) {
 	if !validID(id) {
 		return Report{}, ErrInvalid
 	}
@@ -90,17 +90,17 @@ func (service *Service) GetVerified(ctx context.Context, id string) (Report, err
 	if err != nil {
 		return Report{}, err
 	}
-	if item.Status != StatusVerified {
+	if !IsPublished(item.Status) {
 		return Report{}, ErrNotFound
 	}
 	return item, nil
 }
 
-func (service *Service) ListVerified(ctx context.Context, filter ListFilter) ([]Report, error) {
+func (service *Service) ListPublic(ctx context.Context, filter ListFilter) ([]Report, error) {
 	if !validFilter(filter) {
 		return nil, ErrInvalid
 	}
-	return service.repository.ListVerified(ctx, filter)
+	return service.repository.ListPublic(ctx, filter)
 }
 
 func (service *Service) ListMine(ctx context.Context, userID string, page Page) ([]Report, error) {
@@ -121,7 +121,7 @@ func (service *Service) GetAdmin(ctx context.Context, id string) (Report, error)
 	if !validID(id) {
 		return Report{}, ErrInvalid
 	}
-	return service.repository.Get(ctx, id)
+	return service.repository.GetAdmin(ctx, id)
 }
 
 func (service *Service) Update(ctx context.Context, id, userID string, input Input) (Report, error) {
@@ -151,24 +151,32 @@ func (service *Service) Verify(ctx context.Context, id, reviewerID string, expec
 
 func (service *Service) Reject(ctx context.Context, id, reviewerID, reason string, expectedUpdatedAt time.Time) (Report, error) {
 	reason = strings.TrimSpace(reason)
-	if utf8.RuneCountInString(reason) > maxReasonRunes {
+	if reason == "" || utf8.RuneCountInString(reason) > maxReasonRunes {
 		return Report{}, ErrInvalid
 	}
 	return service.review(ctx, id, reviewerID, StatusRejected, reason, expectedUpdatedAt)
 }
 
+func (service *Service) Restore(ctx context.Context, id, reviewerID, reason string, expectedUpdatedAt time.Time) (Report, error) {
+	reason = strings.TrimSpace(reason)
+	if reason == "" || utf8.RuneCountInString(reason) > maxReasonRunes {
+		return Report{}, ErrInvalid
+	}
+	return service.review(ctx, id, reviewerID, StatusPending, reason, expectedUpdatedAt)
+}
+
 func (service *Service) review(ctx context.Context, id, reviewerID string, status Status, reason string, expectedUpdatedAt time.Time) (Report, error) {
-	if !validID(id) || !validID(reviewerID) || expectedUpdatedAt.IsZero() || status != StatusVerified && status != StatusRejected {
+	if !validID(id) || !validID(reviewerID) || expectedUpdatedAt.IsZero() || !validStatus(status) {
 		return Report{}, ErrInvalid
 	}
 	item, err := service.repository.Get(ctx, id)
 	if err != nil {
 		return Report{}, err
 	}
-	if item.UserID == reviewerID {
+	if status == StatusVerified && item.UserID == reviewerID {
 		return Report{}, ErrForbidden
 	}
-	if item.Status != StatusPending {
+	if !CanReview(item.Status, status) {
 		return Report{}, ErrConflict
 	}
 	if !item.UpdatedAt.Equal(expectedUpdatedAt) {
@@ -245,7 +253,7 @@ func (service *Service) OpenMedia(ctx context.Context, reportID, mediaID string,
 	if err != nil {
 		return MediaFile{}, err
 	}
-	if item.Status != StatusVerified && (item.UserID == "" || access.UserID != item.UserID) && !access.IsAdmin {
+	if !IsPublished(item.Status) && (item.UserID == "" || access.UserID != item.UserID) && !access.IsAdmin {
 		return MediaFile{}, ErrNotFound
 	}
 	media, err := service.repository.GetMedia(ctx, reportID, mediaID)

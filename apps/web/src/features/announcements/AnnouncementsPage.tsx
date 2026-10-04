@@ -5,6 +5,7 @@ import en from "../../i18n/locales/en/announcements";
 import { PageHeroArt } from "../../shared/components/PageHeroArt";
 import { DataTimestamp, FreshnessBadge, OriginalContentNote, SourceBadge, StatusBadge } from "../../shared/components/DataStates";
 import { useRealtimeRevision } from "../realtime/RealtimeProvider";
+import { OfficialAnnouncementsPanel } from "../official-announcements/OfficialAnnouncementsPanel";
 import { listPublicAlerts } from "./api";
 import type { PublicAlert } from "./api";
 import "./AnnouncementsPage.css";
@@ -60,6 +61,7 @@ export function AnnouncementsPage() {
       </div>
       <PageHeroArt kind="announcement" />
     </header>
+    <OfficialAnnouncementsPanel />
     <div className="announcements-page__layout">
         <div className="announcements-page__main">
           <div className="announcement-filters" aria-label={t("filters.label")}>

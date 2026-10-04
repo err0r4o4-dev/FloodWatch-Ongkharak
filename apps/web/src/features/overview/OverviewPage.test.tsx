@@ -40,20 +40,21 @@ describe("OverviewPage", () => {
     expect(screen.queryByText(/25°C/)).not.toBeInTheDocument();
   });
 
-  it("shows only verified individual reports with a link to the selected report", async () => {
+  it("shows published community reports with review wording and a link to the selected report", async () => {
     const report = {
       id: "report-1", type: "FLOOD", description: "น้ำขังหน้าบ้านจากบุคคล", location: { type: "Point", coordinates: [101.1, 14.1] },
       estimatedWaterDepthM: null, status: "VERIFIED", verificationStatus: "VERIFIED", sourceType: "COMMUNITY",
       createdAt: "2026-10-02T00:00:00Z", updatedAt: "2026-10-02T00:00:00Z", verifiedAt: "2026-10-02T01:00:00Z", media: []
     };
-    mockCollections({ "/api/v1/reports": [report, { ...report, id: "pending", description: "รายงานรอตรวจ", status: "PENDING" }, { ...report, id: "unverified", description: "หลักฐานยังไม่ยืนยัน", verificationStatus: "PENDING" }] });
+    mockCollections({ "/api/v1/reports": [report, { ...report, id: "pending", description: "รายงานรอตรวจ", status: "PENDING", verificationStatus: "PENDING", verifiedAt: null }, { ...report, id: "removed", description: "รายงานที่ถูกนำออก", status: "REJECTED", verificationStatus: "REJECTED", verifiedAt: null }] });
     render(<OverviewPage />);
     const reports = await screen.findByRole("region", { name: "รายงานจากประชาชน (ล่าสุด)" });
     expect(await within(reports).findByRole("link", { name: /น้ำขังหน้าบ้านจากบุคคล/ })).toHaveAttribute("href", "/reports?report=report-1");
-    expect(within(reports).getByText("รายงานชุมชน")).toBeInTheDocument();
-    expect(within(reports).getByText("ไม่มีภาพประกอบ")).toBeInTheDocument();
-    expect(within(reports).queryByText("รายงานรอตรวจ")).not.toBeInTheDocument();
-    expect(within(reports).queryByText("หลักฐานยังไม่ยืนยัน")).not.toBeInTheDocument();
+    expect(within(reports).getAllByText("รายงานชุมชน").length).toBeGreaterThan(0);
+    expect(within(reports).getAllByText("ไม่มีภาพประกอบ").length).toBeGreaterThan(0);
+    expect(within(reports).getByText("รายงานรอตรวจ")).toBeInTheDocument();
+    expect(within(reports).getByText("ยังไม่ตรวจสอบ")).toBeInTheDocument();
+    expect(within(reports).queryByText("รายงานที่ถูกนำออก")).not.toBeInTheDocument();
   });
 
   it("loads published alerts independently from flood events", async () => {
@@ -61,7 +62,7 @@ describe("OverviewPage", () => {
     render(<OverviewPage />);
     expect(await screen.findByText("ประกาศจริงจาก API")).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "ประกาศล่าสุด" })).toHaveTextContent("เตือนภัย");
-    expect(screen.getByRole("region", { name: "เหตุการณ์น้ำที่รายงาน" })).toHaveTextContent("ยังไม่มีเหตุการณ์ในรายการ");
+    expect(screen.queryByRole("region", { name: "เหตุการณ์น้ำที่รายงาน" })).not.toBeInTheDocument();
   });
 
   it("retries a failed report feed without hiding the available flood data", async () => {
@@ -70,10 +71,10 @@ describe("OverviewPage", () => {
       : Promise.resolve({ ok: true, json: () => Promise.resolve({ items: url.includes("flood-events") ? [event()] : [], limit: 20, offset: 0 }) }));
     vi.stubGlobal("fetch", request);
     render(<OverviewPage />);
-    expect(await screen.findByText("ข้อมูลทดสอบ")).toBeInTheDocument();
+    expect(await screen.findByText("1")).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "รายงานจากประชาชน (ล่าสุด)" })).toHaveTextContent("ไม่สามารถโหลดรายงานจากประชาชนได้");
     fireEvent.click(screen.getByRole("button", { name: "ลองอีกครั้ง" }));
-    expect(await screen.findByText("ข้อมูลทดสอบ")).toBeInTheDocument();
+    expect(await screen.findByText("1")).toBeInTheDocument();
     expect(request.mock.calls.filter(([url]) => url.includes("/reports"))).toHaveLength(2);
   });
 
@@ -84,23 +85,26 @@ describe("OverviewPage", () => {
     vi.stubGlobal("fetch", request);
     render(<AppShell><OverviewPage /></AppShell>);
 
-    expect(await screen.findByText("ข้อมูลทดสอบ")).toBeInTheDocument();
+    expect(await screen.findByText("1")).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "สภาพอากาศองครักษ์" })).toHaveTextContent("ไม่สามารถโหลดข้อมูลสภาพอากาศได้");
     expect(request.mock.calls.filter(([url]) => url === "/api/v1/weather/ongkharak")).toHaveLength(1);
-    expect(screen.getByRole("region", { name: "เหตุการณ์น้ำที่รายงาน" })).toHaveTextContent("ข้อมูลทดสอบ");
+    expect(screen.queryByRole("region", { name: "เหตุการณ์น้ำที่รายงาน" })).not.toBeInTheDocument();
   });
 
   it("loads guest public endpoints and displays empty data", async () => {
     const request = mockCollections({});
     render(<OverviewPage />);
     expect(screen.getByRole("status", { name: "กำลังโหลดข้อมูล" })).toBeInTheDocument();
-    expect(await screen.findByRole("region", { name: "เหตุการณ์น้ำที่รายงาน" })).toHaveTextContent("ยังไม่มีเหตุการณ์ในรายการ");
+    expect(await screen.findByText("ยังไม่มีสถานีในรายการที่เรียกดู")).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "เหตุการณ์น้ำที่รายงาน" })).not.toBeInTheDocument();
     expect(screen.getByRole("region", { name: "ระดับน้ำ (จุดสำคัญ)" })).toHaveTextContent("ยังไม่มีสถานีในรายการที่เรียกดู");
     expect(screen.getByRole("region", { name: "ประกาศล่าสุด" })).toHaveTextContent("ยังไม่มีประกาศที่เผยแพร่");
     expect(request.mock.calls.map(([url]) => url).filter((url) => !["/api/v1/weather/ongkharak", "/api/v1/external-data/ongkharak"].includes(url))).toEqual([
+      "/api/v1/official-announcements?limit=20&offset=0",
       "/api/v1/flood-events?limit=20", "/api/v1/risk-areas?limit=20", "/api/v1/roads?limit=20", "/api/v1/water-stations?limit=5",
       "/api/v1/alerts?limit=20&offset=0", "/api/v1/reports?limit=20&offset=0"
     ]);
+    expect(request.mock.calls.filter(([url]) => url === "/api/v1/official-announcements?limit=20&offset=0")).toHaveLength(1);
     expect(request.mock.calls.filter(([url]) => url === "/api/v1/external-data/ongkharak")).toHaveLength(1);
   });
 
@@ -111,7 +115,7 @@ describe("OverviewPage", () => {
     expect(screen.queryByText("ยังไม่มีข้อมูลสถานการณ์ที่เผยแพร่")).not.toBeInTheDocument();
   });
 
-  it("shows degraded partial data and distinct provenance", async () => {
+  it("shows degraded partial data without the removed event panel", async () => {
     vi.stubGlobal("fetch", vi.fn((url: string) => url.includes("risk-areas")
       ? Promise.reject(new Error("offline"))
       : Promise.resolve({ ok: true, json: () => Promise.resolve({ items: url.includes("flood-events")
@@ -119,27 +123,14 @@ describe("OverviewPage", () => {
         : [], limit: 20, offset: 0 }) })));
     render(<OverviewPage />);
     expect(await screen.findByText("ข้อมูลบางส่วนไม่พร้อมใช้งาน")).toBeInTheDocument();
-    expect(screen.getByText("แหล่งทางการ")).toBeInTheDocument();
-    expect(screen.getByText("รายงานชุมชน")).toBeInTheDocument();
-    expect(screen.getByText("หลักฐาน AI")).toBeInTheDocument();
   });
 
-  it("keeps stale and unknown evidence unknown, not safe", async () => {
-    mockCollections({ "/api/v1/flood-events": [event({ freshness: "STALE", effectiveSeverity: "UNKNOWN", effectiveStatus: "UNKNOWN" })] });
-    render(<OverviewPage />);
-    expect(await screen.findByText("ข้อมูลทดสอบ")).toBeInTheDocument();
-    expect(screen.getAllByText("ไม่ทราบสถานะ").length).toBeGreaterThan(0);
-    expect(screen.getByText("ข้อมูลเก่า")).toBeInTheDocument();
-    expect(screen.queryByText("ปลอดภัย")).not.toBeInTheDocument();
-  });
-
-  it("shows a verified current event with its reported status and observation time", async () => {
+  it("omits the event panel while keeping the event summary count", async () => {
     mockCollections({ "/api/v1/flood-events": [event()] });
     render(<OverviewPage />);
-    expect(await screen.findByText("ข้อมูลทดสอบ")).toBeInTheDocument();
-    expect(screen.getByText("เตือนภัย")).toBeInTheDocument();
-    expect(screen.getByText("ยังมีเหตุการณ์")).toBeInTheDocument();
-    expect(screen.getByText(/หน่วยงานตัวอย่าง/)).toHaveTextContent("เวลาสังเกต:");
+    expect(await screen.findByText("1")).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "เหตุการณ์น้ำที่รายงาน" })).not.toBeInTheDocument();
+    expect(screen.queryByText("ข้อมูลทดสอบ")).not.toBeInTheDocument();
   });
 
   it("shows observed water readings with their source and freshness", async () => {

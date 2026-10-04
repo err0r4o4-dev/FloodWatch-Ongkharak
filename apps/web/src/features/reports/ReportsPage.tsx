@@ -15,7 +15,7 @@ import type { CommunityReport, ReportType } from "./types";
 type LoadState = "loading" | "ready" | "error";
 type ReportFilter = "ALL" | ReportType;
 
-const reportEvents = ["report.verified"] as const;
+const reportEvents = ["report.verified", "report.updated"] as const;
 const reportFilters: Array<{ value: ReportFilter; key: keyof typeof th }> = [
   { value: "ALL", key: "type.all" },
   { value: "FLOOD", key: "type.flood" },
@@ -54,9 +54,9 @@ function ReportDetails({ report }: { report: CommunityReport }) {
     </div>
     <div className="badge-row">
       <SourceBadge type="COMMUNITY" />
-      <span className="badge badge--report-verified">{t("status.verified")}</span>
+      <span className={`badge badge--report-${report.status.toLowerCase()}`}>{t(report.status === "VERIFIED" ? "status.verified" : "status.pending")}</span>
     </div>
-    <p className="reports-detail__description">{t("detail.verifiedDescription")}</p>
+    <p className="reports-detail__description">{t(report.status === "VERIFIED" ? "detail.verifiedDescription" : "detail.pendingDescription")}</p>
     {report.media.length > 0 && <section className="reports-gallery" aria-labelledby="report-gallery-heading">
       <h3 id="report-gallery-heading">{t("detail.mediaTitle")}</h3>
       <ul className="report-media" aria-label={t("detail.mediaLabel")}>
@@ -110,7 +110,7 @@ export function ReportsPage() {
     try {
       const page = await reportsApi.listPublic();
       if (requestId !== publicRequest.current) return;
-      setPublicReports(page.items.filter((report) => report.status === "VERIFIED" && report.verificationStatus === "VERIFIED" && report.sourceType === "COMMUNITY"));
+      setPublicReports(page.items.filter((report) => report.status !== "REJECTED" && report.sourceType === "COMMUNITY"));
       setPublicState("ready");
     } catch {
       if (requestId === publicRequest.current) setPublicState("error");

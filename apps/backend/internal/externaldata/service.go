@@ -195,8 +195,11 @@ func validateBatch(definition Definition, batch Batch, now time.Time) error {
 				return errors.New("invalid forecast interval/grid")
 			}
 		}
-		if record.Kind == OfficialAlert && (record.AlertIdentifier == "" || record.IssuedAt == nil || (record.ValidTo == nil && record.AlertMessageType != "Cancel")) {
-			return errors.New("invalid CAP lifecycle")
+		if record.Kind == OfficialAlert {
+			indeterminateTiming := definition.Code == "TMD_CAP" && record.Reason == "CONFLICTING_TIME_WINDOWS" && record.Freshness == "UNKNOWN" && record.ValidFrom == nil && record.ValidTo == nil && (record.AlertMessageType == "Alert" || record.AlertMessageType == "Update")
+			if record.AlertIdentifier == "" || record.IssuedAt == nil || record.ValidTo == nil && record.AlertMessageType != "Cancel" && !indeterminateTiming {
+				return errors.New("invalid CAP lifecycle")
+			}
 		}
 	}
 	return nil

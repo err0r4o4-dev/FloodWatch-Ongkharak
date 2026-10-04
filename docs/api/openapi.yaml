@@ -20,10 +20,12 @@ info:
     for the Phase 1 demonstration routes.
 
     # Community reports
-    Phase 6 community reports are always COMMUNITY evidence. Only VERIFIED reports
-    and their images are public; an empty list never means SAFE. Submission time is
-    not a measured observation time. Pending reports are owner-editable, rejected
-    and verified reports are immutable, and an ADMIN cannot verify their own report.
+    Community reports are always COMMUNITY evidence. Valid submissions and their
+    images publish automatically while PENDING (not reviewed); VERIFIED means ADMIN
+    reviewed, not OFFICIAL or SAFE. REJECTED means removed from public access.
+    Submission time is not a measured observation time. ADMIN removal/restoration
+    requires a reason and retains history; restoration returns to PENDING.
+    An ADMIN cannot verify their own report. An empty list never means SAFE.
 
     # Alerts and realtime
     Phase 7 alerts are created only by explicit structured rules; no threshold is
@@ -70,6 +72,49 @@ tags:
   - name: Flood Domain
     description: Flood events and assessed risk areas.
 paths:
+  /api/v1/official-announcements:
+    get:
+      tags: [Alerts]
+      operationId: listOfficialAnnouncements
+      summary: Retained TMD official announcements and lifecycle history
+      description: |
+        Public stored CAP read model, separate from app-generated rule alerts.
+        No upstream HTTP fetch or notification delivery occurs on this request.
+        Disabled sources return NOT_CONFIGURED and an empty list. Stale or
+        unconfirmed current evidence is UNKNOWN, never SAFE. Missing feed items
+        do not erase historical cancellation or imply an all-clear. Pagination
+        is bounded; histories contain at most twenty newest revisions per item.
+        The retained read bound is 10000 evidence versions; overflow returns 503
+        rather than a silently truncated lifecycle. Responses are no-store.
+      security: []
+      parameters:
+        - name: limit
+          in: query
+          schema: {type: integer, minimum: 1, maximum: 50, default: 20}
+        - name: offset
+          in: query
+          schema: {type: integer, minimum: 0, maximum: 10000, default: 0}
+      responses:
+        '200':
+          description: Stored official announcement snapshot, not a safety certification
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/OfficialAnnouncementList'}
+        '400':
+          description: Invalid or repeated pagination parameter
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ErrorResponse'}
+        '429':
+          description: Public read rate limit exceeded (60 requests per minute)
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ErrorResponse'}
+        '503':
+          description: Stored evidence unavailable; current conditions are unknown
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ErrorResponse'}
   /api/v1/external-data/ongkharak:
     get:
       tags:
@@ -767,7 +812,7 @@ paths:
   /api/v1/reports:
     get:
       tags: [Reports]
-      summary: List only published verified community reports
+      summary: List published community reports, including unreviewed submissions
       operationId: listPublicReports
       parameters:
         - { $ref: '#/components/parameters/Limit' }
@@ -780,7 +825,7 @@ paths:
         default: { $ref: '#/components/responses/DomainError' }
     post:
       tags: [Reports]
-      summary: Submit a pending community report
+      summary: Submit and automatically publish an unreviewed community report
       operationId: createReport
       security: []
       requestBody:
@@ -788,7 +833,7 @@ paths:
         content: { application/json: { schema: { $ref: '#/components/schemas/GuestReportInput' } } }
       responses:
         '201':
-          description: Guest submission is PENDING and COMMUNITY. A short-lived report-scoped upload token is returned once; it does not permit reading unpublished data or editing text. Rate-limited per trusted client address.
+          description: Guest submission is PUBLISHED, PENDING and COMMUNITY, not verified fact. A short-lived report-scoped upload token is returned once; it does not permit reading removed data or editing text. Rate-limited per trusted client address.
           content: { application/json: { schema: { $ref: '#/components/schemas/GuestReportResponse' } } }
         default: { $ref: '#/components/responses/DomainError' }
   /api/v1/reports/mine:
@@ -808,12 +853,12 @@ paths:
   /api/v1/reports/{id}:
     get:
       tags: [Reports]
-      summary: Read a published verified community report
+      summary: Read a published community report, reviewed or unreviewed
       operationId: getPublicReport
       parameters: [{ $ref: '#/components/parameters/ResourceID' }]
       responses:
         '200':
-          description: Verified public report only; unpublished reports are not disclosed.
+          description: PENDING and VERIFIED reports are public; REJECTED reports return 404. Private moderation history and reasons are omitted.
           content: { application/json: { schema: { $ref: '#/components/schemas/ReportResponse' } } }
         default: { $ref: '#/components/responses/DomainError' }
     patch:
@@ -854,7 +899,7 @@ paths:
               properties: { file: { type: string, format: binary, description: 'JPEG, PNG or WebP; maximum 5 MiB per file and three images per report.' } }
       responses:
         '201':
-          description: Image stored privately; metadata references a guarded API URL.
+          description: Image stored in private object storage; its guarded API URL is public while the report is PENDING or VERIFIED, and unavailable publicly after removal.
           content: { application/json: { schema: { $ref: '#/components/schemas/ReportMediaResponse' } } }
         default: { $ref: '#/components/responses/DomainError' }
   /api/v1/reports/{id}/media/{mediaId}:
@@ -868,7 +913,7 @@ paths:
         - { name: mediaId, in: path, required: true, schema: { type: string, format: uuid } }
       responses:
         '200':
-          description: Published images are public; unpublished images require owner or ADMIN authorization.
+          description: PENDING and VERIFIED images are public; REJECTED images require legacy owner or ADMIN authorization. Responses are private/no-store.
           content:
             image/jpeg: { schema: { type: string, format: binary } }
             image/png: { schema: { type: string, format: binary } }
@@ -883,7 +928,7 @@ paths:
       parameters:
         - { $ref: '#/components/parameters/Limit' }
         - { $ref: '#/components/parameters/Offset' }
-        - { name: status, in: query, required: true, schema: { $ref: '#/components/schemas/ReportStatus' }, description: 'Explicit review status; UI requests PENDING.' }
+        - { name: status, in: query, required: true, schema: { $ref: '#/components/schemas/ReportStatus' }, description: 'PENDING is published/unreviewed, VERIFIED is reviewed, REJECTED is removed.' }
       responses:
         '200':
           description: Review queue.
@@ -898,13 +943,13 @@ paths:
       parameters: [{ $ref: '#/components/parameters/ResourceID' }]
       responses:
         '200':
-          description: Review detail.
+          description: Review detail including private append-only moderation history. History is omitted from public and owner responses.
           content: { application/json: { schema: { $ref: '#/components/schemas/ReportResponse' } } }
         default: { $ref: '#/components/responses/DomainError' }
   /api/v1/admin/reports/{id}/verify:
     post:
       tags: [Admin, Reports]
-      summary: Verify and publish a pending report (not one's own)
+      summary: Mark an already published pending report reviewed (not one's own)
       operationId: verifyReport
       security: [{ bearerAuth: [] }]
       parameters: [{ $ref: '#/components/parameters/ResourceID' }]
@@ -919,7 +964,7 @@ paths:
   /api/v1/admin/reports/{id}/reject:
     post:
       tags: [Admin, Reports]
-      summary: Reject a pending report
+      summary: Remove a pending or verified report from public access
       operationId: rejectReport
       security: [{ bearerAuth: [] }]
       parameters: [{ $ref: '#/components/parameters/ResourceID' }]
@@ -928,7 +973,22 @@ paths:
         content: { application/json: { schema: { $ref: '#/components/schemas/RejectReportInput' } } }
       responses:
         '200':
-          description: Rejected report remains private and COMMUNITY.
+          description: Removed report remains COMMUNITY and stored for ADMIN review. Public detail and media access return 404 for nonowners; a mandatory reason and reviewer are recorded atomically.
+          content: { application/json: { schema: { $ref: '#/components/schemas/ReportResponse' } } }
+        default: { $ref: '#/components/responses/DomainError' }
+  /api/v1/admin/reports/{id}/restore:
+    post:
+      tags: [Admin, Reports]
+      summary: Restore a removed report as published but unreviewed
+      operationId: restoreReport
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/ResourceID' }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/RejectReportInput' } } }
+      responses:
+        '200':
+          description: Report returns to PENDING/PUBLISHED without verification. History is retained and the former guest upload capability is revoked. Reason and current expectedUpdatedAt are mandatory.
           content: { application/json: { schema: { $ref: '#/components/schemas/ReportResponse' } } }
         default: { $ref: '#/components/responses/DomainError' }
   /api/v1/events/stream:
@@ -942,7 +1002,9 @@ paths:
         `replay.reset` requires a full canonical REST refetch after an expired cursor or
         bounded replay; initial subscription begins at the current stream tail.
         Heartbeats are SSE comments. Delivery can be duplicated and has bounded retention.
-        Pending/private reports never appear; `report.verified` is the public signal.
+        `report.updated` signals creation, edits, image changes, removal and restoration;
+        refetch canonical REST. It carries only the report ID, never review reasons or
+        removed content. `report.verified` remains the additional review signal.
       parameters:
         - { name: Last-Event-ID, in: header, schema: { type: string, pattern: '^[0-9]+-[0-9]+$' } }
         - { name: cursor, in: query, schema: { type: string, pattern: '^[0-9]+-[0-9]+$' } }
@@ -1725,6 +1787,69 @@ components:
       schema:
         type: string
   schemas:
+    OfficialAnnouncementList:
+      type: object
+      required: [retrievedAt, source, items, limit, offset, total]
+      properties:
+        retrievedAt: {type: string, format: date-time}
+        source: {$ref: '#/components/schemas/OfficialAnnouncementSource'}
+        items:
+          type: array
+          maxItems: 50
+          items: {$ref: '#/components/schemas/OfficialAnnouncement'}
+        limit: {type: integer, minimum: 1, maximum: 50}
+        offset: {type: integer, minimum: 0, maximum: 10000}
+        total: {type: integer, minimum: 0}
+    OfficialAnnouncementSource:
+      type: object
+      required: [code, name, sourceType, url, enabled, status, freshness, lastSuccessAt]
+      properties:
+        code: {type: string, const: TMD_CAP}
+        name: {type: string}
+        sourceType: {type: string, const: OFFICIAL}
+        url: {type: string, format: uri, const: 'https://www.tmd.go.th'}
+        enabled: {type: boolean}
+        status: {type: string, enum: [NOT_CONFIGURED, UNAVAILABLE, DEGRADED, AVAILABLE]}
+        freshness: {type: string, enum: [UNKNOWN, STALE, FRESH]}
+        lastSuccessAt: {type: [string, 'null'], format: date-time}
+    OfficialAnnouncement:
+      type: object
+      required: [id, identifier, headline, description, status, effectiveStatus, freshness, issuedAt, expiresAt, areaCodes, reason, historyTotal, history]
+      properties:
+        id: {type: string, format: uuid, description: Stable retained root evidence identifier}
+        identifier: {type: string, description: Latest CAP identifier in the announcement chain}
+        headline: {type: string}
+        description: {type: string}
+        status: {type: string, enum: [ACTIVE, UPDATED, CANCELLED, EXPIRED]}
+        effectiveStatus: {type: string, enum: [ACTIVE, UPDATED, CANCELLED, EXPIRED, UNKNOWN]}
+        freshness: {type: string, enum: [FRESH, STALE, UNKNOWN]}
+        issuedAt: {type: string, format: date-time}
+        expiresAt: {type: [string, 'null'], format: date-time}
+        areaCodes:
+          type: array
+          items: {type: string}
+        reason: {type: [string, 'null']}
+        historyTotal: {type: integer, minimum: 1}
+        history:
+          type: array
+          maxItems: 20
+          items: {$ref: '#/components/schemas/OfficialAnnouncementRevision'}
+    OfficialAnnouncementRevision:
+      type: object
+      required: [evidenceId, identifier, messageType, issuedAt, retrievedAt, expiresAt, headline, description, areaCodes, reason]
+      properties:
+        evidenceId: {type: string, format: uuid}
+        identifier: {type: string}
+        messageType: {type: string, enum: [Alert, Update, Cancel]}
+        issuedAt: {type: string, format: date-time}
+        retrievedAt: {type: string, format: date-time}
+        expiresAt: {type: [string, 'null'], format: date-time}
+        headline: {type: string}
+        description: {type: string}
+        areaCodes:
+          type: array
+          items: {type: string}
+        reason: {type: [string, 'null']}
     ExternalStation:
       type: object
       additionalProperties: false
@@ -2530,6 +2655,7 @@ components:
           - flood_event.updated
           - road.status.changed
           - report.verified
+          - report.updated
           - alert.created
           - external_data.updated
         occurredAt:
@@ -2733,10 +2859,10 @@ components:
     RejectReportInput:
       type: object
       additionalProperties: false
-      required: [expectedUpdatedAt]
+      required: [expectedUpdatedAt, reason]
       properties:
         expectedUpdatedAt: { type: string, format: date-time, description: 'Revision from the latest report detail; a concurrent edit or upload returns 409.' }
-        reason: { type: string, minLength: 1, maxLength: 500 }
+        reason: { type: string, minLength: 1, maxLength: 500, description: 'Mandatory trimmed nonblank reason for removal or restoration; ADMIN-only, never included in public or owner responses.' }
     ReportMedia:
       type: object
       additionalProperties: false
@@ -2747,8 +2873,8 @@ components:
     Report:
       type: object
       additionalProperties: false
-      required: [id, type, description, location, estimatedWaterDepthM, status, verificationStatus, sourceType, createdAt, updatedAt, verifiedAt, media]
-      description: COMMUNITY evidence; verification permits publication but does not make it OFFICIAL or prove safety. createdAt is submission time rather than a measured observation timestamp.
+      required: [id, type, description, location, estimatedWaterDepthM, status, publicationStatus, verificationStatus, sourceType, createdAt, updatedAt, verifiedAt, media]
+      description: COMMUNITY evidence publishes automatically while PENDING. Verification is separate from publication and does not make it OFFICIAL or prove safety. createdAt is submission time rather than a measured observation timestamp. ADMIN detail/actions include reviewHistory; public and owner responses omit history.
       properties:
         id: { type: string, format: uuid }
         userId: { type: string, format: uuid, description: 'Only exposed for legacy owners in owner and ADMIN responses.' }
@@ -2760,6 +2886,7 @@ components:
         locationNote: { type: string, maxLength: 500, description: 'Optional user-supplied COMMUNITY location note; empty for historical records.' }
         estimatedWaterDepthM: { type: [number, 'null'], minimum: 0, maximum: 100 }
         status: { $ref: '#/components/schemas/ReportStatus' }
+        publicationStatus: { type: string, enum: [PUBLISHED, REMOVED], description: 'Derived from status: PENDING/VERIFIED are PUBLISHED; REJECTED is REMOVED.' }
         verificationStatus: { $ref: '#/components/schemas/ReportStatus' }
         sourceType: { type: string, const: COMMUNITY }
         createdAt: { type: string, format: date-time }
@@ -2768,8 +2895,21 @@ components:
         verifiedBy: { type: [string, 'null'], format: uuid, description: 'Owner/ADMIN only; omitted in public responses.' }
         reviewedAt: { type: [string, 'null'], format: date-time, description: 'Owner/ADMIN only; time of verification or rejection.' }
         reviewedBy: { type: [string, 'null'], format: uuid, description: 'Owner/ADMIN only; reviewer of verification or rejection.' }
-        rejectionReason: { type: [string, 'null'], maxLength: 500, description: 'Only shown to owner and ADMIN; null in public responses.' }
+        rejectionReason: { type: [string, 'null'], maxLength: 500, description: 'Only shown in ADMIN detail/action responses; omitted in public, owner and mine responses.' }
         media: { type: array, maxItems: 3, items: { $ref: '#/components/schemas/ReportMedia' } }
+        reviewHistory: { type: array, description: 'ADMIN detail/actions only; append-only review history.', items: { $ref: '#/components/schemas/ReportReviewEvent' } }
+    ReportReviewEvent:
+      type: object
+      additionalProperties: false
+      required: [id, action, previousStatus, status, actorId, reason, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        action: { type: string, enum: [VERIFY, REMOVE, RESTORE] }
+        previousStatus: { $ref: '#/components/schemas/ReportStatus' }
+        status: { $ref: '#/components/schemas/ReportStatus' }
+        actorId: { type: string, format: uuid }
+        reason: { type: string, maxLength: 500, description: 'Empty for verification and possibly historical removal without a saved reason; new removal/restoration requires a reason.' }
+        createdAt: { type: string, format: date-time }
     ReportList:
       type: object
       additionalProperties: false

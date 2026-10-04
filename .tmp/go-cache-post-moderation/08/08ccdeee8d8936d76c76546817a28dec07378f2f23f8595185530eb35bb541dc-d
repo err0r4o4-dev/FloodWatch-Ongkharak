@@ -1,0 +1,3 @@
+./provider.go
+./tiff.go
+./provider_test.go

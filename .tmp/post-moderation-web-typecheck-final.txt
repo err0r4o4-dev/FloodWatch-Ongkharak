@@ -1,0 +1,10 @@
+No projects matched the filters "D:\!Project\FloodWatch-Ongkharak(Web_Application)" in "D:\!Project\FloodWatch-Ongkharak(Web_Application)"
+
+> @floodwatch/web@0.0.0 typecheck D:\!Project\FloodWatch-Ongkharak(Web_Application)\apps\web
+> tsc -b --pretty false
+
+src/app/AppShell.tsx(55,10): error TS6133: 'signingOut' is declared but its value is never read.
+src/app/AppShell.tsx(57,9): error TS6133: 'handleLogout' is declared but its value is never read.
+D:\!Project\FloodWatch-Ongkharak(Web_Application)\apps\web:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @floodwatch/web@0.0.0 typecheck: `tsc -b --pretty false`
+Exit status 1

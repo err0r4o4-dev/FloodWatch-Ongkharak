@@ -48,7 +48,29 @@ describe("reportsApi", () => {
   it("accepts public-safe reports without an owner identifier", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response({ items: [publicReport], limit: 20, offset: 0 })));
 
-    await expect(reportsApi.listPublic()).resolves.toEqual({ items: [publicReport], limit: 20, offset: 0 });
+    await expect(reportsApi.listPublic()).resolves.toEqual({ items: [{ ...publicReport, publicationStatus: "PUBLISHED" }], limit: 20, offset: 0 });
+  });
+
+  it("derives removed publication state for legacy rejected responses", async () => {
+    const rejected = { ...publicReport, status: "REJECTED", verificationStatus: "REJECTED", verifiedAt: null };
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response({ items: [rejected], limit: 20, offset: 0 })));
+
+    await expect(reportsApi.listPublic()).resolves.toMatchObject({ items: [{ publicationStatus: "REMOVED" }] });
+  });
+
+  it("supports paged admin queues and required restore reasons", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(response({ items: [publicReport], limit: 20, offset: 40 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await reportsApi.listAdmin("VERIFIED", 20, 40);
+    expect(fetchMock).toHaveBeenLastCalledWith("/api/v1/admin/reports?status=VERIFIED&limit=20&offset=40", expect.anything());
+
+    fetchMock.mockResolvedValueOnce(response({ report: publicReport }));
+    await reportsApi.restore("report-1", "Duplicate evidence", publicReport.updatedAt);
+    expect(fetchMock).toHaveBeenLastCalledWith("/api/v1/admin/reports/report-1/restore", expect.objectContaining({
+      method: "POST",
+      body: JSON.stringify({ expectedUpdatedAt: publicReport.updatedAt, reason: "Duplicate evidence" })
+    }));
   });
 
   it("parses upload metadata and sends the agreed multipart field", async () => {

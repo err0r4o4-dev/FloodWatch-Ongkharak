@@ -20,7 +20,7 @@ import "./MapPage.css";
 
 const defaultVisibility: LayerVisibility = { flood: true, water: true, risk: true, roads: true, reports: true };
 const emptyPoint: RoutePoint = { longitude: "", latitude: "" };
-const mapEvents = ["water_level.updated", "flood_event.created", "flood_event.updated", "road.status.changed", "report.verified"] as const;
+const mapEvents = ["water_level.updated", "flood_event.created", "flood_event.updated", "road.status.changed", "report.verified", "report.updated"] as const;
 
 function sameBounds(first: MapBounds | null, second: MapBounds) {
   return first?.west === second.west && first.south === second.south && first.east === second.east && first.north === second.north;

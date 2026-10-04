@@ -26,14 +26,15 @@ const (
 
 type ReportService interface {
 	Create(context.Context, string, report.Input) (report.Report, error)
-	GetVerified(context.Context, string) (report.Report, error)
-	ListVerified(context.Context, report.ListFilter) ([]report.Report, error)
+	GetPublic(context.Context, string) (report.Report, error)
+	ListPublic(context.Context, report.ListFilter) ([]report.Report, error)
 	ListMine(context.Context, string, report.Page) ([]report.Report, error)
 	ListAdmin(context.Context, report.Status, report.Page) ([]report.Report, error)
 	GetAdmin(context.Context, string) (report.Report, error)
 	Update(context.Context, string, string, report.Input) (report.Report, error)
 	Verify(context.Context, string, string, time.Time) (report.Report, error)
 	Reject(context.Context, string, string, string, time.Time) (report.Report, error)
+	Restore(context.Context, string, string, string, time.Time) (report.Report, error)
 	UploadMedia(context.Context, string, string, report.Image) (report.Media, error)
 	OpenMedia(context.Context, string, string, report.Access) (report.MediaFile, error)
 }
@@ -48,11 +49,12 @@ type ReportHandler struct{ service ReportService }
 func NewReportHandler(service ReportService) *ReportHandler { return &ReportHandler{service: service} }
 
 func (handler *ReportHandler) List(response http.ResponseWriter, request *http.Request) {
+	response.Header().Set("Cache-Control", "no-store")
 	filter, ok := parseReportFilter(response, request, true)
 	if !ok {
 		return
 	}
-	items, err := handler.service.ListVerified(request.Context(), filter)
+	items, err := handler.service.ListPublic(request.Context(), filter)
 	if err != nil {
 		writeReportError(response, err)
 		return
@@ -61,7 +63,8 @@ func (handler *ReportHandler) List(response http.ResponseWriter, request *http.R
 }
 
 func (handler *ReportHandler) Get(response http.ResponseWriter, request *http.Request) {
-	item, err := handler.service.GetVerified(request.Context(), chi.URLParam(request, "id"))
+	response.Header().Set("Cache-Control", "no-store")
+	item, err := handler.service.GetPublic(request.Context(), chi.URLParam(request, "id"))
 	if err != nil {
 		writeReportError(response, err)
 		return
@@ -70,6 +73,7 @@ func (handler *ReportHandler) Get(response http.ResponseWriter, request *http.Re
 }
 
 func (handler *ReportHandler) ListMine(response http.ResponseWriter, request *http.Request) {
+	response.Header().Set("Cache-Control", "private, no-store")
 	principal, ok := reportPrincipal(response, request)
 	if !ok {
 		return
@@ -144,6 +148,7 @@ func (handler *ReportHandler) Update(response http.ResponseWriter, request *http
 }
 
 func (handler *ReportHandler) ListAdmin(response http.ResponseWriter, request *http.Request) {
+	response.Header().Set("Cache-Control", "private, no-store")
 	filter, status, ok := parseAdminReportFilter(response, request)
 	if !ok {
 		return
@@ -157,15 +162,17 @@ func (handler *ReportHandler) ListAdmin(response http.ResponseWriter, request *h
 }
 
 func (handler *ReportHandler) GetAdmin(response http.ResponseWriter, request *http.Request) {
+	response.Header().Set("Cache-Control", "private, no-store")
 	item, err := handler.service.GetAdmin(request.Context(), chi.URLParam(request, "id"))
 	if err != nil {
 		writeReportError(response, err)
 		return
 	}
-	writeJSON(response, http.StatusOK, map[string]any{"report": reportPayload(item, true)})
+	writeJSON(response, http.StatusOK, map[string]any{"report": adminReportPayload(item)})
 }
 
 func (handler *ReportHandler) Verify(response http.ResponseWriter, request *http.Request) {
+	response.Header().Set("Cache-Control", "private, no-store")
 	principal, ok := reportPrincipal(response, request)
 	if !ok {
 		return
@@ -183,10 +190,11 @@ func (handler *ReportHandler) Verify(response http.ResponseWriter, request *http
 		writeReportError(response, err)
 		return
 	}
-	writeJSON(response, http.StatusOK, map[string]any{"report": reportPayload(item, true)})
+	writeJSON(response, http.StatusOK, map[string]any{"report": adminReportPayload(item)})
 }
 
 func (handler *ReportHandler) Reject(response http.ResponseWriter, request *http.Request) {
+	response.Header().Set("Cache-Control", "private, no-store")
 	principal, ok := reportPrincipal(response, request)
 	if !ok {
 		return
@@ -195,12 +203,38 @@ func (handler *ReportHandler) Reject(response http.ResponseWriter, request *http
 	if !ok {
 		return
 	}
+	if strings.TrimSpace(input.Reason) == "" || utf8.RuneCountInString(strings.TrimSpace(input.Reason)) > 500 {
+		writeReportError(response, report.ErrInvalid)
+		return
+	}
 	item, err := handler.service.Reject(request.Context(), chi.URLParam(request, "id"), principal.UserID, input.Reason, input.ExpectedUpdatedAt)
 	if err != nil {
 		writeReportError(response, err)
 		return
 	}
-	writeJSON(response, http.StatusOK, map[string]any{"report": reportPayload(item, true)})
+	writeJSON(response, http.StatusOK, map[string]any{"report": adminReportPayload(item)})
+}
+
+func (handler *ReportHandler) Restore(response http.ResponseWriter, request *http.Request) {
+	response.Header().Set("Cache-Control", "private, no-store")
+	principal, ok := reportPrincipal(response, request)
+	if !ok {
+		return
+	}
+	input, ok := readReviewRequest(response, request)
+	if !ok {
+		return
+	}
+	if strings.TrimSpace(input.Reason) == "" || utf8.RuneCountInString(strings.TrimSpace(input.Reason)) > 500 {
+		writeReportError(response, report.ErrInvalid)
+		return
+	}
+	item, err := handler.service.Restore(request.Context(), chi.URLParam(request, "id"), principal.UserID, input.Reason, input.ExpectedUpdatedAt)
+	if err != nil {
+		writeReportError(response, err)
+		return
+	}
+	writeJSON(response, http.StatusOK, map[string]any{"report": adminReportPayload(item)})
 }
 
 func (handler *ReportHandler) UploadMedia(response http.ResponseWriter, request *http.Request) {
@@ -244,6 +278,7 @@ func (handler *ReportHandler) UploadGuestMedia(response http.ResponseWriter, req
 }
 
 func (handler *ReportHandler) Media(response http.ResponseWriter, request *http.Request) {
+	response.Header().Set("Cache-Control", "private, no-store")
 	access := report.Access{}
 	if principal, ok := middleware.PrincipalFromContext(request.Context()); ok {
 		access = report.Access{UserID: principal.UserID, IsAdmin: principal.Role == auth.RoleAdmin}
@@ -256,7 +291,6 @@ func (handler *ReportHandler) Media(response http.ResponseWriter, request *http.
 	defer item.Content.Close()
 	response.Header().Set("Content-Type", item.Media.ContentType)
 	response.Header().Set("Content-Length", strconv.Itoa(item.Media.SizeBytes))
-	response.Header().Set("Cache-Control", "private, no-store")
 	response.Header().Set("X-Content-Type-Options", "nosniff")
 	response.WriteHeader(http.StatusOK)
 	_, _ = io.Copy(response, item.Content)
@@ -455,30 +489,44 @@ func reportPrincipal(response http.ResponseWriter, request *http.Request) (middl
 }
 
 type reportResponse struct {
-	ID                   string          `json:"id"`
-	DisplayName          string          `json:"displayName"`
-	Type                 report.Type     `json:"type"`
-	Description          string          `json:"description"`
-	Location             report.Location `json:"location"`
-	LocationName         string          `json:"locationName"`
-	LocationNote         string          `json:"locationNote"`
-	EstimatedWaterDepthM *float64        `json:"estimatedWaterDepthM"`
-	Status               report.Status   `json:"status"`
-	VerificationStatus   report.Status   `json:"verificationStatus"`
-	SourceType           string          `json:"sourceType"`
-	CreatedAt            time.Time       `json:"createdAt"`
-	UpdatedAt            time.Time       `json:"updatedAt"`
-	VerifiedAt           *time.Time      `json:"verifiedAt"`
-	Media                []mediaResponse `json:"media"`
+	ID                   string                   `json:"id"`
+	DisplayName          string                   `json:"displayName"`
+	Type                 report.Type              `json:"type"`
+	Description          string                   `json:"description"`
+	Location             report.Location          `json:"location"`
+	LocationName         string                   `json:"locationName"`
+	LocationNote         string                   `json:"locationNote"`
+	EstimatedWaterDepthM *float64                 `json:"estimatedWaterDepthM"`
+	Status               report.Status            `json:"status"`
+	PublicationStatus    report.PublicationStatus `json:"publicationStatus"`
+	VerificationStatus   report.Status            `json:"verificationStatus"`
+	SourceType           string                   `json:"sourceType"`
+	CreatedAt            time.Time                `json:"createdAt"`
+	UpdatedAt            time.Time                `json:"updatedAt"`
+	VerifiedAt           *time.Time               `json:"verifiedAt"`
+	Media                []mediaResponse          `json:"media"`
 }
 
 type privateReportResponse struct {
 	reportResponse
-	UserID          string     `json:"userId"`
-	VerifiedBy      *string    `json:"verifiedBy"`
-	ReviewedAt      *time.Time `json:"reviewedAt"`
-	ReviewedBy      *string    `json:"reviewedBy"`
-	RejectionReason *string    `json:"rejectionReason"`
+	UserID     string     `json:"userId"`
+	VerifiedBy *string    `json:"verifiedBy"`
+	ReviewedAt *time.Time `json:"reviewedAt"`
+	ReviewedBy *string    `json:"reviewedBy"`
+}
+
+type adminReportResponse struct {
+	privateReportResponse
+	RejectionReason *string              `json:"rejectionReason"`
+	ReviewHistory   []report.ReviewEvent `json:"reviewHistory"`
+}
+
+func adminReportPayload(item report.Report) adminReportResponse {
+	history := item.ReviewHistory
+	if history == nil {
+		history = []report.ReviewEvent{}
+	}
+	return adminReportResponse{privateReportResponse: reportPayload(item, true).(privateReportResponse), RejectionReason: item.RejectionReason, ReviewHistory: history}
 }
 
 type mediaResponse struct {
@@ -493,7 +541,7 @@ func reportPayload(item report.Report, private bool) any {
 	}
 	payload := reportResponse{
 		ID: item.ID, DisplayName: displayName, Type: item.Type, Description: item.Description, Location: item.Location, LocationName: item.LocationName, LocationNote: item.LocationNote, EstimatedWaterDepthM: item.EstimatedWaterDepthM,
-		Status: item.Status, VerificationStatus: item.VerificationStatus, SourceType: item.SourceType, CreatedAt: item.CreatedAt, UpdatedAt: item.UpdatedAt,
+		Status: item.Status, PublicationStatus: item.PublicationStatus(), VerificationStatus: item.VerificationStatus, SourceType: item.SourceType, CreatedAt: item.CreatedAt, UpdatedAt: item.UpdatedAt,
 		VerifiedAt: item.VerifiedAt, Media: make([]mediaResponse, 0, len(item.Media)),
 	}
 	for _, media := range item.Media {
@@ -502,7 +550,7 @@ func reportPayload(item report.Report, private bool) any {
 	if !private {
 		return payload
 	}
-	return privateReportResponse{reportResponse: payload, UserID: item.UserID, VerifiedBy: item.VerifiedBy, ReviewedAt: item.ReviewedAt, ReviewedBy: item.ReviewedBy, RejectionReason: item.RejectionReason}
+	return privateReportResponse{reportResponse: payload, UserID: item.UserID, VerifiedBy: item.VerifiedBy, ReviewedAt: item.ReviewedAt, ReviewedBy: item.ReviewedBy}
 }
 
 func mediaPayload(item report.Media) mediaResponse {

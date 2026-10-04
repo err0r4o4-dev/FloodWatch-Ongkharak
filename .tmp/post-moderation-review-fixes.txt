@@ -1,0 +1,4 @@
+ok  	github.com/floodwatch-ongkharak/backend/internal/report	0.818s
+ok  	github.com/floodwatch-ongkharak/backend/internal/http/handler	0.967s
+ok  	github.com/floodwatch-ongkharak/backend/internal/postgres/reportrepo	0.686s
+ok  	github.com/floodwatch-ongkharak/backend/internal/http/router	1.470s

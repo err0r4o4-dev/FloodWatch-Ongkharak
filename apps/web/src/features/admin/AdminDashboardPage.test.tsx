@@ -65,7 +65,8 @@ describe("AdminDashboardPage dashboard stats", () => {
     });
     expect(await screen.findByText("ผู้ใช้งานทั้งหมด")).toBeInTheDocument();
     expect(screen.getByText("12")).toBeInTheDocument();
-    expect(screen.getByText("รายงานรอตรวจสอบ")).toBeInTheDocument();
+    expect(screen.getByText("รายงานที่ยังไม่ตรวจสอบ")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "จัดการรายงาน" })).toHaveAttribute("href", "/admin/reports");
     expect(screen.getByText("3")).toBeInTheDocument();
   });
 

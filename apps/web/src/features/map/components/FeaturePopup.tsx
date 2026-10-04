@@ -29,7 +29,7 @@ export function FeaturePopup({ selection, onDetails, onClose, restoreFocus }: {
   const observedAt = selection.layer === "flood" ? selection.feature.observedAt
     : selection.layer === "risk" ? selection.feature.validFrom
       : selection.layer === "roads" ? selection.feature.currentCondition.observedAt
-        : selection.layer === "reports" ? selection.feature.verifiedAt : null;
+        : selection.layer === "reports" ? selection.feature.status === "VERIFIED" ? selection.feature.verifiedAt : selection.feature.createdAt : null;
 
   return <section className={`map-popup map-popup--${selection.layer}`} aria-label={t("popup.label")} onKeyDown={(event) => {
     if (event.key === "Escape") { event.stopPropagation(); onClose(); }
@@ -37,7 +37,7 @@ export function FeaturePopup({ selection, onDetails, onClose, restoreFocus }: {
     <div className="map-popup__heading"><div><p className="map-popup__kind">{t(`layer.${selection.layer}`)}</p><OriginalContentNote /><h3>{selectionName(selection)}</h3></div><button ref={closeButton} className="map-popup__close" type="button" aria-label={t("popup.close")} onClick={onClose}>×</button></div>
     <div className="map-popup__body"><div className="badge-row">{selection.layer !== "water" && <StatusBadge status={status} />}{freshness && <FreshnessBadge freshness={freshness} />}{selection.layer === "reports" ? <SourceBadge type="COMMUNITY" /> : source && <SourceBadge type={source.sourceType} />}</div>
     <p className="map-popup__source">{source?.name ?? (selection.layer === "reports" ? t("popup.communitySource") : t("popup.unknownSource"))}</p>
-    {selection.layer === "water" ? <WaterDetails key={selection.feature.id} stationId={selection.feature.id} compact /> : <DataTimestamp label={selection.layer === "risk" ? t("timestamp.validFrom") : selection.layer === "reports" ? t("timestamp.verified") : t("timestamp.observed")} value={observedAt} />}
+    {selection.layer === "water" ? <WaterDetails key={selection.feature.id} stationId={selection.feature.id} compact /> : <DataTimestamp label={selection.layer === "risk" ? t("timestamp.validFrom") : selection.layer === "reports" ? selection.feature.status === "VERIFIED" ? t("timestamp.verified") : t("timestamp.submitted") : t("timestamp.observed")} value={observedAt} />}
     {selection.layer === "risk" && <DataTimestamp label={t("timestamp.validTo")} value={selection.feature.validTo} />}
     {selection.layer === "reports" && selection.feature.estimatedWaterDepthM !== null && <p>{t("popup.reportDepth", { value: formatNumber(selection.feature.estimatedWaterDepthM, locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) })}</p>}
     {status === "UNKNOWN" && selection.layer !== "water" && <p className="uncertainty">{t("popup.unknownWarning")}</p>}

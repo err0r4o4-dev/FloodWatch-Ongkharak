@@ -1,0 +1,14 @@
+No projects matched the filters "D:\!Project\FloodWatch-Ongkharak(Web_Application)" in "D:\!Project\FloodWatch-Ongkharak(Web_Application)"
+
+> @floodwatch/web@0.0.0 test D:\!Project\FloodWatch-Ongkharak(Web_Application)\apps\web
+> vitest run "src/features/reports" "src/features/realtime/RealtimeProvider.test.tsx" "src/features/map/api.test.ts" "src/features/overview/OverviewPage.test.tsx" "src/app/App.test.tsx" "src/features/admin/AdminDashboardPage.test.tsx"
+
+
+ RUN  v5.0.3 D:/!Project/FloodWatch-Ongkharak(Web_Application)/apps/web
+
+
+ Test Files  14 passed (14)
+      Tests  109 passed (109)
+   Start at  20:27:32
+   Duration  12.11s (environment 54%, setup 19%, tests 15%, transform 6%, import 5%, worker 1%)
+

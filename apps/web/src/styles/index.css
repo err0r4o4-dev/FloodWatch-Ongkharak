@@ -516,7 +516,19 @@ code {
 .report-card > p { margin: var(--space-3) 0 0; }
 .report-card .action-button { margin-top: var(--space-3); }
 .admin-review__list button { width: 100%; min-height: var(--touch-target); padding: var(--space-2) var(--space-3); border: var(--border-width) solid var(--color-border); border-radius: var(--radius-sm); color: var(--color-primary-strong); font: inherit; font-weight: 700; text-align: left; background: var(--color-canvas-soft); cursor: pointer; }
+.admin-review__tabs { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-4); }
+.admin-review__tabs button { min-height: var(--touch-target); padding: var(--space-2) var(--space-4); border: var(--border-width) solid var(--color-border); border-radius: var(--radius-control); color: var(--color-primary-strong); font: inherit; font-weight: 700; background: var(--color-surface); cursor: pointer; }
+.admin-review__tabs button[aria-selected="true"] { color: var(--color-surface); border-color: var(--color-primary-strong); background: var(--color-primary-strong); }
 .admin-review__actions { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+.admin-review__detail-heading { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
+.admin-review__detail-heading h3 { margin: 0; }
+.admin-review__history { padding-top: var(--space-4); border-top: var(--border-width) solid var(--color-border); }
+.admin-review__history h3 { margin: 0; font-size: 1rem; }
+.admin-review__history ol { display: grid; gap: var(--space-3); margin: var(--space-3) 0 0; padding-left: var(--space-6); }
+.admin-review__history li { padding-left: var(--space-1); }
+.admin-review__history p, .admin-review__history time { display: block; margin: var(--space-1) 0 0; color: var(--color-ink-muted); font-size: .82rem; }
+.admin-review__pagination { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); margin-top: var(--space-4); }
+.admin-review__pagination > div { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 .action-button--danger { color: var(--color-danger-ink); border-color: var(--color-status-danger); }
 
 @media (max-width: 55rem) {

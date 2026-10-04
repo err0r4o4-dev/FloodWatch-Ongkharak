@@ -43,6 +43,7 @@ type Dependencies struct {
 	PublicNotificationService handler.PublicNotificationService
 	WeatherService            handler.WeatherService
 	ExternalDataService       handler.ExternalDataService
+	AnnouncementService       handler.AnnouncementService
 	RedisClient               redis.UniversalClient
 	CookieOptions             handler.CookieOptions
 }
@@ -61,6 +62,7 @@ func New(dependencies Dependencies) http.Handler {
 		weatherLimiter := middleware.NewRateLimiter()
 		api.With(weatherLimiter.Limit("weather-read", 60, time.Minute)).Get("/weather/ongkharak", handler.NewWeatherHandler(dependencies.WeatherService).ServeHTTP)
 		api.With(weatherLimiter.Limit("external-data-read", 60, time.Minute)).Get("/external-data/ongkharak", handler.NewExternalDataHandler(dependencies.ExternalDataService).ServeHTTP)
+		api.With(weatherLimiter.Limit("official-announcement-read", 60, time.Minute)).Get("/official-announcements", handler.NewAnnouncementHandler(dependencies.AnnouncementService).List)
 		var googleService handler.GoogleAuthentication
 		if dependencies.GoogleService != nil {
 			googleService = dependencies.GoogleService
@@ -149,6 +151,7 @@ func New(dependencies Dependencies) http.Handler {
 			api.With(admin...).Get("/admin/reports/{id}", reportHandler.GetAdmin)
 			api.With(authenticated, middleware.RequireRole(auth.RoleAdmin), writeLimiter.LimitAuthenticated("report-review", 30, time.Hour)).Post("/admin/reports/{id}/verify", reportHandler.Verify)
 			api.With(authenticated, middleware.RequireRole(auth.RoleAdmin), writeLimiter.LimitAuthenticated("report-review", 30, time.Hour)).Post("/admin/reports/{id}/reject", reportHandler.Reject)
+			api.With(authenticated, middleware.RequireRole(auth.RoleAdmin), writeLimiter.LimitAuthenticated("report-review", 30, time.Hour)).Post("/admin/reports/{id}/restore", reportHandler.Restore)
 		}
 		if dependencies.PublicNotificationService != nil {
 			api.Get("/notifications/public", handler.NewPublicNotificationsHandler(dependencies.PublicNotificationService).List)

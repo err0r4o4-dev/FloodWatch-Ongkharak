@@ -1,0 +1,2 @@
+ERROR:  Quiesce report writes and drain report.updated events with a compatible dispatcher before rolling back API binaries or migration 21
+CONTEXT:  PL/pgSQL function inline_code_block line 4 at RAISE

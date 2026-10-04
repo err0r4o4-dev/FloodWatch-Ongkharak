@@ -1,0 +1,41 @@
+?   	github.com/floodwatch-ongkharak/backend/cmd/api	[no test files]
+?   	github.com/floodwatch-ongkharak/backend/cmd/bootstrap-admin	[no test files]
+?   	github.com/floodwatch-ongkharak/backend/cmd/external-data-check	[no test files]
+ok  	github.com/floodwatch-ongkharak/backend/cmd/worker	1.251s
+ok  	github.com/floodwatch-ongkharak/backend/internal/admin	0.966s
+ok  	github.com/floodwatch-ongkharak/backend/internal/ai	2.004s
+ok  	github.com/floodwatch-ongkharak/backend/internal/alert	0.875s
+ok  	github.com/floodwatch-ongkharak/backend/internal/announcement	0.872s
+ok  	github.com/floodwatch-ongkharak/backend/internal/auth	11.291s
+ok  	github.com/floodwatch-ongkharak/backend/internal/config	1.118s
+ok  	github.com/floodwatch-ongkharak/backend/internal/externaldata	0.787s
+ok  	github.com/floodwatch-ongkharak/backend/internal/externaldata/hii	6.661s
+ok  	github.com/floodwatch-ongkharak/backend/internal/externaldata/openmeteo	1.791s
+ok  	github.com/floodwatch-ongkharak/backend/internal/externaldata/providers	1.242s
+ok  	github.com/floodwatch-ongkharak/backend/internal/externaldata/thaiwater	1.904s
+ok  	github.com/floodwatch-ongkharak/backend/internal/externaldata/tmd	1.193s
+ok  	github.com/floodwatch-ongkharak/backend/internal/flood	0.918s
+ok  	github.com/floodwatch-ongkharak/backend/internal/googleauth	2.203s
+ok  	github.com/floodwatch-ongkharak/backend/internal/health	0.764s
+ok  	github.com/floodwatch-ongkharak/backend/internal/http/handler	1.816s
+ok  	github.com/floodwatch-ongkharak/backend/internal/http/middleware	1.238s
+ok  	github.com/floodwatch-ongkharak/backend/internal/http/router	0.545s
+?   	github.com/floodwatch-ongkharak/backend/internal/infrastructure/healthcheck	[no test files]
+ok  	github.com/floodwatch-ongkharak/backend/internal/ingestion	3.049s
+ok  	github.com/floodwatch-ongkharak/backend/internal/ingestion/fixture	0.309s
+ok  	github.com/floodwatch-ongkharak/backend/internal/mailer	1.547s
+ok  	github.com/floodwatch-ongkharak/backend/internal/notification	1.840s
+ok  	github.com/floodwatch-ongkharak/backend/internal/objectstore	2.241s
+?   	github.com/floodwatch-ongkharak/backend/internal/postgres/adminrepo	[no test files]
+?   	github.com/floodwatch-ongkharak/backend/internal/postgres/airepo	[no test files]
+ok  	github.com/floodwatch-ongkharak/backend/internal/postgres/alertrepo	1.999s
+ok  	github.com/floodwatch-ongkharak/backend/internal/postgres/authrepo	0.423s
+ok  	github.com/floodwatch-ongkharak/backend/internal/postgres/externaldatarepo	1.952s
+ok  	github.com/floodwatch-ongkharak/backend/internal/postgres/floodrepo	1.688s
+ok  	github.com/floodwatch-ongkharak/backend/internal/postgres/ingestionrepo	0.361s
+ok  	github.com/floodwatch-ongkharak/backend/internal/postgres/notificationrepo	0.381s
+ok  	github.com/floodwatch-ongkharak/backend/internal/postgres/outbox	1.744s
+ok  	github.com/floodwatch-ongkharak/backend/internal/postgres/reportrepo	0.330s
+ok  	github.com/floodwatch-ongkharak/backend/internal/realtime	1.102s
+ok  	github.com/floodwatch-ongkharak/backend/internal/report	1.100s
+ok  	github.com/floodwatch-ongkharak/backend/internal/weather	2.065s

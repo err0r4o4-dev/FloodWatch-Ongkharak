@@ -628,58 +628,7 @@
         "type": "object"
       },
       "AuditLog": {
-        "properties": {
-          "action": {
-            "type": "string"
-          },
-          "actorEmail": {
-            "type": "string"
-          },
-          "actorId": {
-            "format": "uuid",
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "actorRole": {
-            "enum": [
-              "USER",
-              "ADMIN",
-              "SYSTEM"
-            ],
-            "type": "string"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "id": {
-            "format": "uuid",
-            "type": "string"
-          },
-          "ipAddress": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "metadata": {
-            "type": "object"
-          },
-          "targetId": {
-            "type": "string"
-          },
-          "targetType": {
-            "type": "string"
-          },
-          "userAgent": {
-            "type": [
-              "string",
-              "null"
-            ]
-          }
-        },
+        "type": "object",
         "required": [
           "id",
           "action",
@@ -693,7 +642,58 @@
           "userAgent",
           "createdAt"
         ],
-        "type": "object"
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "action": {
+            "type": "string"
+          },
+          "actorId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "actorEmail": {
+            "type": "string"
+          },
+          "actorRole": {
+            "type": "string",
+            "enum": [
+              "USER",
+              "ADMIN",
+              "SYSTEM"
+            ]
+          },
+          "targetType": {
+            "type": "string"
+          },
+          "targetId": {
+            "type": "string"
+          },
+          "metadata": {
+            "type": "object"
+          },
+          "ipAddress": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "userAgent": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
       },
       "AuditLogList": {
         "properties": {
@@ -1676,6 +1676,7 @@
               "flood_event.updated",
               "road.status.changed",
               "report.verified",
+              "report.updated",
               "alert.created",
               "external_data.updated"
             ]
@@ -2041,124 +2042,19 @@
           "reason": {
             "maxLength": 500,
             "minLength": 1,
-            "type": "string"
+            "type": "string",
+            "description": "Mandatory trimmed nonblank reason for removal or restoration; ADMIN-only, never included in public or owner responses."
           }
         },
         "required": [
-          "expectedUpdatedAt"
+          "expectedUpdatedAt",
+          "reason"
         ],
         "type": "object"
       },
       "Report": {
+        "type": "object",
         "additionalProperties": false,
-        "description": "COMMUNITY evidence; verification permits publication but does not make it OFFICIAL or prove safety. createdAt is submission time rather than a measured observation timestamp.",
-        "properties": {
-          "createdAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "displayName": {
-            "description": "Submitted display-name snapshot; not verified identity.",
-            "maxLength": 80,
-            "type": "string"
-          },
-          "estimatedWaterDepthM": {
-            "maximum": 100,
-            "minimum": 0,
-            "type": [
-              "number",
-              "null"
-            ]
-          },
-          "id": {
-            "format": "uuid",
-            "type": "string"
-          },
-          "location": {
-            "$ref": "#/components/schemas/PointGeometry"
-          },
-          "locationName": {
-            "description": "Optional user-supplied COMMUNITY location label; empty for historical records.",
-            "maxLength": 200,
-            "type": "string"
-          },
-          "locationNote": {
-            "description": "Optional user-supplied COMMUNITY location note; empty for historical records.",
-            "maxLength": 500,
-            "type": "string"
-          },
-          "media": {
-            "items": {
-              "$ref": "#/components/schemas/ReportMedia"
-            },
-            "maxItems": 3,
-            "type": "array"
-          },
-          "rejectionReason": {
-            "description": "Only shown to owner and ADMIN; null in public responses.",
-            "maxLength": 500,
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "reviewedAt": {
-            "description": "Owner/ADMIN only; time of verification or rejection.",
-            "format": "date-time",
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "reviewedBy": {
-            "description": "Owner/ADMIN only; reviewer of verification or rejection.",
-            "format": "uuid",
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "sourceType": {
-            "const": "COMMUNITY",
-            "type": "string"
-          },
-          "status": {
-            "$ref": "#/components/schemas/ReportStatus"
-          },
-          "type": {
-            "$ref": "#/components/schemas/ReportType"
-          },
-          "updatedAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "userId": {
-            "description": "Only exposed for legacy owners in owner and ADMIN responses.",
-            "format": "uuid",
-            "type": "string"
-          },
-          "verificationStatus": {
-            "$ref": "#/components/schemas/ReportStatus"
-          },
-          "verifiedAt": {
-            "format": "date-time",
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "verifiedBy": {
-            "description": "Owner/ADMIN only; omitted in public responses.",
-            "format": "uuid",
-            "type": [
-              "string",
-              "null"
-            ]
-          }
-        },
         "required": [
           "id",
           "type",
@@ -2166,6 +2062,7 @@
           "location",
           "estimatedWaterDepthM",
           "status",
+          "publicationStatus",
           "verificationStatus",
           "sourceType",
           "createdAt",
@@ -2173,7 +2070,129 @@
           "verifiedAt",
           "media"
         ],
-        "type": "object"
+        "description": "COMMUNITY evidence publishes automatically while PENDING. Verification is separate from publication and does not make it OFFICIAL or prove safety. createdAt is submission time rather than a measured observation timestamp. ADMIN detail/actions include reviewHistory; public and owner responses omit history.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "userId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Only exposed for legacy owners in owner and ADMIN responses."
+          },
+          "displayName": {
+            "type": "string",
+            "maxLength": 80,
+            "description": "Submitted display-name snapshot; not verified identity."
+          },
+          "type": {
+            "$ref": "#/components/schemas/ReportType"
+          },
+          "description": {
+            "type": "string"
+          },
+          "location": {
+            "$ref": "#/components/schemas/PointGeometry"
+          },
+          "locationName": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "Optional user-supplied COMMUNITY location label; empty for historical records."
+          },
+          "locationNote": {
+            "type": "string",
+            "maxLength": 500,
+            "description": "Optional user-supplied COMMUNITY location note; empty for historical records."
+          },
+          "estimatedWaterDepthM": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 100
+          },
+          "status": {
+            "$ref": "#/components/schemas/ReportStatus"
+          },
+          "publicationStatus": {
+            "type": "string",
+            "enum": [
+              "PUBLISHED",
+              "REMOVED"
+            ],
+            "description": "Derived from status: PENDING/VERIFIED are PUBLISHED; REJECTED is REMOVED."
+          },
+          "verificationStatus": {
+            "$ref": "#/components/schemas/ReportStatus"
+          },
+          "sourceType": {
+            "type": "string",
+            "const": "COMMUNITY"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "verifiedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "verifiedBy": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Owner/ADMIN only; omitted in public responses."
+          },
+          "reviewedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Owner/ADMIN only; time of verification or rejection."
+          },
+          "reviewedBy": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Owner/ADMIN only; reviewer of verification or rejection."
+          },
+          "rejectionReason": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 500,
+            "description": "Only shown in ADMIN detail/action responses; omitted in public, owner and mine responses."
+          },
+          "media": {
+            "type": "array",
+            "maxItems": 3,
+            "items": {
+              "$ref": "#/components/schemas/ReportMedia"
+            }
+          },
+          "reviewHistory": {
+            "type": "array",
+            "description": "ADMIN detail/actions only; append-only review history.",
+            "items": {
+              "$ref": "#/components/schemas/ReportReviewEvent"
+            }
+          }
+        }
       },
       "ReportInput": {
         "additionalProperties": false,
@@ -3472,6 +3491,312 @@
             }
           }
         }
+      },
+      "OfficialAnnouncementList": {
+        "type": "object",
+        "required": [
+          "retrievedAt",
+          "source",
+          "items",
+          "limit",
+          "offset",
+          "total"
+        ],
+        "properties": {
+          "retrievedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "source": {
+            "$ref": "#/components/schemas/OfficialAnnouncementSource"
+          },
+          "items": {
+            "type": "array",
+            "maxItems": 50,
+            "items": {
+              "$ref": "#/components/schemas/OfficialAnnouncement"
+            }
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10000
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "OfficialAnnouncementSource": {
+        "type": "object",
+        "required": [
+          "code",
+          "name",
+          "sourceType",
+          "url",
+          "enabled",
+          "status",
+          "freshness",
+          "lastSuccessAt"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "const": "TMD_CAP"
+          },
+          "name": {
+            "type": "string"
+          },
+          "sourceType": {
+            "type": "string",
+            "const": "OFFICIAL"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "const": "https://www.tmd.go.th"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "NOT_CONFIGURED",
+              "UNAVAILABLE",
+              "DEGRADED",
+              "AVAILABLE"
+            ]
+          },
+          "freshness": {
+            "type": "string",
+            "enum": [
+              "UNKNOWN",
+              "STALE",
+              "FRESH"
+            ]
+          },
+          "lastSuccessAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "OfficialAnnouncement": {
+        "type": "object",
+        "required": [
+          "id",
+          "identifier",
+          "headline",
+          "description",
+          "status",
+          "effectiveStatus",
+          "freshness",
+          "issuedAt",
+          "expiresAt",
+          "areaCodes",
+          "reason",
+          "historyTotal",
+          "history"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Stable retained root evidence identifier"
+          },
+          "identifier": {
+            "type": "string",
+            "description": "Latest CAP identifier in the announcement chain"
+          },
+          "headline": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "UPDATED",
+              "CANCELLED",
+              "EXPIRED"
+            ]
+          },
+          "effectiveStatus": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "UPDATED",
+              "CANCELLED",
+              "EXPIRED",
+              "UNKNOWN"
+            ]
+          },
+          "freshness": {
+            "type": "string",
+            "enum": [
+              "FRESH",
+              "STALE",
+              "UNKNOWN"
+            ]
+          },
+          "issuedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expiresAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "areaCodes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "historyTotal": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "history": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "$ref": "#/components/schemas/OfficialAnnouncementRevision"
+            }
+          }
+        }
+      },
+      "OfficialAnnouncementRevision": {
+        "type": "object",
+        "required": [
+          "evidenceId",
+          "identifier",
+          "messageType",
+          "issuedAt",
+          "retrievedAt",
+          "expiresAt",
+          "headline",
+          "description",
+          "areaCodes",
+          "reason"
+        ],
+        "properties": {
+          "evidenceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "identifier": {
+            "type": "string"
+          },
+          "messageType": {
+            "type": "string",
+            "enum": [
+              "Alert",
+              "Update",
+              "Cancel"
+            ]
+          },
+          "issuedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "retrievedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expiresAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "headline": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "areaCodes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "ReportReviewEvent": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "action",
+          "previousStatus",
+          "status",
+          "actorId",
+          "reason",
+          "createdAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "VERIFY",
+              "REMOVE",
+              "RESTORE"
+            ]
+          },
+          "previousStatus": {
+            "$ref": "#/components/schemas/ReportStatus"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ReportStatus"
+          },
+          "actorId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 500,
+            "description": "Empty for verification and possibly historical removal without a saved reason; new removal/restoration requires a reason."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
       }
     },
     "securitySchemes": {
@@ -3483,7 +3808,7 @@
     }
   },
   "info": {
-    "description": "# Introduction\nPublic REST API for Flood Watch Ongkharak. The Go API is the public backend.\n\n# Evidence and freshness\nKeep OFFICIAL, COMMUNITY, and AI provenance distinct.\nAvailability data that is stale or unavailable is UNKNOWN, never SAFE.\n\n# Authentication\nAccess tokens use JWT bearer authentication.\nRefresh tokens are sent only in an HttpOnly cookie. The cookie uses the configured\nSameSite Lax or Strict policy and Secure is enabled in production; refresh tokens\nare never returned in response bodies. Phase 2 flood-domain collections are empty\nuntil explicitly populated; no response implies current safe conditions. GUEST has\nno persisted role; only USER and ADMIN accounts exist. Authentication is required\nfor the Phase 1 demonstration routes.\n\n# Community reports\nPhase 6 community reports are always COMMUNITY evidence. Only VERIFIED reports\nand their images are public; an empty list never means SAFE. Submission time is\nnot a measured observation time. Pending reports are owner-editable, rejected\nand verified reports are immutable, and an ADMIN cannot verify their own report.\n\n# Alerts and realtime\nPhase 7 alerts are created only by explicit structured rules; no threshold is\npreconfigured. Public SSE transports versioned change notifications, not canonical\nresource state. Redis outages do not roll back committed PostgreSQL data.\n\n# Errors\nOther auth failures use the ErrorResponse envelope (including 403 origin rejection,\n415 unsupported media type, 429 rate limiting, and 500 infrastructure failure).\n",
+    "description": "# Introduction\nPublic REST API for Flood Watch Ongkharak. The Go API is the public backend.\n\n# Evidence and freshness\nKeep OFFICIAL, COMMUNITY, and AI provenance distinct.\nAvailability data that is stale or unavailable is UNKNOWN, never SAFE.\n\n# Authentication\nAccess tokens use JWT bearer authentication.\nRefresh tokens are sent only in an HttpOnly cookie. The cookie uses the configured\nSameSite Lax or Strict policy and Secure is enabled in production; refresh tokens\nare never returned in response bodies. Phase 2 flood-domain collections are empty\nuntil explicitly populated; no response implies current safe conditions. GUEST has\nno persisted role; only USER and ADMIN accounts exist. Authentication is required\nfor the Phase 1 demonstration routes.\n\n# Community reports\nCommunity reports are always COMMUNITY evidence. Valid submissions and their\nimages publish automatically while PENDING (not reviewed); VERIFIED means ADMIN\nreviewed, not OFFICIAL or SAFE. REJECTED means removed from public access.\nSubmission time is not a measured observation time. ADMIN removal/restoration\nrequires a reason and retains history; restoration returns to PENDING.\nAn ADMIN cannot verify their own report. An empty list never means SAFE.\n\n# Alerts and realtime\nPhase 7 alerts are created only by explicit structured rules; no threshold is\npreconfigured. Public SSE transports versioned change notifications, not canonical\nresource state. Redis outages do not roll back committed PostgreSQL data.\n\n# Errors\nOther auth failures use the ErrorResponse envelope (including 403 origin rejection,\n415 unsupported media type, 429 rate limiting, and 500 infrastructure failure).\n",
     "title": "Flood Watch Ongkharak API",
     "version": "0.5.0"
   },
@@ -4040,7 +4365,7 @@
             "$ref": "#/components/parameters/Offset"
           },
           {
-            "description": "Explicit review status; UI requests PENDING.",
+            "description": "PENDING is published/unreviewed, VERIFIED is reviewed, REJECTED is removed.",
             "in": "query",
             "name": "status",
             "required": true,
@@ -4093,7 +4418,7 @@
                 }
               }
             },
-            "description": "Review detail."
+            "description": "Review detail including private append-only moderation history. History is omitted from public and owner responses."
           },
           "default": {
             "$ref": "#/components/responses/DomainError"
@@ -4138,7 +4463,7 @@
                 }
               }
             },
-            "description": "Rejected report remains private and COMMUNITY."
+            "description": "Removed report remains COMMUNITY and stored for ADMIN review. Public detail and media access return 404 for nonowners; a mandatory reason and reviewer are recorded atomically."
           },
           "default": {
             "$ref": "#/components/responses/DomainError"
@@ -4149,7 +4474,7 @@
             "bearerAuth": []
           }
         ],
-        "summary": "Reject a pending report",
+        "summary": "Remove a pending or verified report from public access",
         "tags": [
           "Admin",
           "Reports"
@@ -4194,7 +4519,7 @@
             "bearerAuth": []
           }
         ],
-        "summary": "Verify and publish a pending report (not one's own)",
+        "summary": "Mark an already published pending report reviewed (not one's own)",
         "tags": [
           "Admin",
           "Reports"
@@ -5511,7 +5836,7 @@
     },
     "/api/v1/events/stream": {
       "get": {
-        "description": "Guest-accessible. `id` is a Redis stream cursor distinct from envelope `eventId`.\nReconnect with Last-Event-ID (or cursor query in browsers that cannot set headers).\n`replay.reset` requires a full canonical REST refetch after an expired cursor or\nbounded replay; initial subscription begins at the current stream tail.\nHeartbeats are SSE comments. Delivery can be duplicated and has bounded retention.\nPending/private reports never appear; `report.verified` is the public signal.\n",
+        "description": "Guest-accessible. `id` is a Redis stream cursor distinct from envelope `eventId`.\nReconnect with Last-Event-ID (or cursor query in browsers that cannot set headers).\n`replay.reset` requires a full canonical REST refetch after an expired cursor or\nbounded replay; initial subscription begins at the current stream tail.\nHeartbeats are SSE comments. Delivery can be duplicated and has bounded retention.\n`report.updated` signals creation, edits, image changes, removal and restoration;\nrefetch canonical REST. It carries only the report ID, never review reasons or\nremoved content. `report.verified` remains the additional review signal.\n",
         "operationId": "streamPublicEvents",
         "parameters": [
           {
@@ -5958,7 +6283,7 @@
             "$ref": "#/components/responses/DomainError"
           }
         },
-        "summary": "List only published verified community reports",
+        "summary": "List published community reports, including unreviewed submissions",
         "tags": [
           "Reports"
         ]
@@ -5984,14 +6309,14 @@
                 }
               }
             },
-            "description": "Guest submission is PENDING and COMMUNITY. A short-lived report-scoped upload token is returned once; it does not permit reading unpublished data or editing text. Rate-limited per trusted client address."
+            "description": "Guest submission is PUBLISHED, PENDING and COMMUNITY, not verified fact. A short-lived report-scoped upload token is returned once; it does not permit reading removed data or editing text. Rate-limited per trusted client address."
           },
           "default": {
             "$ref": "#/components/responses/DomainError"
           }
         },
         "security": [],
-        "summary": "Submit a pending community report",
+        "summary": "Submit and automatically publish an unreviewed community report",
         "tags": [
           "Reports"
         ]
@@ -6051,13 +6376,13 @@
                 }
               }
             },
-            "description": "Verified public report only; unpublished reports are not disclosed."
+            "description": "PENDING and VERIFIED reports are public; REJECTED reports return 404. Private moderation history and reasons are omitted."
           },
           "default": {
             "$ref": "#/components/responses/DomainError"
           }
         },
-        "summary": "Read a published verified community report",
+        "summary": "Read a published community report, reviewed or unreviewed",
         "tags": [
           "Reports"
         ]
@@ -6152,7 +6477,7 @@
                 }
               }
             },
-            "description": "Image stored privately; metadata references a guarded API URL."
+            "description": "Image stored in private object storage; its guarded API URL is public while the report is PENDING or VERIFIED, and unavailable publicly after removal."
           },
           "default": {
             "$ref": "#/components/responses/DomainError"
@@ -6204,7 +6529,7 @@
                 }
               }
             },
-            "description": "Published images are public; unpublished images require owner or ADMIN authorization."
+            "description": "PENDING and VERIFIED images are public; REJECTED images require legacy owner or ADMIN authorization. Responses are private/no-store."
           },
           "default": {
             "$ref": "#/components/responses/DomainError"
@@ -6711,6 +7036,126 @@
             "$ref": "#/components/responses/DomainError"
           },
           "503": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        }
+      }
+    },
+    "/api/v1/official-announcements": {
+      "get": {
+        "tags": [
+          "Alerts"
+        ],
+        "operationId": "listOfficialAnnouncements",
+        "summary": "Retained TMD official announcements and lifecycle history",
+        "description": "Public stored CAP read model, separate from app-generated rule alerts.\nNo upstream HTTP fetch or notification delivery occurs on this request.\nDisabled sources return NOT_CONFIGURED and an empty list. Stale or\nunconfirmed current evidence is UNKNOWN, never SAFE. Missing feed items\ndo not erase historical cancellation or imply an all-clear. Pagination\nis bounded; histories contain at most twenty newest revisions per item.\nThe retained read bound is 10000 evidence versions; overflow returns 503\nrather than a silently truncated lifecycle. Responses are no-store.\n",
+        "security": [],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10000,
+              "default": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Stored official announcement snapshot, not a safety certification",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfficialAnnouncementList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid or repeated pagination parameter",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Public read rate limit exceeded (60 requests per minute)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Stored evidence unavailable; current conditions are unknown",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/reports/{id}/restore": {
+      "post": {
+        "tags": [
+          "Admin",
+          "Reports"
+        ],
+        "summary": "Restore a removed report as published but unreviewed",
+        "operationId": "restoreReport",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectReportInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Report returns to PENDING/PUBLISHED without verification. History is retained and the former guest upload capability is revoked. Reason and current expectedUpdatedAt are mandatory.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportResponse"
+                }
+              }
+            }
+          },
+          "default": {
             "$ref": "#/components/responses/DomainError"
           }
         }

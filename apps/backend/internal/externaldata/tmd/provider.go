@@ -72,6 +72,7 @@ func (provider *Provider) Fetch(ctx context.Context) (externaldata.Batch, error)
 	known := make(map[string]areaContext)
 	alerts := make([]capAlert, 0, len(rss.Channel.Items))
 	seenLinks := make(map[string]struct{})
+	seenAlerts := make(map[string][]byte)
 	for _, item := range rss.Channel.Items {
 		link, err := capLink(item.Link)
 		if err != nil {
@@ -98,6 +99,18 @@ func (provider *Provider) Fetch(ctx context.Context) (externaldata.Batch, error)
 		if alert.MsgType != "Alert" && alert.MsgType != "Update" && alert.MsgType != "Cancel" {
 			return externaldata.Batch{}, errInvalidTMD
 		}
+		identity := alert.Identifier + ":" + alert.MsgType
+		content, err := json.Marshal(alert)
+		if err != nil {
+			return externaldata.Batch{}, errInvalidTMD
+		}
+		if previous, exists := seenAlerts[identity]; exists {
+			if !bytes.Equal(previous, content) {
+				return externaldata.Batch{}, errInvalidTMD
+			}
+			continue
+		}
+		seenAlerts[identity] = content
 		alerts = append(alerts, alert)
 		if match, matched := matchingContext(alert.Infos); matched {
 			known[alert.Identifier] = match
@@ -140,7 +153,9 @@ func (provider *Provider) Fetch(ctx context.Context) (externaldata.Batch, error)
 		}
 		record := makeRecord(alert, match)
 		if !matched && alert.MsgType == "Update" {
-			record.Reason = "GEOGRAPHIC_SCOPE_UNCONFIRMED"
+			if record.Reason == "" {
+				record.Reason = "GEOGRAPHIC_SCOPE_UNCONFIRMED"
+			}
 			record.Freshness = "UNKNOWN"
 		}
 		batch.Records = append(batch.Records, record)
@@ -166,6 +181,7 @@ type capDocument struct {
 	MsgType    string   `xml:"msgType"`
 	References string   `xml:"references"`
 	Infos      []struct {
+		Effective   string `xml:"effective"`
 		Expires     string `xml:"expires"`
 		Headline    string `xml:"headline"`
 		Description string `xml:"description"`
@@ -181,20 +197,24 @@ type capDocument struct {
 }
 
 type capAlert struct {
-	Identifier string
-	Sender     string
-	Sent       time.Time
-	Status     string
-	MsgType    string
-	References string
-	Expiry     time.Time
-	Infos      []capInfo
+	Identifier        string
+	Sender            string
+	Sent              time.Time
+	Status            string
+	MsgType           string
+	References        string
+	Expiry            time.Time
+	Effective         time.Time
+	TimingUnconfirmed bool
+	Infos             []capInfo
 }
 
 type capInfo struct {
 	Headline    string
 	Description string
 	Areas       []capArea
+	Expiry      time.Time
+	Effective   time.Time
 }
 
 type capArea struct {
@@ -255,15 +275,24 @@ func parseCAP(body []byte, receivedAt time.Time) (capAlert, error) {
 	if err != nil {
 		return capAlert{}, errInvalidTMD
 	}
-	var expiry time.Time
 	infos := make([]capInfo, 0, len(document.Infos))
 	for _, info := range document.Infos {
+		var infoExpiry, infoEffective time.Time
 		if strings.TrimSpace(info.Expires) != "" {
-			expiry, err = parseCAPTime(info.Expires)
+			infoExpiry, err = parseCAPTime(info.Expires)
 			if err != nil {
 				return capAlert{}, errInvalidTMD
 			}
 		} else if msgType != "Cancel" {
+			return capAlert{}, errInvalidTMD
+		}
+		if strings.TrimSpace(info.Effective) != "" {
+			infoEffective, err = parseCAPTime(info.Effective)
+			if err != nil {
+				return capAlert{}, errInvalidTMD
+			}
+		}
+		if !infoExpiry.IsZero() && (sent.After(infoExpiry) || !infoEffective.IsZero() && !infoEffective.Before(infoExpiry)) {
 			return capAlert{}, errInvalidTMD
 		}
 		headline, err := limitedText(info.Headline, 512)
@@ -295,13 +324,30 @@ func parseCAP(body []byte, receivedAt time.Time) (capAlert, error) {
 			matches := containsCode(codes, "TH-26") || (hasPolygon && pointInPolygon(101, 14.1, geometry))
 			areas = append(areas, capArea{AreaDesc: areaDesc, Codes: codes, Geometry: geometry, Matches: matches})
 		}
-		infos = append(infos, capInfo{Headline: headline, Description: description, Areas: areas})
+		infos = append(infos, capInfo{Headline: headline, Description: description, Areas: areas, Expiry: infoExpiry, Effective: infoEffective})
 	}
-	if sent.IsZero() || (!expiry.IsZero() && sent.After(expiry)) {
+	if sent.IsZero() {
 		return capAlert{}, errInvalidTMD
 	}
+	var expiry, effective time.Time
+	_, local := matchingContext(infos)
+	for _, info := range infos {
+		if _, matches := matchingContext([]capInfo{info}); local && !matches {
+			continue
+		}
+		if !info.Expiry.IsZero() && (expiry.IsZero() || info.Expiry.Before(expiry)) {
+			expiry = info.Expiry
+		}
+		if info.Effective.After(effective) {
+			effective = info.Effective
+		}
+	}
 	_ = receivedAt
-	return capAlert{Identifier: identifier, Sender: sender, Sent: sent, Status: status, MsgType: msgType, References: references, Expiry: expiry, Infos: infos}, nil
+	timingUnconfirmed := !expiry.IsZero() && !effective.IsZero() && !effective.Before(expiry)
+	if timingUnconfirmed {
+		expiry, effective = time.Time{}, time.Time{}
+	}
+	return capAlert{Identifier: identifier, Sender: sender, Sent: sent, Status: status, MsgType: msgType, References: references, Expiry: expiry, Effective: effective, TimingUnconfirmed: timingUnconfirmed, Infos: infos}, nil
 }
 
 func hasDeclaredArea(infos []capInfo) bool {
@@ -333,6 +379,12 @@ func makeRecord(alert capAlert, area areaContext) externaldata.Record {
 	}
 	if !alert.Expiry.IsZero() {
 		record.ValidTo = &alert.Expiry
+	}
+	if !alert.Effective.IsZero() {
+		record.ValidFrom = &alert.Effective
+	}
+	if alert.TimingUnconfirmed {
+		record.Reason = "CONFLICTING_TIME_WINDOWS"
 	}
 	return record
 }

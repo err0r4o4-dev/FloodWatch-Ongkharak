@@ -1,0 +1,3 @@
+./provider.go
+./dedup_test.go
+./provider_test.go

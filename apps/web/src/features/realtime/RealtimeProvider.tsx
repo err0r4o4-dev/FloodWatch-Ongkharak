@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { apiConfig } from "../../shared/config/api";
 
-export const publicEventTypes = ["water_level.updated", "flood_event.created", "flood_event.updated", "road.status.changed", "report.verified", "alert.created", "external_data.updated"] as const;
+export const publicEventTypes = ["water_level.updated", "flood_event.created", "flood_event.updated", "road.status.changed", "report.verified", "report.updated", "alert.created", "external_data.updated"] as const;
 export type PublicEventType = typeof publicEventTypes[number];
 export type RealtimeStatus = "CONNECTED" | "RECONNECTING" | "DISCONNECTED";
 const stableConnectionDelay = 15_000;

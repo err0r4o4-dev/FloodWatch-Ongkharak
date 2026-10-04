@@ -1,0 +1,52 @@
+=== RUN   TestRepositoryPersistsPoint4326AndPublishesAcrossReviewCycles
+--- PASS: TestRepositoryPersistsPoint4326AndPublishesAcrossReviewCycles (0.22s)
+=== RUN   TestRepositoryPersistsGuestReportAndCapabilityScopedMedia
+--- PASS: TestRepositoryPersistsGuestReportAndCapabilityScopedMedia (0.10s)
+=== RUN   TestRepositoryReviewCASAllowsOneConcurrentTransition
+--- PASS: TestRepositoryReviewCASAllowsOneConcurrentTransition (0.10s)
+PASS
+ok  	github.com/floodwatch-ongkharak/backend/internal/postgres/reportrepo	0.581s
+=== RUN   TestCommunityReportHTTPVisibilityAndReviewBoundaries
+2026/10/04 20:16:16 INFO HTTP request complete method=POST path=/api/v1/reports request_id=LAPTOP-1NDJ8C7M/bd2dyyjqJF-000001 duration=29.5334ms
+2026/10/04 20:16:16 INFO HTTP request complete method=POST path=/api/v1/reports/934f26c4-6701-4fde-971a-2a8a4509297c/media request_id=LAPTOP-1NDJ8C7M/bd2dyyjqJF-000002 duration=20.7049ms
+2026/10/04 20:16:16 INFO HTTP request complete method=GET path=/api/v1/reports/934f26c4-6701-4fde-971a-2a8a4509297c/media/0362d7ff-1b3f-487a-9466-c2835122dac1 request_id=LAPTOP-1NDJ8C7M/bd2dyyjqJF-000003 duration=4.382ms
+2026/10/04 20:16:16 INFO HTTP request complete method=GET path=/api/v1/reports/934f26c4-6701-4fde-971a-2a8a4509297c/media/0362d7ff-1b3f-487a-9466-c2835122dac1 request_id=LAPTOP-1NDJ8C7M/bd2dyyjqJF-000004 duration=4.5138ms
+2026/10/04 20:16:16 INFO HTTP request complete method=GET path=/api/v1/reports/934f26c4-6701-4fde-971a-2a8a4509297c/media/0362d7ff-1b3f-487a-9466-c2835122dac1 request_id=LAPTOP-1NDJ8C7M/bd2dyyjqJF-000005 duration=4.9263ms
+2026/10/04 20:16:16 INFO HTTP request complete method=GET path=/api/v1/reports/934f26c4-6701-4fde-971a-2a8a4509297c request_id=LAPTOP-1NDJ8C7M/bd2dyyjqJF-000006 duration=2.6895ms
+2026/10/04 20:16:16 INFO HTTP request complete method=GET path=/api/v1/reports request_id=LAPTOP-1NDJ8C7M/bd2dyyjqJF-000007 duration=4.588ms
+2026/10/04 20:16:16 INFO HTTP request complete method=POST path=/api/v1/admin/reports/934f26c4-6701-4fde-971a-2a8a4509297c/verify request_id=LAPTOP-1NDJ8C7M/bd2dyyjqJF-000008 duration=0s
+2026/10/04 20:16:16 INFO HTTP request complete method=POST path=/api/v1/admin/reports/934f26c4-6701-4fde-971a-2a8a4509297c/verify request_id=LAPTOP-1NDJ8C7M/bd2dyyjqJF-000009 duration=1.0913ms
+2026/10/04 20:16:16 INFO HTTP request complete method=POST path=/api/v1/admin/reports/934f26c4-6701-4fde-971a-2a8a4509297c/reject request_id=LAPTOP-1NDJ8C7M/bd2dyyjqJF-000010 duration=0s
+2026/10/04 20:16:16 INFO HTTP request complete method=POST path=/api/v1/admin/reports/934f26c4-6701-4fde-971a-2a8a4509297c/reject request_id=LAPTOP-1NDJ8C7M/bd2dyyjqJF-000011 duration=1.0061ms
+2026/10/04 20:16:16 INFO HTTP request complete method=POST path=/api/v1/admin/reports/934f26c4-6701-4fde-971a-2a8a4509297c/restore request_id=LAPTOP-1NDJ8C7M/bd2dyyjqJF-000012 duration=0s
+2026/10/04 20:16:16 INFO HTTP request complete method=POST path=/api/v1/admin/reports/934f26c4-6701-4fde-971a-2a8a4509297c/restore request_id=LAPTOP-1NDJ8C7M/bd2dyyjqJF-000013 duration=1.597ms
+2026/10/04 20:16:16 INFO HTTP request complete method=POST path=/api/v1/admin/reports/934f26c4-6701-4fde-971a-2a8a4509297c/verify request_id=LAPTOP-1NDJ8C7M/bd2dyyjqJF-000014 duration=1.6326ms
+2026/10/04 20:16:16 INFO HTTP request complete method=POST path=/api/v1/admin/reports/934f26c4-6701-4fde-971a-2a8a4509297c/verify request_id=LAPTOP-1NDJ8C7M/bd2dyyjqJF-000015 duration=4.9674ms
+2026/10/04 20:16:16 INFO HTTP request complete method=POST path=/api/v1/admin/reports/934f26c4-6701-4fde-971a-2a8a4509297c/verify request_id=LAPTOP-1NDJ8C7M/bd2dyyjqJF-000016 duration=21.3519ms
+2026/10/04 20:16:16 INFO HTTP request complete method=GET path=/api/v1/reports/934f26c4-6701-4fde-971a-2a8a4509297c request_id=LAPTOP-1NDJ8C7M/bd2dyyjqJF-000017 duration=3.125ms
+2026/10/04 20:16:16 INFO HTTP request complete method=GET path=/api/v1/reports/934f26c4-6701-4fde-971a-2a8a4509297c/media/0362d7ff-1b3f-487a-9466-c2835122dac1 request_id=LAPTOP-1NDJ8C7M/bd2dyyjqJF-000018 duration=3.3907ms
+2026/10/04 20:16:16 INFO HTTP request complete method=POST path=/api/v1/reports/934f26c4-6701-4fde-971a-2a8a4509297c/media request_id=LAPTOP-1NDJ8C7M/bd2dyyjqJF-000019 duration=1.8285ms
+2026/10/04 20:16:16 INFO HTTP request complete method=POST path=/api/v1/admin/reports/934f26c4-6701-4fde-971a-2a8a4509297c/reject request_id=LAPTOP-1NDJ8C7M/bd2dyyjqJF-000020 duration=1.1223ms
+2026/10/04 20:16:16 INFO HTTP request complete method=POST path=/api/v1/admin/reports/934f26c4-6701-4fde-971a-2a8a4509297c/reject request_id=LAPTOP-1NDJ8C7M/bd2dyyjqJF-000021 duration=1.6468ms
+2026/10/04 20:16:16 INFO HTTP request complete method=POST path=/api/v1/admin/reports/934f26c4-6701-4fde-971a-2a8a4509297c/reject request_id=LAPTOP-1NDJ8C7M/bd2dyyjqJF-000022 duration=18.2787ms
+2026/10/04 20:16:16 INFO HTTP request complete method=GET path=/api/v1/reports/934f26c4-6701-4fde-971a-2a8a4509297c request_id=LAPTOP-1NDJ8C7M/bd2dyyjqJF-000023 duration=2.2488ms
+2026/10/04 20:16:16 INFO HTTP request complete method=GET path=/api/v1/reports request_id=LAPTOP-1NDJ8C7M/bd2dyyjqJF-000024 duration=1.5428ms
+2026/10/04 20:16:16 INFO HTTP request complete method=GET path=/api/v1/reports/934f26c4-6701-4fde-971a-2a8a4509297c/media/0362d7ff-1b3f-487a-9466-c2835122dac1 request_id=LAPTOP-1NDJ8C7M/bd2dyyjqJF-000025 duration=2.8929ms
+2026/10/04 20:16:16 INFO HTTP request complete method=GET path=/api/v1/reports/934f26c4-6701-4fde-971a-2a8a4509297c/media/0362d7ff-1b3f-487a-9466-c2835122dac1 request_id=LAPTOP-1NDJ8C7M/bd2dyyjqJF-000026 duration=2.6554ms
+2026/10/04 20:16:16 INFO HTTP request complete method=GET path=/api/v1/admin/reports/934f26c4-6701-4fde-971a-2a8a4509297c request_id=LAPTOP-1NDJ8C7M/bd2dyyjqJF-000027 duration=7.0395ms
+2026/10/04 20:16:16 INFO HTTP request complete method=GET path=/api/v1/admin/reports request_id=LAPTOP-1NDJ8C7M/bd2dyyjqJF-000028 duration=5.4898ms
+2026/10/04 20:16:16 INFO HTTP request complete method=POST path=/api/v1/admin/reports/934f26c4-6701-4fde-971a-2a8a4509297c/restore request_id=LAPTOP-1NDJ8C7M/bd2dyyjqJF-000029 duration=1.6221ms
+2026/10/04 20:16:16 INFO HTTP request complete method=POST path=/api/v1/admin/reports/934f26c4-6701-4fde-971a-2a8a4509297c/restore request_id=LAPTOP-1NDJ8C7M/bd2dyyjqJF-000030 duration=13.735ms
+2026/10/04 20:16:16 INFO HTTP request complete method=GET path=/api/v1/reports/934f26c4-6701-4fde-971a-2a8a4509297c request_id=LAPTOP-1NDJ8C7M/bd2dyyjqJF-000031 duration=1.5733ms
+2026/10/04 20:16:16 INFO HTTP request complete method=POST path=/api/v1/reports/934f26c4-6701-4fde-971a-2a8a4509297c/media request_id=LAPTOP-1NDJ8C7M/bd2dyyjqJF-000032 duration=515.8µs
+2026/10/04 20:16:16 INFO HTTP request complete method=POST path=/api/v1/admin/reports/934f26c4-6701-4fde-971a-2a8a4509297c/verify request_id=LAPTOP-1NDJ8C7M/bd2dyyjqJF-000033 duration=13.2972ms
+2026/10/04 20:16:16 INFO HTTP request complete method=POST path=/api/v1/admin/reports/934f26c4-6701-4fde-971a-2a8a4509297c/reject request_id=LAPTOP-1NDJ8C7M/bd2dyyjqJF-000034 duration=11.5817ms
+2026/10/04 20:16:16 INFO HTTP request complete method=POST path=/api/v1/admin/reports/934f26c4-6701-4fde-971a-2a8a4509297c/restore request_id=LAPTOP-1NDJ8C7M/bd2dyyjqJF-000035 duration=12.0112ms
+2026/10/04 20:16:16 INFO HTTP request complete method=GET path=/api/v1/admin/reports/934f26c4-6701-4fde-971a-2a8a4509297c request_id=LAPTOP-1NDJ8C7M/bd2dyyjqJF-000036 duration=5.8809ms
+2026/10/04 20:16:16 INFO HTTP request complete method=GET path=/api/v1/reports/934f26c4-6701-4fde-971a-2a8a4509297c request_id=LAPTOP-1NDJ8C7M/bd2dyyjqJF-000037 duration=1.5711ms
+2026/10/04 20:16:16 INFO HTTP request complete method=POST path=/api/v1/admin/reports/d6cc645b-22dd-41e2-9c8b-473b0e570a03/verify request_id=LAPTOP-1NDJ8C7M/bd2dyyjqJF-000038 duration=3.2845ms
+2026/10/04 20:16:16 INFO HTTP request complete method=POST path=/api/v1/admin/reports/d6cc645b-22dd-41e2-9c8b-473b0e570a03/reject request_id=LAPTOP-1NDJ8C7M/bd2dyyjqJF-000039 duration=10.4335ms
+2026/10/04 20:16:16 INFO HTTP request complete method=POST path=/api/v1/admin/reports/d6cc645b-22dd-41e2-9c8b-473b0e570a03/restore request_id=LAPTOP-1NDJ8C7M/bd2dyyjqJF-000040 duration=9.9243ms
+--- PASS: TestCommunityReportHTTPVisibilityAndReviewBoundaries (1.13s)
+PASS
+ok  	github.com/floodwatch-ongkharak/backend/internal/http/router	1.323s

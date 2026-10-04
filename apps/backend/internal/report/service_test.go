@@ -325,12 +325,12 @@ func TestRejectRecordsPrivateReviewTrail(t *testing.T) {
 	}
 }
 
-func TestOpenMediaHidesUnpublishedReportsFromNonOwners(t *testing.T) {
+func TestOpenMediaHidesRemovedReportsFromNonOwners(t *testing.T) {
 	ownerID := "7b6a2a68-688a-4c59-82cf-0b541dfa0d49"
 	reportID := "ddfd74fd-9561-4c5e-a304-b1cb704508d9"
 	mediaID := "f58e07e0-77ec-488d-9a5c-4ed1e142ecfd"
 	repository := &fakeRepository{
-		reports: map[string]Report{reportID: {ID: reportID, UserID: ownerID, Status: StatusPending, VerificationStatus: StatusPending, SourceType: SourceCommunity}},
+		reports: map[string]Report{reportID: {ID: reportID, UserID: ownerID, Status: StatusRejected, VerificationStatus: StatusRejected, SourceType: SourceCommunity}},
 		media:   map[string]Media{mediaID: {ID: mediaID, ReportID: reportID, ObjectKey: "reports/test.png", ContentType: "image/png"}},
 	}
 	service, err := NewService(repository, &fakeStorage{})
@@ -339,11 +339,123 @@ func TestOpenMediaHidesUnpublishedReportsFromNonOwners(t *testing.T) {
 	}
 
 	if _, err := service.OpenMedia(context.Background(), reportID, mediaID, Access{}); !errors.Is(err, ErrNotFound) {
-		t.Fatalf("OpenMedia() anonymous pending error = %v, want ErrNotFound", err)
+		t.Fatalf("OpenMedia() anonymous removed error = %v, want ErrNotFound", err)
+	}
+}
+
+func TestUnreviewedReportAndMediaArePublicWithoutVerification(t *testing.T) {
+	reportID := "ddfd74fd-9561-4c5e-a304-b1cb704508d9"
+	mediaID := "f58e07e0-77ec-488d-9a5c-4ed1e142ecfd"
+	repository := &fakeRepository{
+		reports: map[string]Report{reportID: {ID: reportID, Status: StatusPending, VerificationStatus: StatusPending, SourceType: SourceCommunity}},
+		media:   map[string]Media{mediaID: {ID: mediaID, ReportID: reportID, ObjectKey: "reports/test.png", ContentType: "image/png"}},
+	}
+	service, err := NewService(repository, &fakeStorage{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	item, err := service.GetPublic(context.Background(), reportID)
+	if err != nil || item.Status != StatusPending || item.VerifiedAt != nil || item.VerifiedBy != nil {
+		t.Fatalf("unreviewed public report = %+v, %v", item, err)
+	}
+	media, err := service.OpenMedia(context.Background(), reportID, mediaID, Access{})
+	if err != nil {
+		t.Fatalf("unreviewed public media = %v", err)
+	}
+	media.Content.Close()
+}
+
+func TestAdminCanRemoveVerifiedReportButCannotVerifyTheirOwn(t *testing.T) {
+	adminID := "f58e07e0-77ec-488d-9a5c-4ed1e142ecfd"
+	reportID := "ddfd74fd-9561-4c5e-a304-b1cb704508d9"
+	updatedAt := time.Now().UTC()
+	repository := &fakeRepository{reports: map[string]Report{reportID: {ID: reportID, UserID: adminID, Status: StatusVerified, UpdatedAt: updatedAt}}}
+	service, err := NewService(repository, &fakeStorage{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	removed, err := service.Reject(context.Background(), reportID, adminID, "Incorrect location", updatedAt)
+	if err != nil || removed.Status != StatusRejected {
+		t.Fatalf("remove previously reviewed own report = %+v, %v", removed, err)
+	}
+	if _, err := service.GetPublic(context.Background(), reportID); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("removed public detail = %v, want not found", err)
+	}
+	item := repository.reports[reportID]
+	item.Status = StatusPending
+	repository.reports[reportID] = item
+	if _, err := service.Verify(context.Background(), reportID, adminID, updatedAt); !errors.Is(err, ErrForbidden) {
+		t.Fatalf("self verification = %v, want forbidden", err)
+	}
+}
+
+func TestRemovalRequiresBoundedReasonAndCurrentRevision(t *testing.T) {
+	adminID := "f58e07e0-77ec-488d-9a5c-4ed1e142ecfd"
+	reportID := "ddfd74fd-9561-4c5e-a304-b1cb704508d9"
+	updatedAt := time.Now().UTC()
+	repository := &fakeRepository{reports: map[string]Report{reportID: {ID: reportID, Status: StatusPending, UpdatedAt: updatedAt}}}
+	service, err := NewService(repository, &fakeStorage{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, reason := range []string{"", "  ", strings.Repeat("x", 501)} {
+		if _, err := service.Reject(context.Background(), reportID, adminID, reason, updatedAt); !errors.Is(err, ErrInvalid) {
+			t.Fatalf("reason %q = %v, want invalid", reason, err)
+		}
+	}
+	if _, err := service.Reject(context.Background(), reportID, adminID, "Spam", updatedAt.Add(-time.Second)); !errors.Is(err, ErrConflict) {
+		t.Fatalf("stale removal = %v, want conflict", err)
+	}
+}
+
+func TestRestoreRequiresReasonAndReturnsToUnreviewed(t *testing.T) {
+	adminID := "f58e07e0-77ec-488d-9a5c-4ed1e142ecfd"
+	reportID := "ddfd74fd-9561-4c5e-a304-b1cb704508d9"
+	updatedAt := time.Now().UTC()
+	repository := &fakeRepository{reports: map[string]Report{reportID: {ID: reportID, Status: StatusRejected, UpdatedAt: updatedAt}}}
+	service, err := NewService(repository, &fakeStorage{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	restorer, ok := any(service).(interface {
+		Restore(context.Context, string, string, string, time.Time) (Report, error)
+	})
+	if !ok {
+		t.Fatal("report restore capability missing")
+	}
+	if _, err := restorer.Restore(context.Background(), reportID, adminID, "  ", updatedAt); !errors.Is(err, ErrInvalid) {
+		t.Fatalf("empty restore reason = %v", err)
+	}
+	if _, err := restorer.Restore(context.Background(), reportID, adminID, "Removal was mistaken", updatedAt.Add(-time.Second)); !errors.Is(err, ErrConflict) {
+		t.Fatalf("stale restore = %v", err)
+	}
+	restored, err := restorer.Restore(context.Background(), reportID, adminID, "Removal was mistaken", updatedAt)
+	if err != nil || restored.Status != StatusPending || restored.VerificationStatus != StatusPending || restored.VerifiedAt != nil || restored.VerifiedBy != nil {
+		t.Fatalf("restore = %+v, %v", restored, err)
+	}
+	if _, err := restorer.Restore(context.Background(), reportID, adminID, "Again", restored.UpdatedAt); !errors.Is(err, ErrConflict) {
+		t.Fatalf("double restore = %v", err)
+	}
+}
+
+func TestModerationReturnsCommittedSnapshotWithoutRereadingHistory(t *testing.T) {
+	reportID := "ddfd74fd-9561-4c5e-a304-b1cb704508d9"
+	adminID := "f58e07e0-77ec-488d-9a5c-4ed1e142ecfd"
+	updatedAt := time.Now().UTC()
+	history := []ReviewEvent{{ID: "snapshot-history", Action: "REMOVE", Status: StatusRejected}}
+	repository := &fakeRepository{reports: map[string]Report{reportID: {ID: reportID, Status: StatusPending, UpdatedAt: updatedAt, ReviewHistory: history}}, historyReadError: errors.New("separate history read is inconsistent")}
+	service, err := NewService(repository, &fakeStorage{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	removed, err := service.Reject(context.Background(), reportID, adminID, "Incorrect evidence", updatedAt)
+	if err != nil || removed.Status != StatusRejected || len(removed.ReviewHistory) != 1 || removed.ReviewHistory[0].ID != "snapshot-history" {
+		t.Fatalf("committed snapshot = %+v, %v", removed, err)
 	}
 }
 
 type fakeRepository struct {
+	historyReadError    error
 	created             Report
 	reports             map[string]Report
 	createMediaErr      error
@@ -395,7 +507,11 @@ func (repository *fakeRepository) Get(_ context.Context, id string) (Report, err
 	return item, nil
 }
 
-func (repository *fakeRepository) ListVerified(context.Context, ListFilter) ([]Report, error) {
+func (repository *fakeRepository) GetAdmin(ctx context.Context, id string) (Report, error) {
+	return repository.Get(ctx, id)
+}
+
+func (repository *fakeRepository) ListPublic(context.Context, ListFilter) ([]Report, error) {
 	return nil, nil
 }
 func (repository *fakeRepository) ListMine(context.Context, string, Page) ([]Report, error) {
@@ -433,6 +549,10 @@ func (repository *fakeRepository) Review(_ context.Context, id string, status St
 	}
 	repository.reports[id] = item
 	return item, nil
+}
+
+func (repository *fakeRepository) ListReviewHistory(context.Context, string) ([]ReviewEvent, error) {
+	return []ReviewEvent{}, repository.historyReadError
 }
 
 func (repository *fakeRepository) CreateMedia(_ context.Context, item Media, _ string) (Media, error) {

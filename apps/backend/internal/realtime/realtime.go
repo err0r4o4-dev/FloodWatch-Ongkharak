@@ -30,6 +30,7 @@ const (
 	EventFloodEventUpdated   EventType = "flood_event.updated"
 	EventRoadStatusChanged   EventType = "road.status.changed"
 	EventReportVerified      EventType = "report.verified"
+	EventReportUpdated       EventType = "report.updated"
 	EventAlertCreated        EventType = "alert.created"
 	EventExternalDataUpdated EventType = "external_data.updated"
 )
@@ -77,7 +78,7 @@ func (event Event) Validate() error {
 	if event.EventType == EventExternalDataUpdated && event.SourceType != SourceOfficial && event.SourceType != SourceModel {
 		return ErrInvalidEvent
 	}
-	if event.EventType == EventReportVerified && event.SourceType != SourceCommunity {
+	if (event.EventType == EventReportVerified || event.EventType == EventReportUpdated) && event.SourceType != SourceCommunity {
 		return ErrInvalidEvent
 	}
 	if _, err := uuid.Parse(event.ResourceID); err != nil || event.PayloadVersion != PayloadVersion1 || len(event.Payload) > MaxPayloadBytes {
@@ -240,7 +241,7 @@ func validPublicPair(eventType EventType, resourceType ResourceType) bool {
 		return resourceType == ResourceFloodEvent
 	case EventRoadStatusChanged:
 		return resourceType == ResourceRoad
-	case EventReportVerified:
+	case EventReportVerified, EventReportUpdated:
 		return resourceType == ResourceCommunityReport
 	case EventAlertCreated:
 		return resourceType == ResourceAlert

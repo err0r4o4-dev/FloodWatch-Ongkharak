@@ -13,9 +13,10 @@ import th from "../../i18n/locales/th/overview";
 import en from "../../i18n/locales/en/overview";
 import { loadCollection, type Collections, type CollectionKey, type WaterStation } from "./api";
 import { ExternalDataPanel } from "../external-data/ExternalDataPanel";
+import { OfficialAnnouncementsPanel } from "../official-announcements/OfficialAnnouncementsPanel";
 import "./OverviewPage.css";
 
-const overviewEvents = ["water_level.updated", "flood_event.created", "flood_event.updated", "road.status.changed", "alert.created", "report.verified"] as const;
+const overviewEvents = ["water_level.updated", "flood_event.created", "flood_event.updated", "road.status.changed", "alert.created", "report.verified", "report.updated"] as const;
 const keys: CollectionKey[] = ["events", "risks", "roads", "water"];
 type FeedKey = CollectionKey | "alerts" | "reports";
 type OverviewCollections = Collections & { alerts: PublicAlert[]; reports: CommunityReport[] };
@@ -116,7 +117,7 @@ export function OverviewPage() {
     const requests: Array<{ key: FeedKey; load: Promise<OverviewCollections[FeedKey]> }> = [
       ...keys.map((key) => ({ key, load: loadCollection(key, controller.signal) })),
       { key: "alerts", load: listPublicAlerts(controller.signal) },
-      { key: "reports", load: reportsApi.listPublic({ signal: controller.signal }).then((page) => page.items.filter((report) => report.status === "VERIFIED" && report.verificationStatus === "VERIFIED" && report.sourceType === "COMMUNITY")) }
+      { key: "reports", load: reportsApi.listPublic({ signal: controller.signal }).then((page) => page.items.filter((report) => report.status !== "REJECTED" && report.sourceType === "COMMUNITY")) }
     ];
     void Promise.allSettled(requests.map((request) => request.load)).then((outcomes) => {
       if (controller.signal.aborted) return;
@@ -136,7 +137,6 @@ export function OverviewPage() {
   const water = latest(collections?.water, (station) => station.latestReading?.observedAt ?? null);
   const risks = latest(collections?.risks, (risk) => risk.validFrom);
   const roads = latest(collections?.roads, (road) => road.currentCondition.observedAt);
-  const events = latest(collections?.events, (event) => event.observedAt);
   const alerts = latest(collections?.alerts, (alert) => alert.triggeredAt, 3);
   const reports = latest(collections?.reports, (report) => report.createdAt, 3);
   const allFailed = result?.failed.length === keys.length + 2;
@@ -154,6 +154,7 @@ export function OverviewPage() {
       {metrics.map((metric) => <Link key={metric.key} to={metric.to} className="summary-metric"><span className={`summary-metric__icon${metric.tone ? ` summary-metric__icon--${metric.tone}` : ""}`} aria-hidden="true"><OverviewIcon name={metric.icon} /></span><span>{metric.label}<strong>{collections?.[metric.key]?.length ?? "—"}</strong><small>{!result ? t("summary.loadingData") : result.failed.includes(metric.key) ? t("summary.unavailable") : metric.caption}</small></span><span className="summary-metric__arrow" aria-hidden="true">›</span></Link>)}
     </div>
     <ExternalDataPanel />
+    <OfficialAnnouncementsPanel />
     {!result && <LoadingState />}
     {allFailed ? <ErrorState onRetry={() => setRevision((previous) => previous + 1)} /> : result && result.failed.length > 0 && <div className="notice" role="status"><strong>{t("partial.title")}</strong><span>{t("partial.body", { feeds: result.failed.map((key) => t(headingKeys[key])).join(", ") })}</span><button type="button" onClick={() => setRevision((previous) => previous + 1)}>{t("retry")}</button></div>}
     <OriginalContentNote />
@@ -171,15 +172,12 @@ export function OverviewPage() {
       <OverviewPanel id="roads-title" title={t("road.title")} icon="road" to="/map" caption={t("road.caption")}>
         {roads.length ? <Table label={t("table.roadName")} columns={[t("table.roadName"), t("table.status"), t("table.sourceTime")]}>{roads.map((road) => <tr key={road.id}><th scope="row">{road.name}</th><td><StatusBadge status={effectiveStatus(road.currentCondition.status, road.currentCondition.freshness, road.currentCondition.verificationStatus)} /><Evidence source={road.currentCondition.source} freshness={road.currentCondition.freshness} /></td><td><Observation source={road.currentCondition.source} time={road.currentCondition.observedAt} /></td></tr>)}</Table> : <PanelState result={result} feed="roads" empty={t("panel.noRoad")} />}
       </OverviewPanel>
-      <OverviewPanel id="events-title" title={t("event.title")} icon="rain" to="/map" caption={t("event.caption")}>
-        {events.length ? <ul className="overview-bulletins">{events.map((event) => <li className={`overview-bulletin overview-bulletin--${effectiveStatus(event.effectiveSeverity, event.freshness, event.verificationStatus).toLowerCase()}`} key={event.id}><article><h3>{event.title}</h3><p>{event.description}</p><div className="badge-row"><StatusBadge status={effectiveStatus(event.effectiveSeverity, event.freshness, event.verificationStatus)} /><StatusBadge status={effectiveStatus(event.effectiveStatus, event.freshness, event.verificationStatus)} /></div><Evidence source={event.source} freshness={event.freshness} /><Observation source={event.source} time={event.observedAt} /></article></li>)}</ul> : <PanelState result={result} feed="events" empty={t("panel.noEvent")} />}
-      </OverviewPanel>
     </div><aside className="overview-sidebar" aria-label={`${t("heading.alerts")} ${t("heading.reports")}`}>
       <OverviewPanel id="alerts-title" title={t("alert.title")} icon="announcement" to="/announcements" caption={t("alert.caption")}>
         {alerts.length ? <ul className="overview-bulletins">{alerts.map((alert) => <li className={`overview-bulletin overview-bulletin--${alert.severity === "WATCH" ? "warning" : alert.severity.toLowerCase()}`} key={alert.id}><article><div className="badge-row"><StatusBadge status={alert.severity} /><FreshnessBadge freshness="UNKNOWN" /><SourceBadge type={alert.sourceType} /></div><h3>{alert.title}</h3><p>{alert.message}</p><div className="overview-cell-meta"><DataTimestamp value={alert.triggeredAt} label={t("label.alertStarted")} /></div></article></li>)}</ul> : <PanelState result={result} feed="alerts" empty={t("panel.noAlert")} />}
       </OverviewPanel>
       <OverviewPanel id="reports-title" title={t("report.title")} icon="people" to="/reports" caption={t("report.caption")}>
-        {reports.length ? <ul className="overview-report-list">{reports.map((report) => <li key={report.id}><article><div className="overview-report-thumbnail">{report.media[0] ? <ReportMediaImage media={report.media[0]} /> : <span>{t("report.noImage")}</span>}</div><div className="overview-report-copy"><Link className="overview-report-link" to={`/reports?report=${encodeURIComponent(report.id)}`}><div><h3>{t(reportLabelKeys[report.type])}</h3><p>{report.description}</p></div></Link><div className="badge-row"><SourceBadge type="COMMUNITY" /><span className="badge">{t("report.verified")}</span></div><small><DataTimestamp value={report.createdAt} label={t("label.reportSubmitted")} /></small></div></article></li>)}</ul> : <PanelState result={result} feed="reports" empty={t("panel.noReport")} />}
+        {reports.length ? <ul className="overview-report-list">{reports.map((report) => <li key={report.id}><article><div className="overview-report-thumbnail">{report.media[0] ? <ReportMediaImage media={report.media[0]} /> : <span>{t("report.noImage")}</span>}</div><div className="overview-report-copy"><Link className="overview-report-link" to={`/reports?report=${encodeURIComponent(report.id)}`}><div><h3>{t(reportLabelKeys[report.type])}</h3><p>{report.description}</p></div></Link><div className="badge-row"><SourceBadge type="COMMUNITY" /><span className="badge">{t(report.status === "VERIFIED" ? "report.verified" : "report.unreviewed")}</span></div><small><DataTimestamp value={report.createdAt} label={t("label.reportSubmitted")} /></small></div></article></li>)}</ul> : <PanelState result={result} feed="reports" empty={t("panel.noReport")} />}
         <p className="overview-footer-note">{t("report.footer")}</p>
       </OverviewPanel>
     </aside></div>

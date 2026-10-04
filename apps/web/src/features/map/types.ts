@@ -1,4 +1,5 @@
 import type { Freshness, SourceRef, VerificationStatus } from "../../shared/types/flood";
+import type { PublicationStatus, ReportStatus } from "../reports/types";
 
 export type Position = [longitude: number, latitude: number];
 export type PointGeometry = { type: "Point"; coordinates: Position };
@@ -35,7 +36,8 @@ export type RoadFeature = {
 };
 export type CommunityReportFeature = {
   id: string; type: "FLOOD" | "ROAD" | "OTHER"; description: string; location: PointGeometry;
-  estimatedWaterDepthM: number | null; status: "VERIFIED"; verificationStatus: "VERIFIED";
+  estimatedWaterDepthM: number | null; status: Extract<ReportStatus, "PENDING" | "VERIFIED">; verificationStatus: Extract<ReportStatus, "PENDING" | "VERIFIED">;
+  publicationStatus?: PublicationStatus;
   sourceType: "COMMUNITY"; createdAt: string; updatedAt: string; verifiedAt: string | null; verifiedBy: string | null;
   media: { id: string; url: string }[];
 };
@@ -58,5 +60,5 @@ export type MapSelectHandler = (selection: MapSelection, position?: Position) =>
 
 export const layerKeys: LayerKey[] = ["flood", "water", "risk", "roads", "reports"];
 export const layerLabels: Record<LayerKey, string> = {
-  flood: "เหตุการณ์น้ำ", water: "สถานีวัดน้ำ", risk: "พื้นที่เสี่ยง", roads: "สภาพถนน", reports: "รายงานชุมชนที่ยืนยันแล้ว"
+  flood: "เหตุการณ์น้ำ", water: "สถานีวัดน้ำ", risk: "พื้นที่เสี่ยง", roads: "สภาพถนน", reports: "รายงานชุมชน"
 };

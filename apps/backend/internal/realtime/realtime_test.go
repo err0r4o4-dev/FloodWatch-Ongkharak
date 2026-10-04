@@ -82,6 +82,17 @@ func TestPublisherRejectsPrivateOrOversizedEvents(t *testing.T) {
 	}
 }
 
+func TestReportUpdatedIsCommunityOnlyCanonicalRefetchSignal(t *testing.T) {
+	event := Event{EventID: uuid.NewString(), EventType: "report.updated", OccurredAt: time.Now().UTC(), PublishedAt: time.Now().UTC(), SourceType: SourceCommunity, ResourceType: ResourceCommunityReport, ResourceID: uuid.NewString(), PayloadVersion: PayloadVersion1, Payload: json.RawMessage(`{}`)}
+	if err := event.Validate(); err != nil {
+		t.Fatalf("report update rejected: %v", err)
+	}
+	event.SourceType = SourceOfficial
+	if err := event.Validate(); !errors.Is(err, ErrInvalidEvent) {
+		t.Fatalf("official report update = %v", err)
+	}
+}
+
 func TestIsMissingStreamErrorRecognizesRedisMissingKeyReply(t *testing.T) {
 	if !isMissingStreamError(errors.New("ERR no such key")) {
 		t.Fatal("missing-key reply was not recognized")

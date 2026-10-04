@@ -9,8 +9,10 @@ import (
 	"fmt"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/floodwatch-ongkharak/backend/internal/report"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -70,8 +72,8 @@ func (repository *Repository) Get(ctx context.Context, id string) (report.Report
 	return item, nil
 }
 
-func (repository *Repository) ListVerified(ctx context.Context, filter report.ListFilter) ([]report.Report, error) {
-	query := reportSelect + ` WHERE r.status='VERIFIED'`
+func (repository *Repository) ListPublic(ctx context.Context, filter report.ListFilter) ([]report.Report, error) {
+	query := reportSelect + ` WHERE r.status IN ('PENDING','VERIFIED')`
 	arguments := []any{}
 	if filter.BBox != nil {
 		query += ` AND r.location && ST_MakeEnvelope($1,$2,$3,$4,4326)`
@@ -80,6 +82,38 @@ func (repository *Repository) ListVerified(ctx context.Context, filter report.Li
 	query += fmt.Sprintf(` ORDER BY r.created_at DESC LIMIT $%d OFFSET $%d`, len(arguments)+1, len(arguments)+2)
 	arguments = append(arguments, filter.Page.Limit, filter.Page.Offset)
 	return repository.list(ctx, query, arguments...)
+}
+
+func (repository *Repository) GetAdmin(ctx context.Context, id string) (report.Report, error) {
+	transaction, err := repository.pool.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.RepeatableRead, AccessMode: pgx.ReadOnly})
+	if err != nil {
+		return report.Report{}, fmt.Errorf("begin admin report read: %w", err)
+	}
+	defer transaction.Rollback(ctx)
+	item, err := readAdminReport(ctx, transaction, id)
+	if err != nil {
+		return report.Report{}, err
+	}
+	if err := transaction.Commit(ctx); err != nil {
+		return report.Report{}, fmt.Errorf("commit admin report read: %w", err)
+	}
+	return item, nil
+}
+
+func readAdminReport(ctx context.Context, transaction pgx.Tx, id string) (report.Report, error) {
+	item, err := scanReport(transaction.QueryRow(ctx, reportSelect+` WHERE r.id=$1`, id))
+	if err != nil {
+		return report.Report{}, fmt.Errorf("read admin report: %w", mapped(err))
+	}
+	item.Media, err = listReportMedia(ctx, transaction, id)
+	if err != nil {
+		return report.Report{}, err
+	}
+	item.ReviewHistory, err = listReviewHistory(ctx, transaction, id)
+	if err != nil {
+		return report.Report{}, err
+	}
+	return item, nil
 }
 
 func (repository *Repository) ListMine(ctx context.Context, userID string, page report.Page) ([]report.Report, error) {
@@ -103,23 +137,84 @@ func (repository *Repository) UpdatePending(ctx context.Context, id string, inpu
 }
 
 func (repository *Repository) Review(ctx context.Context, id string, status report.Status, reviewerID, reason string, expectedUpdatedAt time.Time) (report.Report, error) {
-	var query string
-	var arguments []any
-	if status == report.StatusVerified {
-		query = `UPDATE community_reports SET status='VERIFIED', verified_at=CURRENT_TIMESTAMP, verified_by=$2, reviewed_at=CURRENT_TIMESTAMP, reviewed_by=$2, rejection_reason=NULL, updated_at=GREATEST(clock_timestamp(), updated_at + interval '1 microsecond') WHERE id=$1 AND status='PENDING' AND updated_at=$3`
-		arguments = []any{id, reviewerID, expectedUpdatedAt}
-	} else {
-		query = `UPDATE community_reports SET status='REJECTED', verified_at=NULL, verified_by=NULL, reviewed_at=CURRENT_TIMESTAMP, reviewed_by=$3, rejection_reason=$2, updated_at=GREATEST(clock_timestamp(), updated_at + interval '1 microsecond') WHERE id=$1 AND status='PENDING' AND updated_at=$4`
-		arguments = []any{id, nullableReason(reason), reviewerID, expectedUpdatedAt}
+	reason = strings.TrimSpace(reason)
+	if uuid.Validate(id) != nil || uuid.Validate(reviewerID) != nil || expectedUpdatedAt.IsZero() || utf8.RuneCountInString(reason) > 500 || (status == report.StatusVerified && reason != "") || (status != report.StatusVerified && reason == "") {
+		return report.Report{}, report.ErrInvalid
 	}
-	command, err := repository.pool.Exec(ctx, query, arguments...)
+	transaction, err := repository.pool.Begin(ctx)
 	if err != nil {
-		return report.Report{}, fmt.Errorf("review report: %w", mapped(err))
+		return report.Report{}, fmt.Errorf("begin report review: %w", err)
 	}
-	if command.RowsAffected() != 1 {
+	defer transaction.Rollback(ctx)
+	var previous report.Status
+	var userID sql.NullString
+	var updatedAt time.Time
+	if err := transaction.QueryRow(ctx, `SELECT status, user_id, updated_at FROM community_reports WHERE id=$1 FOR UPDATE`, id).Scan(&previous, &userID, &updatedAt); err != nil {
+		return report.Report{}, fmt.Errorf("lock report review: %w", mapped(err))
+	}
+	if !updatedAt.Equal(expectedUpdatedAt) || !report.CanReview(previous, status) {
 		return report.Report{}, report.ErrConflict
 	}
-	return repository.Get(ctx, id)
+	if status == report.StatusVerified && userID.Valid && userID.String == reviewerID {
+		return report.Report{}, report.ErrForbidden
+	}
+	action := "VERIFY"
+	var query string
+	switch status {
+	case report.StatusVerified:
+		query = `UPDATE community_reports SET status='VERIFIED', verified_at=CURRENT_TIMESTAMP, verified_by=$2, reviewed_at=CURRENT_TIMESTAMP, reviewed_by=$2, rejection_reason=NULL, updated_at=GREATEST(clock_timestamp(), updated_at + interval '1 microsecond') WHERE id=$1`
+	case report.StatusRejected:
+		action = "REMOVE"
+		query = `UPDATE community_reports SET status='REJECTED', verified_at=NULL, verified_by=NULL, reviewed_at=CURRENT_TIMESTAMP, reviewed_by=$2, rejection_reason=$3, updated_at=GREATEST(clock_timestamp(), updated_at + interval '1 microsecond') WHERE id=$1`
+	case report.StatusPending:
+		action = "RESTORE"
+		query = `UPDATE community_reports SET status='PENDING', verified_at=NULL, verified_by=NULL, reviewed_at=NULL, reviewed_by=NULL, rejection_reason=NULL, guest_upload_token_hash=CASE WHEN guest_upload_token_hash IS NOT NULL THEN digest(gen_random_uuid()::text, 'sha256') ELSE NULL END, updated_at=GREATEST(clock_timestamp(), updated_at + interval '1 microsecond') WHERE id=$1`
+	}
+	arguments := []any{id, reviewerID}
+	if status == report.StatusPending {
+		arguments = []any{id}
+	} else if status == report.StatusRejected {
+		arguments = append(arguments, reason)
+	}
+	if _, err := transaction.Exec(ctx, query, arguments...); err != nil {
+		return report.Report{}, fmt.Errorf("review report: %w", mapped(err))
+	}
+	if _, err := transaction.Exec(ctx, `INSERT INTO community_report_reviews (id, report_id, action, previous_status, status, actor_id, reason) VALUES ($1,$2,$3,$4,$5,$6,$7)`, uuid.NewString(), id, action, previous, status, reviewerID, reason); err != nil {
+		return report.Report{}, fmt.Errorf("record report review: %w", mapped(err))
+	}
+	item, err := readAdminReport(ctx, transaction, id)
+	if err != nil {
+		return report.Report{}, err
+	}
+	if err := transaction.Commit(ctx); err != nil {
+		return report.Report{}, fmt.Errorf("commit report review: %w", err)
+	}
+	return item, nil
+}
+
+func (repository *Repository) ListReviewHistory(ctx context.Context, id string) ([]report.ReviewEvent, error) {
+	return listReviewHistory(ctx, repository.pool, id)
+}
+
+type reportQuerier interface {
+	Query(context.Context, string, ...any) (pgx.Rows, error)
+}
+
+func listReviewHistory(ctx context.Context, querier reportQuerier, id string) ([]report.ReviewEvent, error) {
+	rows, err := querier.Query(ctx, `SELECT id, action, previous_status, status, actor_id, reason, created_at FROM community_report_reviews WHERE report_id=$1 ORDER BY created_at DESC, id DESC`, id)
+	if err != nil {
+		return nil, fmt.Errorf("list report reviews: %w", err)
+	}
+	defer rows.Close()
+	items := make([]report.ReviewEvent, 0)
+	for rows.Next() {
+		var item report.ReviewEvent
+		if err := rows.Scan(&item.ID, &item.Action, &item.PreviousStatus, &item.Status, &item.ActorID, &item.Reason, &item.CreatedAt); err != nil {
+			return nil, fmt.Errorf("scan report review: %w", err)
+		}
+		items = append(items, item)
+	}
+	return items, rows.Err()
 }
 
 func (repository *Repository) CountMedia(ctx context.Context, reportID string) (int, error) {
@@ -249,7 +344,11 @@ func (repository *Repository) list(ctx context.Context, query string, arguments 
 }
 
 func (repository *Repository) listMedia(ctx context.Context, reportID string) ([]report.Media, error) {
-	rows, err := repository.pool.Query(ctx, `SELECT id, report_id, object_key, content_type, size_bytes, created_at FROM community_report_media WHERE report_id=$1 ORDER BY created_at ASC`, reportID)
+	return listReportMedia(ctx, repository.pool, reportID)
+}
+
+func listReportMedia(ctx context.Context, querier reportQuerier, reportID string) ([]report.Media, error) {
+	rows, err := querier.Query(ctx, `SELECT id, report_id, object_key, content_type, size_bytes, created_at FROM community_report_media WHERE report_id=$1 ORDER BY created_at ASC`, reportID)
 	if err != nil {
 		return nil, fmt.Errorf("list report media: %w", err)
 	}
@@ -302,13 +401,6 @@ func nullableUserID(userID string) any {
 		return nil
 	}
 	return userID
-}
-
-func nullableReason(reason string) any {
-	if strings.TrimSpace(reason) == "" {
-		return nil
-	}
-	return reason
 }
 
 func mapped(err error) error {

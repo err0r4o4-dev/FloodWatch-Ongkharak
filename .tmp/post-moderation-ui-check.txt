@@ -1,0 +1,2 @@
+PASS 390: review, mandatory reason, cancel, remove, public absence, restore-unreviewed, history, Escape/focus, 44px targets and no overflow; synthetic fixtures only.
+PASS 1440: review, mandatory reason, cancel, remove, public absence, restore-unreviewed, history, Escape/focus, 44px targets and no overflow; synthetic fixtures only.
