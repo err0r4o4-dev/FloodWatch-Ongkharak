@@ -1,0 +1,5 @@
+No projects matched the filters "D:\!Project\FloodWatch-Ongkharak(Web_Application)" in "D:\!Project\FloodWatch-Ongkharak(Web_Application)"
+JSON report written to D:/!Project/FloodWatch-Ongkharak(Web_Application)/.tmp/shared-map-full.json
+undefined
+D:\!Project\FloodWatch-Ongkharak(Web_Application)\apps\web:
+ ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL  Command "vitest" not found

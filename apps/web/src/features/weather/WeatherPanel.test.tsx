@@ -33,7 +33,10 @@ function renderPanel() {
   return render(<LanguageProvider><WeatherPanel /></LanguageProvider>);
 }
 
-beforeEach(() => localStorage.setItem(LANGUAGE_STORAGE_KEY, "th"));
+beforeEach(() => {
+  vi.spyOn(Date, "now").mockReturnValue(Date.parse("2026-10-04T04:05:00Z"));
+  localStorage.setItem(LANGUAGE_STORAGE_KEY, "th");
+});
 afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); localStorage.removeItem(LANGUAGE_STORAGE_KEY); });
 
 describe("WeatherPanel", () => {
@@ -44,7 +47,7 @@ describe("WeatherPanel", () => {
     expect(screen.getByRole("status", { name: "กำลังโหลดข้อมูลสภาพอากาศ" })).toBeInTheDocument();
     expect(await screen.findByRole("region", { name: "สภาพอากาศองครักษ์" })).toHaveTextContent("ฝนตกเล็กน้อย");
     expect(screen.getByText("1.5 มม. / 15 นาที")).toBeInTheDocument();
-    expect(screen.getByText(/แบบจำลองสภาพอากาศ ไม่ใช่สถานีตรวจวัด/)).toBeInTheDocument();
+    expect(screen.queryByText("แบบจำลองสภาพอากาศ ไม่ใช่สถานีตรวจวัด")).not.toBeInTheDocument();
     expect(screen.getByText(/ไม่ใช่ข้อมูลยืนยันความปลอดภัยน้ำท่วม/)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Open-Meteo" })).toHaveAttribute("href", "https://open-meteo.com/");
     expect(screen.getByText(/เวลาแบบจำลอง/)).toBeInTheDocument();

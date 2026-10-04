@@ -42,6 +42,7 @@ type Dependencies struct {
 	NotificationService       *notification.Service
 	PublicNotificationService handler.PublicNotificationService
 	WeatherService            handler.WeatherService
+	ExternalDataService       handler.ExternalDataService
 	RedisClient               redis.UniversalClient
 	CookieOptions             handler.CookieOptions
 }
@@ -59,6 +60,7 @@ func New(dependencies Dependencies) http.Handler {
 	router.Route("/api/v1", func(api chi.Router) {
 		weatherLimiter := middleware.NewRateLimiter()
 		api.With(weatherLimiter.Limit("weather-read", 60, time.Minute)).Get("/weather/ongkharak", handler.NewWeatherHandler(dependencies.WeatherService).ServeHTTP)
+		api.With(weatherLimiter.Limit("external-data-read", 60, time.Minute)).Get("/external-data/ongkharak", handler.NewExternalDataHandler(dependencies.ExternalDataService).ServeHTTP)
 		var googleService handler.GoogleAuthentication
 		if dependencies.GoogleService != nil {
 			googleService = dependencies.GoogleService

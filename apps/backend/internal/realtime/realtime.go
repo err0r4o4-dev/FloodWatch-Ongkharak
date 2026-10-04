@@ -25,12 +25,13 @@ var ErrInvalidEvent = errors.New("invalid public realtime event")
 type EventType string
 
 const (
-	EventWaterLevelUpdated EventType = "water_level.updated"
-	EventFloodEventCreated EventType = "flood_event.created"
-	EventFloodEventUpdated EventType = "flood_event.updated"
-	EventRoadStatusChanged EventType = "road.status.changed"
-	EventReportVerified    EventType = "report.verified"
-	EventAlertCreated      EventType = "alert.created"
+	EventWaterLevelUpdated   EventType = "water_level.updated"
+	EventFloodEventCreated   EventType = "flood_event.created"
+	EventFloodEventUpdated   EventType = "flood_event.updated"
+	EventRoadStatusChanged   EventType = "road.status.changed"
+	EventReportVerified      EventType = "report.verified"
+	EventAlertCreated        EventType = "alert.created"
+	EventExternalDataUpdated EventType = "external_data.updated"
 )
 
 type SourceType string
@@ -39,6 +40,7 @@ const (
 	SourceOfficial  SourceType = "OFFICIAL"
 	SourceCommunity SourceType = "COMMUNITY"
 	SourceAI        SourceType = "AI"
+	SourceModel     SourceType = "MODEL"
 )
 
 type ResourceType string
@@ -49,6 +51,7 @@ const (
 	ResourceRoad            ResourceType = "ROAD"
 	ResourceCommunityReport ResourceType = "COMMUNITY_REPORT"
 	ResourceAlert           ResourceType = "ALERT"
+	ResourceExternalData    ResourceType = "EXTERNAL_DATA"
 )
 
 type Event struct {
@@ -67,7 +70,11 @@ func (event Event) Validate() error {
 	if _, err := uuid.Parse(event.EventID); err != nil || event.OccurredAt.IsZero() || event.PublishedAt.IsZero() {
 		return ErrInvalidEvent
 	}
-	if !validPublicPair(event.EventType, event.ResourceType) || !publicSourceType(event.SourceType) {
+	modelEvidence := event.EventType == EventExternalDataUpdated && event.ResourceType == ResourceExternalData && event.SourceType == SourceModel
+	if !validPublicPair(event.EventType, event.ResourceType) || (!publicSourceType(event.SourceType) && !modelEvidence) {
+		return ErrInvalidEvent
+	}
+	if event.EventType == EventExternalDataUpdated && event.SourceType != SourceOfficial && event.SourceType != SourceModel {
 		return ErrInvalidEvent
 	}
 	if event.EventType == EventReportVerified && event.SourceType != SourceCommunity {
@@ -237,6 +244,8 @@ func validPublicPair(eventType EventType, resourceType ResourceType) bool {
 		return resourceType == ResourceCommunityReport
 	case EventAlertCreated:
 		return resourceType == ResourceAlert
+	case EventExternalDataUpdated:
+		return resourceType == ResourceExternalData
 	default:
 		return false
 	}

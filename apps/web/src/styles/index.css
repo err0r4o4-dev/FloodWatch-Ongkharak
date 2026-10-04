@@ -47,6 +47,8 @@
   --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
   --z-header: 10;
   --z-bottom-nav: 20;
+  --z-weather-popup: 1002;
+  --z-map-expanded: calc(var(--z-weather-popup) + 1);
   --sidebar-width: 14.5rem;
   --touch-target: 2.75rem;
   --breakpoint-compact: 40rem;

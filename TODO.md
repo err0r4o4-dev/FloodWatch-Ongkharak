@@ -312,9 +312,27 @@ Release boundary: running application services and database are not changed by t
 
 Full frontend suite passes 341/344; the same three pre-existing AppShell logout-confirmation tests fail. Typecheck/full typechecked production build remain blocked by existing unused `signingOut` and `handleLogout` in `AppShell.tsx`; standalone Vite build passes with the existing chunk-size warning. No backend, dependencies, database, runtime configuration, migrations or production services are changed. The pre-existing `.env.example` edits are preserved. No commit/push occurred; physical devices and Safari remain unverified.
 
+### Approved UI follow-up — Floating weather popup (2026-10-04)
+
+- [x] Replace Sidebar/Overview cards with one viewport-fixed lower-left popup on desktop, tablet and mobile, including the landing page. Preserve Sidebar caution and landing illustrations; omit the popup on authentication routes.
+- [x] Start with temperature/condition, humidity, wind, model freshness/time and provider attribution. Add explicit Thai/English Show all, centered native modal details with the summary hidden, close/Escape focus return, and a cloud-only minimized button. Keep state in this tab's sessionStorage with an in-memory fallback.
+- [x] Verify 76 focused weather/Overview/landing/shell/realtime tests, standalone Vite bundling and scoped diff checks. Edge checks cover eight viewport sizes from 320px through 1440px, portrait/landscape, fixed positioning while scrolling, bottom-navigation clearance, centered details, keyboard/touch close and reopen, persisted minimize on reload, API-request sharing, stale/unavailable/error/loading, English and 320px/200% text. Add 1366x1024 touch emulation for iPad-style navigation. Evidence uses synthetic intercepted data in `.tmp/weather-floating-ui`, not live local conditions or physical devices.
+
+Whole-workspace verification snapshot: 347/354 tests pass; seven tests fail in logout, map and concurrent external-data work, and the concurrent ExternalDataPanel suite cannot import its not-yet-present implementation. Typecheck is blocked by the existing unused AppShell logout declarations and concurrent external-data errors. No weather-popup type errors are reported. Tests retain weather-failure isolation and realtime invalidation coverage; the existing WeatherPanel fixture clock is now deterministic rather than expiring with wall time. Concurrent backend/map/external-data edits and the added realtime provenance test are preserved. No API contracts, dependencies, migrations, runtime configuration or production services are changed; no commit/push occurs. Safari and real hardware remain unverified.
+
 ## Future Skills
 
 - [ ] Add narrower skills only when a later phase exposes meaningful recurring practices not covered by the Phase 0 core.
+
+## Phase 11 follow-up — External evidence flow (2026-10-04)
+
+- [x] Implement allowlisted worker adapters, private raw archives, versioned database snapshots and provider health for ThaiWater water/rain/gates, ECMWF/GFS/ICON/ensemble, GloFAS, HII WRF and TMD CAP.
+- [x] Add public external-data endpoint, scoped SSE refresh and bilingual overview panel; preserve MODEL versus OFFICIAL and UNKNOWN versus SAFE.
+- [x] Protect canonical station readings and water alert rules with explicit MSL datum/station scope; seed no thresholds and activate no providers by default.
+- [x] Verify live read-only GET/normalization for all ten providers; HII stays null/UNKNOWN until unit/time semantics are confirmed, and empty TMD results are not an all-clear.
+- [x] Verify migrations 1–20 plus eleven external-repository integration tests on disposable PostGIS; rollback/reapply disables all water-level rules, finalizes pending explicit-datum evidence events and preserves FK-linked alert/reading history. Test database/role/container removed; application database unchanged.
+
+Fresh verification: backend `go test ./... -count=1`, `go vet ./...`, command builds and Compose syntax checks pass. External-data/realtime frontend focused tests pass 22/22; rendered synthetic fixtures including omitted HII optional fields fit 320/390/1440px and keyboard retry works. Review regressions cover preceding-hour rainfall, CAP newest-first/update-only/outside-target geography, HII wire compatibility, retained outage/15-second stalled-request timeout UNKNOWN, normal poll health and safe rollback. Broader overview tests retain a concurrent duplicate-weather-widget failure; typecheck is blocked by unrelated unused declarations in AppShell/SituationMap and in-progress shared-map imports/fixtures. Vite-only bundling passes with a chunk-size warning. See `docs/architecture/external-data.md` for flow, enablement, limits and rollback data loss. Running API/worker services have not been migrated/restarted by this task; production activation remains a separate release step.
 
 ## Approved feature — Dedicated report creation and location labels (2026-10-04)
 
@@ -335,3 +353,9 @@ Release boundary: the running application database and services were not migrate
 Fixed missing Vite `/api` forwarding after reproducing `localhost:5173`/IPv6 returning 404 while IPv4 Caddy and the direct backend returned the expected validation response. Host Vite defaults to `http://127.0.0.1:8080`; Compose sets `VITE_API_PROXY_TARGET=http://api:8080`, preserving request paths and origins. Two proxy regressions plus report form/API tests pass 24/24; scoped diff check passes. Typecheck still reports the existing AppShell unused logout declarations.
 
 With approved execution, recreated only the development web service and applied existing migrations 16–19 to the running development database (previously clean at version 15). This supersedes the earlier local release boundary above for this development environment only; no production deployment, account deletion, real report submission, API/worker restart or rollback occurred. Live checks through localhost:5173, IPv4:5173 and localhost:15173 now return GET reports 200 and POST empty payload 400/INVALID_REQUEST instead of 404 or missing-schema 500. No test report was inserted into the application database.
+
+### Follow-up — Shared situation/report map flow (2026-10-04)
+
+Implemented the approved shared in-memory camera and 60-second GPS cache, centered/away SVG button states, common metric zoom controls, and report-map expansion without moving the incident pin or losing the draft. Both maps reach the real 50 m scale in the Ongkharak view. Resize keeps geographic center; narrow-screen controls remain in one accessible column and scale labels remain clear of attribution. Existing verified-only publication rules remain unchanged.
+
+Map layer requests now render progressively and retain explicitly labeled previous results during refresh, without allowing old/aborted responses to overwrite newer bounds or presenting failed-layer evidence as current. Validation and remaining environment blockers are recorded after final checks; no dependency, backend/schema change, real GPS history persistence, service restart, production deployment or real report submission is part of this follow-up.

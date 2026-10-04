@@ -24,6 +24,9 @@ const th = {
   "allLayersOff": "ปิดทุกชั้นข้อมูล",
   "mapStatus.loaded": "ข้อมูลในขอบเขตที่โหลด",
   "mapStatus.loading": "กำลังโหลดข้อมูลตามขอบเขตแผนที่",
+  "mapStatus.previous": "กำลังแสดงข้อมูลก่อนหน้าระหว่างปรับปรุง อาจไม่ตรงกับขอบเขตนี้และไม่ใช่การยืนยันว่าปลอดภัย",
+  "mapStatus.updating": "กำลังอัปเดตข้อมูลตามขอบเขตปัจจุบัน",
+  "mapStatus.progress": "มีข้อมูลแล้ว {count} รายการ ขณะที่ชั้นข้อมูลอื่นกำลังอัปเดต",
   "mapStatus.error": "ไม่สามารถโหลดข้อมูลแผนที่ได้ · สถานะพื้นที่ไม่ทราบ",
   "mapStatus.retry": "ลองอีกครั้ง",
   "mapStatus.partial": "ข้อมูลบางส่วนไม่พร้อมใช้งาน: {layers}",
@@ -130,7 +133,9 @@ const th = {
   "map.reset": "กลับมุมมองเริ่มต้น",
   "map.fit": "ปรับให้พอดีกับข้อมูล",
   "map.origin": "จุดเริ่มต้น",
-  "map.destination": "จุดหมาย"
+  "map.destination": "จุดหมาย",
+  "map.location": "ตำแหน่งปัจจุบัน",
+  "map.locationError": "ไม่สามารถดึงตำแหน่งปัจจุบันได้"
 } as const;
 
 export default th;

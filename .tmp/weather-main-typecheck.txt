@@ -1,0 +1,3 @@
+src/app/AppShell.tsx(55,10): error TS6133: 'signingOut' is declared but its value is never read.
+src/app/AppShell.tsx(57,9): error TS6133: 'handleLogout' is declared but its value is never read.
+src/features/map/components/SituationMap.tsx(54,10): error TS6133: 'zoom' is declared but its value is never read.

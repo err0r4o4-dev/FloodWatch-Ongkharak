@@ -1,3 +1,33 @@
+.report-location-workspace { min-width: 0; }
+
+.report-location-workspace.is-expanded {
+  position: fixed;
+  z-index: var(--z-map-expanded);
+  inset: 0;
+  height: 100dvh;
+  overflow-y: auto;
+  padding: max(var(--space-3), env(safe-area-inset-top)) max(var(--space-3), env(safe-area-inset-right)) max(var(--space-3), env(safe-area-inset-bottom)) max(var(--space-3), env(safe-area-inset-left));
+  background: var(--color-canvas);
+}
+
+.report-location-workspace.is-expanded > .report-location-picker {
+  display: flex;
+  height: 100%;
+  min-height: 0;
+  flex-direction: column;
+  border: 0;
+}
+
+.report-location-workspace.is-expanded .report-location-map { height: auto; min-height: 18rem; flex: 1; }
+
+.report-location-map .shared-map-controls {
+  top: var(--space-3);
+  right: var(--space-3);
+  width: var(--touch-target);
+}
+
+.report-location-map .leaflet-control-scale { margin-bottom: var(--space-12); }
+
 .report-location-picker {
   display: grid;
   gap: var(--space-3);
@@ -38,19 +68,13 @@
 }
 
 .report-location-map .leaflet-container {
-  position: relative;
+  position: absolute;
+  inset: 0;
   z-index: 0;
   width: 100%;
   height: 100%;
 }
 
-.report-location-map .leaflet-control-zoom a {
-  width: var(--touch-target);
-  height: var(--touch-target);
-  line-height: var(--touch-target);
-}
-
-.report-location-map__locate,
 .report-location-picker__action {
   display: inline-flex;
   min-height: var(--touch-target);
@@ -67,43 +91,16 @@
   cursor: pointer;
 }
 
-.report-location-map__locate {
-  position: absolute;
-  right: var(--space-3);
-  bottom: var(--space-8);
-  z-index: 1;
-  width: var(--touch-target);
-  min-width: var(--touch-target);
-  height: var(--touch-target);
-  padding: 0;
-  box-shadow: var(--shadow-surface);
-}
-
-.report-location-picker__visually-hidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-.report-location-map__locate:hover,
 .report-location-picker__action:hover {
   border-color: var(--color-primary);
   background: var(--color-canvas-soft);
 }
 
-.report-location-map__locate:disabled,
 .report-location-picker__action:disabled {
   cursor: wait;
   opacity: 0.7;
 }
 
-.report-location-map__locate:focus-visible,
 .report-location-picker__action:focus-visible {
   outline: 3px solid var(--color-primary);
   outline-offset: 2px;
@@ -203,14 +200,13 @@
     height: 16rem;
   }
 
-  .report-location-map__locate {
+  .report-location-map .shared-map-controls {
     right: var(--space-2);
-    bottom: var(--space-8);
+    top: var(--space-2);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .report-location-map__locate,
   .report-location-picker__action {
     transition: none;
   }

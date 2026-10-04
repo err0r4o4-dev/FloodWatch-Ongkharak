@@ -83,10 +83,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     <aside className="desktop-sidebar">
       <NavLink to="/" className="brand" aria-label={t("floodWatchOngkharakHome")}><img className="brand__image" src="/flood-watch-mark.svg" alt="" /><span><strong>Flood Watch</strong><small>Ongkharak</small></span></NavLink>
       <Navigation />
-      <div className="sidebar-footer">
-        <aside className="sidebar-status" aria-labelledby="sidebar-status-title"><span className="sidebar-status__dot" aria-hidden="true" /><div><strong id="sidebar-status-title">{t("pleaseNote")}</strong><p>{t("unavailableDataDoesNotMeanAnArea")}</p></div></aside>
-        <WeatherWidget />
-      </div>
+      <aside className="sidebar-status" aria-labelledby="sidebar-status-title"><span className="sidebar-status__dot" aria-hidden="true" /><div><strong id="sidebar-status-title">{t("pleaseNote")}</strong><p>{t("unavailableDataDoesNotMeanAnArea")}</p></div></aside>
     </aside>
     <div className="shell-main"><div className="shell-top">
       <header className="institution-header"><div className="w-full max-w-[1600px] mx-auto px-4 sm:px-5 md:px-5 lg:px-5 flex items-center justify-between gap-4"><span className="institution-header__name">{t("waterSituationMonitoringCentreOngkharakNakhonNayok")}</span><div className="institution-header__actions"><LanguageSwitcher /></div></div></header>
@@ -97,5 +94,6 @@ export function AppShell({ children }: { children: ReactNode }) {
       </main>
     </div>
     <Navigation mobile />
+    <WeatherWidget hasBottomNavigation />
   </div></WeatherProvider>;
 }

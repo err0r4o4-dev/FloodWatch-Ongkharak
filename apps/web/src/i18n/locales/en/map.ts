@@ -26,6 +26,9 @@ const en: Record<keyof typeof th, string> = {
   "allLayersOff": "All data layers are off",
   "mapStatus.loaded": "Data loaded for this view",
   "mapStatus.loading": "Loading data for the map view",
+  "mapStatus.previous": "Showing previous results while updating; they may not match this view and do not indicate safety",
+  "mapStatus.updating": "Updating data for the current map view",
+  "mapStatus.progress": "{count} items available so far while other layers update",
   "mapStatus.error": "Map data could not be loaded · Area status is unknown",
   "mapStatus.retry": "Try again",
   "mapStatus.partial": "Some data is unavailable: {layers}",
@@ -132,7 +135,9 @@ const en: Record<keyof typeof th, string> = {
   "map.reset": "Reset view",
   "map.fit": "Fit map to data",
   "map.origin": "Starting point",
-  "map.destination": "Destination"
+  "map.destination": "Destination",
+  "map.location": "My location",
+  "map.locationError": "Could not retrieve current location"
 };
 
 export default en;

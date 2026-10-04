@@ -122,7 +122,7 @@ func (repository *Repository) CreateStation(ctx context.Context, item flood.Wate
 
 func (repository *Repository) ListReadings(ctx context.Context, stationID string, filter flood.ListFilter) ([]flood.WaterReading, error) {
 	rows, err := repository.pool.Query(ctx, `SELECT r.id, r.station_id, d.id, d.code, d.name, d.source_type, r.observed_at, r.received_at,
-		r.water_level_m::double precision, r.flow_rate_m3s::double precision, r.rainfall_mm::double precision, r.verification_status, r.confidence::double precision
+		r.water_level_m::double precision, r.flow_rate_m3s::double precision, r.rainfall_mm::double precision, r.verification_status, r.confidence::double precision, r.water_level_datum, r.rainfall_period_seconds
 		FROM water_readings r JOIN data_sources d ON d.id=r.source_id
 		WHERE r.station_id=$1 AND ($2::timestamptz IS NULL OR r.observed_at >= $2) AND ($3::timestamptz IS NULL OR r.observed_at <= $3)
 		ORDER BY r.observed_at DESC, r.id DESC LIMIT $4 OFFSET $5`, stationID, filter.From, filter.To, filter.Page.Limit, filter.Page.Offset)
@@ -133,7 +133,7 @@ func (repository *Repository) ListReadings(ctx context.Context, stationID string
 	items := make([]flood.WaterReading, 0)
 	for rows.Next() {
 		var item flood.WaterReading
-		if err := rows.Scan(&item.ID, &item.StationID, &item.Source.ID, &item.Source.Code, &item.Source.Name, &item.Source.SourceType, &item.ObservedAt, &item.ReceivedAt, &item.WaterLevelM, &item.FlowRateM3S, &item.RainfallMM, &item.VerificationStatus, &item.Confidence); err != nil {
+		if err := rows.Scan(&item.ID, &item.StationID, &item.Source.ID, &item.Source.Code, &item.Source.Name, &item.Source.SourceType, &item.ObservedAt, &item.ReceivedAt, &item.WaterLevelM, &item.FlowRateM3S, &item.RainfallMM, &item.VerificationStatus, &item.Confidence, &item.WaterLevelDatum, &item.RainfallPeriodSeconds); err != nil {
 			return nil, fmt.Errorf("scan water reading: %w", err)
 		}
 		items = append(items, item)
@@ -146,7 +146,7 @@ func (repository *Repository) ListReadings(ctx context.Context, stationID string
 
 func (repository *Repository) CreateReading(ctx context.Context, item flood.WaterReading) (flood.WaterReading, error) {
 	err := repository.pool.QueryRow(ctx, `INSERT INTO water_readings (id, station_id, source_id, observed_at, received_at, water_level_m, flow_rate_m3s, rainfall_mm, verification_status, confidence)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING received_at`, item.ID, item.StationID, item.Source.ID, item.ObservedAt, item.ReceivedAt, item.WaterLevelM, item.FlowRateM3S, item.RainfallMM, item.VerificationStatus, item.Confidence).Scan(&item.ReceivedAt)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING received_at, water_level_datum, rainfall_period_seconds`, item.ID, item.StationID, item.Source.ID, item.ObservedAt, item.ReceivedAt, item.WaterLevelM, item.FlowRateM3S, item.RainfallMM, item.VerificationStatus, item.Confidence).Scan(&item.ReceivedAt, &item.WaterLevelDatum, &item.RainfallPeriodSeconds)
 	if err != nil {
 		return flood.WaterReading{}, fmt.Errorf("create water reading: %w", mapped(err))
 	}

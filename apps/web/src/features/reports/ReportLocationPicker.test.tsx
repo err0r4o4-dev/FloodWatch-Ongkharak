@@ -4,17 +4,22 @@ import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ReportLocationPicker } from "./ReportLocationPicker";
 import type { ReportLocation } from "./types";
+import { mapSettings, resetMapSession, setMapViewport, setUserPosition } from "../../shared/map/mapSession";
 
-const { map, mapEvents, circleMarkers, circles, markers } = vi.hoisted(() => ({
+const { map, mapEvents, circleMarkers, circles, markers, containers } = vi.hoisted(() => ({
   map: {
     getCenter: vi.fn(() => ({ lat: 14.4, lng: 101.4 })),
     getZoom: vi.fn(() => 11),
-    setView: vi.fn()
+    setView: vi.fn(), getMinZoom: () => 8, getMaxZoom: () => 18,
+    zoomIn: vi.fn(), zoomOut: vi.fn(), invalidateSize: vi.fn(),
+    getContainer: () => document.createElement("div"), getSize: () => ({ x: 400, y: 300 }),
+    latLngToContainerPoint: () => ({ x: 200, y: 150 })
   },
   mapEvents: [] as Array<{ click?: (event: { latlng: { lng: number; lat: number } }) => void }>,
   circleMarkers: [] as Array<Record<string, unknown>>,
   circles: [] as Array<Record<string, unknown>>,
-  markers: [] as Array<Record<string, unknown>>
+  markers: [] as Array<Record<string, unknown>>,
+  containers: [] as Array<Record<string, unknown>>
 }));
 
 vi.mock("react-leaflet", () => ({
@@ -30,8 +35,9 @@ vi.mock("react-leaflet", () => ({
     circleMarkers.push(props);
     return null;
   },
-  MapContainer: ({ children }: { children: ReactNode }) => <div data-testid="leaflet-container">{children}</div>,
+  MapContainer: ({ children, ...props }: { children: ReactNode }) => { containers.push(props); return <div data-testid="leaflet-container">{children}</div>; },
   TileLayer: () => null,
+  ScaleControl: () => null,
   useMap: () => map,
   useMapEvents: (handlers: { click?: (event: { latlng: { lng: number; lat: number } }) => void }) => {
     mapEvents.push(handlers);
@@ -72,15 +78,43 @@ function PickerHarness({ onSelect, initialLocation = null }: { onSelect: (locati
 }
 
 afterEach(() => {
+  act(() => resetMapSession());
   vi.unstubAllGlobals();
   vi.clearAllMocks();
   mapEvents.length = 0;
   circleMarkers.length = 0;
   circles.length = 0;
   markers.length = 0;
+  containers.length = 0;
 });
 
 describe("ReportLocationPicker", () => {
+  it("shares the last viewport but prioritizes an existing report pin", () => {
+    setMapViewport({ center: [14.8, 101.8], zoom: 18 });
+    const view = render(<ReportLocationPicker location={null} onChange={vi.fn()} resetKey={1} />);
+    expect(containers.at(-1)).toMatchObject({ center: [14.8, 101.8], zoom: 18, minZoom: mapSettings.minZoom, maxZoom: mapSettings.maxZoom });
+    view.unmount();
+    render(<ReportLocationPicker location={{ type: "Point", coordinates: [101.2, 14.2] }} onChange={vi.fn()} resetKey={2} />);
+    expect(containers.at(-1)).toMatchObject({ center: [14.2, 101.2] });
+  });
+
+  it("expands and closes with Escape without remounting the map or moving the report pin", () => {
+    const onSelect = vi.fn();
+    render(<PickerHarness onSelect={onSelect} initialLocation={{ type: "Point", coordinates: [101.1, 14.2] }} />);
+    const container = screen.getByTestId("leaflet-container");
+    const expand = screen.getByRole("button", { name: "ขยายแผนที่" });
+    fireEvent.click(expand);
+    const dialog = screen.getByRole("dialog", { name: "ตำแหน่งเหตุการณ์" });
+    expect(dialog).toHaveAttribute("aria-modal", "true");
+    expect(document.body.style.overflow).toBe("hidden");
+    fireEvent.keyDown(dialog, { key: "Escape" });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByTestId("leaflet-container")).toBe(container);
+    expect(markers.at(-1)).toMatchObject({ position: [14.2, 101.1] });
+    expect(onSelect).not.toHaveBeenCalled();
+    expect(expand).toHaveFocus();
+  });
+
   it("selects map clicks as GeoJSON longitude then latitude without coordinate inputs", () => {
     const onSelect = vi.fn();
     render(<PickerHarness onSelect={onSelect} />);
@@ -96,7 +130,8 @@ describe("ReportLocationPicker", () => {
     render(<PickerHarness onSelect={vi.fn()} />);
 
     const locate = screen.getByRole("button", { name: "ไปยังตำแหน่งของฉัน" });
-    expect(locate.querySelector(".report-location-picker__visually-hidden")).toBeInTheDocument();
+    expect(locate.querySelector(".sr-only")).toBeInTheDocument();
+    expect(locate.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
   });
 
   it("does not request permission on mount and locates without changing the incident pin", () => {
@@ -106,9 +141,9 @@ describe("ReportLocationPicker", () => {
     render(<PickerHarness onSelect={onSelect} initialLocation={initialLocation} />);
 
     expect(getCurrentPosition).not.toHaveBeenCalled();
-    expect(screen.getByTestId("leaflet-container")).not.toContainElement(screen.getByRole("button", { name: "ไปยังตำแหน่งของฉัน" }));
+    expect(screen.getByTestId("leaflet-container")).toContainElement(screen.getByRole("button", { name: "ไปยังตำแหน่งของฉัน" }));
     fireEvent.click(screen.getByRole("button", { name: "ไปยังตำแหน่งของฉัน" }));
-    expect(getCurrentPosition).toHaveBeenCalledWith(expect.any(Function), expect.any(Function), { enableHighAccuracy: true, timeout: 10_000, maximumAge: 0 });
+    expect(getCurrentPosition).toHaveBeenCalledWith(expect.any(Function), expect.any(Function), { enableHighAccuracy: false, timeout: 10_000, maximumAge: 60_000 });
 
     act(() => callbacks[0].success(position(14.5, 101.5, 18)));
 
@@ -150,14 +185,18 @@ describe("ReportLocationPicker", () => {
     expect(screen.getByRole("status")).toHaveTextContent("เลือกจุดเกิดเหตุแล้ว");
   });
 
-  it("clears the previous user point while refreshing and after a failed refresh", () => {
-    const { callbacks } = installGeolocation();
+  it("reuses a fresh fix and clears the user point on a failed expired refresh", () => {
+    const { callbacks, getCurrentPosition } = installGeolocation();
     render(<PickerHarness onSelect={vi.fn()} />);
 
     fireEvent.click(screen.getByRole("button", { name: "ไปยังตำแหน่งของฉัน" }));
     act(() => callbacks[0].success(position(14.5, 101.5, 18)));
     expect(screen.getByText("ตำแหน่งของคุณอาจคลาดเคลื่อนประมาณ 18 เมตร")).toBeInTheDocument();
 
+    fireEvent.click(screen.getByRole("button", { name: "ไปยังตำแหน่งของฉัน" }));
+    expect(getCurrentPosition).toHaveBeenCalledTimes(1);
+    expect(screen.getByText("ตำแหน่งของคุณอาจคลาดเคลื่อนประมาณ 18 เมตร")).toBeInTheDocument();
+    act(() => setUserPosition({ latitude: 14.5, longitude: 101.5, accuracy: 18, timestamp: Date.now() - 60_001 }));
     fireEvent.click(screen.getByRole("button", { name: "ไปยังตำแหน่งของฉัน" }));
     expect(screen.queryByText("ตำแหน่งของคุณอาจคลาดเคลื่อนประมาณ 18 เมตร")).not.toBeInTheDocument();
     act(() => callbacks[1].failure({ code: 2, message: "unavailable" } as GeolocationPositionError));

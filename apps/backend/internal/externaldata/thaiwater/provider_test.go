@@ -60,9 +60,47 @@ func TestFetchWaterNormalizesSyntheticMSLAndUnknownDatumValues(t *testing.T) {
 	}
 }
 
+func TestFetchThaiWaterAcceptsSyntheticActualStationCoordinatesAndMinuteTimestamps(t *testing.T) {
+	tests := []struct {
+		name    string
+		kind    string
+		path    string
+		payload []byte
+		want    int
+	}{
+		{
+			name: "water", kind: "WATER", path: waterPath, want: 2,
+			payload: []byte(`{"result":"OK","data":[{"station":{"id":"189","tele_station_oldcode":"189","tele_station_name":{"th":"Synthetic actual station"},"tele_station_lat":"14.1000","tele_station_long":101.0000},"geocode":{"province_code":"26"},"waterlevel_datetime":"2026-09-29 10:00","waterlevel_msl":"1.25","waterlevel_m":"1.10"}]}`),
+		},
+		{
+			name: "rain", kind: "RAIN", path: rainPath, want: 2,
+			payload: []byte(`{"result":"OK","data":[{"station":{"id":"189","tele_station_oldcode":"189","tele_station_name":{"th":"Synthetic actual station"},"tele_station_lat":14.1,"tele_station_long":"101.0"},"geocode":{"province_code":"26"},"rainfall_datetime":"2026-09-29 10:00","rainfall_1h":"2.5","rainfall_24h":null}]}`),
+		},
+		{
+			name: "gate", kind: "GATE", path: gatePath, want: 4,
+			payload: []byte(`{"watergate_data":{"result":"OK","data":[{"station":{"id":"189","tele_station_oldcode":"189","tele_station_name":{"th":"Synthetic actual station"},"tele_station_lat":"14.1","tele_station_long":"101.0"},"geocode":{"province_code":"26"},"watergate_in":"1.0","watergate_out":"0.5","watergate_datetime_in":"2026-09-29 10:00","watergate_datetime_out":"2026-09-29 10:05","watergate_open":null,"watergate_pump":null}]}}`),
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			provider, err := NewWithFetcher(test.kind, syntheticFetcher{responses: map[string][]byte{test.path: test.payload}})
+			if err != nil {
+				t.Fatal(err)
+			}
+			batch, err := provider.Fetch(context.Background())
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(batch.Records) != test.want || batch.Records[0].Station.Latitude != 14.1 || batch.Records[0].Station.Longitude != 101 || !batch.Records[0].ObservedAt.Equal(time.Date(2026, 9, 29, 3, 0, 0, 0, time.UTC)) {
+				t.Fatalf("batch = %+v", batch)
+			}
+		})
+	}
+}
+
 func TestFetchRainSeparatesSyntheticAccumulations(t *testing.T) {
 	provider, err := NewWithFetcher("RAIN", syntheticFetcher{responses: map[string][]byte{
-		rainPath: []byte(`{"result":"OK","data":[{"station":{"id":"S1","tele_station_name":{"th":"Synthetic rain"},"lat":14.1,"long":101},"geocode":{"province_code":"26"},"rainfall_1h":"2.5","rainfall_24h":null,"rainfall_datetime":"2026-10-03T12:00:00+07:00"}]}`),
+		rainPath: []byte(`{"result":"OK","data":[{"station":{"id":"S1","tele_station_oldcode":"OLD-1","tele_station_name":{"th":"Synthetic rain"},"lat":14.1,"long":101},"geocode":{"province_code":"26"},"rainfall_1h":"2.5","rainfall_24h":null,"rainfall_datetime":"2026-10-03T12:00:00+07:00"}]}`),
 	}})
 	if err != nil {
 		t.Fatal(err)
@@ -92,7 +130,7 @@ func TestFetchRainSeparatesSyntheticAccumulations(t *testing.T) {
 
 func TestFetchGateKeepsNullOpenAndPumpUnknown(t *testing.T) {
 	provider, err := NewWithFetcher("GATE", syntheticFetcher{responses: map[string][]byte{
-		gatePath: []byte(`{"watergate_data":{"result":"OK","data":[{"station":{"id":"G1","tele_station_name":{"th":"Synthetic gate"},"lat":"14.1","long":"101.0"},"geocode":{"province_code":"26"},"watergate_in":"1.0","watergate_out":"0.5","watergate_datetime_in":"2026-10-03 12:00:00","watergate_datetime_out":"2026-10-03 12:05:00","watergate_open":null,"watergate_pump":null}]}}`),
+		gatePath: []byte(`{"watergate_data":{"result":"OK","data":[{"station":{"id":"G1","tele_station_oldcode":"GATE-1","tele_station_name":{"th":"Synthetic gate"},"lat":"14.1","long":"101.0"},"geocode":{"province_code":"26"},"watergate_in":"1.0","watergate_out":"0.5","watergate_datetime_in":"2026-10-03 12:00:00","watergate_datetime_out":"2026-10-03 12:05:00","watergate_open":null,"watergate_pump":null}]}}`),
 	}})
 	if err != nil {
 		t.Fatal(err)
@@ -130,5 +168,15 @@ func TestThaiWaterRejectsInvalidKindMalformedResultFutureAndGeometry(t *testing.
 		if _, err := provider.Fetch(context.Background()); err == nil {
 			t.Fatalf("accepted %s", name)
 		}
+	}
+}
+
+func TestThaiWaterReturnsFetcherError(t *testing.T) {
+	provider, err := NewWithFetcher("WATER", syntheticFetcher{err: errors.New("synthetic upstream failure")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := provider.Fetch(context.Background()); err == nil {
+		t.Fatal("fetcher error was hidden")
 	}
 }

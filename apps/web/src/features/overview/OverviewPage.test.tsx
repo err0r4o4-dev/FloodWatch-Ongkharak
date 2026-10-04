@@ -2,9 +2,10 @@ import { fireEvent, render as renderUI, screen, within } from "@testing-library/
 import { MemoryRouter } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { OverviewPage } from "./OverviewPage";
+import { AppShell } from "../../app/AppShell";
 
 function render(ui: Parameters<typeof renderUI>[0]) {
-  return renderUI(<MemoryRouter>{ui}</MemoryRouter>);
+  return renderUI(<MemoryRouter initialEntries={["/overview"]}>{ui}</MemoryRouter>);
 }
 
 const source = (sourceType: string) => ({ id: "source-1", name: "หน่วยงานตัวอย่าง", code: "sample", sourceType });
@@ -81,10 +82,11 @@ describe("OverviewPage", () => {
       ? Promise.reject(new Error("weather offline"))
       : Promise.resolve({ ok: true, json: () => Promise.resolve({ items: url.includes("flood-events") ? [event()] : [], limit: 20, offset: 0 }) }));
     vi.stubGlobal("fetch", request);
-    render(<OverviewPage />);
+    render(<AppShell><OverviewPage /></AppShell>);
 
     expect(await screen.findByText("ข้อมูลทดสอบ")).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "สภาพอากาศองครักษ์" })).toHaveTextContent("ไม่สามารถโหลดข้อมูลสภาพอากาศได้");
+    expect(request.mock.calls.filter(([url]) => url === "/api/v1/weather/ongkharak")).toHaveLength(1);
     expect(screen.getByRole("region", { name: "เหตุการณ์น้ำที่รายงาน" })).toHaveTextContent("ข้อมูลทดสอบ");
   });
 
@@ -95,11 +97,11 @@ describe("OverviewPage", () => {
     expect(await screen.findByRole("region", { name: "เหตุการณ์น้ำที่รายงาน" })).toHaveTextContent("ยังไม่มีเหตุการณ์ในรายการ");
     expect(screen.getByRole("region", { name: "ระดับน้ำ (จุดสำคัญ)" })).toHaveTextContent("ยังไม่มีสถานีในรายการที่เรียกดู");
     expect(screen.getByRole("region", { name: "ประกาศล่าสุด" })).toHaveTextContent("ยังไม่มีประกาศที่เผยแพร่");
-    expect(request.mock.calls.map(([url]) => url)).toEqual([
-      "/api/v1/weather/ongkharak",
+    expect(request.mock.calls.map(([url]) => url).filter((url) => !["/api/v1/weather/ongkharak", "/api/v1/external-data/ongkharak"].includes(url))).toEqual([
       "/api/v1/flood-events?limit=20", "/api/v1/risk-areas?limit=20", "/api/v1/roads?limit=20", "/api/v1/water-stations?limit=5",
       "/api/v1/alerts?limit=20&offset=0", "/api/v1/reports?limit=20&offset=0"
     ]);
+    expect(request.mock.calls.filter(([url]) => url === "/api/v1/external-data/ongkharak")).toHaveLength(1);
   });
 
   it("discloses failed collections rather than treating them as empty", async () => {

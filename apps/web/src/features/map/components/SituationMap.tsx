@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { DomEvent, geoJSON, latLngBounds } from "leaflet";
+import { geoJSON, latLngBounds } from "leaflet";
 import type { Popup as LeafletPopup } from "leaflet";
 import { CircleMarker, MapContainer, Popup, TileLayer, Tooltip, useMap, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
@@ -17,10 +17,14 @@ import type { MapMode } from "../types";
 import { useTranslation } from "../../../i18n";
 import th from "../../../i18n/locales/th/map";
 import en from "../../../i18n/locales/en/map";
+import { getMapSession, mapSettings } from "../../../shared/map/mapSession";
+import { useUserLocation } from "../../../shared/map/useUserLocation";
+import type { UserLocationState } from "../../../shared/map/useUserLocation";
+import { MapLocationError, MapNavigation, SharedMapViewport, UserLocationMarker } from "../../../shared/map/MapNavigation";
 import "./MapPopup.css";
 
-const initialCenter: [number, number] = [14.1, 101.0];
-const initialZoom = 11;
+const initialCenter = mapSettings.initialCenter;
+const initialZoom = mapSettings.initialZoom;
 
 function ViewportEvents({ onBoundsChange, onMapPoint, initialBounds }: {
   onBoundsChange: (bounds: MapBounds) => void;
@@ -41,23 +45,16 @@ function ViewportEvents({ onBoundsChange, onMapPoint, initialBounds }: {
     if (initialBounds) map.fitBounds([[initialBounds.south, initialBounds.west], [initialBounds.north, initialBounds.east]], { padding: [48, 48], maxZoom: 14, animate: false });
     publish();
     if (typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver(() => { map.invalidateSize({ pan: false }); publish(); });
+    const observer = new ResizeObserver(() => { map.invalidateSize({ pan: true, animate: false }); publish(); });
     observer.observe(map.getContainer());
     return () => observer.disconnect();
   }, [map]);
   return null;
 }
 
-function MapControls({ items, compact = false }: { items: LayerItems; compact?: boolean }) {
+function MapControls({ items, compact = false, location }: { items: LayerItems; compact?: boolean; location: UserLocationState }) {
   const { t } = useTranslation({ th, en });
   const map = useMap();
-  const controls = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (controls.current) {
-      DomEvent.disableClickPropagation(controls.current);
-      DomEvent.disableScrollPropagation(controls.current);
-    }
-  }, []);
   const fitFeatures = () => {
     const bounds = latLngBounds([]);
     items.water.forEach((station) => bounds.extend([station.location.coordinates[1], station.location.coordinates[0]]));
@@ -69,12 +66,10 @@ function MapControls({ items, compact = false }: { items: LayerItems; compact?: 
     if (bounds.isValid()) map.fitBounds(bounds, { padding: [24, 24], maxZoom: 14 });
   };
   const hasFeatures = Object.values(items).some((collection) => collection.length > 0);
-  return <div ref={controls} className="map-zoom-controls" role="group" aria-label={t("map.controls")}>
-    <button type="button" aria-label={t("map.zoomIn")} onClick={() => map.zoomIn()}>+</button>
-    <button type="button" aria-label={t("map.zoomOut")} onClick={() => map.zoomOut()}>−</button>
+  return <MapNavigation location={location}>
     <button type="button" aria-label={t("map.reset")} title={t("map.reset")} onClick={() => map.setView(initialCenter, initialZoom)}>{compact ? "⌖" : t("map.reset")}</button>
     <button type="button" aria-label={t("map.fit")} title={t("map.fit")} disabled={!hasFeatures} onClick={fitFeatures}>{compact ? "⤢" : t("map.fit")}</button>
-  </div>;
+  </MapNavigation>;
 }
 
 function MapFeaturePopup({ selection, position, onClose, onDetails }: {
@@ -168,16 +163,22 @@ export function SituationMap({ items, visible, mode, points, picking, onBoundsCh
   initialRiskId?: string | null;
 }) {
   const { t } = useTranslation({ th, en });
+  const location = useUserLocation();
+  const [viewport] = useState(() => enablePopups && !initialBounds ? getMapSession().viewport : null);
+
   return <div className={`situation-map${picking ? " is-picking" : ""}`} aria-label={t("map.label")}>
-    <MapContainer center={initialCenter} zoom={initialZoom} minZoom={8} maxZoom={16} zoomControl={false} scrollWheelZoom={false} className="leaflet-map">
-      <TileLayer url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' />
+    <MapContainer center={viewport?.center ?? initialCenter} zoom={viewport?.zoom ?? initialZoom} minZoom={mapSettings.minZoom} maxZoom={mapSettings.maxZoom} zoomControl={false} scrollWheelZoom={false} className="leaflet-map">
+      <SharedMapViewport enabled={enablePopups} observeResize={false} />
+      <TileLayer url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' maxZoom={mapSettings.maxZoom} />
       <ViewportEvents onBoundsChange={onBoundsChange} onMapPoint={onMapPoint} initialBounds={initialBounds} />
       <InteractiveLayers items={items} visible={visible} mode={mode} enablePopups={enablePopups} focusSelection={focusSelection} initialRiskId={initialRiskId} onSelect={onSelect} onPreview={onPreview} />
+      <UserLocationMarker position={location.position} />
       {mode === "ROUTE" && (["origin", "destination"] as const).map((key) => {
         const position = parseRoutePoint(points[key]);
         return position ? <CircleMarker key={key} center={[position[1], position[0]]} radius={9} pathOptions={{ color: "var(--color-primary-strong)", fillColor: "var(--color-surface)", fillOpacity: 1, weight: 3 }}><Tooltip permanent direction="top">{t(key === "origin" ? "map.origin" : "map.destination")}</Tooltip></CircleMarker> : null;
       })}
-      <MapControls items={items} compact={compactControls} />
+      <MapControls items={items} compact={compactControls} location={location} />
     </MapContainer>
+    <MapLocationError error={location.error} />
   </div>;
 }

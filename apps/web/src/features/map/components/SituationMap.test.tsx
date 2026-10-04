@@ -3,18 +3,24 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 import { SituationMap } from "./SituationMap";
 import type { LayerItems, LayerVisibility } from "../types";
+import { mapSettings, resetMapSession, setMapViewport } from "../../../shared/map/mapSession";
 
-const { map, mapEvents } = vi.hoisted(() => ({
+const { map, mapEvents, containers } = vi.hoisted(() => ({
+  containers: [] as Record<string, unknown>[],
   mapEvents: [] as Array<Record<string, () => void>>,
   map: {
     getBounds: () => ({ getWest: () => 100.9, getEast: () => 101.2, getSouth: () => 14, getNorth: () => 14.3 }),
-    getContainer: () => document.createElement("div"), invalidateSize: vi.fn(), fitBounds: vi.fn(), setView: vi.fn(), zoomIn: vi.fn(), zoomOut: vi.fn()
+    getContainer: () => document.createElement("div"), invalidateSize: vi.fn(), fitBounds: vi.fn(), setView: vi.fn(), zoomIn: vi.fn(), zoomOut: vi.fn(),
+    getCenter: () => ({ lat: 14.1, lng: 101 }), getZoom: () => 11, getMinZoom: () => 8, getMaxZoom: () => 18,
+    getSize: () => ({ x: 400, y: 300 }), latLngToContainerPoint: () => ({ x: 200, y: 150 })
   }
 }));
 
 vi.mock("react-leaflet", () => ({
-  MapContainer: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+  MapContainer: ({ children, ...props }: { children: ReactNode }) => { containers.push(props); return <div>{children}</div>; },
   TileLayer: () => null,
+  ScaleControl: () => null,
+  Circle: () => null,
   Popup: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   Tooltip: ({ children }: { children: ReactNode }) => <span>{children}</span>,
   Marker: ({ title, eventHandlers }: { title: string; eventHandlers: { click: () => void; keydown?: (event: { originalEvent: KeyboardEvent }) => void } }) => <button type="button" onClick={eventHandlers.click} onKeyDown={(event) => eventHandlers.keydown?.({ originalEvent: event.nativeEvent })}>{title}</button>,
@@ -30,7 +36,7 @@ const items: LayerItems = {
 };
 const points = { origin: { longitude: "", latitude: "" }, destination: { longitude: "", latitude: "" } };
 
-afterEach(() => { vi.unstubAllGlobals(); mapEvents.length = 0; vi.clearAllMocks(); });
+afterEach(() => { act(() => resetMapSession()); vi.unstubAllGlobals(); mapEvents.length = 0; containers.length = 0; vi.clearAllMocks(); });
 
 function prepare() {
   vi.stubGlobal("ResizeObserver", class { observe() {} disconnect() {} });
@@ -41,6 +47,35 @@ function prepare() {
 }
 
 describe("SituationMap popup flow", () => {
+  it("restores a shared camera on the full map without applying it to previews", () => {
+    const { props } = prepare();
+    setMapViewport({ center: [14.6, 101.6], zoom: 18 });
+    const view = render(<SituationMap {...props} />);
+    expect(containers.at(-1)).toMatchObject({ center: [14.6, 101.6], zoom: 18, maxZoom: mapSettings.maxZoom });
+    view.unmount();
+    render(<SituationMap {...props} enablePopups={false} />);
+    expect(containers.at(-1)).toMatchObject({ center: mapSettings.initialCenter, zoom: mapSettings.initialZoom });
+  });
+
+  it("prioritizes explicit bounds over the shared camera", () => {
+    const { props } = prepare();
+    setMapViewport({ center: [14.6, 101.6], zoom: 18 });
+    render(<SituationMap {...props} initialBounds={{ west: 100, south: 14, east: 101, north: 15 }} />);
+    expect(containers.at(-1)).toMatchObject({ center: mapSettings.initialCenter, zoom: mapSettings.initialZoom });
+    expect(map.fitBounds).toHaveBeenCalledWith([[14, 100], [15, 101]], expect.objectContaining({ animate: false }));
+  });
+
+  it("does not request GPS automatically from the legacy tracking flag", () => {
+    const { props } = prepare();
+    const getCurrentPosition = vi.fn();
+    vi.stubGlobal("navigator", { geolocation: { getCurrentPosition } });
+    localStorage.setItem("kineguide:mapTracking", "true");
+    render(<SituationMap {...props} />);
+    expect(getCurrentPosition).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "ตำแหน่งปัจจุบัน" })).toHaveAttribute("aria-pressed", "false");
+    localStorage.removeItem("kineguide:mapTracking");
+  });
+
   it("still renders when ResizeObserver is unavailable", () => {
     const { props } = prepare();
     vi.stubGlobal("ResizeObserver", undefined);

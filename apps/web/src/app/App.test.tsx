@@ -22,6 +22,25 @@ describe("AppRoutes", () => {
 });
 
 describe("public routes", () => {
+  it("does not show or request floating weather on the main landing page", () => {
+    const request = vi.fn(() => new Promise(() => undefined));
+    vi.stubGlobal("fetch", request);
+    render(<MemoryRouter initialEntries={["/"]}><AppRoutes /></MemoryRouter>);
+    expect(screen.queryByRole("region", { name: "สภาพอากาศองครักษ์" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "เปิดการ์ดสภาพอากาศ" })).not.toBeInTheDocument();
+    expect(request).not.toHaveBeenCalled();
+  });
+
+  it.each(["/overview", "/announcements"])("keeps one floating weather popup outside navigation and page content at %s", (route) => {
+    vi.stubGlobal("fetch", vi.fn(() => new Promise(() => undefined)));
+    render(<MemoryRouter initialEntries={[route]}><AppRoutes /></MemoryRouter>);
+    const popup = screen.getByRole("region", { name: "สภาพอากาศองครักษ์" });
+    expect(screen.getAllByRole("region", { name: "สภาพอากาศองครักษ์" })).toHaveLength(1);
+    expect(popup.closest(".desktop-sidebar, main, .overview-page")).toBeNull();
+    expect(popup.closest(".weather-floating")).not.toBeNull();
+    expect(within(popup).getByRole("button", { name: "แสดงทั้งหมด" })).toBeInTheDocument();
+  });
+
   it("opens the dedicated report creation route without a login", () => {
     render(<MemoryRouter initialEntries={["/reports/new"]}><AppRoutes /></MemoryRouter>);
     expect(screen.getByRole("heading", { name: "เพิ่มรายงานสถานการณ์" })).toBeInTheDocument();
@@ -110,7 +129,7 @@ describe("public routes", () => {
   it.each([
     ["/announcements", "ประกาศและแจ้งเตือน", "ยังไม่มีประกาศที่เผยแพร่"],
     ["/reports", "รายงานสถานการณ์", "ยังไม่มีรายงานที่เผยแพร่"],
-    ["/map", "แผนที่สถานการณ์น้ำ", "ข้อมูลในขอบเขตที่โหลด"]
+    ["/map", "แผนที่สถานการณ์น้ำ", "กำลังโหลดข้อมูลตามขอบเขตแผนที่"]
   ])("opens %s without login", async (path, heading, empty) => {
     if (path === "/reports" || path === "/announcements") {
       vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, status: 200, json: () => Promise.resolve({ items: [], limit: 20, offset: 0 }) }));

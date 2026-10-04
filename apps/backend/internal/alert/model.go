@@ -38,6 +38,8 @@ type Rule struct {
 	Title                string
 	Message              string
 	WaterLevelThresholdM *float64
+	WaterLevelDatum      string
+	WaterStationID       *string
 	CreatedAt            time.Time
 	UpdatedAt            time.Time
 }
@@ -48,6 +50,7 @@ type Evidence struct {
 	ResourceID         string
 	SourceType         flood.SourceType
 	WaterLevelM        *float64
+	WaterLevelDatum    string
 	RoadStatus         flood.RoadStatus
 	FloodSeverity      flood.Severity
 	VerificationStatus flood.VerificationStatus
@@ -85,6 +88,8 @@ type RuleInput struct {
 	Title                string
 	Message              string
 	WaterLevelThresholdM *float64
+	WaterLevelDatum      string
+	WaterStationID       *string
 }
 
 type Repository interface {

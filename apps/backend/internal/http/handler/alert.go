@@ -91,10 +91,12 @@ type alertRuleInput struct {
 	Title                string         `json:"title"`
 	Message              string         `json:"message"`
 	WaterLevelThresholdM *float64       `json:"waterLevelThresholdM"`
+	WaterLevelDatum      string         `json:"waterLevelDatum"`
+	WaterStationID       *string        `json:"waterStationId"`
 }
 
 func (input alertRuleInput) domain() alert.RuleInput {
-	return alert.RuleInput{Name: input.Name, Type: input.Type, Enabled: *input.Enabled, Severity: input.Severity, Title: input.Title, Message: input.Message, WaterLevelThresholdM: input.WaterLevelThresholdM}
+	return alert.RuleInput{Name: input.Name, Type: input.Type, Enabled: *input.Enabled, Severity: input.Severity, Title: input.Title, Message: input.Message, WaterLevelThresholdM: input.WaterLevelThresholdM, WaterLevelDatum: input.WaterLevelDatum, WaterStationID: input.WaterStationID}
 }
 
 func (handler *AlertHandler) CreateRule(response http.ResponseWriter, request *http.Request) {
@@ -141,9 +143,11 @@ func ruleResponse(rule alert.Rule) any {
 		Title                string         `json:"title"`
 		Message              string         `json:"message"`
 		WaterLevelThresholdM *float64       `json:"waterLevelThresholdM"`
+		WaterLevelDatum      string         `json:"waterLevelDatum"`
+		WaterStationID       *string        `json:"waterStationId"`
 		CreatedAt            time.Time      `json:"createdAt"`
 		UpdatedAt            time.Time      `json:"updatedAt"`
-	}{rule.ID, rule.Name, rule.Type, rule.Enabled, rule.Severity, rule.Title, rule.Message, rule.WaterLevelThresholdM, rule.CreatedAt, rule.UpdatedAt}
+	}{rule.ID, rule.Name, rule.Type, rule.Enabled, rule.Severity, rule.Title, rule.Message, rule.WaterLevelThresholdM, rule.WaterLevelDatum, rule.WaterStationID, rule.CreatedAt, rule.UpdatedAt}
 }
 
 func writeAlertError(response http.ResponseWriter, err error) {

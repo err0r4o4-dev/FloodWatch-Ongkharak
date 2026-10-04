@@ -8,6 +8,16 @@ The map displays OpenStreetMap standard tiles as an external basemap with attrib
 
 Phase 6 adds a separate verified `COMMUNITY` report feed and an optional map layer. It never inherits `OFFICIAL` styling or changes route evaluation. The public endpoint excludes pending and rejected reports. See `community-reports.md` for review and publication policy.
 
+## Shared location and report-map navigation (2026-10-04)
+
+The full situation map and report location picker share an in-memory camera snapshot and a timestamped user position through `shared/map`. Client-side navigation restores the last center and zoom; report editing centers its existing incident pin instead, and explicit risk/bounds deep links take priority on the situation map. Overview and risk previews do not write the shared camera. Reloading the app clears this memory; neither GPS coordinates nor camera history are persisted to browser storage.
+
+Both maps use the same zoom range (8–18), metric scale, SVG locate control, and non-animated recentering. At the Ongkharak reference latitude the closest view shows a real 50 m scale; this is not an incident/search radius or a claim of GPS precision. The locate action reuses a valid fix younger than 60 seconds, otherwise requests a bounded browser fix without forcing high accuracy. There is no permission request on mount or continuous tracking. The button is highlighted only while the user point is within 12 screen pixels of the map center. Panning away changes both its pressed state and accessible description, not just its color. Failed, stale, canceled, reset and unmounted location requests cannot move the camera or incident pin.
+
+Report-map expansion retains the same Leaflet instance and draft, supports Escape and contained keyboard traversal, restores focus, and keeps the selected incident independent of the blue GPS point. Resize invalidation preserves the geographic center. Expanded maps sit above floating shell widgets; metric scales remain clear of attribution and the situation legend. A separate report action always requests a fresh high-accuracy fix before explicitly selecting it as the incident. Verified-only public report APIs and `report.verified` refreshes remain unchanged.
+
+Viewport layer requests remain debounced and cancel superseded bounds, but publish each completed layer independently. During refresh, retained results are visibly labeled as previous, with failure/truncation metadata preserved until that layer settles. Hidden layers are removed immediately; a failed current layer does not retain its old evidence. Lists and risk cards can show completed layers while others are still pending. GPS/camera movement never waits for these requests, and retained evidence is not reclassified as current or safe.
+
 ## Map-first interaction (2026-10-03)
 
 The full `/map` page now prioritizes the map canvas, with floating layer toggles, situation/route switching, zoom/reset/fit controls, an expandable map view, and a synchronized legend. The keyboard-accessible feature list is available through the visible list button rather than a permanently open sidebar. On phones the layer menu starts collapsed, and requested details use a scrollable bottom sheet above the application navigation. Full-map expansion supports Escape and contained keyboard traversal.

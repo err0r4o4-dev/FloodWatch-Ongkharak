@@ -1,0 +1,8 @@
+.map-zoom-controls.shared-map-controls { grid-template-columns: minmax(0, 1fr); min-width: calc(var(--touch-target) + var(--border-width) * 2); gap: 0; padding: 0; overflow: hidden; box-shadow: var(--shadow-surface); }
+.map-zoom-controls.shared-map-controls button { display: flex; min-width: var(--touch-target); min-height: var(--touch-target); align-items: center; justify-content: center; border: 0; border-bottom: var(--border-width) solid var(--color-border); border-radius: 0; }
+.shared-map-controls button:last-child { border-bottom: 0; }
+.shared-map-controls button.map-location-control { color: var(--color-ink-muted); }
+.shared-map-controls button.map-location-control.is-centered { color: var(--color-primary-strong); background: var(--color-source-official); }
+.shared-map-controls button[aria-busy="true"] svg { opacity: 0.45; }
+.shared-map-controls button:focus-visible { position: relative; z-index: 1; outline: 3px solid var(--color-primary); outline-offset: -3px; }
+.shared-map-error { position: absolute; z-index: 900; top: var(--space-3); left: var(--space-3); max-width: min(24rem, calc(100% - 5rem)); margin: 0; padding: var(--space-3); border-radius: var(--radius-sm); color: var(--color-danger-ink); background: var(--color-danger-soft); font-size: 0.83rem; }

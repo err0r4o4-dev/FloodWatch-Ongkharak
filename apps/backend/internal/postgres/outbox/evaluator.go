@@ -93,8 +93,9 @@ func (evaluator *Evaluator) loadEvidence(ctx context.Context, event Record, evid
 	case "water_level.updated":
 		result.ResourceType = alert.ResourceWaterStation
 		var verified flood.VerificationStatus
-		err := evaluator.pool.QueryRow(ctx, `SELECT r.water_level_m::double precision, r.verification_status FROM water_readings r
-			WHERE r.id=$1 AND r.station_id=$2 AND r.id=(SELECT current.id FROM water_readings current WHERE current.station_id=r.station_id ORDER BY current.observed_at DESC, current.received_at DESC, current.id DESC LIMIT 1)`, evidenceID, event.ResourceID).Scan(&result.WaterLevelM, &verified)
+		err := evaluator.pool.QueryRow(ctx, `SELECT r.water_level_m::double precision, r.verification_status, r.water_level_datum FROM water_readings r
+			WHERE r.id=$1 AND r.station_id=$2 AND (r.water_level_datum='UNKNOWN' OR r.observed_at BETWEEN clock_timestamp()-interval '6 hours' AND clock_timestamp())
+			AND r.id=(SELECT current.id FROM water_readings current WHERE current.station_id=r.station_id ORDER BY current.observed_at DESC, current.received_at DESC, current.id DESC LIMIT 1)`, evidenceID, event.ResourceID).Scan(&result.WaterLevelM, &verified, &result.WaterLevelDatum)
 		if errors.Is(err, pgx.ErrNoRows) {
 			return alert.Evidence{}, nil
 		}

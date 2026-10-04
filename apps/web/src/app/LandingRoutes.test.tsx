@@ -81,7 +81,7 @@ describe("landing and overview navigation", () => {
     expect(screen.getAllByRole("link", { name: "เข้าสู่เมนู" }).every((link) => link.getAttribute("href") === "/overview")).toBe(true);
   });
 
-  it.each(["unavailable", "pending"])("shows illustrative map and weather without requesting %s APIs", (state) => {
+  it.each(["unavailable", "pending"])("keeps illustrative landing content independent of %s weather requests", (state) => {
     vi.stubGlobal("fetch", state === "unavailable" ? vi.fn().mockRejectedValue(new Error("offline")) : vi.fn(() => new Promise(() => {})));
     render(<MemoryRouter><AppRoutes /></MemoryRouter>);
     expect(screen.getByRole("img", { name: "แผนที่ตัวอย่าง" })).toBeInTheDocument();

@@ -1,0 +1,27 @@
+src/app/AppShell.tsx(55,10): error TS6133: 'signingOut' is declared but its value is never read.
+src/app/AppShell.tsx(57,9): error TS6133: 'handleLogout' is declared but its value is never read.
+src/features/external-data/ExternalDataPanel.test.tsx(4,35): error TS2307: Cannot find module './ExternalDataPanel' or its corresponding type declarations.
+src/features/external-data/ExternalDataPanel.test.tsx(140,7): error TS2322: Type 'AbortSignal | null | undefined' is not assignable to type 'AbortSignal | undefined'.
+  Type 'null' is not assignable to type 'AbortSignal | undefined'.
+src/features/external-data/api.ts(124,5): error TS2322: Type 'unknown' is not assignable to type 'string'.
+src/features/external-data/api.ts(125,5): error TS2322: Type 'unknown' is not assignable to type 'string'.
+src/features/external-data/api.ts(126,5): error TS2322: Type 'unknown' is not assignable to type 'string'.
+src/features/external-data/api.ts(129,5): error TS2322: Type 'unknown' is not assignable to type 'string'.
+src/features/external-data/api.ts(130,5): error TS2322: Type 'unknown' is not assignable to type 'string'.
+src/features/external-data/api.ts(131,5): error TS2322: Type 'unknown' is not assignable to type 'string'.
+src/features/external-data/api.ts(146,162): error TS18048: 'record.accumulationSeconds' is possibly 'undefined'.
+src/features/external-data/api.ts(146,162): error TS2365: Operator '<' cannot be applied to types '{}' and 'number'.
+src/features/external-data/api.ts(146,196): error TS18048: 'record.accumulationSeconds' is possibly 'undefined'.
+src/features/external-data/api.ts(146,196): error TS2365: Operator '>' cannot be applied to types '{}' and 'number'.
+src/features/external-data/api.ts(158,110): error TS2345: Argument of type '{} | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/features/external-data/api.ts(158,135): error TS2345: Argument of type '{} | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/features/external-data/api.ts(173,121): error TS2365: Operator '<=' cannot be applied to types '{}' and 'number'.
+src/features/external-data/api.ts(177,5): error TS2322: Type 'unknown' is not assignable to type 'ExternalDataKind'.
+src/features/external-data/api.ts(178,5): error TS2322: Type 'unknown' is not assignable to type 'ExternalDataProvenance'.
+src/features/external-data/api.ts(201,5): error TS2322: Type 'unknown' is not assignable to type 'ExternalDataFreshness'.
+src/features/external-data/api.ts(215,5): error TS2322: Type 'unknown' is not assignable to type 'ExternalDataKind'.
+src/features/external-data/api.ts(216,5): error TS2322: Type 'unknown' is not assignable to type 'ExternalDataProvenance'.
+src/features/external-data/api.ts(219,5): error TS2322: Type 'unknown' is not assignable to type 'ExternalDataStatus'.
+src/features/external-data/api.ts(220,5): error TS2322: Type 'unknown' is not assignable to type 'ExternalDataFreshness'.

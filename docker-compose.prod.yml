@@ -26,6 +26,8 @@ services:
       - APP_ENV=production
       - API_PORT=8080
       - WEATHER_ENABLED=${WEATHER_ENABLED:-false}
+      - EXTERNAL_DATA_PROVIDERS=${EXTERNAL_DATA_PROVIDERS:-}
+      - EXTERNAL_DATA_OPENMETEO_NONCOMMERCIAL=${EXTERNAL_DATA_OPENMETEO_NONCOMMERCIAL:-false}
       - DATABASE_URL=postgres://floodwatch:${DB_PASSWORD}@postgres:5432/floodwatch
       - REDIS_URL=redis://redis:6379/0
       - MINIO_ENDPOINT=http://minio:9000
@@ -65,6 +67,8 @@ services:
     restart: always
     environment:
       - APP_ENV=production
+      - EXTERNAL_DATA_PROVIDERS=${EXTERNAL_DATA_PROVIDERS:-}
+      - EXTERNAL_DATA_OPENMETEO_NONCOMMERCIAL=${EXTERNAL_DATA_OPENMETEO_NONCOMMERCIAL:-false}
       - DATABASE_URL=postgres://floodwatch:${DB_PASSWORD}@postgres:5432/floodwatch
       - REDIS_URL=redis://redis:6379/0
       - MINIO_ENDPOINT=http://minio:9000

@@ -3,6 +3,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { RealtimeProvider, useRealtimeRevision, useRealtimeStatus } from "./RealtimeProvider";
 import { OverviewPage } from "../overview/OverviewPage";
 import { MemoryRouter } from "react-router";
+import { WeatherProvider } from "../weather/WeatherProvider";
+import { WeatherWidget } from "../weather/WeatherWidget";
 
 vi.mock("../overview/OverviewMapPreview", () => ({ OverviewMapPreview: () => <div aria-label="แผนที่ภาพรวม" /> }));
 
@@ -34,6 +36,11 @@ function Consumer() {
   return <div><span>{status}</span><span>revision {revision}</span></div>;
 }
 
+function ExternalConsumer() {
+  const revision = useRealtimeRevision(["external_data.updated"]);
+  return <div>external revision {revision}</div>;
+}
+
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.useRealTimers();
@@ -41,6 +48,17 @@ afterEach(() => {
 });
 
 describe("public realtime subscription", () => {
+  it("accepts model provenance only for an external-data invalidation", () => {
+    vi.stubGlobal("EventSource", FakeEventSource);
+    render(<RealtimeProvider><ExternalConsumer /><Consumer /></RealtimeProvider>);
+    const connection = FakeEventSource.connections[0];
+    act(() => connection.send("external_data.updated", { eventType: "external_data.updated", eventId: "external-1", resourceId: "source-1", resourceType: "EXTERNAL_DATA", payloadVersion: 1, sourceType: "MODEL" }));
+    expect(screen.getByText("external revision 1")).toBeInTheDocument();
+    act(() => connection.send("external_data.updated", { eventType: "external_data.updated", eventId: "external-2", resourceId: "source-1", resourceType: "WATER_STATION", payloadVersion: 1, sourceType: "MODEL" }));
+    act(() => connection.send("report.verified", { eventType: "report.verified", eventId: "report-1", resourceId: "report-1", payloadVersion: 1, sourceType: "MODEL" }));
+    expect(screen.getByText("external revision 1")).toBeInTheDocument();
+    expect(screen.getByText("revision 0")).toBeInTheDocument();
+  });
   it("connects once, ignores malformed/duplicate events, and refetches by revision", () => {
     vi.stubGlobal("EventSource", FakeEventSource);
     const view = render(<RealtimeProvider><Consumer /></RealtimeProvider>);
@@ -132,23 +150,24 @@ describe("public realtime subscription", () => {
     vi.stubGlobal("EventSource", FakeEventSource);
     const request = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ items: [], limit: 20, offset: 0 }) });
     vi.stubGlobal("fetch", request);
-    const view = render(<MemoryRouter><RealtimeProvider><OverviewPage /></RealtimeProvider></MemoryRouter>);
+    const view = render(<MemoryRouter><RealtimeProvider><WeatherProvider><OverviewPage /><WeatherWidget /></WeatherProvider></RealtimeProvider></MemoryRouter>);
     expect(await screen.findByText("ยังไม่มีสถานีในรายการที่เรียกดู")).toBeInTheDocument();
-    expect(request).toHaveBeenCalledTimes(7);
+    expect(request).toHaveBeenCalledTimes(8);
     act(() => FakeEventSource.connections[0].onopen?.());
-    await waitFor(() => expect(request).toHaveBeenCalledTimes(13));
+    await waitFor(() => expect(request).toHaveBeenCalledTimes(15));
     act(() => FakeEventSource.connections[0].send("water_level.updated", {
       eventType: "water_level.updated", eventId: "event-1", resourceId: "station-1", payloadVersion: 1, sourceType: "OFFICIAL"
     }));
-    await waitFor(() => expect(request).toHaveBeenCalledTimes(19));
+    await waitFor(() => expect(request).toHaveBeenCalledTimes(21));
     act(() => FakeEventSource.connections[0].send("report.verified", {
       eventType: "report.verified", eventId: "report-event-1", resourceId: "report-1", payloadVersion: 1, sourceType: "COMMUNITY"
     }));
-    await waitFor(() => expect(request).toHaveBeenCalledTimes(25));
+    await waitFor(() => expect(request).toHaveBeenCalledTimes(27));
     act(() => FakeEventSource.connections[0].send("alert.created", {
       eventType: "alert.created", eventId: "alert-event-1", resourceId: "alert-1", payloadVersion: 1, sourceType: "OFFICIAL"
     }));
-    await waitFor(() => expect(request).toHaveBeenCalledTimes(31));
+    await waitFor(() => expect(request).toHaveBeenCalledTimes(33));
+    expect(request.mock.calls.filter(([url]) => url === "/api/v1/weather/ongkharak")).toHaveLength(1);
     expect(screen.queryByText("ปลอดภัย")).not.toBeInTheDocument();
     view.unmount();
   });

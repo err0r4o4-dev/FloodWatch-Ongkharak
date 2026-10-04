@@ -3,7 +3,7 @@ CREATE TABLE external_data_sources (
     code TEXT PRIMARY KEY,
     name TEXT NOT NULL,
     kind TEXT CHECK (kind IN ('OBSERVATION', 'FORECAST', 'OFFICIAL_ALERT')),
-    provenance TEXT NOT NULL DEFAULT 'OFFICIAL' CHECK (provenance IN ('MODEL', 'OFFICIAL')),
+    provenance TEXT CHECK (provenance IN ('MODEL', 'OFFICIAL')),
     url TEXT NOT NULL DEFAULT '',
     enabled BOOLEAN NOT NULL DEFAULT TRUE,
     last_attempt_at TIMESTAMPTZ,
@@ -22,6 +22,30 @@ CREATE TABLE external_data_sources (
         AND (last_failure_at IS NULL OR last_attempt_at IS NULL OR last_failure_at <= last_attempt_at)
     )
 );
+
+INSERT INTO data_sources (id, code, name, source_type, provider, enabled)
+VALUES
+    (gen_random_uuid(), 'THAIWATER_WATER', 'ThaiWater water observations', 'OFFICIAL', 'ThaiWater', TRUE),
+    (gen_random_uuid(), 'THAIWATER_RAIN', 'ThaiWater rainfall observations', 'OFFICIAL', 'ThaiWater', TRUE)
+ON CONFLICT (code) DO NOTHING;
+
+ALTER TABLE water_readings
+    ADD COLUMN water_level_datum TEXT NOT NULL DEFAULT 'UNKNOWN'
+        CHECK (water_level_datum IN ('UNKNOWN', 'MSL', 'LOCAL')),
+    ADD COLUMN rainfall_period_seconds INTEGER
+        CHECK (rainfall_period_seconds IS NULL OR rainfall_period_seconds > 0);
+
+ALTER TABLE alert_rules
+    ADD COLUMN water_level_datum TEXT NOT NULL DEFAULT 'UNKNOWN'
+        CHECK (water_level_datum IN ('UNKNOWN', 'MSL', 'LOCAL')),
+    ADD COLUMN water_station_id UUID REFERENCES water_stations (id),
+    ADD CONSTRAINT alert_rules_water_level_scope_valid CHECK (
+        (rule_type = 'WATER_LEVEL_THRESHOLD' AND (
+            (water_level_datum = 'UNKNOWN')
+            OR (water_level_datum IN ('MSL', 'LOCAL') AND water_station_id IS NOT NULL)
+        ))
+        OR (rule_type <> 'WATER_LEVEL_THRESHOLD' AND water_level_datum = 'UNKNOWN' AND water_station_id IS NULL)
+    );
 
 CREATE TABLE external_data_runs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -132,4 +156,7 @@ CREATE INDEX external_data_raw_references_run_idx
 
 ALTER TABLE event_outbox
     DROP CONSTRAINT event_outbox_source_type_check,
-    ADD CONSTRAINT event_outbox_source_type_check CHECK (source_type IN ('OFFICIAL', 'COMMUNITY', 'AI', 'MODEL'));
+    ADD CONSTRAINT event_outbox_source_type_check CHECK (
+        source_type IN ('OFFICIAL', 'COMMUNITY', 'AI')
+        OR (source_type = 'MODEL' AND event_type = 'external_data.updated' AND resource_type = 'EXTERNAL_DATA')
+    );

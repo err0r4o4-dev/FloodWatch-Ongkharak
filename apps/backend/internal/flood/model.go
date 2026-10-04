@@ -111,17 +111,19 @@ type WaterStation struct {
 }
 
 type WaterReading struct {
-	ID                 string             `json:"id"`
-	StationID          string             `json:"stationId"`
-	Source             SourceRef          `json:"source"`
-	ObservedAt         time.Time          `json:"observedAt"`
-	ReceivedAt         time.Time          `json:"receivedAt"`
-	WaterLevelM        *float64           `json:"waterLevelM"`
-	FlowRateM3S        *float64           `json:"flowRateM3s"`
-	RainfallMM         *float64           `json:"rainfallMm"`
-	VerificationStatus VerificationStatus `json:"verificationStatus"`
-	Confidence         *float64           `json:"confidence"`
-	Freshness          Freshness          `json:"freshness"`
+	ID                    string             `json:"id"`
+	StationID             string             `json:"stationId"`
+	Source                SourceRef          `json:"source"`
+	ObservedAt            time.Time          `json:"observedAt"`
+	ReceivedAt            time.Time          `json:"receivedAt"`
+	WaterLevelM           *float64           `json:"waterLevelM"`
+	WaterLevelDatum       string             `json:"waterLevelDatum"`
+	RainfallPeriodSeconds *int               `json:"rainfallPeriodSeconds"`
+	FlowRateM3S           *float64           `json:"flowRateM3s"`
+	RainfallMM            *float64           `json:"rainfallMm"`
+	VerificationStatus    VerificationStatus `json:"verificationStatus"`
+	Confidence            *float64           `json:"confidence"`
+	Freshness             Freshness          `json:"freshness"`
 }
 
 type FloodEvent struct {

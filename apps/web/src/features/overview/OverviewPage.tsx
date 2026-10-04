@@ -12,7 +12,7 @@ import { formatDate, formatNumber, useTranslation } from "../../i18n";
 import th from "../../i18n/locales/th/overview";
 import en from "../../i18n/locales/en/overview";
 import { loadCollection, type Collections, type CollectionKey, type WaterStation } from "./api";
-import { WeatherWidget } from "../weather/WeatherWidget";
+import { ExternalDataPanel } from "../external-data/ExternalDataPanel";
 import "./OverviewPage.css";
 
 const overviewEvents = ["water_level.updated", "flood_event.created", "flood_event.updated", "road.status.changed", "alert.created", "report.verified"] as const;
@@ -153,7 +153,7 @@ export function OverviewPage() {
     <div className="summary-metrics" aria-label={result ? t("summary.loaded") : t("summary.loading")}>
       {metrics.map((metric) => <Link key={metric.key} to={metric.to} className="summary-metric"><span className={`summary-metric__icon${metric.tone ? ` summary-metric__icon--${metric.tone}` : ""}`} aria-hidden="true"><OverviewIcon name={metric.icon} /></span><span>{metric.label}<strong>{collections?.[metric.key]?.length ?? "—"}</strong><small>{!result ? t("summary.loadingData") : result.failed.includes(metric.key) ? t("summary.unavailable") : metric.caption}</small></span><span className="summary-metric__arrow" aria-hidden="true">›</span></Link>)}
     </div>
-    <div className="overview-weather"><WeatherWidget /></div>
+    <ExternalDataPanel />
     {!result && <LoadingState />}
     {allFailed ? <ErrorState onRetry={() => setRevision((previous) => previous + 1)} /> : result && result.failed.length > 0 && <div className="notice" role="status"><strong>{t("partial.title")}</strong><span>{t("partial.body", { feeds: result.failed.map((key) => t(headingKeys[key])).join(", ") })}</span><button type="button" onClick={() => setRevision((previous) => previous + 1)}>{t("retry")}</button></div>}
     <OriginalContentNote />

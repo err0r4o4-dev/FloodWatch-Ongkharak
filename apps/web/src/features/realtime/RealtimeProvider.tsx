@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { apiConfig } from "../../shared/config/api";
 
-export const publicEventTypes = ["water_level.updated", "flood_event.created", "flood_event.updated", "road.status.changed", "report.verified", "alert.created"] as const;
+export const publicEventTypes = ["water_level.updated", "flood_event.created", "flood_event.updated", "road.status.changed", "report.verified", "alert.created", "external_data.updated"] as const;
 export type PublicEventType = typeof publicEventTypes[number];
 export type RealtimeStatus = "CONNECTED" | "RECONNECTING" | "DISCONNECTED";
 const stableConnectionDelay = 15_000;
@@ -13,9 +13,12 @@ const RealtimeContext = createContext<RealtimeState>({ status: "DISCONNECTED", r
 function isPublicEvent(value: unknown, expectedType: PublicEventType): boolean {
   if (!value || typeof value !== "object") return false;
   const event = value as Record<string, unknown>;
+  const validSource = expectedType === "external_data.updated"
+    ? event.resourceType === "EXTERNAL_DATA" && ["OFFICIAL", "MODEL"].includes(String(event.sourceType))
+    : ["OFFICIAL", "COMMUNITY", "AI"].includes(String(event.sourceType));
   return event.eventType === expectedType && typeof event.eventId === "string" &&
     typeof event.resourceId === "string" && event.payloadVersion === 1 &&
-    ["OFFICIAL", "COMMUNITY", "AI"].includes(String(event.sourceType));
+    validSource;
 }
 
 export function RealtimeProvider({ children }: { children: React.ReactNode }) {

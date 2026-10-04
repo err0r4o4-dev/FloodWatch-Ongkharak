@@ -53,7 +53,7 @@ export function WeatherPanel() {
 
   if (state.error && !data) return <section className="weather-panel" aria-labelledby={titleId}><div className="weather-panel__heading"><div><h2 id={titleId}>{translate("title")}</h2><p>{translate("location")}</p></div></div><div className="weather-panel__state weather-panel__state--error" role="status" aria-label={translate("error.aria")}><h3>{translate("error.title")}</h3><p>{translate("error.body")}</p><button type="button" onClick={() => setRetry((value) => value + 1)}>{translate("retry")}</button></div></section>;
 
-  if (!data || !data.current || !usableCurrent || !condition) return <section className="weather-panel" aria-labelledby={titleId}><div className="weather-panel__header"><div className="weather-panel__heading"><div><h2 id={titleId}>{translate("title")}</h2><p>{translate("location")}</p></div></div><span className="weather-panel__freshness weather-panel__freshness--unknown">{translate("unknown")}</span></div><div className="weather-panel__state"><h3>{translate("unavailable.title")}</h3><p>{reasonText ?? translate("unavailable.body")}</p><button type="button" onClick={() => setRetry((value) => value + 1)}>{translate("retry")}</button></div><p className="weather-panel__note">{translate("floodCaveat")}</p></section>;
+  if (!data || !data.current || !usableCurrent || !condition) return <section className="weather-panel" aria-labelledby={titleId}><div className="weather-panel__header"><div className="weather-panel__heading"><div><h2 id={titleId}>{translate("title")}</h2><p>{translate("location")}</p></div></div><span className="weather-panel__freshness weather-panel__freshness--unknown">{translate("unknown")}</span></div><div className="weather-panel__state"><h3>{translate("unavailable.title")}</h3><p>{reasonText ?? translate("unavailable.body")}</p><button type="button" onClick={() => setRetry((value) => value + 1)}>{translate("retry")}</button></div></section>;
 
   const current = data.current;
   const conditionLabel = translate(`condition.${condition.key}`);
@@ -78,8 +78,7 @@ export function WeatherPanel() {
     {freshness === "STALE" && <p className="weather-panel__note weather-panel__note--stale">{translate("staleNotice")}</p>}
     {state.error && <div className="weather-panel__state weather-panel__state--error" role="status"><h3>{translate("error.title")}</h3><p>{translate("error.body")}</p><button type="button" onClick={() => setRetry((value) => value + 1)}>{translate("retry")}</button></div>}
     <div className="weather-panel__meta"><span>{translate("modelTime", { value: observedAt })}</span><span>{translate("retrievedAt", { value: retrievedAt })}</span></div>
-    <div className="weather-panel__provider"><span>{translate("model")}</span>{providerUrl && <span>{translate("providerLabel")}: <a href={providerUrl} target="_blank" rel="noreferrer">{data.source.name}</a></span>}</div>
+    {providerUrl && <div className="weather-panel__provider"><span>{translate("providerLabel")}: <a href={providerUrl} target="_blank" rel="noreferrer">{data.source.name}</a></span></div>}
     {reasonText && <p className="weather-panel__note">{translate("reason", { value: reasonText })}</p>}
-    <p className="weather-panel__note">{translate("floodCaveat")}</p>
   </section>;
 }

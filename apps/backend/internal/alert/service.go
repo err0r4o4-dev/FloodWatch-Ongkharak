@@ -88,12 +88,15 @@ func (service *Service) UpdateRule(ctx context.Context, id string, input RuleInp
 }
 
 func normalizeRule(input RuleInput) Rule {
-	return Rule{Name: strings.TrimSpace(input.Name), Type: input.Type, Enabled: input.Enabled, Severity: input.Severity, Title: strings.TrimSpace(input.Title), Message: strings.TrimSpace(input.Message), WaterLevelThresholdM: input.WaterLevelThresholdM}
+	return Rule{Name: strings.TrimSpace(input.Name), Type: input.Type, Enabled: input.Enabled, Severity: input.Severity, Title: strings.TrimSpace(input.Title), Message: strings.TrimSpace(input.Message), WaterLevelThresholdM: input.WaterLevelThresholdM, WaterLevelDatum: datum(input.WaterLevelDatum), WaterStationID: input.WaterStationID}
 }
 
 func matchesRule(rule Rule, evidence Evidence) bool {
 	switch rule.Type {
 	case RuleWaterLevelThreshold:
+		if datum(rule.WaterLevelDatum) != datum(evidence.WaterLevelDatum) || (datum(rule.WaterLevelDatum) != "UNKNOWN" && rule.WaterStationID == nil) || (rule.WaterStationID != nil && *rule.WaterStationID != evidence.ResourceID) {
+			return false
+		}
 		return rule.WaterLevelThresholdM != nil && evidence.ResourceType == ResourceWaterStation && evidence.WaterLevelM != nil && *evidence.WaterLevelM >= *rule.WaterLevelThresholdM
 	case RuleRoadClosed:
 		return evidence.ResourceType == ResourceRoad && evidence.RoadStatus == flood.RoadClosed
@@ -109,9 +112,22 @@ func validRule(rule Rule) bool {
 		return false
 	}
 	if rule.Type == RuleWaterLevelThreshold {
-		return validThreshold(rule.WaterLevelThresholdM)
+		if rule.WaterStationID != nil {
+			if identifier, err := uuid.Parse(*rule.WaterStationID); err != nil || identifier == uuid.Nil {
+				return false
+			}
+		}
+		levelDatum := datum(rule.WaterLevelDatum)
+		return validThreshold(rule.WaterLevelThresholdM) && (levelDatum == "UNKNOWN" || ((levelDatum == "MSL" || levelDatum == "LOCAL") && rule.WaterStationID != nil))
 	}
-	return (rule.Type == RuleRoadClosed || rule.Type == RuleFloodCritical) && rule.WaterLevelThresholdM == nil
+	return (rule.Type == RuleRoadClosed || rule.Type == RuleFloodCritical) && rule.WaterLevelThresholdM == nil && datum(rule.WaterLevelDatum) == "UNKNOWN" && rule.WaterStationID == nil
+}
+
+func datum(value string) string {
+	if value == "" {
+		return "UNKNOWN"
+	}
+	return value
 }
 
 func validPage(page Page) bool {

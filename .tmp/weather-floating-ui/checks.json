@@ -1,0 +1,23 @@
+{
+  "checks": [
+    "1440x900: floating left, stable scroll, centered details, Escape/close, cloud-only persisted minimize, 44px controls",
+    "1280x800: floating left, stable scroll, centered details, Escape/close, cloud-only persisted minimize, 44px controls",
+    "1366x1024: floating left, stable scroll, centered details, Escape/close, cloud-only persisted minimize, 44px controls",
+    "1024x768: floating left, stable scroll, centered details, Escape/close, cloud-only persisted minimize, 44px controls",
+    "768x1024: floating left, stable scroll, centered details, Escape/close, cloud-only persisted minimize, 44px controls",
+    "390x844: floating left, stable scroll, centered details, Escape/close, cloud-only persisted minimize, 44px controls",
+    "320x700: floating left, stable scroll, centered details, Escape/close, cloud-only persisted minimize, 44px controls",
+    "844x390: floating left, stable scroll, centered details, Escape/close, cloud-only persisted minimize, 44px controls",
+    "public route navigation, map, single shared request and minimize state",
+    "stale state and applicable keyboard retry",
+    "unknown state and applicable keyboard retry",
+    "error state and applicable keyboard retry",
+    "loading state and applicable keyboard retry",
+    "landing page popup without bottom-navigation offset",
+    "authentication route has no weather popup",
+    "English, 320px/200% text popup and dialog fit",
+    "1366x1024 touch emulation: bottom-navigation clearance, centered modal, touch close/minimize/reopen"
+  ],
+  "errors": [],
+  "evidence": "Synthetic intercepted weather; not live local conditions or physical device verification"
+}

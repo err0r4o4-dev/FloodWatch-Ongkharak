@@ -1,0 +1,8 @@
+{
+  "checks": [
+    "1440px: no main popup/request; one Overview popup; removed text; attribution and close preserved",
+    "390px: no main popup/request; one Overview popup; removed text; attribution and close preserved"
+  ],
+  "errors": [],
+  "evidence": "Synthetic intercepted weather, not live local conditions"
+}

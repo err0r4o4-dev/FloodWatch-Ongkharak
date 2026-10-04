@@ -515,53 +515,8 @@
         ]
       },
       "AlertRuleInput": {
+        "type": "object",
         "additionalProperties": false,
-        "properties": {
-          "enabled": {
-            "type": "boolean"
-          },
-          "message": {
-            "maxLength": 1000,
-            "minLength": 1,
-            "type": "string"
-          },
-          "name": {
-            "maxLength": 200,
-            "minLength": 1,
-            "type": "string"
-          },
-          "severity": {
-            "enum": [
-              "INFO",
-              "WATCH",
-              "WARNING",
-              "CRITICAL"
-            ],
-            "type": "string"
-          },
-          "title": {
-            "maxLength": 200,
-            "minLength": 1,
-            "type": "string"
-          },
-          "type": {
-            "enum": [
-              "WATER_LEVEL_THRESHOLD",
-              "ROAD_CLOSED",
-              "FLOOD_CRITICAL"
-            ],
-            "type": "string"
-          },
-          "waterLevelThresholdM": {
-            "description": "Required for WATER_LEVEL_THRESHOLD; absent/null for other rule types. Configured rule",
-            "minimum": 0,
-            "not an official default.": null,
-            "type": [
-              "number",
-              "null"
-            ]
-          }
-        },
         "required": [
           "name",
           "type",
@@ -570,7 +525,70 @@
           "title",
           "message"
         ],
-        "type": "object"
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "WATER_LEVEL_THRESHOLD",
+              "ROAD_CLOSED",
+              "FLOOD_CRITICAL"
+            ]
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "INFO",
+              "WATCH",
+              "WARNING",
+              "CRITICAL"
+            ]
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "message": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          },
+          "waterLevelThresholdM": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0,
+            "description": "Required for WATER_LEVEL_THRESHOLD; absent/null for other rule types. Configured rule",
+            "not an official default.": null
+          },
+          "waterLevelDatum": {
+            "type": "string",
+            "enum": [
+              "UNKNOWN",
+              "MSL",
+              "LOCAL"
+            ],
+            "default": "UNKNOWN",
+            "description": "MSL/LOCAL thresholds require an explicit station and match only the same datum. Legacy unspecified datum remains UNKNOWN."
+          },
+          "waterStationId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Required and non-null for MSL/LOCAL water thresholds; optional for legacy UNKNOWN water rules; absent/null for other rule types."
+          }
+        }
       },
       "AlertRuleList": {
         "properties": {
@@ -1632,59 +1650,8 @@
         "type": "array"
       },
       "PublicEventEnvelope": {
+        "type": "object",
         "additionalProperties": false,
-        "properties": {
-          "eventId": {
-            "format": "uuid",
-            "type": "string"
-          },
-          "eventType": {
-            "enum": [
-              "water_level.updated",
-              "flood_event.created",
-              "flood_event.updated",
-              "road.status.changed",
-              "report.verified",
-              "alert.created"
-            ],
-            "type": "string"
-          },
-          "occurredAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "payload": {
-            "description": "Minimal change hint; refetch the canonical API.",
-            "type": "object"
-          },
-          "payloadVersion": {
-            "enum": [
-              1
-            ],
-            "type": "integer"
-          },
-          "publishedAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "resourceId": {
-            "format": "uuid",
-            "type": "string"
-          },
-          "resourceType": {
-            "enum": [
-              "WATER_STATION",
-              "FLOOD_EVENT",
-              "ROAD",
-              "COMMUNITY_REPORT",
-              "ALERT"
-            ],
-            "type": "string"
-          },
-          "sourceType": {
-            "$ref": "#/components/schemas/SourceType"
-          }
-        },
         "required": [
           "eventId",
           "eventType",
@@ -1696,7 +1663,110 @@
           "payloadVersion",
           "payload"
         ],
-        "type": "object"
+        "properties": {
+          "eventId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "eventType": {
+            "type": "string",
+            "enum": [
+              "water_level.updated",
+              "flood_event.created",
+              "flood_event.updated",
+              "road.status.changed",
+              "report.verified",
+              "alert.created",
+              "external_data.updated"
+            ]
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "publishedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "sourceType": {
+            "type": "string",
+            "enum": [
+              "OFFICIAL",
+              "COMMUNITY",
+              "AI",
+              "MODEL"
+            ]
+          },
+          "resourceType": {
+            "type": "string",
+            "enum": [
+              "WATER_STATION",
+              "FLOOD_EVENT",
+              "ROAD",
+              "COMMUNITY_REPORT",
+              "ALERT",
+              "EXTERNAL_DATA"
+            ]
+          },
+          "resourceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "payloadVersion": {
+            "type": "integer",
+            "enum": [
+              1
+            ]
+          },
+          "payload": {
+            "type": "object",
+            "description": "Minimal change hint; refetch the canonical API."
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "sourceType": {
+                  "const": "MODEL"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "eventType": {
+                  "const": "external_data.updated"
+                },
+                "resourceType": {
+                  "const": "EXTERNAL_DATA"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "eventType": {
+                  "const": "external_data.updated"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "sourceType": {
+                  "type": "string",
+                  "enum": [
+                    "OFFICIAL",
+                    "MODEL"
+                  ]
+                },
+                "resourceType": {
+                  "const": "EXTERNAL_DATA"
+                }
+              }
+            }
+          }
+        ]
       },
       "PublicNotification": {
         "additionalProperties": false,
@@ -2866,60 +2936,7 @@
         "type": "object"
       },
       "WaterReading": {
-        "properties": {
-          "confidence": {
-            "maximum": 1,
-            "minimum": 0,
-            "type": [
-              "number",
-              "null"
-            ]
-          },
-          "flowRateM3s": {
-            "type": [
-              "number",
-              "null"
-            ]
-          },
-          "freshness": {
-            "$ref": "#/components/schemas/Freshness"
-          },
-          "id": {
-            "format": "uuid",
-            "type": "string"
-          },
-          "observedAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "rainfallMm": {
-            "type": [
-              "number",
-              "null"
-            ]
-          },
-          "receivedAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "source": {
-            "$ref": "#/components/schemas/SourceRef"
-          },
-          "stationId": {
-            "format": "uuid",
-            "type": "string"
-          },
-          "verificationStatus": {
-            "$ref": "#/components/schemas/VerificationStatus"
-          },
-          "waterLevelM": {
-            "description": "Canonical water level in meters.",
-            "type": [
-              "number",
-              "null"
-            ]
-          }
-        },
+        "type": "object",
         "required": [
           "id",
           "stationId",
@@ -2931,9 +2948,80 @@
           "rainfallMm",
           "verificationStatus",
           "confidence",
-          "freshness"
+          "freshness",
+          "waterLevelDatum",
+          "rainfallPeriodSeconds"
         ],
-        "type": "object"
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "stationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "source": {
+            "$ref": "#/components/schemas/SourceRef"
+          },
+          "observedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "receivedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "waterLevelM": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "Water level in metres with explicit datum. MSL is not flood depth on a road."
+          },
+          "flowRateM3s": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "rainfallMm": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "verificationStatus": {
+            "$ref": "#/components/schemas/VerificationStatus"
+          },
+          "confidence": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 1
+          },
+          "freshness": {
+            "$ref": "#/components/schemas/Freshness"
+          },
+          "waterLevelDatum": {
+            "type": "string",
+            "enum": [
+              "UNKNOWN",
+              "MSL",
+              "LOCAL"
+            ]
+          },
+          "rainfallPeriodSeconds": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1,
+            "description": "Accumulation window; null means unspecified, not instantaneous or 24 hours."
+          }
+        }
       },
       "WaterStation": {
         "properties": {
@@ -3096,6 +3184,294 @@
           "current"
         ],
         "type": "object"
+      },
+      "ExternalStation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "code",
+          "externalId",
+          "name",
+          "province",
+          "district",
+          "agency",
+          "latitude",
+          "longitude"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "externalId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "province": {
+            "type": "string"
+          },
+          "district": {
+            "type": "string"
+          },
+          "agency": {
+            "type": "string"
+          },
+          "latitude": {
+            "type": "number",
+            "minimum": -90,
+            "maximum": 90
+          },
+          "longitude": {
+            "type": "number",
+            "minimum": -180,
+            "maximum": 180
+          }
+        }
+      },
+      "ExternalRecord": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "key",
+          "kind",
+          "provenance",
+          "value",
+          "freshness"
+        ],
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "member": {
+            "type": "string"
+          },
+          "metric": {
+            "type": "string"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "datum": {
+            "type": "string"
+          },
+          "headline": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "alertIdentifier": {
+            "type": "string"
+          },
+          "alertMessageType": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "OBSERVATION",
+              "FORECAST",
+              "OFFICIAL_ALERT"
+            ]
+          },
+          "provenance": {
+            "type": "string",
+            "enum": [
+              "OFFICIAL",
+              "MODEL"
+            ]
+          },
+          "station": {
+            "$ref": "#/components/schemas/ExternalStation"
+          },
+          "value": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "Missing, expired or semantically unverified evidence is null, never zero."
+          },
+          "freshness": {
+            "type": "string",
+            "enum": [
+              "FRESH",
+              "STALE",
+              "UNKNOWN"
+            ]
+          },
+          "observedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "issuedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "validFrom": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "validTo": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "accumulationSeconds": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "latitude": {
+            "type": "number",
+            "minimum": -90,
+            "maximum": 90
+          },
+          "longitude": {
+            "type": "number",
+            "minimum": -180,
+            "maximum": 180
+          },
+          "alertReferences": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "areaCodes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "geometry": {
+            "type": "object"
+          }
+        },
+        "description": "A station measurement, model forecast or CAP lifecycle record. Time/units are capability-specific. HII records without verified semantics omit intervals and have null value with UNKNOWN freshness."
+      },
+      "ExternalSource": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "code",
+          "name",
+          "kind",
+          "provenance",
+          "url",
+          "enabled",
+          "status",
+          "freshness",
+          "lastAttemptAt",
+          "lastSuccessAt",
+          "errorCode",
+          "recordCount",
+          "records"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "OBSERVATION",
+              "FORECAST",
+              "OFFICIAL_ALERT"
+            ]
+          },
+          "provenance": {
+            "type": "string",
+            "enum": [
+              "OFFICIAL",
+              "MODEL"
+            ]
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "NOT_CONFIGURED",
+              "UNAVAILABLE",
+              "DEGRADED",
+              "AVAILABLE"
+            ]
+          },
+          "freshness": {
+            "type": "string",
+            "enum": [
+              "FRESH",
+              "STALE",
+              "UNKNOWN"
+            ],
+            "description": "Provider retrieval health; does not establish freshness of every observation or safety."
+          },
+          "lastAttemptAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "lastSuccessAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "errorCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "recordCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "records": {
+            "type": "array",
+            "maxItems": 24,
+            "items": {
+              "$ref": "#/components/schemas/ExternalRecord"
+            }
+          }
+        }
+      },
+      "ExternalDataSnapshot": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "retrievedAt",
+          "sources"
+        ],
+        "properties": {
+          "retrievedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "sources": {
+            "type": "array",
+            "maxItems": 10,
+            "items": {
+              "$ref": "#/components/schemas/ExternalSource"
+            }
+          }
+        }
       }
     },
     "securitySchemes": {
@@ -6301,6 +6677,43 @@
         "tags": [
           "System"
         ]
+      }
+    },
+    "/api/v1/external-data/ongkharak": {
+      "get": {
+        "tags": [
+          "External data"
+        ],
+        "operationId": "getOngkharakExternalData",
+        "summary": "Read bounded, source-aware external evidence and provider health",
+        "description": "Database-only read; never fetches an upstream provider. All providers are opt-in. Disabled sources are NOT_CONFIGURED/UNKNOWN. Empty official alerts do not imply safety. Raw payloads remain private. Forecasts retain MODEL provenance and never become station readings.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Snapshot including disabled/unavailable/stale sources; current conditions are not inferred from retrieval health.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExternalDataSnapshot"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/DomainError"
+          },
+          "503": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        }
       }
     }
   },

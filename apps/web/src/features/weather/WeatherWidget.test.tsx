@@ -17,15 +17,16 @@ beforeEach(() => {
   Object.defineProperty(HTMLDialogElement.prototype, "showModal", { configurable: true, value: vi.fn(function (this: HTMLDialogElement) { this.setAttribute("open", ""); }) });
   Object.defineProperty(HTMLDialogElement.prototype, "close", { configurable: true, value: vi.fn(function (this: HTMLDialogElement) { this.removeAttribute("open"); this.dispatchEvent(new Event("close")); }) });
 });
-afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); localStorage.clear(); });
+afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); localStorage.clear(); sessionStorage.clear(); });
 
 it("shares data between cards and details and supports minimize/reopen", async () => {
   const request = vi.fn().mockResolvedValue({ ok: true, json: async () => weather() });
   vi.stubGlobal("fetch", request);
   mount();
   expect(await screen.findAllByText("28.4°C")).toHaveLength(2);
-  fireEvent.click(screen.getAllByRole("button", { name: "ดูรายละเอียดสภาพอากาศ" })[0]);
+  fireEvent.click(screen.getAllByRole("button", { name: "แสดงทั้งหมด" })[0]);
   expect(screen.getByRole("dialog", { name: "รายละเอียดสภาพอากาศองครักษ์" })).toHaveTextContent("Open-Meteo");
+  expect(screen.getByRole("dialog")).not.toHaveTextContent("แบบจำลองสภาพอากาศ ไม่ใช่สถานีตรวจวัด");
   expect(request).toHaveBeenCalledTimes(1);
   fireEvent.click(screen.getByRole("button", { name: "ปิดรายละเอียดสภาพอากาศ" }));
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -40,6 +41,56 @@ it("shows loading without inventing readings", () => {
   mount();
   expect(screen.getAllByRole("status")).toHaveLength(2);
   expect(screen.queryByText("28.4°C")).not.toBeInTheDocument();
+});
+
+it("opens a centered detail dialog without a duplicate visible summary", async () => {
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => weather() }));
+  render(<LanguageProvider><WeatherProvider><WeatherWidget /></WeatherProvider></LanguageProvider>);
+  await screen.findByText("28.4°C");
+  const opener = screen.getByRole("button", { name: "แสดงทั้งหมด" });
+  const floating = opener.closest(".weather-floating");
+  expect(floating).toBeVisible();
+  fireEvent.click(opener);
+  expect(floating).not.toBeVisible();
+  expect(screen.getByRole("dialog")).toBeVisible();
+  fireEvent.click(screen.getByRole("button", { name: "ปิดรายละเอียดสภาพอากาศ" }));
+  expect(floating).toBeVisible();
+  expect(opener).toHaveFocus();
+});
+
+it("remembers minimize state in this tab and reopens from a cloud-only button", async () => {
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => weather() }));
+  const renderSingle = () => render(<LanguageProvider><WeatherProvider><WeatherWidget /></WeatherProvider></LanguageProvider>);
+  const view = renderSingle();
+  await screen.findByText("28.4°C");
+  fireEvent.click(screen.getByRole("button", { name: "ย่อการ์ดสภาพอากาศ" }));
+  expect(sessionStorage.getItem("floodwatch.weather.minimized")).toBe("true");
+  expect(screen.getByRole("button", { name: "เปิดการ์ดสภาพอากาศ" }).textContent).toBe("");
+  view.unmount();
+  renderSingle();
+  const reopen = screen.getByRole("button", { name: "เปิดการ์ดสภาพอากาศ" });
+  expect(reopen.querySelector("svg")).not.toBeNull();
+  expect(reopen.textContent).toBe("");
+  expect(screen.queryByRole("button", { name: "แสดงทั้งหมด" })).not.toBeInTheDocument();
+  fireEvent.click(reopen);
+  expect(screen.getByRole("button", { name: "แสดงทั้งหมด" })).toBeVisible();
+  expect(sessionStorage.getItem("floodwatch.weather.minimized")).toBe("false");
+});
+
+it("remains usable when session storage is unavailable", () => {
+  vi.stubGlobal("fetch", vi.fn(() => new Promise(() => undefined)));
+  const original = Storage.prototype.getItem;
+  vi.spyOn(Storage.prototype, "getItem").mockImplementation(function (this: Storage, key: string) {
+    if (this === sessionStorage) throw new Error("storage disabled");
+    return original.call(this, key);
+  });
+  vi.spyOn(Storage.prototype, "setItem").mockImplementation(function (this: Storage) {
+    if (this === sessionStorage) throw new Error("storage disabled");
+  });
+  render(<LanguageProvider><WeatherProvider><WeatherWidget /></WeatherProvider></LanguageProvider>);
+  fireEvent.click(screen.getByRole("button", { name: "ย่อการ์ดสภาพอากาศ" }));
+  fireEvent.click(screen.getByRole("button", { name: "เปิดการ์ดสภาพอากาศ" }));
+  expect(screen.getByRole("button", { name: "แสดงทั้งหมด" })).toBeVisible();
 });
 
 it("retries transport errors once for all consumers and hides unknown readings", async () => {

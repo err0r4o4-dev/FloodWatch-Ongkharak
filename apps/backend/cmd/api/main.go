@@ -16,6 +16,8 @@ import (
 	"github.com/floodwatch-ongkharak/backend/internal/alert"
 	"github.com/floodwatch-ongkharak/backend/internal/auth"
 	"github.com/floodwatch-ongkharak/backend/internal/config"
+	"github.com/floodwatch-ongkharak/backend/internal/externaldata"
+	"github.com/floodwatch-ongkharak/backend/internal/externaldata/providers"
 	"github.com/floodwatch-ongkharak/backend/internal/flood"
 	"github.com/floodwatch-ongkharak/backend/internal/googleauth"
 	"github.com/floodwatch-ongkharak/backend/internal/health"
@@ -29,6 +31,7 @@ import (
 	"github.com/floodwatch-ongkharak/backend/internal/postgres/airepo"
 	"github.com/floodwatch-ongkharak/backend/internal/postgres/alertrepo"
 	"github.com/floodwatch-ongkharak/backend/internal/postgres/authrepo"
+	"github.com/floodwatch-ongkharak/backend/internal/postgres/externaldatarepo"
 	"github.com/floodwatch-ongkharak/backend/internal/postgres/floodrepo"
 	"github.com/floodwatch-ongkharak/backend/internal/postgres/notificationrepo"
 	"github.com/floodwatch-ongkharak/backend/internal/postgres/outbox"
@@ -147,6 +150,14 @@ func run() error {
 		}
 		weatherService = weather.NewService(provider)
 	}
+	externalProviders, err := providers.New(configuration.ExternalDataProviders)
+	if err != nil {
+		return fmt.Errorf("configure external providers: %w", err)
+	}
+	externalService, err := externaldata.NewService(externaldatarepo.New(postgresPool), mediaStorage, externalProviders)
+	if err != nil {
+		return fmt.Errorf("configure external data: %w", err)
+	}
 	server := &http.Server{
 		Addr: fmt.Sprintf(":%d", configuration.APIPort),
 		Handler: router.New(router.Dependencies{
@@ -157,6 +168,7 @@ func run() error {
 			GoogleService:   googleService, AuthFrontendOrigin: configuration.AuthFrontendOrigin,
 			FloodService:              floodService,
 			WeatherService:            weatherService,
+			ExternalDataService:       externalService,
 			ReportService:             reportService,
 			AlertService:              alertService,
 			AdminService:              adminService,

@@ -186,15 +186,10 @@ func parseGate(body []byte, receivedAt time.Time) ([]externaldata.Record, error)
 				return nil, err
 			}
 			dateField := firstPresentField(item, definition.timeFields...)
+			if dateField == "" && (definition.metric == "gate_open" || definition.metric == "gate_pump") && value == nil {
+				dateField = firstPresentField(item, "watergate_datetime", "watergate_datetime_in", "watergate_datetime_out")
+			}
 			if dateField == "" {
-				if (definition.metric == "gate_open" || definition.metric == "gate_pump") && value == nil {
-					record := makeRecord(station, receivedAt, definition.metric, nil, definition.unit, "")
-					record.Key = station.ExternalID + ":" + definition.metric + ":unknown-time"
-					record.ObservedAt = nil
-					record.Freshness = "UNKNOWN"
-					records = append(records, record)
-					continue
-				}
 				return nil, errInvalidThaiWater
 			}
 			observedAt, err := requiredTime(item, dateField, receivedAt)
@@ -209,8 +204,7 @@ func parseGate(body []byte, receivedAt time.Time) ([]externaldata.Record, error)
 
 func responseData(body []byte, nested string) ([]map[string]json.RawMessage, error) {
 	var envelope map[string]json.RawMessage
-	decoder := json.NewDecoder(bytes.NewReader(body))
-	if err := decoder.Decode(&envelope); err != nil {
+	if err := json.Unmarshal(body, &envelope); err != nil {
 		return nil, errInvalidThaiWater
 	}
 	if nested != "" {
@@ -252,21 +246,45 @@ func parseStation(item map[string]json.RawMessage) (*externaldata.Station, error
 	if err != nil {
 		return nil, err
 	}
-	latitude, err := requiredNumber(station, "lat")
+	latitude, err := requiredNumber(station, firstPresentField(station, "lat", "tele_station_lat"))
 	if err != nil {
 		return nil, err
 	}
-	longitude, err := requiredNumber(station, "long")
+	longitude, err := requiredNumber(station, firstPresentField(station, "long", "tele_station_long"))
 	if err != nil {
 		return nil, err
 	}
 	if latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180 {
 		return nil, errInvalidThaiWater
 	}
-	oldCode, _ := optionalText(station, "tele_station_oldcode")
-	province, _ := nestedText(item, "geocode", "province_name", "th")
-	district, _ := nestedText(item, "geocode", "amphoe_name", "th")
-	agency, _ := nestedText(item, "agency", "agency_name", "th")
+	oldCode, err := requiredText(station, "tele_station_oldcode")
+	if err != nil {
+		return nil, err
+	}
+	geocodeRaw, ok := item["geocode"]
+	if !ok {
+		return nil, errInvalidThaiWater
+	}
+	var geocode map[string]json.RawMessage
+	if json.Unmarshal(geocodeRaw, &geocode) != nil {
+		return nil, errInvalidThaiWater
+	}
+	provinceCode, err := requiredText(geocode, "province_code")
+	if err != nil || provinceCode != "26" {
+		return nil, errInvalidThaiWater
+	}
+	province, err := optionalNestedText(item, "geocode", "province_name", "th")
+	if err != nil {
+		return nil, err
+	}
+	district, err := optionalNestedText(item, "geocode", "amphoe_name", "th")
+	if err != nil {
+		return nil, err
+	}
+	agency, err := optionalNestedText(item, "agency", "agency_name", "th")
+	if err != nil {
+		return nil, err
+	}
 	return &externaldata.Station{
 		Code: oldCode, ExternalID: id, Name: name, Latitude: latitude, Longitude: longitude,
 		Province: province, District: district, Agency: agency,
@@ -335,10 +353,14 @@ func optionalText(item map[string]json.RawMessage, field string) (string, bool) 
 		return "", false
 	}
 	var value string
-	if json.Unmarshal(raw, &value) != nil {
-		return "", false
+	if json.Unmarshal(raw, &value) == nil {
+		return strings.TrimSpace(value), true
 	}
-	return strings.TrimSpace(value), true
+	var number json.Number
+	if json.Unmarshal(raw, &number) == nil && number.String() != "" {
+		return number.String(), true
+	}
+	return "", false
 }
 
 func nestedText(item map[string]json.RawMessage, fields ...string) (string, error) {
@@ -362,6 +384,28 @@ func nestedText(item map[string]json.RawMessage, fields ...string) (string, erro
 	return "", errInvalidThaiWater
 }
 
+func optionalNestedText(item map[string]json.RawMessage, fields ...string) (string, error) {
+	if len(fields) == 0 {
+		return "", errInvalidThaiWater
+	}
+	current := item
+	for index, field := range fields {
+		raw, ok := current[field]
+		if !ok {
+			return "", nil
+		}
+		if index == len(fields)-1 {
+			return nestedText(item, fields...)
+		}
+		var next map[string]json.RawMessage
+		if json.Unmarshal(raw, &next) != nil {
+			return "", errInvalidThaiWater
+		}
+		current = next
+	}
+	return "", errInvalidThaiWater
+}
+
 func requiredNumber(item map[string]json.RawMessage, field string) (float64, error) {
 	value, present, err := optionalNumber(item, field)
 	if err != nil || !present || value == nil {
@@ -375,16 +419,20 @@ func optionalNumber(item map[string]json.RawMessage, field string) (*float64, bo
 	if !ok {
 		return nil, false, nil
 	}
-	if bytes.Equal(bytes.TrimSpace(raw), []byte("null")) {
+	trimmed := bytes.TrimSpace(raw)
+	if bytes.Equal(trimmed, []byte("null")) {
 		return nil, true, nil
 	}
 	var text string
-	if raw[0] == '"' {
-		if json.Unmarshal(raw, &text) != nil {
+	if len(trimmed) == 0 {
+		return nil, true, errInvalidThaiWater
+	}
+	if trimmed[0] == '"' {
+		if json.Unmarshal(trimmed, &text) != nil {
 			return nil, true, errInvalidThaiWater
 		}
 	} else {
-		text = string(raw)
+		text = string(trimmed)
 	}
 	value, err := strconv.ParseFloat(strings.TrimSpace(text), 64)
 	if err != nil || math.IsNaN(value) || math.IsInf(value, 0) {

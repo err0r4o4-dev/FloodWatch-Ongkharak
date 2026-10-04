@@ -2,7 +2,7 @@ import type th from "./th";
 
 const en: Record<keyof typeof th, string> = {
   "title": "Ongkharak weather",
-  "widget.details": "View weather details",
+  "widget.details": "Show all",
   "widget.dialogTitle": "Ongkharak weather details",
   "widget.closeDetails": "Close weather details",
   "widget.minimize": "Minimize weather card",
@@ -23,8 +23,6 @@ const en: Record<keyof typeof th, string> = {
   "fresh": "Current data",
   "stale": "Stale data",
   "unknown": "Status unknown",
-  "model": "Model weather, not a measurement station",
-  "floodCaveat": "Weather data does not confirm flood safety",
   "provider": "Provider: {name}",
   "providerLabel": "Provider",
   "modelTime": "Model time: {value}",
