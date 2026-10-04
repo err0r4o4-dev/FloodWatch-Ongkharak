@@ -26,6 +26,49 @@ const pendingReport = {
 
 describe("ReportForm uploads", () => {
   beforeEach(() => { vi.clearAllMocks(); });
+  it("submits an observation time and a falling trend without inventing a depth", async () => {
+    reportsApi.create.mockReset().mockResolvedValue({ ...pendingReport, uploadToken: "private-upload-capability" });
+    render(<ReportForm editing={null} onComplete={vi.fn()} onCancel={vi.fn()} />);
+    fireEvent.change(screen.getByLabelText("ชื่อสถานที่ / ชื่อซอย *"), { target: { value: "อาคารทดสอบ" } });
+    fireEvent.change(screen.getByLabelText("รายละเอียด"), { target: { value: "ระดับน้ำกำลังลด" } });
+    fireEvent.click(screen.getByRole("button", { name: "เลือกพิกัด" }));
+    fireEvent.change(screen.getByLabelText("การเปลี่ยนแปลงที่สังเกต"), { target: { value: "FALLING" } });
+    fireEvent.click(screen.getByRole("button", { name: "ส่งรายงาน" }));
+    await waitFor(() => expect(reportsApi.create).toHaveBeenCalledWith(expect.objectContaining({ observedAt: expect.any(String), waterTrend: "FALLING" })));
+    expect(reportsApi.create.mock.calls[0][0]).not.toHaveProperty("estimatedWaterDepthM");
+  });
+
+  it("rejects a future observation time and retains the report draft", () => {
+    reportsApi.create.mockReset();
+    render(<ReportForm editing={null} onComplete={vi.fn()} onCancel={vi.fn()} />);
+    fireEvent.change(screen.getByLabelText("ชื่อสถานที่ / ชื่อซอย *"), { target: { value: "อาคารทดสอบ" } });
+    fireEvent.change(screen.getByLabelText("รายละเอียด"), { target: { value: "น้ำขัง" } });
+    fireEvent.click(screen.getByRole("button", { name: "เลือกพิกัด" }));
+    fireEvent.change(screen.getByLabelText("เวลาที่พบเหตุ"), { target: { value: "custom" } });
+    fireEvent.change(screen.getByLabelText("ระบุวันและเวลาที่พบเหตุ"), { target: { value: "2099-01-01T12:00" } });
+    fireEvent.click(screen.getByRole("button", { name: "ส่งรายงาน" }));
+    expect(screen.getByRole("alert")).toHaveTextContent("เวลาที่พบเหตุ");
+    expect(reportsApi.create).not.toHaveBeenCalled();
+    expect(screen.getByLabelText("รายละเอียด")).toHaveValue("น้ำขัง");
+  });
+
+  it("prefills an area update while leaving its incident point editable", async () => {
+    reportsApi.create.mockReset().mockResolvedValue({ ...pendingReport, uploadToken: "private-upload-capability" });
+    render(<ReportForm editing={null} initialLocation={pendingReport.location} initialLocationName="พื้นที่ทดสอบ" onComplete={vi.fn()} onCancel={vi.fn()} />);
+    expect(screen.getByLabelText("ชื่อสถานที่ / ชื่อซอย *")).toHaveValue("พื้นที่ทดสอบ");
+    fireEvent.change(screen.getByLabelText("รายละเอียด"), { target: { value: "รายงานล่าสุด" } });
+    fireEvent.click(screen.getByRole("button", { name: "ส่งรายงาน" }));
+    await waitFor(() => expect(reportsApi.create).toHaveBeenCalledWith(expect.objectContaining({ location: pendingReport.location, locationName: "พื้นที่ทดสอบ" })));
+  });
+
+  it("does not replace missing historical observation time when editing", async () => {
+    reportsApi.update.mockReset().mockResolvedValue(pendingReport);
+    render(<ReportForm editing={pendingReport} onComplete={vi.fn()} onCancel={vi.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: "บันทึกการแก้ไข" }));
+    await waitFor(() => expect(reportsApi.update).toHaveBeenCalled());
+    expect(reportsApi.update.mock.calls[0][1]).not.toHaveProperty("observedAt");
+  });
+
   it("rejects empty or excessive custom depths while preserving the draft", () => {
     reportsApi.create.mockReset();
     render(<ReportForm editing={null} onComplete={vi.fn()} onCancel={vi.fn()} />);

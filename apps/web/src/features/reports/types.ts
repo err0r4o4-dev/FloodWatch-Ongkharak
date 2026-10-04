@@ -2,6 +2,7 @@ export type ReportType = "FLOOD" | "ROAD" | "OTHER";
 export type ReportStatus = "PENDING" | "VERIFIED" | "REJECTED";
 export type PublicationStatus = "PUBLISHED" | "REMOVED";
 export type ReviewAction = "VERIFY" | "REMOVE" | "RESTORE";
+export type WaterTrend = "UNKNOWN" | "RISING" | "STABLE" | "FALLING";
 
 export type ReportReviewHistory = {
   id: string;
@@ -33,6 +34,8 @@ export type CommunityReport = {
   locationNote?: string;
   location: ReportLocation;
   estimatedWaterDepthM: number | null;
+  observedAt?: string | null;
+  waterTrend?: WaterTrend;
   status: ReportStatus;
   verificationStatus: ReportStatus;
   publicationStatus?: PublicationStatus;
@@ -53,6 +56,8 @@ export type ReportInput = Pick<CommunityReport, "type" | "description" | "locati
   locationNote?: string;
   displayName?: string;
   estimatedWaterDepthM?: number;
+  observedAt?: string;
+  waterTrend?: WaterTrend;
 };
 
 export function derivePublicationStatus(status: ReportStatus): PublicationStatus {

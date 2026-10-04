@@ -41,7 +41,7 @@ func NewService(repository Repository, storage MediaStorage) (*Service, error) {
 }
 
 func (service *Service) Create(ctx context.Context, userID string, input Input) (Report, error) {
-	if !validID(userID) || !normalizeInput(&input) {
+	if !validID(userID) || !normalizeInput(&input) || !validObservationTime(input.ObservedAt, service.now()) {
 		return Report{}, ErrInvalid
 	}
 	now := service.now()
@@ -49,6 +49,7 @@ func (service *Service) Create(ctx context.Context, userID string, input Input) 
 		ID: uuid.NewString(), UserID: userID, Type: input.Type, Description: input.Description, Location: input.Location, LocationName: optionalString(input.LocationName), LocationNote: optionalString(input.LocationNote),
 		DisplayName:          defaultDisplayName,
 		EstimatedWaterDepthM: input.EstimatedWaterDepthM, Status: StatusPending, VerificationStatus: StatusPending,
+		ObservedAt: input.ObservedAt, WaterTrend: trendOrUnknown(input.WaterTrend),
 		SourceType: SourceCommunity, CreatedAt: now, UpdatedAt: now,
 	})
 	if err != nil {
@@ -58,7 +59,7 @@ func (service *Service) Create(ctx context.Context, userID string, input Input) 
 }
 
 func (service *Service) CreateGuest(ctx context.Context, userID string, input GuestInput) (GuestCreation, error) {
-	if (userID != "" && !validID(userID)) || !normalizeGuestInput(&input) {
+	if (userID != "" && !validID(userID)) || !normalizeGuestInput(&input) || !validObservationTime(input.ObservedAt, service.now()) {
 		return GuestCreation{}, ErrInvalid
 	}
 	guestRepository, ok := service.repository.(GuestRepository)
@@ -74,6 +75,7 @@ func (service *Service) CreateGuest(ctx context.Context, userID string, input Gu
 	created, err := guestRepository.CreateGuest(ctx, Report{
 		ID: uuid.NewString(), UserID: userID, DisplayName: input.DisplayName, Type: input.Type, Description: input.Description, Location: input.Location, LocationName: optionalString(input.LocationName), LocationNote: optionalString(input.LocationNote),
 		EstimatedWaterDepthM: input.EstimatedWaterDepthM, Status: StatusPending, VerificationStatus: StatusPending,
+		ObservedAt: input.ObservedAt, WaterTrend: trendOrUnknown(input.WaterTrend),
 		SourceType: SourceCommunity, CreatedAt: now, UpdatedAt: now,
 	}, tokenHash, expiresAt)
 	if err != nil {
@@ -125,7 +127,7 @@ func (service *Service) GetAdmin(ctx context.Context, id string) (Report, error)
 }
 
 func (service *Service) Update(ctx context.Context, id, userID string, input Input) (Report, error) {
-	if !validID(id) || !validID(userID) || !normalizeInput(&input) {
+	if !validID(id) || !validID(userID) || !normalizeInput(&input) || !validObservationTime(input.ObservedAt, service.now()) {
 		return Report{}, ErrInvalid
 	}
 	item, err := service.repository.Get(ctx, id)
@@ -208,7 +210,7 @@ func (service *Service) UploadMedia(ctx context.Context, reportID, userID string
 	if err := service.storage.Put(ctx, key, contentType, image.Data); err != nil {
 		return Media{}, fmt.Errorf("store report media: %w", err)
 	}
-	media, err := service.repository.CreateMedia(ctx, Media{ID: uuid.NewString(), ReportID: reportID, ObjectKey: key, ContentType: contentType, SizeBytes: len(image.Data)}, userID)
+	media, err := service.repository.CreateMedia(ctx, Media{ID: uuid.NewString(), ReportID: reportID, ObjectKey: key, ContentType: contentType, SizeBytes: len(image.Data), ContentSHA256: imageSHA256(image.Data)}, userID)
 	if err != nil {
 		if cleanupErr := service.storage.Delete(ctx, key); cleanupErr != nil {
 			return Media{}, fmt.Errorf("record report media: %w; cleanup: %v", err, cleanupErr)
@@ -235,7 +237,7 @@ func (service *Service) UploadGuestMedia(ctx context.Context, reportID, token st
 	if err := service.storage.Put(ctx, key, contentType, image.Data); err != nil {
 		return Media{}, fmt.Errorf("store guest report media: %w", err)
 	}
-	media, err := guestRepository.CreateGuestMedia(ctx, Media{ID: uuid.NewString(), ReportID: reportID, ObjectKey: key, ContentType: contentType, SizeBytes: len(image.Data)}, tokenHash, service.now())
+	media, err := guestRepository.CreateGuestMedia(ctx, Media{ID: uuid.NewString(), ReportID: reportID, ObjectKey: key, ContentType: contentType, SizeBytes: len(image.Data), ContentSHA256: imageSHA256(image.Data)}, tokenHash, service.now())
 	if err != nil {
 		if cleanupErr := service.storage.Delete(ctx, key); cleanupErr != nil {
 			return Media{}, fmt.Errorf("record guest report media: %w; cleanup: %v", err, cleanupErr)
@@ -271,7 +273,27 @@ func normalizeInput(input *Input) bool {
 	input.Description = strings.TrimSpace(input.Description)
 	locationNameValid := normalizeOptionalString(&input.LocationName, maxLocationNameRunes)
 	locationNoteValid := normalizeOptionalString(&input.LocationNote, maxLocationNoteRunes)
-	return validType(input.Type) && input.Description != "" && utf8.RuneCountInString(input.Description) <= maxDescriptionRunes && locationNameValid && locationNoteValid && validLocation(input.Location) && (input.EstimatedWaterDepthM == nil || validDepth(*input.EstimatedWaterDepthM))
+	return validType(input.Type) && input.Description != "" && utf8.RuneCountInString(input.Description) <= maxDescriptionRunes && locationNameValid && locationNoteValid && validLocation(input.Location) && validWaterTrend(input.WaterTrend) && (input.EstimatedWaterDepthM == nil || validDepth(*input.EstimatedWaterDepthM))
+}
+
+func validObservationTime(observedAt *time.Time, now time.Time) bool {
+	return observedAt == nil || (!observedAt.IsZero() && observedAt.Year() >= 2000 && !observedAt.After(now.Add(30*time.Second)))
+}
+
+func validWaterTrend(trend WaterTrend) bool {
+	return trend == "" || trend == TrendUnknown || trend == TrendRising || trend == TrendStable || trend == TrendFalling
+}
+
+func trendOrUnknown(trend WaterTrend) WaterTrend {
+	if trend == "" {
+		return TrendUnknown
+	}
+	return trend
+}
+
+func imageSHA256(data []byte) string {
+	hash := sha256.Sum256(data)
+	return fmt.Sprintf("%x", hash)
 }
 
 func normalizeOptionalString(value **string, maxRunes int) bool {

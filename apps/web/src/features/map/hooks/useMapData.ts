@@ -15,7 +15,13 @@ const emptyItems = (): LayerItems => ({ flood: [], water: [], risk: [], roads: [
 
 export function useMapData(bounds: MapBounds | null, visible: LayerVisibility, retry: number): MapData {
   const [data, setData] = useState<MapData>({ items: emptyItems(), failed: [], truncated: [], loading: true, previousLayers: [] });
+  const [pollRevision, setPollRevision] = useState(0);
   const requestVersion = useRef(0);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setPollRevision((current) => current + 1), 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   // Memoize bounds key to prevent unnecessary re-renders
   const boundsKey = useMemo(() => {
@@ -76,7 +82,7 @@ export function useMapData(bounds: MapBounds | null, visible: LayerVisibility, r
     }, 250);
 
     return () => { window.clearTimeout(timer); controller.abort(); };
-  }, [boundsKey, visibilityKey, retry]);
+  }, [boundsKey, visibilityKey, retry + pollRevision]);
 
   return data;
 }

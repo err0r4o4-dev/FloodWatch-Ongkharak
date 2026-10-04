@@ -1,6 +1,14 @@
 .map-marker { display: grid; place-items: center; border: 3px solid var(--color-surface); border-radius: 50%; box-shadow: var(--shadow-surface); font: 800 1.2rem/1 var(--font-sans); }
 .map-marker--water { color: var(--color-surface); background: var(--color-source-community-ink); }
-.map-marker--reports { color: var(--color-source-community-ink); background: var(--color-source-community); border-radius: var(--radius-sm); }
+.map-marker--reports { position: relative; color: var(--color-surface); background: var(--color-area-unknown); border-radius: 50%; }
+.map-marker--reports.map-marker--depth-very_high { background: var(--color-area-very-high); }
+.map-marker--reports.map-marker--depth-high { background: var(--color-area-high); }
+.map-marker--reports.map-marker--depth-moderate { background: var(--color-area-moderate); }
+.map-marker--reports.map-marker--depth-low { background: var(--color-area-low); }
+.map-marker__depth { display: block; line-height: 1; }
+.map-marker__trend { position: absolute; right: -0.4rem; bottom: -0.25rem; display: grid; width: 1.15rem; height: 1.15rem; place-items: center; border: 2px solid var(--color-surface); border-radius: 50%; background: var(--color-status-unknown); color: var(--color-ink-muted); font-size: .8rem; line-height: 1; }
+.map-marker__trend--rising { background: var(--color-danger-soft); color: var(--color-danger-ink); }
+.map-marker__trend--falling { background: var(--color-source-community); color: var(--color-status-success); }
 .map-marker--flood { color: var(--color-ink); background: var(--color-status-unknown); border-radius: var(--radius-sm); transform-origin: center; }
 .map-marker--flood.map-marker--danger { color: var(--color-danger-ink); background: var(--color-danger-soft); }
 .map-marker--flood.map-marker--warning { color: var(--color-warning-ink); background: var(--color-warning-soft); }

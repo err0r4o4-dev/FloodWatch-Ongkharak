@@ -1,9 +1,10 @@
 import { apiConfig } from "../../shared/config/api";
 import type { LayerItems, LayerKey, MapBounds, WaterReading } from "./types";
 import { validBounds, validGeometry } from "./utils";
+import { fetchReportAreas, isValidReportArea } from "../report-areas/api";
 
 const paths: Record<LayerKey, string> = {
-  flood: "/flood-events", water: "/water-stations", risk: "/risk-areas", roads: "/roads", reports: "/reports"
+  flood: "/flood-events", water: "/water-stations", risk: "/risk-areas", roads: "/roads", reports: "/report-areas"
 };
 const pageLimit = 100;
 const freshnessValues = ["FRESH", "STALE", "EXPIRED", "UNKNOWN"];
@@ -33,13 +34,7 @@ function validItem(key: LayerKey, value: unknown): boolean {
     typeof value.verificationStatus === "string" && confidence(value.confidence);
   if (key === "risk") return geometry.type === "MultiPolygon" && typeof value.name === "string" && source(value.source) &&
     typeof value.effectiveRiskLevel === "string" && freshnessValues.includes(String(value.freshness));
-  if (key === "reports") return geometry.type === "Point" && ["FLOOD", "ROAD", "OTHER"].includes(String(value.type)) &&
-    typeof value.description === "string" && (value.estimatedWaterDepthM === null || typeof value.estimatedWaterDepthM === "number") &&
-    ["PENDING", "VERIFIED"].includes(String(value.status)) && value.verificationStatus === value.status && value.sourceType === "COMMUNITY" &&
-    (value.publicationStatus === undefined || value.publicationStatus === "PUBLISHED") &&
-    typeof value.createdAt === "string" && typeof value.updatedAt === "string" && (value.verifiedAt === null || typeof value.verifiedAt === "string") &&
-    (value.verifiedBy === undefined || value.verifiedBy === null || typeof value.verifiedBy === "string") && Array.isArray(value.media) &&
-    value.media.every((media) => record(media) && typeof media.id === "string" && typeof media.url === "string");
+  if (key === "reports") return isValidReportArea(value);
   if (geometry.type !== "MultiLineString" || typeof value.name !== "string" || !record(value.currentCondition)) return false;
   const condition = value.currentCondition;
   return roadValues.includes(String(condition.status)) && freshnessValues.includes(String(condition.freshness)) &&
@@ -62,6 +57,10 @@ async function readPage<T>(url: string, signal: AbortSignal): Promise<{ items: T
 }
 
 export async function fetchMapLayer<Key extends LayerKey>(key: Key, bounds: MapBounds, signal: AbortSignal): Promise<{ items: LayerItems[Key]; hasMore: boolean }> {
+  if (key === "reports") {
+    const page = await fetchReportAreas(bounds, signal);
+    return { items: page.items as LayerItems[Key], hasMore: page.hasMore };
+  }
   const query = new URLSearchParams({ bbox: formatBbox(bounds), limit: String(pageLimit), offset: "0" });
   const page = await readPage<LayerItems[Key][number]>(`${apiConfig.baseUrl}${paths[key]}?${query}`, signal);
   if (!page.items.every((item) => validItem(key, item))) throw new Error("Invalid map geometry or evidence");

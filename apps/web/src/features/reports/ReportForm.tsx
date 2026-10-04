@@ -6,7 +6,7 @@ import { notifyError, notifySuccess, notifyWarning } from "../../shared/alerts";
 import { ApiError, reportsApi } from "./api";
 import { ReportLocationPicker } from "./ReportLocationPicker";
 import { useGuestIdentity } from "../guest/identity";
-import type { CommunityReport, ReportInput, ReportLocation, ReportType } from "./types";
+import type { CommunityReport, ReportInput, ReportLocation, ReportType, WaterTrend } from "./types";
 
 type UploadState = { name: string; state: "uploading" | "complete" | "failed" };
 type FormError = { key: keyof typeof th };
@@ -15,7 +15,21 @@ const maximumDepthM = 100;
 const maximumFiles = 3;
 const maximumFileBytes = 5 * 1024 * 1024;
 const supportedMediaTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
-const depthPresets = ["", "0.1", "0.3", "0.5", "1"];
+const depthPresets = ["", "0", "0.1", "0.3", "0.5", "1"];
+
+type ObservationChoice = "now" | "custom" | "unknown";
+
+function observationChoice(report: CommunityReport | null): ObservationChoice {
+  return report ? report.observedAt ? "custom" : "unknown" : "now";
+}
+
+function localObservationTime(value?: string | null): string {
+  if (!value) return "";
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return "";
+  date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+  return date.toISOString().slice(0, 16);
+}
 
 function depthChoiceFromReport(report: CommunityReport | null) {
   const value = report?.estimatedWaterDepthM?.toString() ?? "";
@@ -33,8 +47,10 @@ function inputFromReport(report: CommunityReport | null): ReportInput {
   } : { type: "FLOOD", description: "", locationName: "", locationNote: "", location: { type: "Point", coordinates: [0, 0] } };
 }
 
-export function ReportForm({ editing, onComplete, onCancel }: {
+export function ReportForm({ editing, initialLocation = null, initialLocationName = "", onComplete, onCancel }: {
   editing: CommunityReport | null;
+  initialLocation?: ReportLocation | null;
+  initialLocationName?: string;
   onComplete: (preserveEditing?: boolean) => void;
   onCancel: () => void;
 }) {
@@ -43,8 +59,11 @@ export function ReportForm({ editing, onComplete, onCancel }: {
   const [nameDraft, setNameDraft] = useState(displayName);
   const submitPending = useRef(false);
   const [submitted, setSubmitted] = useState(false);
-  const [input, setInput] = useState(() => inputFromReport(editing));
-  const [location, setLocation] = useState<ReportLocation | null>(editing?.location ?? null);
+  const [input, setInput] = useState(() => ({ ...inputFromReport(editing), ...(!editing && initialLocationName ? { locationName: initialLocationName } : {}) }));
+  const [location, setLocation] = useState<ReportLocation | null>(editing?.location ?? initialLocation);
+  const [observedChoice, setObservedChoice] = useState<ObservationChoice>(() => observationChoice(editing));
+  const [observedTime, setObservedTime] = useState(() => localObservationTime(editing?.observedAt));
+  const [waterTrend, setWaterTrend] = useState<WaterTrend>(editing?.waterTrend ?? "UNKNOWN");
   const [waterDepth, setWaterDepth] = useState(editing?.estimatedWaterDepthM?.toString() ?? "");
   const [depthChoice, setDepthChoice] = useState(() => depthChoiceFromReport(editing));
   const [customDepthCm, setCustomDepthCm] = useState(editing?.estimatedWaterDepthM === null || !editing ? "" : (editing.estimatedWaterDepthM * 100).toString());
@@ -59,8 +78,11 @@ export function ReportForm({ editing, onComplete, onCancel }: {
   useEffect(() => { setNameDraft(displayName); }, [displayName]);
 
   useEffect(() => {
-    setInput(inputFromReport(editing));
-    setLocation(editing?.location ?? null);
+    setInput({ ...inputFromReport(editing), ...(!editing && initialLocationName ? { locationName: initialLocationName } : {}) });
+    setLocation(editing?.location ?? initialLocation);
+    setObservedChoice(observationChoice(editing));
+    setObservedTime(localObservationTime(editing?.observedAt));
+    setWaterTrend(editing?.waterTrend ?? "UNKNOWN");
     setWaterDepth(editing?.estimatedWaterDepthM?.toString() ?? "");
     setDepthChoice(depthChoiceFromReport(editing));
     setCustomDepthCm(editing?.estimatedWaterDepthM === null || !editing ? "" : (editing.estimatedWaterDepthM * 100).toString());
@@ -70,7 +92,7 @@ export function ReportForm({ editing, onComplete, onCancel }: {
     setUploadToken(undefined);
     setError(null);
     setLocationResetKey((key) => key + 1);
-  }, [editing]);
+  }, [editing, initialLocation, initialLocationName]);
 
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -80,6 +102,7 @@ export function ReportForm({ editing, onComplete, onCancel }: {
     const locationName = input.locationName?.trim() ?? "";
     const locationNote = input.locationNote?.trim() ?? "";
     const depth = waterDepth === "" ? undefined : Number(waterDepth);
+    const observedDate = observedChoice === "now" ? new Date() : observedChoice === "custom" ? new Date(observedTime) : null;
     if (!retryReportId) {
       if (Array.from(submittedName).length > 80) return setError({ key: "form.error.displayName" });
       if (!description) return setError({ key: "form.error.required" });
@@ -89,6 +112,7 @@ export function ReportForm({ editing, onComplete, onCancel }: {
       if (Array.from(locationNote).length > 500) return setError({ key: "form.error.locationNote" });
       if (depthChoice === "custom" && !customDepthCm.trim()) return setError({ key: "form.error.depth" });
       if (depth !== undefined && (!Number.isFinite(depth) || depth < 0 || depth > maximumDepthM)) return setError({ key: "form.error.depth" });
+      if (observedDate && (!Number.isFinite(observedDate.getTime()) || observedDate.getFullYear() < 2000 || observedDate.getTime() > Date.now() + 30_000)) return setError({ key: "form.error.observedAt" });
     }
 
     setError(null);
@@ -98,7 +122,7 @@ export function ReportForm({ editing, onComplete, onCancel }: {
       let reportId = retryReportId;
       let capability = uploadToken;
       if (!reportId && location) {
-        const payload: ReportInput = { type: input.type, description, location, locationName, locationNote, ...(!editing ? { displayName: submittedName } : {}), ...(depth === undefined ? {} : { estimatedWaterDepthM: depth }) };
+        const payload: ReportInput = { type: input.type, description, location, locationName, locationNote, waterTrend, ...(observedDate ? { observedAt: editing?.observedAt && observedTime === localObservationTime(editing.observedAt) && observedChoice === "custom" ? editing.observedAt : observedDate.toISOString() } : {}), ...(!editing ? { displayName: submittedName } : {}), ...(depth === undefined ? {} : { estimatedWaterDepthM: depth }) };
         const report = editing ? await reportsApi.update(editing.id, payload) : await reportsApi.create(payload);
         reportId = report.id;
         if (!editing) {
@@ -139,6 +163,9 @@ export function ReportForm({ editing, onComplete, onCancel }: {
           setWaterDepth("");
           setDepthChoice("");
           setCustomDepthCm("");
+          setObservedChoice("now");
+          setObservedTime("");
+          setWaterTrend("UNKNOWN");
           setLocationResetKey((key) => key + 1);
         }
         void notifySuccess(editing ? t("form.success.updated") : t("form.success.created"), t("form.success.text"));
@@ -170,6 +197,19 @@ export function ReportForm({ editing, onComplete, onCancel }: {
         <label>{t("form.locationNote")}<input value={input.locationNote ?? ""} maxLength={1000} placeholder={t("form.locationNotePlaceholder")} onChange={(event) => setInput((current) => ({ ...current, locationNote: event.target.value }))} /></label>
         <p id="report-place-hint" className="report-field-hint">{t("form.locationHint")}</p>
       </div>
+      <div className="report-place-fields">
+        <label>{t("form.observedAt")}<select value={observedChoice} aria-describedby="report-observation-hint" onChange={(event) => setObservedChoice(event.target.value as ObservationChoice)}>
+          <option value="now">{t("form.observedNow")}</option>
+          <option value="custom">{t("form.observedCustom")}</option>
+          {!editing?.observedAt && <option value="unknown">{t("form.observedUnknown")}</option>}
+        </select></label>
+        {observedChoice === "custom" && <label>{t("form.observedCustomLabel")}<input type="datetime-local" required value={observedTime} onChange={(event) => setObservedTime(event.target.value)} /></label>}
+        <p id="report-observation-hint" className="report-field-hint">{t("form.observedHint")}</p>
+        <label>{t("form.waterTrend")}<select value={waterTrend} aria-describedby="report-trend-hint" onChange={(event) => setWaterTrend(event.target.value as WaterTrend)}>
+          {["UNKNOWN", "RISING", "STABLE", "FALLING"].map((trend) => <option key={trend} value={trend}>{t(`trend.${trend as WaterTrend}`)}</option>)}
+        </select></label>
+        <p id="report-trend-hint" className="report-field-hint">{t("form.waterTrendHint")}</p>
+      </div>
       <fieldset className="report-depth-picker" aria-describedby="report-depth-hint">
         <legend>{t("form.depth")}</legend>
         <p id="report-depth-hint" className="report-field-hint">{t("form.depthHint")}</p>
@@ -179,7 +219,7 @@ export function ReportForm({ editing, onComplete, onCancel }: {
               setDepthChoice(value);
               setWaterDepth(value === "custom" ? customDepthCm.trim() === "" ? "" : (Number(customDepthCm) / 100).toString() : value);
             }} />
-            <span><span className="report-depth-check" aria-hidden="true">✓</span>{value === "" ? t("form.depthUnspecified") : value === "custom" ? t("form.depthCustom") : value === "1" ? t("form.depthOneMeter") : t("form.depthCentimeters", { value: Number(value) * 100 })}</span>
+            <span><span className="report-depth-check" aria-hidden="true">✓</span>{value === "" ? t("form.depthUnspecified") : value === "0" ? t("form.depthNotObserved") : value === "custom" ? t("form.depthCustom") : value === "1" ? t("form.depthOneMeter") : t("form.depthCentimeters", { value: Number(value) * 100 })}</span>
           </label>)}
         </div>
         {depthChoice === "custom" && <label>{t("form.depthCustomLabel")}<input type="number" inputMode="decimal" min="0" max={maximumDepthM * 100} step="any" value={customDepthCm} onChange={(event) => {
@@ -218,6 +258,9 @@ export function ReportForm({ editing, onComplete, onCancel }: {
           setWaterDepth("");
           setDepthChoice("");
           setCustomDepthCm("");
+          setObservedChoice("now");
+          setObservedTime("");
+          setWaterTrend("UNKNOWN");
           setLocationResetKey((key) => key + 1);
         }
       }}>{t("form.skipFailed")}</button>}

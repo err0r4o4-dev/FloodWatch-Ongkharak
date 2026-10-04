@@ -59,7 +59,7 @@ export function MapSidePanel({ mode, items, visible, loading, failed, failedLaye
       {loading && <p role="status">{t(showingPrevious ? "mapStatus.previous" : selections.length ? "mapStatus.updating" : "panel.loading")}</p>}
       {loading && selections.length > 0 && <p role="status">{t("mapStatus.progress", { count: selections.length })}</p>}
       {failed ? <div role="alert"><p>{t("panel.error")}</p><button type="button" className="action-button" onClick={onRetry}>{t("mapStatus.retry")}</button></div> : selections.length ? <ul className="map-feature-list">{selections.map((item) => {
-        const name = item.layer === "flood" ? item.feature.title : item.layer === "reports" ? item.feature.description : item.feature.name;
+        const name = item.layer === "flood" ? item.feature.title : item.feature.name;
         const status = item.layer === "roads" ? effectiveRoadStatus(item.feature.currentCondition) : item.layer === "flood" ? effectiveFloodSeverity(item.feature) : item.layer === "risk" ? effectiveRiskLevel(item.feature) : item.layer === "reports" ? "INFO" : "UNKNOWN";
         return <li key={`${item.layer}-${item.feature.id}`}><button type="button" onClick={() => onSelect(item)}><span>{name}<small>{t(`layer.${item.layer}`)}</small></span><StatusBadge status={status} /></button></li>;
       })}</ul> : loading ? null : <EmptyState title={t("panel.emptyTitle")}>{t("panel.emptyBody")}</EmptyState>}

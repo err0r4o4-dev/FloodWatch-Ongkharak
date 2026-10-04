@@ -2,6 +2,7 @@ package ingestion
 
 import (
 	"context"
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"io"
@@ -19,10 +20,11 @@ import (
 var ErrResponseTooLarge = errors.New("provider response exceeds size limit")
 
 type HTTPOptions struct {
-	Timeout      time.Duration
-	MaxBytes     int64
-	Attempts     int
-	AllowPrivate bool
+	Timeout             time.Duration
+	MaxBytes            int64
+	Attempts            int
+	AllowPrivate        bool
+	TLSIntermediatesPEM []byte
 }
 
 type HTTPClient struct {
@@ -70,6 +72,19 @@ func NewHTTPClient(endpoint string, options HTTPOptions) (*HTTPClient, error) {
 		}
 		return (&net.Dialer{Timeout: options.Timeout}).DialContext(ctx, network, net.JoinHostPort(host, port))
 	}}
+	if len(options.TLSIntermediatesPEM) > 0 {
+		if parsed.Scheme != "https" {
+			return nil, errors.New("supplemental TLS requires HTTPS")
+		}
+		roots, err := x509.SystemCertPool()
+		if err != nil {
+			return nil, errors.New("system TLS roots unavailable")
+		}
+		transport.TLSClientConfig, err = supplementalTLSConfig(parsed.Hostname(), options.TLSIntermediatesPEM, roots)
+		if err != nil {
+			return nil, err
+		}
+	}
 	return &HTTPClient{endpoint: parsed, options: options, client: &http.Client{
 		Timeout: options.Timeout, Transport: transport,
 		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },

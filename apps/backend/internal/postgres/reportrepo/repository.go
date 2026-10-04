@@ -23,8 +23,8 @@ type Repository struct{ pool *pgxpool.Pool }
 func New(pool *pgxpool.Pool) *Repository { return &Repository{pool: pool} }
 
 func (repository *Repository) Create(ctx context.Context, item report.Report) (report.Report, error) {
-	_, err := repository.pool.Exec(ctx, `INSERT INTO community_reports (id, user_id, display_name, type, description, location_name, location_note, location, estimated_water_depth_m, status, source_type, created_at, updated_at)
-		VALUES ($1,$2,COALESCE(NULLIF($3,''),'Guest'),$4,$5,$6,$7,ST_SetSRID(ST_MakePoint($8,$9),4326),$10,$11,'COMMUNITY',$12,$13)`, item.ID, nullableUserID(item.UserID), item.DisplayName, item.Type, item.Description, item.LocationName, item.LocationNote, item.Location.Coordinates[0], item.Location.Coordinates[1], item.EstimatedWaterDepthM, item.Status, item.CreatedAt, item.UpdatedAt)
+	_, err := repository.pool.Exec(ctx, `INSERT INTO community_reports (id, user_id, display_name, type, description, location_name, location_note, location, estimated_water_depth_m, status, source_type, created_at, updated_at, observed_at, water_trend)
+		VALUES ($1,$2,COALESCE(NULLIF($3,''),'Guest'),$4,$5,$6,$7,ST_SetSRID(ST_MakePoint($8,$9),4326),$10,$11,'COMMUNITY',$12,$13,$14,COALESCE(NULLIF($15,''),'UNKNOWN'))`, item.ID, nullableUserID(item.UserID), item.DisplayName, item.Type, item.Description, item.LocationName, item.LocationNote, item.Location.Coordinates[0], item.Location.Coordinates[1], item.EstimatedWaterDepthM, item.Status, item.CreatedAt, item.UpdatedAt, item.ObservedAt, item.WaterTrend)
 	if err != nil {
 		return report.Report{}, fmt.Errorf("create report: %w", mapped(err))
 	}
@@ -32,8 +32,8 @@ func (repository *Repository) Create(ctx context.Context, item report.Report) (r
 }
 
 func (repository *Repository) CreateGuest(ctx context.Context, item report.Report, tokenHash []byte, expiresAt time.Time) (report.Report, error) {
-	_, err := repository.pool.Exec(ctx, `INSERT INTO community_reports (id, user_id, display_name, type, description, location_name, location_note, location, estimated_water_depth_m, status, source_type, guest_upload_token_hash, guest_upload_token_expires_at, created_at, updated_at)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,ST_SetSRID(ST_MakePoint($8,$9),4326),$10,$11,'COMMUNITY',$12,$13,$14,$15)`, item.ID, nullableUserID(item.UserID), item.DisplayName, item.Type, item.Description, item.LocationName, item.LocationNote, item.Location.Coordinates[0], item.Location.Coordinates[1], item.EstimatedWaterDepthM, item.Status, tokenHash, expiresAt, item.CreatedAt, item.UpdatedAt)
+	_, err := repository.pool.Exec(ctx, `INSERT INTO community_reports (id, user_id, display_name, type, description, location_name, location_note, location, estimated_water_depth_m, status, source_type, guest_upload_token_hash, guest_upload_token_expires_at, created_at, updated_at, observed_at, water_trend)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,ST_SetSRID(ST_MakePoint($8,$9),4326),$10,$11,'COMMUNITY',$12,$13,$14,$15,$16,COALESCE(NULLIF($17,''),'UNKNOWN'))`, item.ID, nullableUserID(item.UserID), item.DisplayName, item.Type, item.Description, item.LocationName, item.LocationNote, item.Location.Coordinates[0], item.Location.Coordinates[1], item.EstimatedWaterDepthM, item.Status, tokenHash, expiresAt, item.CreatedAt, item.UpdatedAt, item.ObservedAt, item.WaterTrend)
 	if err != nil {
 		return report.Report{}, fmt.Errorf("create guest report: %w", mapped(err))
 	}
@@ -125,8 +125,8 @@ func (repository *Repository) ListAdmin(ctx context.Context, status report.Statu
 }
 
 func (repository *Repository) UpdatePending(ctx context.Context, id string, input report.Input) (report.Report, error) {
-	command, err := repository.pool.Exec(ctx, `UPDATE community_reports SET type=$2, description=$3, location_name=COALESCE($4, location_name), location_note=COALESCE($5, location_note), location=ST_SetSRID(ST_MakePoint($6,$7),4326), estimated_water_depth_m=$8, updated_at=GREATEST(clock_timestamp(), updated_at + interval '1 microsecond')
-		WHERE id=$1 AND status='PENDING'`, id, input.Type, input.Description, input.LocationName, input.LocationNote, input.Location.Coordinates[0], input.Location.Coordinates[1], input.EstimatedWaterDepthM)
+	command, err := repository.pool.Exec(ctx, `UPDATE community_reports SET type=$2, description=$3, location_name=COALESCE($4, location_name), location_note=COALESCE($5, location_note), location=ST_SetSRID(ST_MakePoint($6,$7),4326), estimated_water_depth_m=$8, observed_at=COALESCE($9,observed_at), water_trend=COALESCE(NULLIF($10,''),water_trend), updated_at=GREATEST(clock_timestamp(), updated_at + interval '1 microsecond')
+		WHERE id=$1 AND status='PENDING'`, id, input.Type, input.Description, input.LocationName, input.LocationNote, input.Location.Coordinates[0], input.Location.Coordinates[1], input.EstimatedWaterDepthM, input.ObservedAt, input.WaterTrend)
 	if err != nil {
 		return report.Report{}, fmt.Errorf("update report: %w", mapped(err))
 	}
@@ -249,8 +249,8 @@ func (repository *Repository) CreateMedia(ctx context.Context, item report.Media
 	if count >= 3 {
 		return report.Media{}, report.ErrConflict
 	}
-	if err := transaction.QueryRow(ctx, `INSERT INTO community_report_media (id, report_id, object_key, content_type, size_bytes)
-        VALUES ($1,$2,$3,$4,$5) RETURNING created_at`, item.ID, item.ReportID, item.ObjectKey, item.ContentType, item.SizeBytes).Scan(&item.CreatedAt); err != nil {
+	if err := transaction.QueryRow(ctx, `INSERT INTO community_report_media (id, report_id, object_key, content_type, size_bytes, content_sha256)
+        VALUES ($1,$2,$3,$4,$5,NULLIF($6,'')) RETURNING created_at`, item.ID, item.ReportID, item.ObjectKey, item.ContentType, item.SizeBytes, item.ContentSHA256).Scan(&item.CreatedAt); err != nil {
 		return report.Media{}, fmt.Errorf("create report media: %w", mapped(err))
 	}
 	if _, err := transaction.Exec(ctx, `UPDATE community_reports SET updated_at=GREATEST(clock_timestamp(), updated_at + interval '1 microsecond') WHERE id=$1`, item.ReportID); err != nil {
@@ -293,8 +293,8 @@ func (repository *Repository) CreateGuestMedia(ctx context.Context, item report.
 	if count >= 3 {
 		return report.Media{}, report.ErrConflict
 	}
-	if err := transaction.QueryRow(ctx, `INSERT INTO community_report_media (id, report_id, object_key, content_type, size_bytes)
-        VALUES ($1,$2,$3,$4,$5) RETURNING created_at`, item.ID, item.ReportID, item.ObjectKey, item.ContentType, item.SizeBytes).Scan(&item.CreatedAt); err != nil {
+	if err := transaction.QueryRow(ctx, `INSERT INTO community_report_media (id, report_id, object_key, content_type, size_bytes, content_sha256)
+        VALUES ($1,$2,$3,$4,$5,NULLIF($6,'')) RETURNING created_at`, item.ID, item.ReportID, item.ObjectKey, item.ContentType, item.SizeBytes, item.ContentSHA256).Scan(&item.CreatedAt); err != nil {
 		return report.Media{}, fmt.Errorf("create guest report media: %w", mapped(err))
 	}
 	if _, err := transaction.Exec(ctx, `UPDATE community_reports SET updated_at=GREATEST(clock_timestamp(), updated_at + interval '1 microsecond') WHERE id=$1`, item.ReportID); err != nil {
@@ -348,7 +348,7 @@ func (repository *Repository) listMedia(ctx context.Context, reportID string) ([
 }
 
 func listReportMedia(ctx context.Context, querier reportQuerier, reportID string) ([]report.Media, error) {
-	rows, err := querier.Query(ctx, `SELECT id, report_id, object_key, content_type, size_bytes, created_at FROM community_report_media WHERE report_id=$1 ORDER BY created_at ASC`, reportID)
+	rows, err := querier.Query(ctx, `SELECT id, report_id, object_key, content_type, size_bytes, created_at, COALESCE(content_sha256,'') FROM community_report_media WHERE report_id=$1 ORDER BY created_at ASC`, reportID)
 	if err != nil {
 		return nil, fmt.Errorf("list report media: %w", err)
 	}
@@ -356,7 +356,7 @@ func listReportMedia(ctx context.Context, querier reportQuerier, reportID string
 	items := make([]report.Media, 0)
 	for rows.Next() {
 		var item report.Media
-		if err := rows.Scan(&item.ID, &item.ReportID, &item.ObjectKey, &item.ContentType, &item.SizeBytes, &item.CreatedAt); err != nil {
+		if err := rows.Scan(&item.ID, &item.ReportID, &item.ObjectKey, &item.ContentType, &item.SizeBytes, &item.CreatedAt, &item.ContentSHA256); err != nil {
 			return nil, fmt.Errorf("scan report media: %w", err)
 		}
 		items = append(items, item)
@@ -368,7 +368,7 @@ func listReportMedia(ctx context.Context, querier reportQuerier, reportID string
 }
 
 const reportSelect = `SELECT r.id, r.user_id, r.display_name, r.type, r.description, r.location_name, r.location_note, ST_AsGeoJSON(r.location), r.estimated_water_depth_m::double precision,
-    r.status, r.source_type, r.created_at, r.updated_at, r.verified_at, r.verified_by, r.reviewed_at, r.reviewed_by, r.rejection_reason FROM community_reports r`
+    r.status, r.source_type, r.created_at, r.updated_at, r.verified_at, r.verified_by, r.reviewed_at, r.reviewed_by, r.rejection_reason, r.observed_at, r.water_trend FROM community_reports r`
 
 type rowScanner interface{ Scan(...any) error }
 
@@ -376,7 +376,7 @@ func scanReport(row rowScanner) (report.Report, error) {
 	var item report.Report
 	var userID, displayName, locationName, locationNote sql.NullString
 	var locationJSON []byte
-	err := row.Scan(&item.ID, &userID, &displayName, &item.Type, &item.Description, &locationName, &locationNote, &locationJSON, &item.EstimatedWaterDepthM, &item.Status, &item.SourceType, &item.CreatedAt, &item.UpdatedAt, &item.VerifiedAt, &item.VerifiedBy, &item.ReviewedAt, &item.ReviewedBy, &item.RejectionReason)
+	err := row.Scan(&item.ID, &userID, &displayName, &item.Type, &item.Description, &locationName, &locationNote, &locationJSON, &item.EstimatedWaterDepthM, &item.Status, &item.SourceType, &item.CreatedAt, &item.UpdatedAt, &item.VerifiedAt, &item.VerifiedBy, &item.ReviewedAt, &item.ReviewedBy, &item.RejectionReason, &item.ObservedAt, &item.WaterTrend)
 	if err != nil {
 		return report.Report{}, err
 	}

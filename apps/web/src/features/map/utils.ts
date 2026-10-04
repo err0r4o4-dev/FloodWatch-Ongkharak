@@ -62,7 +62,7 @@ export function mapSelections(items: LayerItems): MapSelection[] {
 }
 
 export function selectionName(selection: MapSelection): string {
-  return selection.layer === "flood" ? selection.feature.title : selection.layer === "reports" ? selection.feature.description : selection.feature.name;
+  return selection.layer === "flood" ? selection.feature.title : selection.feature.name;
 }
 
 export function geometryBounds(geometry: MapGeometry): MapBounds {

@@ -497,6 +497,8 @@ type reportResponse struct {
 	LocationName         string                   `json:"locationName"`
 	LocationNote         string                   `json:"locationNote"`
 	EstimatedWaterDepthM *float64                 `json:"estimatedWaterDepthM"`
+	ObservedAt           *time.Time               `json:"observedAt"`
+	WaterTrend           report.WaterTrend        `json:"waterTrend"`
 	Status               report.Status            `json:"status"`
 	PublicationStatus    report.PublicationStatus `json:"publicationStatus"`
 	VerificationStatus   report.Status            `json:"verificationStatus"`
@@ -540,7 +542,7 @@ func reportPayload(item report.Report, private bool) any {
 		displayName = "Guest"
 	}
 	payload := reportResponse{
-		ID: item.ID, DisplayName: displayName, Type: item.Type, Description: item.Description, Location: item.Location, LocationName: item.LocationName, LocationNote: item.LocationNote, EstimatedWaterDepthM: item.EstimatedWaterDepthM,
+		ID: item.ID, DisplayName: displayName, Type: item.Type, Description: item.Description, Location: item.Location, LocationName: item.LocationName, LocationNote: item.LocationNote, EstimatedWaterDepthM: item.EstimatedWaterDepthM, ObservedAt: item.ObservedAt, WaterTrend: item.WaterTrend,
 		Status: item.Status, PublicationStatus: item.PublicationStatus(), VerificationStatus: item.VerificationStatus, SourceType: item.SourceType, CreatedAt: item.CreatedAt, UpdatedAt: item.UpdatedAt,
 		VerifiedAt: item.VerifiedAt, Media: make([]mediaResponse, 0, len(item.Media)),
 	}

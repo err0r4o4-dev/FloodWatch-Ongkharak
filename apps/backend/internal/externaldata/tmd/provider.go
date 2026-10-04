@@ -3,6 +3,7 @@ package tmd
 import (
 	"bytes"
 	"context"
+	_ "embed"
 	"encoding/json"
 	"encoding/xml"
 	"errors"
@@ -27,6 +28,9 @@ const (
 
 var errInvalidTMD = errors.New("invalid TMD CAP response")
 
+//go:embed globalsign-r6-alphassl-2025.pem
+var tlsIntermediate []byte
+
 type Provider struct {
 	fetcher externaldata.Fetcher
 	now     func() time.Time
@@ -35,6 +39,7 @@ type Provider struct {
 func New() (*Provider, error) {
 	client, err := ingestion.NewHTTPClient(tmdBase, ingestion.HTTPOptions{
 		Timeout: 10 * time.Second, MaxBytes: 5 << 20, Attempts: 2,
+		TLSIntermediatesPEM: tlsIntermediate,
 	})
 	if err != nil {
 		return nil, err

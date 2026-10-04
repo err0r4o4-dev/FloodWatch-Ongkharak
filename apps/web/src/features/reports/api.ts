@@ -19,6 +19,8 @@ function validReport(value: unknown): value is CommunityReport {
     (value.displayName !== undefined && typeof value.displayName !== "string") ||
     (value.locationName !== undefined && typeof value.locationName !== "string") ||
     (value.locationNote !== undefined && typeof value.locationNote !== "string") ||
+    (value.observedAt !== undefined && value.observedAt !== null && (typeof value.observedAt !== "string" || !Number.isFinite(Date.parse(value.observedAt)))) ||
+    (value.waterTrend !== undefined && !["UNKNOWN", "RISING", "STABLE", "FALLING"].includes(String(value.waterTrend))) ||
     !["FLOOD", "ROAD", "OTHER"].includes(String(value.type)) || typeof value.description !== "string" ||
     !validPoint(value.location) || !["PENDING", "VERIFIED", "REJECTED"].includes(String(value.status)) ||
     !["PENDING", "VERIFIED", "REJECTED"].includes(String(value.verificationStatus)) || value.verificationStatus !== value.status ||
@@ -26,7 +28,7 @@ function validReport(value: unknown): value is CommunityReport {
     typeof value.createdAt !== "string" || typeof value.updatedAt !== "string" ||
     !Array.isArray(value.media)) return false;
 
-  return (value.estimatedWaterDepthM === null || typeof value.estimatedWaterDepthM === "number") &&
+  return (value.estimatedWaterDepthM === null || typeof value.estimatedWaterDepthM === "number" && Number.isFinite(value.estimatedWaterDepthM) && value.estimatedWaterDepthM >= 0 && value.estimatedWaterDepthM <= 100) &&
     (value.verifiedAt === null || typeof value.verifiedAt === "string") &&
     (value.verifiedBy === undefined || value.verifiedBy === null || typeof value.verifiedBy === "string") &&
     (value.reviewedAt === undefined || value.reviewedAt === null || typeof value.reviewedAt === "string") &&

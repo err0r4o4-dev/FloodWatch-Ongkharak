@@ -32,6 +32,15 @@ const (
 
 const SourceCommunity = "COMMUNITY"
 
+type WaterTrend string
+
+const (
+	TrendUnknown WaterTrend = "UNKNOWN"
+	TrendRising  WaterTrend = "RISING"
+	TrendStable  WaterTrend = "STABLE"
+	TrendFalling WaterTrend = "FALLING"
+)
+
 type PublicationStatus string
 
 const (
@@ -79,12 +88,14 @@ type Location struct {
 }
 
 type Input struct {
-	Type                 Type     `json:"type"`
-	Description          string   `json:"description"`
-	Location             Location `json:"location"`
-	LocationName         *string  `json:"locationName"`
-	LocationNote         *string  `json:"locationNote"`
-	EstimatedWaterDepthM *float64 `json:"estimatedWaterDepthM"`
+	Type                 Type       `json:"type"`
+	Description          string     `json:"description"`
+	Location             Location   `json:"location"`
+	LocationName         *string    `json:"locationName"`
+	LocationNote         *string    `json:"locationNote"`
+	EstimatedWaterDepthM *float64   `json:"estimatedWaterDepthM"`
+	ObservedAt           *time.Time `json:"observedAt"`
+	WaterTrend           WaterTrend `json:"waterTrend"`
 }
 
 type GuestInput struct {
@@ -124,6 +135,8 @@ type Report struct {
 	LocationName         string
 	LocationNote         string
 	EstimatedWaterDepthM *float64
+	ObservedAt           *time.Time
+	WaterTrend           WaterTrend
 	Status               Status
 	VerificationStatus   Status
 	SourceType           string
@@ -139,12 +152,13 @@ type Report struct {
 }
 
 type Media struct {
-	ID          string
-	ReportID    string
-	ObjectKey   string
-	ContentType string
-	SizeBytes   int
-	CreatedAt   time.Time
+	ID            string
+	ReportID      string
+	ObjectKey     string
+	ContentType   string
+	SizeBytes     int
+	CreatedAt     time.Time
+	ContentSHA256 string
 }
 
 type Image struct {

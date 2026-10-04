@@ -1,5 +1,5 @@
 import type { Freshness, SourceRef, VerificationStatus } from "../../shared/types/flood";
-import type { PublicationStatus, ReportStatus } from "../reports/types";
+import type { ReportArea } from "../report-areas/types";
 
 export type Position = [longitude: number, latitude: number];
 export type PointGeometry = { type: "Point"; coordinates: Position };
@@ -34,13 +34,7 @@ export type RoadCondition = {
 export type RoadFeature = {
   id: string; name: string; geometry: MultiLineGeometry; currentCondition: RoadCondition;
 };
-export type CommunityReportFeature = {
-  id: string; type: "FLOOD" | "ROAD" | "OTHER"; description: string; location: PointGeometry;
-  estimatedWaterDepthM: number | null; status: Extract<ReportStatus, "PENDING" | "VERIFIED">; verificationStatus: Extract<ReportStatus, "PENDING" | "VERIFIED">;
-  publicationStatus?: PublicationStatus;
-  sourceType: "COMMUNITY"; createdAt: string; updatedAt: string; verifiedAt: string | null; verifiedBy: string | null;
-  media: { id: string; url: string }[];
-};
+export type CommunityReportFeature = ReportArea;
 export type WaterReading = {
   source: SourceRef; observedAt: string; freshness: Freshness;
   verificationStatus: VerificationStatus; confidence: number | null;

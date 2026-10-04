@@ -1,4 +1,4 @@
-.map-page { display: flex; min-height: 100%; flex-direction: column; gap: var(--space-3); }
+.map-page { --color-area-very-high: #dc2626; --color-area-high: #ea580c; --color-area-moderate: #d97706; --color-area-low: #059669; --color-area-unknown: #64748b; display: flex; min-height: 100%; flex-direction: column; gap: var(--space-3); }
 .map-page__hero { align-items: center; }
 .map-page__caution { margin: 0; color: var(--color-ink-muted); font-size: .75rem; }
 .map-page__workspace { position: relative; z-index: 1; margin-top: 0; flex: none; height: clamp(32rem, calc(100dvh - 19rem), 48rem); min-height: 32rem; overflow: hidden; isolation: isolate; border: var(--border-width) solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-canvas-soft); box-shadow: var(--shadow-surface); }
@@ -39,6 +39,14 @@
 .map-page__legend { right: 5rem; bottom: var(--space-6); left: var(--space-4); width: fit-content; max-width: calc(100% - 6rem); }
 .map-legend { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); }
 .map-legend > span { display: inline-flex; align-items: center; gap: var(--space-1); }
+.map-legend__area-group { flex-wrap: wrap; }
+.map-legend__depth-dot { display: inline-block; width: .7rem; height: .7rem; margin-left: var(--space-2); border-radius: 50%; }
+.map-legend__depth-dot--very-high { background: var(--color-area-very-high); }
+.map-legend__depth-dot--high { background: var(--color-area-high); }
+.map-legend__depth-dot--moderate { background: var(--color-area-moderate); }
+.map-legend__depth-dot--low { background: var(--color-area-low); }
+.map-legend__depth-dot--unknown { background: var(--color-area-unknown); }
+.map-legend__trend-note { color: var(--color-ink-muted); }
 .map-page .map-legend { padding: var(--space-2) var(--space-3); border: var(--border-width) solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-glass-fallback); box-shadow: var(--shadow-surface); color: var(--color-ink); font-size: .7rem; }
 .map-page .map-legend > .sr-only { display: block; }
 .map-page .map-side-panel { position: absolute; z-index: 960; top: 5.5rem; right: var(--space-4); bottom: 5.5rem; width: min(23rem, calc(100% - 2rem)); max-height: none; padding: var(--space-4); border: var(--border-width) solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: var(--shadow-surface); overscroll-behavior: contain; }

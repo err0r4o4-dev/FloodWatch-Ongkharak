@@ -7,12 +7,12 @@ const station = {
   id: "station-1", name: "สถานีทดสอบ", source, active: true,
   location: { type: "Point", coordinates: [101.02, 14.1] }
 };
-const report = {
-  id: "report-1", type: "FLOOD", description: "รายงานน้ำท่วมที่ยืนยันแล้ว",
-  location: { type: "Point", coordinates: [101.02, 14.1] }, estimatedWaterDepthM: null,
-  status: "VERIFIED", verificationStatus: "VERIFIED", sourceType: "COMMUNITY",
-  createdAt: "2026-10-02T00:00:00Z", updatedAt: "2026-10-02T00:00:00Z",
-  verifiedAt: "2026-10-02T01:00:00Z", media: []
+const reportArea = {
+  id: "area-1", name: "พื้นที่รายงานทดสอบ", location: { type: "Point", coordinates: [101.02, 14.1] }, radiusM: 150,
+  sourceType: "COMMUNITY", depthBand: "MODERATE", previousDepthBand: "LOW", trend: "RISING", reportedTrend: "UNKNOWN",
+  freshness: "FRESH", summaryReason: "SUMMARIZED", latestObservedAt: "2026-10-02T01:00:00Z",
+  computedAt: "2026-10-02T02:00:00Z", windowStart: "2026-10-01T02:00:00Z", windowEnd: "2026-10-02T02:00:00Z",
+  reportCount: 4, sampleCount: 3, totalReportCount: 5, reportIds: ["report-1"]
 };
 
 afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); });
@@ -33,14 +33,13 @@ describe("map API boundary", () => {
     expect(url.searchParams.get("offset")).toBe("0");
   });
 
-  it("requests published COMMUNITY report points, including unreviewed reports, within the viewport", async () => {
-    const pending = { ...report, id: "report-pending", status: "PENDING", verificationStatus: "PENDING", verifiedAt: null };
-    const request = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({ items: [report, pending], limit: 100, offset: 0 }) });
+  it("requests aggregated COMMUNITY report areas within the viewport", async () => {
+    const request = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({ items: [reportArea], limit: 100, offset: 0 }) });
     vi.stubGlobal("fetch", request);
 
-    await expect(fetchMapLayer("reports", { west: 100.9, south: 14, east: 101.2, north: 14.3 }, new AbortController().signal)).resolves.toEqual({ items: [report, pending], hasMore: false });
+    await expect(fetchMapLayer("reports", { west: 100.9, south: 14, east: 101.2, north: 14.3 }, new AbortController().signal)).resolves.toEqual({ items: [reportArea], hasMore: false });
     const url = new URL(request.mock.calls[0][0], "http://localhost");
-    expect(url.pathname).toBe("/api/v1/reports");
+    expect(url.pathname).toBe("/api/v1/report-areas");
     expect(url.searchParams.get("bbox")).toBe("100.9,14,101.2,14.3");
     expect(url.searchParams.get("limit")).toBe("100");
   });

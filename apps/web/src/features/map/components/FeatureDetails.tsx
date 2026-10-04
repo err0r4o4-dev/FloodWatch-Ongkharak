@@ -1,15 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import { DataTimestamp, FreshnessBadge, OriginalContentNote, SourceBadge, StatusBadge } from "../../../shared/components/DataStates";
-import { ReportMediaImage } from "../../reports/ReportMediaImage";
 import { fetchLatestReading } from "../api";
 import type { MapSelection, WaterReading } from "../types";
 import { effectiveFloodSeverity, effectiveRiskLevel, effectiveRoadStatus } from "../utils";
 import { formatNumber, useTranslation } from "../../../i18n";
 import th from "../../../i18n/locales/th/map";
 import en from "../../../i18n/locales/en/map";
+import { ReportAreaDetailsContent } from "../../../features/report-areas/ReportAreaDetails";
+import { displayDepthBand } from "../../../features/report-areas/presentation";
 
 function Verification({ value, confidence }: { value?: string; confidence?: number | null }) {
-  const { t, locale } = useTranslation({ th, en });
+  const { t } = useTranslation({ th, en });
   const status = value ? t(value === "VERIFIED" ? "details.verified" : value === "UNVERIFIED" ? "details.unverified" : value === "REJECTED" ? "details.rejected" : "details.unknown") : t("details.apiUnspecified");
   const certainty = confidence == null ? t("details.unspecified") : `${formatNumber(Math.round(confidence * 100), locale)}%`;
   return <p className="map-evidence">{t("details.verification", { status, confidence: certainty })}</p>;
@@ -54,20 +55,20 @@ export function FeatureDetails({ selection, onClose }: { selection: MapSelection
     closeButton.current?.focus();
     return () => { if (previousFocus?.isConnected) previousFocus.focus(); };
   }, [selection.layer, selection.feature.id]);
-  const title = selection.layer === "flood" ? selection.feature.title : selection.layer === "reports" ? t("layer.reports") : selection.feature.name;
+  const title = selection.layer === "flood" ? selection.feature.title : selection.feature.name;
   const source = selection.layer === "roads" ? selection.feature.currentCondition.source : selection.layer === "reports" ? null : selection.feature.source;
-  const freshness = selection.layer === "water" || selection.layer === "reports" ? "UNKNOWN" : selection.layer === "roads" ? selection.feature.currentCondition.freshness : selection.feature.freshness;
+  const freshness = selection.layer === "water" ? "UNKNOWN" : selection.layer === "reports" ? selection.feature.freshness : selection.layer === "roads" ? selection.feature.currentCondition.freshness : selection.feature.freshness;
   const status = selection.layer === "flood" ? effectiveFloodSeverity(selection.feature)
     : selection.layer === "risk" ? effectiveRiskLevel(selection.feature)
-      : selection.layer === "roads" ? effectiveRoadStatus(selection.feature.currentCondition) : selection.layer === "reports" ? "INFO" : "UNKNOWN";
+    : selection.layer === "roads" ? effectiveRoadStatus(selection.feature.currentCondition) : selection.layer === "reports" ? displayDepthBand(selection.feature.depthBand, selection.feature.freshness) : "UNKNOWN";
   return <section className="map-selection" aria-label={t("details.label")} onKeyDown={(event) => { if (event.key === "Escape") { event.stopPropagation(); onClose(); } }}><div className="map-selection__heading"><h3>{title}</h3><button ref={closeButton} type="button" aria-label={t("details.close")} onClick={onClose}>×</button></div>
     <div className="badge-row"><StatusBadge status={status} /><FreshnessBadge freshness={freshness} />{selection.layer === "reports" ? <SourceBadge type="COMMUNITY" /> : source && <SourceBadge type={source.sourceType} />}</div>
-    <p>{t("details.source", { source: selection.layer === "reports" ? t("details.communitySource") : source?.name ?? t("details.unknownSource") })}</p>
+    <p>{t("details.source", { source: selection.layer === "reports" ? t("details.communityAreaSource") : source?.name ?? t("details.unknownSource") })}</p>
     {selection.layer === "flood" && <><DataTimestamp value={selection.feature.observedAt} /><Verification value={selection.feature.verificationStatus} confidence={selection.feature.confidence} /><OriginalContentNote /><p>{selection.feature.description}</p></>}
     {selection.layer === "risk" && <><DataTimestamp label={t("timestamp.validFrom")} value={selection.feature.validFrom} /><p><DataTimestamp label={t("timestamp.validTo")} value={selection.feature.validTo} /></p><Verification /><OriginalContentNote /><p>{selection.feature.description}</p></>}
     {selection.layer === "roads" && <><DataTimestamp value={selection.feature.currentCondition.observedAt} /><Verification value={selection.feature.currentCondition.verificationStatus} confidence={selection.feature.currentCondition.confidence} /><OriginalContentNote /><p>{selection.feature.currentCondition.description ?? t("details.noDescription")}</p></>}
     {selection.layer === "water" && <WaterDetails stationId={selection.feature.id} />}
-    {selection.layer === "reports" && <><OriginalContentNote /><p>{selection.feature.description}</p><DataTimestamp label={t("timestamp.submitted")} value={selection.feature.createdAt} /><p>{t(selection.feature.status === "VERIFIED" ? "details.reportVerified" : "details.reportUnreviewed")}</p>{selection.feature.verifiedAt && <DataTimestamp label={t("timestamp.verified")} value={selection.feature.verifiedAt} />}{selection.feature.estimatedWaterDepthM !== null && <p>{t("details.reportDepth", { value: formatNumber(selection.feature.estimatedWaterDepthM, locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) })}</p>}{selection.feature.media.length > 0 && <ul className="report-media" aria-label={t("details.media")}>{selection.feature.media.map((media) => <li key={media.id}><ReportMediaImage media={media} /></li>)}</ul>}</>}
+    {selection.layer === "reports" && <ReportAreaDetailsContent area={selection.feature} />}
     {status === "UNKNOWN" && <p className="uncertainty">{t("details.unknownWarning")}</p>}
   </section>;
 }

@@ -1,6 +1,24 @@
 import type th from "../th/reports";
 
 const messages = {
+  "form.observedAt": "When did you observe this?",
+  "form.observedNow": "Observed now",
+  "form.observedCustom": "Specify observation time",
+  "form.observedUnknown": "Observation time unknown",
+  "form.observedCustomLabel": "Observation date and time",
+  "form.observedHint": "Water summaries use observation time, not submission time. Unknown observation times are excluded from current water summaries.",
+  "form.waterTrend": "Observed change",
+  "form.waterTrendHint": "Falling water does not mean shallow water. Report the depth separately when known.",
+  "form.depthNotObserved": "No flooding observed at this point",
+  "form.error.observedAt": "Enter a valid observation time that is not in the future.",
+  "trend.UNKNOWN": "Change unknown",
+  "trend.RISING": "Water rising ↑",
+  "trend.STABLE": "Water stable →",
+  "trend.FALLING": "Water falling ↓",
+  "detail.observed": "Observation time",
+  "detail.observedUnknown": "Observation time unknown",
+  "detail.waterTrend": "Reporter-observed change",
+  "createPage.areaUpdateHint": "You are updating an existing area. Confirm or move the pin to the actual observation point. This will be saved as a new report.",
   "detail.reportedBy": "Reported by",
   "detail.reporterNotProvided": "Name not provided",
 
