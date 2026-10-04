@@ -1,0 +1,113 @@
+
+ RUN  v5.0.3 D:/!Project/FloodWatch-Ongkharak(Web_Application)/apps/web
+
+·········xxxx
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/features/notifications/api.test.ts > notificationApi > updates language without enrolling a device or sending subscription keys
+TypeError: notificationApi.updateLanguage is not a function
+ ❯ src/features/notifications/api.test.ts:122:27
+    120|     const request = vi.fn().mockResolvedValue(new Response(null, { sta…
+    121|     vi.stubGlobal("fetch", request);
+    122|     await notificationApi.updateLanguage("https://push.example.test/de…
+       |                           ^
+    123|     const [url, init] = request.mock.calls[0];
+    124|     expect(url).toBe("/api/v1/notifications/language");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/features/notifications/NotificationLanguageSync.test.tsx > notification language synchronization > saves the selected language for existing subscriptions without prompting
+TypeError: undefined is not a spy or a call to a spy!
+
+Ignored nodes: comments, script, style
+<html
+  lang="th"
+>
+  <head>
+    <title>
+      Flood Watch องครักษ์
+    </title>
+  </head>
+  <body>
+    <div>
+      <div
+        aria-label="ภาษา"
+        class="locale-toggle"
+        role="group"
+      >
+        <button
+          aria-pressed="true"
+          type="button"
+        >
+          TH
+        </button>
+        <button
+          aria-pressed="false"
+          type="button"
+        >
+          EN
+        </button>
+      </div>
+      <aside
+        class="state-panel notification-language-error"
+        role="alert"
+      >
+        <p>
+          บันทึกภาษาสำหรับการแจ้งเตือนไม่สำเร็จ กรุณาลองอีกครั้ง
+        </p>
+        <button
+          class="action-button"
+          type="button"
+        >
+          ลองอีกครั้ง
+        </button>
+      </aside>
+    </div>
+  </body>
+</html>
+ ❯ src/features/notifications/NotificationLanguageSync.test.tsx:15:59
+     13|   it("saves the selected language for existing subscriptions without p…
+     14|     render(<LanguageProvider><LanguageSwitcher /><NotificationLanguage…
+     15|     await waitFor(() => expect(notificationApi.subscribe).toHaveBeenLa…
+       |                                                           ^
+     16|     fireEvent.click(screen.getByRole("button", { name: "EN" }));
+     17|     await waitFor(() => expect(notificationApi.subscribe).toHaveBeenLa…
+ ❯ runWithExpensiveErrorDiagnosticsDisabled ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/config.js:47:12
+ ❯ checkCallback ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/wait-for.js:124:77
+ ❯ Timeout.checkRealTimersCallback ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/wait-for.js:118:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/features/notifications/NotificationLanguageSync.test.tsx > notification language synchronization > shows an honest retry action when saving the language fails
+TypeError: Cannot read properties of undefined (reading 'mockRejectedValueOnce')
+ ❯ src/features/notifications/NotificationLanguageSync.test.tsx:20:41
+     18|   });
+     19|   it("shows an honest retry action when saving the language fails", as…
+     20|     vi.mocked(notificationApi.subscribe).mockRejectedValueOnce(new Err…
+       |                                         ^
+     21|     render(<LanguageProvider><LanguageSwitcher /><NotificationLanguage…
+     22|     expect(await screen.findByRole("alert")).toHaveTextContent("บันทึก…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  src/features/notifications/NotificationLanguageSync.test.tsx > notification language synchronization > serializes requests and ignores obsolete choices during rapid switching
+TypeError: Cannot read properties of undefined (reading 'mockImplementationOnce')
+ ❯ src/features/notifications/NotificationLanguageSync.test.tsx:28:41
+     26|   it("serializes requests and ignores obsolete choices during rapid sw…
+     27|     let finish: () => void = () => {};
+     28|     vi.mocked(notificationApi.subscribe).mockImplementationOnce(() => …
+       |                                         ^
+     29|     render(<LanguageProvider><LanguageSwitcher /><NotificationLanguage…
+     30|     await waitFor(() => expect(notificationApi.subscribe).toHaveBeenCa…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+
+
+ Test Files  2 failed (2)
+      Tests  4 failed | 9 passed (13)
+   Start at  09:45:28
+   Duration  2.56s (environment 52%, tests 28%, setup 15%, transform 3%, import 2%, worker 1%)
+
+undefined
+ ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL  Command "vitest" not found

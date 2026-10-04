@@ -1,18 +1,22 @@
+import { useTranslation, LanguageSwitcher } from "../../i18n";
+import th from "../../i18n/locales/th/common";
+import en from "../../i18n/locales/en/common";
+const messages = { th, en };
 import { Link } from "react-router";
-import { useOptionalAuth } from "../auth/AuthProvider";
 import { LandingIcon } from "./LandingIcon";
 import { LandingMapPreview } from "./LandingMapPreview";
 import "./LandingPage.css";
 
-const goals = [
-  { icon: "building", title: "เชื่อถือได้", description: "รวบรวมข้อมูลจากหน่วยงานทางการ พร้อมแสดงแหล่งที่มาและเวลาสังเกต", tone: "official" },
-  { icon: "people", title: "เข้าถึงง่าย", description: "ให้ข้อมูลที่เข้าใจง่าย เข้าถึงได้สำหรับทุกคนในชุมชน", tone: "community" },
-  { icon: "ai", title: "ใช้เทคโนโลยี AI", description: "ใช้ AI เป็นหลักฐานประกอบการประเมิน แยกจากข้อมูลทางการและรายงานชุมชน", tone: "ai" },
-  { icon: "bell", title: "ลดความเสี่ยง", description: "ติดตามประกาศและเหตุการณ์สำคัญ เพื่อช่วยเตรียมรับมืออย่างมีข้อมูล", tone: "alert" }
+const goals = (t: (key: keyof typeof th) => string) => [
+  { icon: "building", title: t("traceableInformation"), description: t("informationFromOfficialAgenciesWithSourcesAnd"), tone: "official" },
+  { icon: "people", title: t("easyToAccess"), description: t("clearInformationThatEveryoneInTheCommunity"), tone: "community" },
+  { icon: "ai", title: t("aiAssistedEvidence"), description: t("aiEvidenceIsShownSeparatelyFromOfficial"), tone: "ai" },
+  { icon: "bell", title: t("prepareWithInformation"), description: t("followAnnouncementsAndReportedEventsToMake"), tone: "alert" }
 ] as const;
 
 function Brand() {
-  return <Link to="/" className="landing-brand" aria-label="Flood Watch Ongkharak หน้าหลัก"><img src="/flood-watch-mark.svg" alt="" width="44" height="44" /><span><strong>Flood Watch</strong><small>ONGKHARAK</small></span></Link>;
+  const { t } = useTranslation(messages);
+  return <Link to="/" className="landing-brand" aria-label={t("floodWatchOngkharakHome")}><img src="/flood-watch-mark.svg" alt="" width="44" height="44" /><span><strong>Flood Watch</strong><small>ONGKHARAK</small></span></Link>;
 }
 
 function Waves() {
@@ -20,19 +24,17 @@ function Waves() {
 }
 
 export function LandingPage() {
-  const { account } = useOptionalAuth();
-  const entry = account ? "/overview" : "/login?returnTo=%2Foverview";
-  const entryLabel = "เข้าสู่เมนู";
+  const { t } = useTranslation(messages);
   return <div className="landing-page">
-    <a className="skip-link" href="#main-content">ข้ามไปยังเนื้อหาหลัก</a>
-    <header className="landing-header"><div className="landing-container landing-header__inner"><Brand /><nav className="landing-nav" aria-label="การนำทางหน้าแรก"><div className="landing-locale" aria-label="ภาษา"><span aria-current="true">TH</span><button type="button" disabled aria-describedby="landing-english-note">EN</button><span id="landing-english-note" className="sr-only">ภาษาอังกฤษยังไม่พร้อมใช้งาน</span></div><Link className="landing-button landing-button--primary landing-button--header" to={entry}>เข้าสู่ระบบ</Link></nav></div></header>
+    <a className="skip-link" href="#main-content">{t("skipToMainContent")}</a>
+    <header className="landing-header"><div className="landing-container landing-header__inner"><Brand /><nav className="landing-nav" aria-label={t("homeNavigation")}><LanguageSwitcher className="landing-locale" /></nav></div></header>
     <main id="main-content" tabIndex={-1}>
       <section className="landing-hero" aria-labelledby="landing-title"><Waves /><div className="landing-container landing-hero__inner">
-        <div className="landing-hero__copy"><p className="landing-eyebrow"><span aria-hidden="true" />ศูนย์ติดตามสถานการณ์น้ำ อำเภอองครักษ์ จังหวัดนครนายก</p><h1 id="landing-title">ติดตามสถานการณ์น้ำ <span>เพื่อความปลอดภัยของทุกคน</span></h1><p className="landing-hero__description">รวบรวมข้อมูลจากหน่วยงานทางการและรายงานชุมชน พร้อมแยกหลักฐานจาก AI เพื่อให้คุณเข้าถึงข้อมูลสถานการณ์น้ำได้อย่างเข้าใจง่าย สำหรับอำเภอองครักษ์ จังหวัดนครนายก</p><div className="landing-hero__actions"><Link to="/overview" className="landing-button landing-button--primary"><LandingIcon kind="map" />{entryLabel} <span aria-hidden="true">→</span></Link><Link to="/map" className="landing-button landing-button--secondary"><LandingIcon kind="map" />ดูแผนที่</Link></div>{!account && <Link className="landing-guest-link" to="/overview">ดูภาพรวมโดยไม่เข้าสู่ระบบ</Link>}</div>
+        <div className="landing-hero__copy"><p className="landing-eyebrow"><span aria-hidden="true" />{t("waterSituationMonitoringCentreOngkharakNakhonNayok")}</p><h1 id="landing-title">{t("followTheWaterSituation")} <span>{t("helpEveryonePrepare")}</span></h1><p className="landing-hero__description">{t("exploreOfficialInformationCommunityReportsAndSeparately")}</p><div className="landing-hero__actions"><Link to="/overview" className="landing-button landing-button--primary"><LandingIcon kind="map" />{t("openOverview")} <span aria-hidden="true">→</span></Link><Link to="/map" className="landing-button landing-button--secondary"><LandingIcon kind="map" />{t("viewMap")}</Link></div></div>
         <LandingMapPreview />
       </div></section>
-      <section className="landing-goals" aria-labelledby="landing-goals-title"><div className="landing-container"><div className="landing-section-heading"><p className="landing-eyebrow"><span aria-hidden="true" />เป้าหมายของเรา</p><h2 id="landing-goals-title">สร้างชุมชนที่ปลอดภัย พร้อมรับมือสถานการณ์น้ำ</h2><p>ด้วยข้อมูลที่มีแหล่งที่มา เข้าใจง่าย และเข้าถึงได้สำหรับทุกคน</p></div><ul className="landing-goals__list">{goals.map((goal) => <li key={goal.title} className={`landing-goal landing-goal--${goal.tone}`}><span className="landing-goal__icon"><LandingIcon kind={goal.icon} /></span><h3>{goal.title}</h3><p>{goal.description}</p></li>)}</ul></div></section>
+      <section className="landing-goals" aria-labelledby="landing-goals-title"><div className="landing-container"><div className="landing-section-heading"><p className="landing-eyebrow"><span aria-hidden="true" />{t("ourGoals")}</p><h2 id="landing-goals-title">{t("helpTheCommunityPrepareForChangingWater")}</h2><p>{t("withClearTraceableInformationThatEveryoneCan")}</p></div><ul className="landing-goals__list">{goals(t).map((goal) => <li key={goal.title} className={`landing-goal landing-goal--${goal.tone}`}><span className="landing-goal__icon"><LandingIcon kind={goal.icon} /></span><h3>{goal.title}</h3><p>{goal.description}</p></li>)}</ul></div></section>
     </main>
-    <footer className="landing-footer"><div className="landing-container landing-footer__inner"><Brand /><p className="landing-footer__description">ศูนย์ติดตามสถานการณ์น้ำ อำเภอองครักษ์ จังหวัดนครนายก<br />ข้อมูลเพื่อประกอบการตัดสินใจ ไม่ใช่การรับรองความปลอดภัย</p><div className="landing-footer__links"><nav aria-label="ลิงก์ท้ายหน้า"><Link to="/overview">ภาพรวม</Link><Link to="/announcements">ประกาศ</Link><Link to="/reports">รายงานชุมชน</Link></nav><small>Flood Watch Ongkharak · เพื่อทุกคนในชุมชน</small></div></div></footer>
+    <footer className="landing-footer"><div className="landing-container landing-footer__inner"><Brand /><p className="landing-footer__description">{t("waterSituationMonitoringCentreOngkharakNakhonNayok")}<br />{t("informationToSupportDecisionsNotAGuarantee")}</p><div className="landing-footer__links"><nav aria-label={t("footerLinks")}><a href="mailto:title.thirawat.dev@gmail.com">{t("contactUs")}</a></nav><small>{t("floodWatchOngkharakForEveryoneInThe")}</small></div></div></footer>
   </div>;
 }

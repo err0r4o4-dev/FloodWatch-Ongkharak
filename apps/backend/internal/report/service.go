@@ -2,6 +2,9 @@ package report
 
 import (
 	"context"
+	cryptorand "crypto/rand"
+	"crypto/sha256"
+	"encoding/base64"
 	"fmt"
 	"math"
 	"net/http"
@@ -15,8 +18,12 @@ import (
 const (
 	maxDescriptionRunes = 2000
 	maxReasonRunes      = 500
+	maxDisplayNameRunes = 80
 	maxMediaBytes       = 5 * 1024 * 1024
+	guestUploadTokenTTL = 15 * time.Minute
 )
+
+const defaultDisplayName = "Guest"
 
 type Service struct {
 	repository Repository
@@ -38,6 +45,7 @@ func (service *Service) Create(ctx context.Context, userID string, input Input) 
 	now := service.now()
 	created, err := service.repository.Create(ctx, Report{
 		ID: uuid.NewString(), UserID: userID, Type: input.Type, Description: input.Description, Location: input.Location,
+		DisplayName:          defaultDisplayName,
 		EstimatedWaterDepthM: input.EstimatedWaterDepthM, Status: StatusPending, VerificationStatus: StatusPending,
 		SourceType: SourceCommunity, CreatedAt: now, UpdatedAt: now,
 	})
@@ -45,6 +53,31 @@ func (service *Service) Create(ctx context.Context, userID string, input Input) 
 		return Report{}, fmt.Errorf("create report: %w", err)
 	}
 	return created, nil
+}
+
+func (service *Service) CreateGuest(ctx context.Context, userID string, input GuestInput) (GuestCreation, error) {
+	if (userID != "" && !validID(userID)) || !normalizeGuestInput(&input) {
+		return GuestCreation{}, ErrInvalid
+	}
+	guestRepository, ok := service.repository.(GuestRepository)
+	if !ok {
+		return GuestCreation{}, fmt.Errorf("guest report repository capability unavailable")
+	}
+	token, tokenHash, err := newGuestUploadToken()
+	if err != nil {
+		return GuestCreation{}, fmt.Errorf("create guest upload capability: %w", err)
+	}
+	now := service.now()
+	expiresAt := now.Add(guestUploadTokenTTL)
+	created, err := guestRepository.CreateGuest(ctx, Report{
+		ID: uuid.NewString(), UserID: userID, DisplayName: input.DisplayName, Type: input.Type, Description: input.Description, Location: input.Location,
+		EstimatedWaterDepthM: input.EstimatedWaterDepthM, Status: StatusPending, VerificationStatus: StatusPending,
+		SourceType: SourceCommunity, CreatedAt: now, UpdatedAt: now,
+	}, tokenHash, expiresAt)
+	if err != nil {
+		return GuestCreation{}, fmt.Errorf("create guest report: %w", err)
+	}
+	return GuestCreation{Report: created, UploadToken: token}, nil
 }
 
 func (service *Service) GetVerified(ctx context.Context, id string) (Report, error) {
@@ -175,6 +208,33 @@ func (service *Service) UploadMedia(ctx context.Context, reportID, userID string
 	return media, nil
 }
 
+func (service *Service) UploadGuestMedia(ctx context.Context, reportID, token string, image Image) (Media, error) {
+	if !validID(reportID) || !validGuestUploadToken(token) || !validImage(image) {
+		return Media{}, ErrInvalid
+	}
+	guestRepository, ok := service.repository.(GuestRepository)
+	if !ok {
+		return Media{}, fmt.Errorf("guest report repository capability unavailable")
+	}
+	tokenHash := guestUploadTokenHash(token)
+	if err := guestRepository.ValidateGuestUpload(ctx, reportID, tokenHash, service.now()); err != nil {
+		return Media{}, err
+	}
+	contentType := detectedImageContentType(image.Data)
+	key := "reports/" + reportID + "/" + uuid.NewString() + imageExtension(contentType)
+	if err := service.storage.Put(ctx, key, contentType, image.Data); err != nil {
+		return Media{}, fmt.Errorf("store guest report media: %w", err)
+	}
+	media, err := guestRepository.CreateGuestMedia(ctx, Media{ID: uuid.NewString(), ReportID: reportID, ObjectKey: key, ContentType: contentType, SizeBytes: len(image.Data)}, tokenHash, service.now())
+	if err != nil {
+		if cleanupErr := service.storage.Delete(ctx, key); cleanupErr != nil {
+			return Media{}, fmt.Errorf("record guest report media: %w; cleanup: %v", err, cleanupErr)
+		}
+		return Media{}, fmt.Errorf("record guest report media: %w", err)
+	}
+	return media, nil
+}
+
 func (service *Service) OpenMedia(ctx context.Context, reportID, mediaID string, access Access) (MediaFile, error) {
 	if !validID(reportID) || !validID(mediaID) {
 		return MediaFile{}, ErrInvalid
@@ -183,7 +243,7 @@ func (service *Service) OpenMedia(ctx context.Context, reportID, mediaID string,
 	if err != nil {
 		return MediaFile{}, err
 	}
-	if item.Status != StatusVerified && access.UserID != item.UserID && !access.IsAdmin {
+	if item.Status != StatusVerified && (item.UserID == "" || access.UserID != item.UserID) && !access.IsAdmin {
 		return MediaFile{}, ErrNotFound
 	}
 	media, err := service.repository.GetMedia(ctx, reportID, mediaID)
@@ -200,6 +260,14 @@ func (service *Service) OpenMedia(ctx context.Context, reportID, mediaID string,
 func normalizeInput(input *Input) bool {
 	input.Description = strings.TrimSpace(input.Description)
 	return validType(input.Type) && input.Description != "" && utf8.RuneCountInString(input.Description) <= maxDescriptionRunes && validLocation(input.Location) && (input.EstimatedWaterDepthM == nil || validDepth(*input.EstimatedWaterDepthM))
+}
+
+func normalizeGuestInput(input *GuestInput) bool {
+	input.DisplayName = strings.TrimSpace(input.DisplayName)
+	if input.DisplayName == "" {
+		input.DisplayName = defaultDisplayName
+	}
+	return utf8.RuneCountInString(input.DisplayName) <= maxDisplayNameRunes && normalizeInput(&input.Input)
 }
 
 func validPage(page Page) bool {
@@ -232,6 +300,28 @@ func validImage(image Image) bool {
 	declared := strings.ToLower(strings.TrimSpace(image.ContentType))
 	detected := detectedImageContentType(image.Data)
 	return declared == detected && imageExtension(detected) != ""
+}
+
+func newGuestUploadToken() (string, []byte, error) {
+	raw := make([]byte, 32)
+	if _, err := cryptorand.Read(raw); err != nil {
+		return "", nil, err
+	}
+	token := base64.RawURLEncoding.EncodeToString(raw)
+	return token, guestUploadTokenHash(token), nil
+}
+
+func validGuestUploadToken(token string) bool {
+	if len(token) != base64.RawURLEncoding.EncodedLen(32) {
+		return false
+	}
+	raw, err := base64.RawURLEncoding.DecodeString(token)
+	return err == nil && len(raw) == 32
+}
+
+func guestUploadTokenHash(token string) []byte {
+	hash := sha256.Sum256([]byte(token))
+	return hash[:]
 }
 func detectedImageContentType(data []byte) string {
 	if len(data) >= 12 && string(data[:4]) == "RIFF" && string(data[8:12]) == "WEBP" {

@@ -2,6 +2,8 @@ package reportrepo
 
 import (
 	"context"
+	"crypto/subtle"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -19,12 +21,40 @@ type Repository struct{ pool *pgxpool.Pool }
 func New(pool *pgxpool.Pool) *Repository { return &Repository{pool: pool} }
 
 func (repository *Repository) Create(ctx context.Context, item report.Report) (report.Report, error) {
-	_, err := repository.pool.Exec(ctx, `INSERT INTO community_reports (id, user_id, type, description, location, estimated_water_depth_m, status, source_type, created_at, updated_at)
-        VALUES ($1,$2,$3,$4,ST_SetSRID(ST_MakePoint($5,$6),4326),$7,$8,'COMMUNITY',$9,$10)`, item.ID, item.UserID, item.Type, item.Description, item.Location.Coordinates[0], item.Location.Coordinates[1], item.EstimatedWaterDepthM, item.Status, item.CreatedAt, item.UpdatedAt)
+	_, err := repository.pool.Exec(ctx, `INSERT INTO community_reports (id, user_id, display_name, type, description, location, estimated_water_depth_m, status, source_type, created_at, updated_at)
+        VALUES ($1,$2,COALESCE(NULLIF($3,''),'Guest'),$4,$5,ST_SetSRID(ST_MakePoint($6,$7),4326),$8,$9,'COMMUNITY',$10,$11)`, item.ID, nullableUserID(item.UserID), item.DisplayName, item.Type, item.Description, item.Location.Coordinates[0], item.Location.Coordinates[1], item.EstimatedWaterDepthM, item.Status, item.CreatedAt, item.UpdatedAt)
 	if err != nil {
 		return report.Report{}, fmt.Errorf("create report: %w", mapped(err))
 	}
 	return repository.Get(ctx, item.ID)
+}
+
+func (repository *Repository) CreateGuest(ctx context.Context, item report.Report, tokenHash []byte, expiresAt time.Time) (report.Report, error) {
+	_, err := repository.pool.Exec(ctx, `INSERT INTO community_reports (id, user_id, display_name, type, description, location, estimated_water_depth_m, status, source_type, guest_upload_token_hash, guest_upload_token_expires_at, created_at, updated_at)
+        VALUES ($1,$2,$3,$4,$5,ST_SetSRID(ST_MakePoint($6,$7),4326),$8,$9,'COMMUNITY',$10,$11,$12,$13)`, item.ID, nullableUserID(item.UserID), item.DisplayName, item.Type, item.Description, item.Location.Coordinates[0], item.Location.Coordinates[1], item.EstimatedWaterDepthM, item.Status, tokenHash, expiresAt, item.CreatedAt, item.UpdatedAt)
+	if err != nil {
+		return report.Report{}, fmt.Errorf("create guest report: %w", mapped(err))
+	}
+	return repository.Get(ctx, item.ID)
+}
+
+func (repository *Repository) ValidateGuestUpload(ctx context.Context, reportID string, tokenHash []byte, now time.Time) error {
+	var storedHash []byte
+	var expiresAt sql.NullTime
+	var status report.Status
+	if err := repository.pool.QueryRow(ctx, `SELECT guest_upload_token_hash, guest_upload_token_expires_at, status FROM community_reports WHERE id=$1`, reportID).Scan(&storedHash, &expiresAt, &status); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return report.ErrForbidden
+		}
+		return fmt.Errorf("validate guest report upload: %w", mapped(err))
+	}
+	if !expiresAt.Valid || len(storedHash) != len(tokenHash) || subtle.ConstantTimeCompare(storedHash, tokenHash) != 1 || !expiresAt.Time.After(now) {
+		return report.ErrForbidden
+	}
+	if status != report.StatusPending {
+		return report.ErrConflict
+	}
+	return nil
 }
 
 func (repository *Repository) Get(ctx context.Context, id string) (report.Report, error) {
@@ -106,12 +136,12 @@ func (repository *Repository) CreateMedia(ctx context.Context, item report.Media
 		return report.Media{}, fmt.Errorf("begin report media transaction: %w", err)
 	}
 	defer transaction.Rollback(ctx)
-	var ownerID string
+	var ownerID *string
 	var status report.Status
 	if err := transaction.QueryRow(ctx, `SELECT user_id, status FROM community_reports WHERE id=$1 FOR UPDATE`, item.ReportID).Scan(&ownerID, &status); err != nil {
 		return report.Media{}, fmt.Errorf("lock report media: %w", mapped(err))
 	}
-	if ownerID != userID {
+	if ownerID == nil || *ownerID != userID {
 		return report.Media{}, report.ErrForbidden
 	}
 	if status != report.StatusPending {
@@ -133,6 +163,50 @@ func (repository *Repository) CreateMedia(ctx context.Context, item report.Media
 	}
 	if err := transaction.Commit(ctx); err != nil {
 		return report.Media{}, fmt.Errorf("commit report media: %w", err)
+	}
+	return item, nil
+}
+
+func (repository *Repository) CreateGuestMedia(ctx context.Context, item report.Media, tokenHash []byte, now time.Time) (report.Media, error) {
+	transaction, err := repository.pool.Begin(ctx)
+	if err != nil {
+		return report.Media{}, fmt.Errorf("begin guest report media transaction: %w", err)
+	}
+	defer transaction.Rollback(ctx)
+	var storedHash []byte
+	var expiresAt sql.NullTime
+	var status report.Status
+	if err := transaction.QueryRow(ctx, `SELECT guest_upload_token_hash, guest_upload_token_expires_at, status FROM community_reports WHERE id=$1 FOR UPDATE`, item.ReportID).Scan(&storedHash, &expiresAt, &status); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return report.Media{}, report.ErrForbidden
+		}
+		return report.Media{}, fmt.Errorf("lock guest report media: %w", mapped(err))
+	}
+	if err := transaction.QueryRow(ctx, `SELECT clock_timestamp()`).Scan(&now); err != nil {
+		return report.Media{}, fmt.Errorf("read guest report upload time: %w", err)
+	}
+	if !expiresAt.Valid || len(storedHash) != len(tokenHash) || subtle.ConstantTimeCompare(storedHash, tokenHash) != 1 || !expiresAt.Time.After(now) {
+		return report.Media{}, report.ErrForbidden
+	}
+	if status != report.StatusPending {
+		return report.Media{}, report.ErrConflict
+	}
+	var count int
+	if err := transaction.QueryRow(ctx, `SELECT count(*) FROM community_report_media WHERE report_id=$1`, item.ReportID).Scan(&count); err != nil {
+		return report.Media{}, fmt.Errorf("count guest report media: %w", err)
+	}
+	if count >= 3 {
+		return report.Media{}, report.ErrConflict
+	}
+	if err := transaction.QueryRow(ctx, `INSERT INTO community_report_media (id, report_id, object_key, content_type, size_bytes)
+        VALUES ($1,$2,$3,$4,$5) RETURNING created_at`, item.ID, item.ReportID, item.ObjectKey, item.ContentType, item.SizeBytes).Scan(&item.CreatedAt); err != nil {
+		return report.Media{}, fmt.Errorf("create guest report media: %w", mapped(err))
+	}
+	if _, err := transaction.Exec(ctx, `UPDATE community_reports SET updated_at=GREATEST(clock_timestamp(), updated_at + interval '1 microsecond') WHERE id=$1`, item.ReportID); err != nil {
+		return report.Media{}, fmt.Errorf("update guest report media revision: %w", err)
+	}
+	if err := transaction.Commit(ctx); err != nil {
+		return report.Media{}, fmt.Errorf("commit guest report media: %w", err)
 	}
 	return item, nil
 }
@@ -194,23 +268,38 @@ func (repository *Repository) listMedia(ctx context.Context, reportID string) ([
 	return items, nil
 }
 
-const reportSelect = `SELECT r.id, r.user_id, r.type, r.description, ST_AsGeoJSON(r.location), r.estimated_water_depth_m::double precision,
+const reportSelect = `SELECT r.id, r.user_id, r.display_name, r.type, r.description, ST_AsGeoJSON(r.location), r.estimated_water_depth_m::double precision,
     r.status, r.source_type, r.created_at, r.updated_at, r.verified_at, r.verified_by, r.reviewed_at, r.reviewed_by, r.rejection_reason FROM community_reports r`
 
 type rowScanner interface{ Scan(...any) error }
 
 func scanReport(row rowScanner) (report.Report, error) {
 	var item report.Report
+	var userID, displayName sql.NullString
 	var locationJSON []byte
-	err := row.Scan(&item.ID, &item.UserID, &item.Type, &item.Description, &locationJSON, &item.EstimatedWaterDepthM, &item.Status, &item.SourceType, &item.CreatedAt, &item.UpdatedAt, &item.VerifiedAt, &item.VerifiedBy, &item.ReviewedAt, &item.ReviewedBy, &item.RejectionReason)
+	err := row.Scan(&item.ID, &userID, &displayName, &item.Type, &item.Description, &locationJSON, &item.EstimatedWaterDepthM, &item.Status, &item.SourceType, &item.CreatedAt, &item.UpdatedAt, &item.VerifiedAt, &item.VerifiedBy, &item.ReviewedAt, &item.ReviewedBy, &item.RejectionReason)
 	if err != nil {
 		return report.Report{}, err
+	}
+	if userID.Valid {
+		item.UserID = userID.String
+	}
+	item.DisplayName = displayName.String
+	if item.DisplayName == "" {
+		item.DisplayName = "Guest"
 	}
 	if err := json.Unmarshal(locationJSON, &item.Location); err != nil {
 		return report.Report{}, fmt.Errorf("decode report location: %w", err)
 	}
 	item.VerificationStatus = item.Status
 	return item, nil
+}
+
+func nullableUserID(userID string) any {
+	if userID == "" {
+		return nil
+	}
+	return userID
 }
 
 func nullableReason(reason string) any {

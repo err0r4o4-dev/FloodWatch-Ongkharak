@@ -1,5 +1,11 @@
 # Authentication boundary (Phase 1)
 
+## Current Guest public flow
+
+The October 4, 2026 Guest flow supersedes the public registration and account-required reporting UI described in the historical Phase 1/6 sections below. Public registration returns `403 REGISTRATION_DISABLED`; existing users are retained. Visitors edit a browser-local display name and submit pending reports without an account. Only the administrator entry at `/admin` leads to `/admin/login`. Administrator APIs still require authenticated ADMIN authorization. Public notifications use a separate verified-only feed; legacy personal inbox/session APIs remain protected. See `guest-public-flow.md` for the upload capability, migration and deployment boundaries.
+
+## Historical account/session implementation
+
 Google login is an optional additional identity provider using the same Flood Watch sessions and authorization checks. Password-email collisions require explicit password proof before linking, and new Google accounts are USER only. See `google-login.md` for the callback, cookie, migration, setup and operational boundaries.
 
 Username login and real three-step password recovery require migration 14. See `password-recovery.md` for API behavior, SMTP setup, token revocation, abuse limits, compatibility, and deployment gates.

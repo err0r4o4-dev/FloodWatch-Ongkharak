@@ -1,8 +1,12 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "../../i18n";
+import th from "../../i18n/locales/th/reports";
+import en from "../../i18n/locales/en/reports";
 import { apiClient } from "../auth/api";
 import type { ReportMedia } from "./types";
 
 export function ReportMediaImage({ media }: { media: ReportMedia }) {
+  const { t } = useTranslation({ th, en });
   const [source, setSource] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
 
@@ -26,7 +30,7 @@ export function ReportMediaImage({ media }: { media: ReportMedia }) {
     };
   }, [media.url]);
 
-  if (failed) return <p className="report-media__error" role="status">ไม่สามารถโหลดภาพประกอบได้</p>;
-  if (!source) return <p className="report-media__loading" role="status">กำลังโหลดภาพประกอบ</p>;
-  return <a className="report-media__image-link" href={source} target="_blank" rel="noreferrer"><img src={source} alt="ภาพประกอบรายงาน" /></a>;
+  if (failed) return <p className="report-media__error" role="status">{t("media.error")}</p>;
+  if (!source) return <p className="report-media__loading" role="status">{t("media.loading")}</p>;
+  return <a className="report-media__image-link" href={source} target="_blank" rel="noreferrer"><img src={source} alt={t("media.alt")} /></a>;
 }

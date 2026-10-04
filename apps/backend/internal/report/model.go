@@ -44,6 +44,16 @@ type Input struct {
 	EstimatedWaterDepthM *float64 `json:"estimatedWaterDepthM"`
 }
 
+type GuestInput struct {
+	Input
+	DisplayName string `json:"displayName"`
+}
+
+type GuestCreation struct {
+	Report      Report
+	UploadToken string
+}
+
 type Page struct {
 	Limit  int
 	Offset int
@@ -64,6 +74,7 @@ type ListFilter struct {
 type Report struct {
 	ID                   string
 	UserID               string
+	DisplayName          string
 	Type                 Type
 	Description          string
 	Location             Location
@@ -115,6 +126,12 @@ type Repository interface {
 	Review(context.Context, string, Status, string, string, time.Time) (Report, error)
 	CreateMedia(context.Context, Media, string) (Media, error)
 	GetMedia(context.Context, string, string) (Media, error)
+}
+
+type GuestRepository interface {
+	ValidateGuestUpload(context.Context, string, []byte, time.Time) error
+	CreateGuest(context.Context, Report, []byte, time.Time) (Report, error)
+	CreateGuestMedia(context.Context, Media, []byte, time.Time) (Media, error)
 }
 
 type MediaStorage interface {

@@ -1,36 +1,38 @@
 import type { ReactNode } from "react";
 import type { Freshness, SourceType } from "../types/flood";
-
-const sourceLabels: Record<SourceType, string> = {
-  OFFICIAL: "แหล่งทางการ", COMMUNITY: "รายงานชุมชน", AI: "หลักฐาน AI"
-};
-const freshnessLabels: Record<Freshness, string> = {
-  FRESH: "ข้อมูลล่าสุดตามเกณฑ์", STALE: "ข้อมูลเก่า", EXPIRED: "ข้อมูลหมดอายุ", UNKNOWN: "ไม่ทราบความใหม่"
-};
-const statusLabels: Record<string, string> = {
-  INFO: "ข้อมูล", WATCH: "เฝ้าระวัง", WARNING: "เตือนภัย", CRITICAL: "วิกฤต",
-  ACTIVE: "ยังมีเหตุการณ์", RESOLVED: "คลี่คลายตามรายงาน", LOW: "ความเสี่ยงต่ำ",
-  MODERATE: "ความเสี่ยงปานกลาง", HIGH: "ความเสี่ยงสูง", VERY_HIGH: "ความเสี่ยงสูงมาก",
-  PASSABLE: "ผ่านได้ตามรายงาน", SMALL_VEHICLE_NOT_RECOMMENDED: "ไม่แนะนำรถเล็ก",
-  CLOSED: "ปิดการสัญจร", UNKNOWN: "ไม่ทราบสถานะ"
-};
+import { formatDate, useTranslation } from "../../i18n";
+import th from "../../i18n/locales/th/data";
+import en from "../../i18n/locales/en/data";
+const messages = { th, en };
 
 export function SourceBadge({ type }: { type: SourceType }) {
-  return <span className={`badge badge--source-${type.toLowerCase()}`}>{sourceLabels[type] ?? "ไม่ทราบแหล่งข้อมูล"}</span>;
+  const { t } = useTranslation(messages);
+  const labels: Record<SourceType, string> = { OFFICIAL: t("official"), COMMUNITY: t("community"), AI: t("ai") };
+  return <span className={`badge badge--source-${type.toLowerCase()}`}>{labels[type] ?? t("sourceUnknown")}</span>;
 }
 
 export function FreshnessBadge({ freshness }: { freshness: Freshness }) {
-  return <span className={`badge badge--freshness-${freshness.toLowerCase()}`}>{freshnessLabels[freshness] ?? freshnessLabels.UNKNOWN}</span>;
+  const { t } = useTranslation(messages);
+  const labels: Record<Freshness, string> = { FRESH: t("fresh"), STALE: t("stale"), EXPIRED: t("expired"), UNKNOWN: t("freshnessUnknown") };
+  return <span className={`badge badge--freshness-${freshness.toLowerCase()}`}>{labels[freshness] ?? t("freshnessUnknown")}</span>;
 }
 
 export function StatusBadge({ status }: { status: string }) {
-  return <span className={`badge badge--status-${status.toLowerCase().replace(/[^a-z_]/g, "")}`}>{statusLabels[status] ?? statusLabels.UNKNOWN}</span>;
+  const { t } = useTranslation(messages);
+  const statuses = ["INFO", "WATCH", "WARNING", "CRITICAL", "ACTIVE", "RESOLVED", "LOW", "MODERATE", "HIGH", "VERY_HIGH", "PASSABLE", "SMALL_VEHICLE_NOT_RECOMMENDED", "CLOSED", "UNKNOWN"] as const;
+  const key = statuses.find((value) => value === status) ?? "UNKNOWN";
+  return <span className={`badge badge--status-${status.toLowerCase().replace(/[^a-z_]/g, "")}`}>{t(key)}</span>;
 }
 
-export function DataTimestamp({ value, label = "เวลาสังเกต" }: { value: string | null; label?: string }) {
-  const date = value ? new Date(value) : null;
-  const valid = date && !Number.isNaN(date.getTime());
-  return <span className="data-timestamp">{label}: {valid ? <time dateTime={value!}>{new Intl.DateTimeFormat("th-TH", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Bangkok" }).format(date)}</time> : "ไม่ระบุ"}</span>;
+export function DataTimestamp({ value, label }: { value: string | null; label?: string }) {
+  const { locale, t } = useTranslation(messages);
+  const valid = value && !Number.isNaN(new Date(value).getTime());
+  return <span className="data-timestamp">{label ?? t("observedAt")}: {valid ? <time dateTime={value}>{formatDate(value, locale)}</time> : t("unspecified")}</span>;
+}
+
+export function OriginalContentNote() {
+  const { t } = useTranslation(messages);
+  return <p className="section-caption">{t("original")}</p>;
 }
 
 export function EmptyState({ title, children }: { title: string; children: ReactNode }) {
@@ -38,9 +40,11 @@ export function EmptyState({ title, children }: { title: string; children: React
 }
 
 export function ErrorState({ onRetry }: { onRetry: () => void }) {
-  return <div className="state-panel" role="alert"><h2>ไม่สามารถโหลดข้อมูลสถานการณ์ได้</h2><p>โปรดลองอีกครั้ง ข้อมูลที่ไม่พร้อมใช้งานไม่ได้หมายถึงพื้นที่ปลอดภัย</p><button type="button" className="action-button" onClick={onRetry}>ลองอีกครั้ง</button></div>;
+  const { t } = useTranslation(messages);
+  return <div className="state-panel" role="alert"><h2>{t("loadError")}</h2><p>{t("loadErrorHelp")}</p><button type="button" className="action-button" onClick={onRetry}>{t("retry")}</button></div>;
 }
 
 export function LoadingState() {
-  return <div className="state-panel" role="status" aria-label="กำลังโหลดข้อมูล"><h2>กำลังโหลดข้อมูล</h2><p>กำลังตรวจสอบข้อมูลจาก API สาธารณะ</p></div>;
+  const { t } = useTranslation(messages);
+  return <div className="state-panel" role="status" aria-label={t("loading")}><h2>{t("loading")}</h2><p>{t("loadingHelp")}</p></div>;
 }

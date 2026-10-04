@@ -63,7 +63,17 @@ func (s *Service) Subscribe(ctx context.Context, sub Subscription) error {
 	if !s.pushEnabled() {
 		return ErrUnavailable
 	}
+	if sub.Locale == "" {
+		sub.Locale = "th"
+	}
 	return s.repo.UpsertSubscription(ctx, sub)
+}
+
+func (s *Service) UpdateSubscriptionLocale(ctx context.Context, endpoint, userID, locale string) error {
+	if userID == "" || !validPushEndpoint(endpoint) || !validNotificationLocale(locale) {
+		return ErrInvalid
+	}
+	return s.repo.UpdateSubscriptionLocale(ctx, endpoint, userID, locale)
 }
 
 func (s *Service) Unsubscribe(ctx context.Context, endpoint string, userID string) error {
@@ -136,7 +146,7 @@ func (s *Service) DeliverPending(ctx context.Context) (int, error) {
 		}
 
 		deliveryContext, cancel := context.WithTimeout(workContext, deliveryTimeout)
-		err = s.sendPushNotification(deliveryContext, Subscription{ID: job.SubscriptionID, UserID: job.UserID, Endpoint: job.Endpoint, P256dh: job.P256dh, Auth: job.Auth}, job.Payload)
+		err = s.sendPushNotification(deliveryContext, Subscription{ID: job.SubscriptionID, UserID: job.UserID, Endpoint: job.Endpoint, P256dh: job.P256dh, Auth: job.Auth}, localizedDeliveryPayload(job))
 		cancel()
 		if err == nil {
 			if err := s.repo.CompleteDelivery(workContext, job.ID, job.LeaseToken); err != nil {
@@ -243,7 +253,7 @@ func (s *Service) pushEnabled() bool {
 }
 
 func validPushSubscription(sub Subscription) bool {
-	if sub.UserID == "" || !validPushEndpoint(sub.Endpoint) {
+	if (sub.Locale != "" && sub.Locale != "th" && sub.Locale != "en") || sub.UserID == "" || !validPushEndpoint(sub.Endpoint) {
 		return false
 	}
 	p256dh, ok := decodePushKey(sub.P256dh)

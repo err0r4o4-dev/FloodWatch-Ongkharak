@@ -1,28 +1,33 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
+import { formatNumber, LanguageSwitcher, useTranslation } from "../../i18n";
 import { ApiError, passwordRecoveryApi } from "./api";
 import type { PasswordRecoveryApi } from "./api";
 import { safeReturnTo } from "./google";
+import { authMessage, authMessages, formatAuthMessage } from "./messages";
+import type { AuthMessage, AuthMessageKey } from "./messages";
 
 type RecoveryStep = 1 | 2 | 3 | "success";
 
-const errorMessages: Record<string, string> = {
-  INVALID_REQUEST: "ข้อมูลคำขอไม่ถูกต้อง กรุณาตรวจสอบข้อมูลแล้วลองใหม่",
-  INVALID_OTP: "รหัส OTP ไม่ถูกต้อง หมดอายุ หรือถูกใช้ไปแล้ว กรุณาขอรหัสใหม่",
-  INVALID_RESET_TOKEN: "สิทธิ์ตั้งรหัสผ่านหมดอายุหรือไม่ถูกต้อง กรุณาเริ่มกู้คืนรหัสผ่านใหม่",
-  RECOVERY_RATE_LIMITED: "ดำเนินการกู้คืนรหัสผ่านบ่อยเกินไป กรุณารอสักครู่แล้วลองใหม่",
-  RATE_LIMITED: "ดำเนินการกู้คืนรหัสผ่านบ่อยเกินไป กรุณารอสักครู่แล้วลองใหม่",
-  RECOVERY_UNAVAILABLE: "บริการกู้คืนรหัสผ่านไม่พร้อมใช้งาน กรุณาลองใหม่ภายหลัง"
+const errorMessages: Record<string, AuthMessageKey> = {
+  INVALID_REQUEST: "invalidRequest",
+  INVALID_OTP: "invalidOtp",
+  INVALID_RESET_TOKEN: "invalidResetToken",
+  RECOVERY_RATE_LIMITED: "recoveryRateLimited",
+  RATE_LIMITED: "recoveryRateLimited",
+  RECOVERY_UNAVAILABLE: "recoveryUnavailable"
 };
 
-function recoveryError(cause: unknown): string {
-  if (cause instanceof ApiError && cause.code && errorMessages[cause.code]) return errorMessages[cause.code];
-  return "ไม่สามารถดำเนินการกู้คืนรหัสผ่านได้ กรุณาลองใหม่ภายหลัง";
+function recoveryError(cause: unknown): AuthMessage {
+  if (cause instanceof ApiError && cause.code && errorMessages[cause.code]) return authMessage(errorMessages[cause.code]);
+  return authMessage("recoveryFailed");
 }
 
-function passwordError(password: string): string | null {
+function passwordError(password: string): AuthMessage | null {
   const bytes = new TextEncoder().encode(password).byteLength;
-  return bytes < 12 || bytes > 128 ? "รหัสผ่านต้องมีความยาว 12–128 ไบต์" : null;
+  if (bytes < 12) return authMessage("passwordTooShort");
+  if (bytes > 128) return authMessage("passwordTooLong");
+  return null;
 }
 
 function validEmail(email: string): boolean {
@@ -39,13 +44,15 @@ function Header({ heading, headingId, children, headingRef }: { heading: string;
 }
 
 function Shell({ children }: { children: React.ReactNode }) {
+  const { t } = useTranslation(authMessages);
   return (
     <main className="auth-page">
-      <Link to="/" className="auth-brand" aria-label="Flood Watch Ongkharak หน้าหลัก">
+      <LanguageSwitcher />
+      <Link to="/" className="auth-brand" aria-label={t("brandHomeAria")}>
         <img src="/flood-watch-mark.svg" alt="" />
         <div>
           <strong>Flood Watch</strong>
-          <small>ติดตามสถานการณ์น้ำองครักษ์</small>
+          <small>{t("brandTagline")}</small>
         </div>
       </Link>
       {children}
@@ -54,6 +61,7 @@ function Shell({ children }: { children: React.ReactNode }) {
 }
 
 export function ForgotPasswordPage({ api = passwordRecoveryApi }: { api?: PasswordRecoveryApi }) {
+  const { locale, t } = useTranslation(authMessages);
   const location = useLocation();
   const navigate = useNavigate();
   const returnTo = safeReturnTo(new URLSearchParams(location.search).get("returnTo"));
@@ -68,7 +76,7 @@ export function ForgotPasswordPage({ api = passwordRecoveryApi }: { api?: Passwo
   const [requestMessage, setRequestMessage] = useState("");
   const [resendRemaining, setResendRemaining] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<AuthMessage | null>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
@@ -102,8 +110,8 @@ export function ForgotPasswordPage({ api = passwordRecoveryApi }: { api?: Passwo
 
   const requestOtp = async () => {
     const normalizedEmail = email.trim();
-    if (!normalizedEmail) return setError("กรุณากรอกอีเมล");
-    if (!validEmail(normalizedEmail)) return setError("กรุณากรอกอีเมลให้ถูกต้อง");
+    if (!normalizedEmail) return setError(authMessage("emailRequired"));
+    if (!validEmail(normalizedEmail)) return setError(authMessage("invalidEmail"));
     if (loading || (step === 2 && resendRemaining > 0)) return;
     setLoading(true);
     setError(null);
@@ -131,8 +139,8 @@ export function ForgotPasswordPage({ api = passwordRecoveryApi }: { api?: Passwo
   const handleVerifyOtp = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (loading) return;
-    if (!/^\d{6}$/u.test(otp)) return setError("รหัส OTP ต้องเป็นตัวเลข 6 หลัก");
-    if (!challengeId) return setError("คำขอกู้คืนหมดอายุ กรุณาเริ่มใหม่");
+    if (!/^\d{6}$/u.test(otp)) return setError(authMessage("otpInvalid"));
+    if (!challengeId) return setError(authMessage("recoveryExpired"));
     setLoading(true);
     setError(null);
     try {
@@ -150,12 +158,12 @@ export function ForgotPasswordPage({ api = passwordRecoveryApi }: { api?: Passwo
     event.preventDefault();
     if (loading) return;
     if (!resetToken) {
-      setError("สิทธิ์ตั้งรหัสผ่านหมดอายุ กรุณาเริ่มกู้คืนรหัสผ่านใหม่");
+      setError(authMessage("resetExpired"));
       return;
     }
     const newPasswordError = passwordError(newPassword);
     if (newPasswordError) return setError(newPasswordError);
-    if (newPassword !== confirmPassword) return setError("รหัสผ่านไม่ตรงกัน");
+    if (newPassword !== confirmPassword) return setError(authMessage("passwordMismatch"));
     setLoading(true);
     setError(null);
     try {
@@ -186,9 +194,9 @@ export function ForgotPasswordPage({ api = passwordRecoveryApi }: { api?: Passwo
     return (
       <Shell>
         <section className="auth-form data-section" aria-labelledby="recovery-success-heading">
-          <Header heading="เปลี่ยนรหัสผ่านสำเร็จ" headingId="recovery-success-heading" headingRef={headingRef}>คุณสามารถใช้รหัสผ่านใหม่เพื่อเข้าสู่ระบบได้แล้ว</Header>
+          <Header heading={t("resetSuccessHeading")} headingId="recovery-success-heading" headingRef={headingRef}>{t("resetSuccessDescription")}</Header>
           <button type="button" className="action-button" disabled={loading} onClick={() => navigate(loginPath, { replace: true })} style={{ minHeight: "3rem", justifyContent: "center" }}>
-            กลับไปหน้าเข้าสู่ระบบ
+            {t("backToLogin")}
           </button>
         </section>
       </Shell>
@@ -199,19 +207,19 @@ export function ForgotPasswordPage({ api = passwordRecoveryApi }: { api?: Passwo
     return (
       <Shell>
         <form className="auth-form data-section" onSubmit={handleRequestOtp} noValidate>
-          <Header heading="ลืมรหัสผ่าน?" headingRef={headingRef}>ระบุอีเมลที่ใช้สมัครบัญชีเพื่อเริ่มกู้คืนรหัสผ่าน</Header>
-          {error && <p className="form-error" role="alert">{error}</p>}
+          <Header heading={t("forgotHeading")} headingRef={headingRef}>{t("forgotDescription")}</Header>
+          {error && <p className="form-error" role="alert">{formatAuthMessage(error, t)}</p>}
           <label>
-            อีเมล
-            <input type="email" autoComplete="email" value={email} onChange={(event) => handleEmailChange(event.target.value)} disabled={loading} placeholder="อีเมลของคุณ" />
+            {t("email")}
+            <input type="email" autoComplete="email" value={email} onChange={(event) => handleEmailChange(event.target.value)} disabled={loading} placeholder={t("emailPlaceholder")} />
           </label>
           <div className="auth-actions" style={{ marginTop: "0.5rem" }}>
             <button type="submit" className="action-button" disabled={loading} style={{ width: "100%", justifyContent: "center" }}>
-              {loading ? "กำลังตรวจสอบ..." : "ส่งรหัส OTP"}
+              {loading ? t("checking") : t("requestOtp")}
             </button>
           </div>
           <p className="section-caption">
-            จำรหัสผ่านได้แล้ว? <Link to={loginPath}>กลับไปหน้าเข้าสู่ระบบ</Link>
+            {t("rememberPassword")} <Link to={loginPath}>{t("backToLogin")}</Link>
           </p>
         </form>
       </Shell>
@@ -222,27 +230,27 @@ export function ForgotPasswordPage({ api = passwordRecoveryApi }: { api?: Passwo
     return (
       <Shell>
         <form className="auth-form data-section" onSubmit={handleVerifyOtp} noValidate>
-          <Header heading="ยืนยันรหัส OTP" headingRef={headingRef}>หากอีเมลนี้มีบัญชี คุณอาจได้รับ <strong>รหัส OTP สำหรับ {email}</strong> เพื่อดำเนินการต่อ</Header>
-          {requestMessage && <p role="status" aria-label="ข้อมูลการกู้คืน">{requestMessage}</p>}
-          {error && <p className="form-error" role="alert">{error}</p>}
+          <Header heading={t("otpHeading")} headingRef={headingRef}>{t("otpDescription", { name: email })}</Header>
+          {requestMessage && <p role="status" aria-label={t("recoveryInfo")}>{requestMessage}</p>}
+          {error && <p className="form-error" role="alert">{formatAuthMessage(error, t)}</p>}
           <label>
-            รหัส OTP
-            <input type="text" inputMode="numeric" pattern="[0-9]{6}" maxLength={6} autoComplete="one-time-code" value={otp} onChange={(event) => setOtp(event.target.value)} disabled={loading} placeholder="ตัวเลข 6 หลัก" />
+            {t("otp")}
+            <input type="text" inputMode="numeric" pattern="[0-9]{6}" maxLength={6} autoComplete="one-time-code" value={otp} onChange={(event) => setOtp(event.target.value)} disabled={loading} placeholder={t("otpPlaceholder")} />
           </label>
           <div className="auth-actions" style={{ marginTop: "0.5rem" }}>
             <button type="submit" className="action-button" disabled={loading} style={{ width: "100%", justifyContent: "center" }}>
-              {loading ? "กำลังตรวจสอบ..." : "ยืนยันรหัส OTP"}
+              {loading ? t("checking") : t("verifyOtp")}
             </button>
           </div>
-          <p role="timer" aria-live="off" aria-label="เวลารอส่งรหัสอีกครั้ง">
-            {resendRemaining > 0 ? `ส่งรหัสอีกครั้งได้ใน ${resendRemaining} วินาที` : "สามารถขอรหัสใหม่ได้แล้ว"}
+          <p role="timer" aria-live="off" aria-label={t("resendTimer")}>
+            {resendRemaining > 0 ? t("resendIn", { seconds: formatNumber(resendRemaining, locale) }) : t("resendAvailable")}
           </p>
           <div className="auth-actions" style={{ marginTop: "0.5rem" }}>
             <button type="button" className="action-button" disabled={loading || resendRemaining > 0} onClick={() => void requestOtp()} style={{ width: "100%", justifyContent: "center", backgroundColor: "transparent", color: "var(--color-ink-muted)", border: "1px solid var(--color-border)" }}>
-              ส่งรหัสอีกครั้ง
+              {t("resendOtp")}
             </button>
           </div>
-          <button type="button" className="auth-text-action" disabled={loading} onClick={editEmail}>แก้ไขอีเมล</button>
+          <button type="button" className="auth-text-action" disabled={loading} onClick={editEmail}>{t("editEmail")}</button>
         </form>
       </Shell>
     );
@@ -251,23 +259,27 @@ export function ForgotPasswordPage({ api = passwordRecoveryApi }: { api?: Passwo
   return (
     <Shell>
       <form className="auth-form data-section" onSubmit={handleResetPassword} noValidate>
-        <Header heading="ตั้งรหัสผ่านใหม่" headingRef={headingRef}>ตั้งรหัสผ่านใหม่เพื่อใช้เข้าสู่ระบบในครั้งถัดไป</Header>
-        {error && <p className="form-error" role="alert">{error}</p>}
+        <Header heading={t("newPasswordHeading")} headingRef={headingRef}>{t("newPasswordDescription")}</Header>
+        {error && <p className="form-error" role="alert">{formatAuthMessage(error, t)}</p>}
         <label>
-          รหัสผ่านใหม่
-          <input type="password" autoComplete="new-password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} disabled={loading} placeholder="ความยาว 12–128 ไบต์" />
+          {t("newPassword")}
+          <input type="password" autoComplete="new-password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} disabled={loading} placeholder={t("newPasswordPlaceholder")} />
         </label>
         <label>
-          ยืนยันรหัสผ่านใหม่
-          <input type="password" autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} disabled={loading} placeholder="พิมพ์รหัสผ่านใหม่อีกครั้ง" />
+          {t("confirmPassword")}
+          <input type="password" autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} disabled={loading} placeholder={t("confirmPasswordPlaceholder")} />
         </label>
-        <p className="section-caption" style={{ textAlign: "left" }}>รหัสผ่านต้องมีความยาว 12–128 ไบต์</p>
+        <p className="section-caption" style={{ textAlign: "left" }}>{t("authPasswordHint")}</p>
+        <details>
+          <summary>{t("passwordTechnicalDetailsSummary")}</summary>
+          <p className="section-caption" style={{ textAlign: "left" }}>{t("passwordTechnicalDetails")}</p>
+        </details>
         <div className="auth-actions" style={{ marginTop: "0.5rem" }}>
           <button type="submit" className="action-button" disabled={loading} style={{ width: "100%", justifyContent: "center" }}>
-            {loading ? "กำลังบันทึก..." : "เปลี่ยนรหัสผ่าน"}
+            {loading ? t("savingPassword") : t("changePassword")}
           </button>
         </div>
-        <button type="button" className="auth-text-action" disabled={loading} onClick={editEmail}>เริ่มกู้คืนใหม่</button>
+        <button type="button" className="auth-text-action" disabled={loading} onClick={editEmail}>{t("startRecoveryAgain")}</button>
       </form>
     </Shell>
   );

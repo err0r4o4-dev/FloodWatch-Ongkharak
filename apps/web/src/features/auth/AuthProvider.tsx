@@ -1,26 +1,28 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { authApi } from "./api";
-import type { AuthApi } from "./api";
+import { accountApi as defaultAccountApi, authApi } from "./api";
+import type { AccountApi, AuthApi } from "./api";
 import type { Account, Credentials, RegisterInput } from "./types";
 
 type AuthStatus = "loading" | "anonymous" | "authenticated";
 
 type AuthContextValue = {
   account: Account | null;
-  login(input: Credentials): Promise<void>;
+  login(input: Credentials): Promise<Account>;
   logout(): Promise<void>;
   register(input: RegisterInput): Promise<Account>;
   status: AuthStatus;
+  updateUsername(username: string): Promise<void>;
 };
 
 type AuthProviderProps = {
   api?: AuthApi;
+  accountApi?: AccountApi;
   children: React.ReactNode;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-export function AuthProvider({ api = authApi, children }: AuthProviderProps) {
+export function AuthProvider({ api = authApi, accountApi = defaultAccountApi, children }: AuthProviderProps) {
   const [account, setAccount] = useState<Account | null>(null);
   const [status, setStatus] = useState<AuthStatus>("loading");
 
@@ -61,13 +63,22 @@ export function AuthProvider({ api = authApi, children }: AuthProviderProps) {
   const login = useCallback(async (input: Credentials) => {
     const session = await api.login(input);
     const currentAccount = await api.me();
-    setAccount(currentAccount ?? session.user);
+    const loggedInAccount = currentAccount ?? session.user;
+    setAccount(loggedInAccount);
     setStatus("authenticated");
+    return loggedInAccount;
   }, [api]);
 
   const register = useCallback((input: RegisterInput) => api.register(input), [api]);
 
-  const value = useMemo(() => ({ account, login, logout, register, status }), [account, login, logout, register, status]);
+  const updateUsername = useCallback(async (username: string) => {
+    if (!account) throw new Error("Authentication is unavailable.");
+    const updatedAccount = await accountApi.updateUsername(username);
+    if (updatedAccount.id !== account.id) throw new Error("Account changed while updating username.");
+    setAccount((currentAccount) => currentAccount === account ? updatedAccount : currentAccount);
+  }, [account, accountApi]);
+
+  const value = useMemo(() => ({ account, login, logout, register, status, updateUsername }), [account, login, logout, register, status, updateUsername]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
@@ -83,9 +94,10 @@ export function useOptionalAuth(): AuthContextValue {
   const context = useContext(AuthContext);
   return context ?? {
     account: null,
-    login: async () => undefined,
+    login: async () => { throw new Error("Authentication is unavailable."); },
     logout: async () => undefined,
     register: async () => { throw new Error("Authentication is unavailable."); },
+    updateUsername: async () => { throw new Error("Authentication is unavailable."); },
     status: "anonymous"
   };
 }

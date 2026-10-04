@@ -15,6 +15,7 @@ function validPoint(value: unknown): boolean {
 
 function validReport(value: unknown): value is CommunityReport {
   if (!record(value) || typeof value.id !== "string" || (value.userId !== undefined && typeof value.userId !== "string") ||
+    (value.displayName !== undefined && typeof value.displayName !== "string") ||
     !["FLOOD", "ROAD", "OTHER"].includes(String(value.type)) || typeof value.description !== "string" ||
     !validPoint(value.location) || !["PENDING", "VERIFIED", "REJECTED"].includes(String(value.status)) ||
     !["PENDING", "VERIFIED", "REJECTED"].includes(String(value.verificationStatus)) ||
@@ -64,11 +65,13 @@ export const reportsApi = {
   },
 
   async create(input: ReportInput) {
-    return reportResponse(await apiClient.request<unknown>("/reports", {
+    const value = await apiClient.request<unknown>("/reports", {
       body: JSON.stringify(input),
       headers: { "Content-Type": "application/json" },
       method: "POST"
-    }));
+    }, { authenticate: false, retryUnauthorized: false });
+    if (!record(value) || typeof value.uploadToken !== "string" || !value.uploadToken) throw new Error("Invalid guest report response");
+    return { ...reportResponse(value), uploadToken: value.uploadToken };
   },
 
   async update(id: string, input: ReportInput) {
@@ -79,10 +82,12 @@ export const reportsApi = {
     }));
   },
 
-  async uploadMedia(id: string, file: File) {
+  async uploadMedia(id: string, file: File, uploadToken?: string) {
     const form = new FormData();
     form.append("file", file);
-    return mediaResponse(await apiClient.request<unknown>(`${reportPath(id)}/media`, { body: form, method: "POST" }));
+    return mediaResponse(await apiClient.request<unknown>(`${reportPath(id)}/media`, {
+      body: form, method: "POST", ...(uploadToken ? { headers: { "X-Report-Upload-Token": uploadToken } } : {})
+    }, { authenticate: false, retryUnauthorized: false }));
   },
 
   async listPending(signal?: AbortSignal) {

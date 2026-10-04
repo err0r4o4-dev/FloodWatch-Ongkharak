@@ -30,6 +30,7 @@ func (h *NotificationHandler) PublicKey(w http.ResponseWriter, r *http.Request) 
 }
 
 type SubscribeRequest struct {
+	Locale   string `json:"locale"`
 	Endpoint string `json:"endpoint"`
 	Keys     struct {
 		P256dh string `json:"p256dh"`
@@ -51,6 +52,7 @@ func (h *NotificationHandler) Subscribe(w http.ResponseWriter, r *http.Request) 
 	}
 
 	sub := notification.Subscription{
+		Locale:   req.Locale,
 		UserID:   principal.UserID,
 		Endpoint: req.Endpoint,
 		P256dh:   req.Keys.P256dh,
@@ -62,6 +64,29 @@ func (h *NotificationHandler) Subscribe(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	w.WriteHeader(http.StatusNoContent)
+}
+
+type SubscriptionLocaleRequest struct {
+	Endpoint string `json:"endpoint"`
+	Locale   string `json:"locale"`
+}
+
+func (h *NotificationHandler) UpdateSubscriptionLocale(w http.ResponseWriter, r *http.Request) {
+	principal, ok := notificationPrincipal(w, r)
+	if !ok {
+		return
+	}
+
+	var req SubscriptionLocaleRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeAuthError(w, http.StatusBadRequest, "INVALID_REQUEST", "Invalid notification language data")
+		return
+	}
+	if err := h.service.UpdateSubscriptionLocale(r.Context(), req.Endpoint, principal.UserID, req.Locale); err != nil {
+		writeNotificationError(w, err)
+		return
+	}
 	w.WriteHeader(http.StatusNoContent)
 }
 

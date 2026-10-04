@@ -14,7 +14,6 @@ describe("AppRoutes", () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByRole("link", { name: "สถานะระบบ" })).toHaveAttribute("href", "/system-status");
     expect(
       screen.getByRole("heading", { name: "สถานะระบบสำหรับการพัฒนา" })
     ).toBeInTheDocument();
@@ -47,13 +46,11 @@ describe("public routes", () => {
     expect(screen.getByRole("main")).toBeInTheDocument();
   });
 
-  it("shows the institutional header and marks the pending language action unavailable", () => {
+  it("shows the institutional header and enables language selection", () => {
     render(<MemoryRouter initialEntries={["/system-status"]}><AppRoutes /></MemoryRouter>);
-    expect(screen.getByText("ศูนย์ติดตามสถานการณ์น้ำ อำเภอองครักษ์ จังหวัดนครนายก")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "EN" })).toBeDisabled();
+    expect(screen.getByText("สถานการณ์น้ำ อำเภอองครักษ์ จังหวัดนครนายก")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "EN" })).toBeEnabled();
     expect(screen.getByRole("link", { name: "การแจ้งเตือน" })).toHaveAttribute("href", "/notifications");
-    fireEvent.click(screen.getByLabelText("เมนูบัญชี"));
-    expect(screen.getByRole("link", { name: "เข้าสู่ระบบ" })).toHaveAttribute("href", "/login");
   });
 
   it("combines map and risk navigation without CCTV", () => {
@@ -74,14 +71,12 @@ describe("public routes", () => {
     expect(within(caution).getByText("ข้อมูลไม่พร้อมใช้งานไม่ได้หมายถึงพื้นที่ปลอดภัย")).toBeInTheDocument();
   });
 
-  it("keeps four mobile destinations for an admin and exposes admin from the account menu", async () => {
+  it("keeps four mobile destinations for an admin while the public account menu stays guest-only", async () => {
     const account = { id: "admin-1", email: "admin@example.com", role: "ADMIN" as const, createdAt: "2026-10-02T00:00:00Z" };
     const api = { refresh: vi.fn().mockResolvedValue(undefined), me: vi.fn().mockResolvedValue(account), logout: vi.fn(), login: vi.fn(), register: vi.fn() };
     render(<MemoryRouter initialEntries={["/system-status"]}><AuthProvider api={api}><AppRoutes /></AuthProvider></MemoryRouter>);
     await waitFor(() => expect(within(screen.getByRole("navigation", { name: "การนำทางหลัก" })).getByRole("link", { name: "จัดการระบบ" })).toBeInTheDocument());
     expect(within(screen.getByRole("navigation", { name: "การนำทางมือถือ" })).getAllByRole("link")).toHaveLength(4);
-    fireEvent.click(screen.getByLabelText("เมนูบัญชี"));
-    expect(screen.getAllByRole("link", { name: "จัดการระบบ" })).toHaveLength(2);
   });
 
   it("opens notifications from the header without inventing an unread count", async () => {
@@ -93,13 +88,11 @@ describe("public routes", () => {
     expect(screen.getByRole("link", { name: "การแจ้งเตือน" })).not.toHaveTextContent(/\d/);
   });
 
-  it("opens the notifications bookmark without treating a guest as an empty inbox", () => {
+  it("opens the public notifications bookmark without a login entry", () => {
     render(<MemoryRouter initialEntries={["/notifications"]}><AppRoutes /></MemoryRouter>);
     expect(screen.getByRole("heading", { level: 1, name: "การแจ้งเตือน" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "ลงชื่อเข้าใช้เพื่อดูการแจ้งเตือน" })).toBeInTheDocument();
-    expect(screen.queryByText("ไม่มีการแจ้งเตือน")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "อ่านทั้งหมดแล้ว" })).toBeDisabled();
-    expect(within(screen.getByRole("region", { name: "การแจ้งเตือนของคุณ" })).getByRole("link", { name: "เข้าสู่ระบบ" })).toHaveAttribute("href", "/login");
+    expect(screen.getByRole("heading", { name: "ประกาศและรายงานล่าสุด" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "เข้าสู่ระบบ" })).not.toBeInTheDocument();
     expect(screen.getByText("ไม่มีการแจ้งเตือนไม่ได้หมายความว่าพื้นที่ปลอดภัย")).toBeInTheDocument();
     expect(screen.getByRole("main")).toBeInTheDocument();
   });
@@ -141,5 +134,18 @@ describe("public routes", () => {
     fireEvent.click(screen.getByRole("button", { name: "เส้นทาง" }));
     expect(screen.getByText(/ยังไม่มีบริการคำนวณเส้นทาง/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "เส้นทาง" })).toHaveAttribute("aria-pressed", "true");
+  });
+});
+
+describe("admin routes", () => {
+  it("renders the protected community report review route for an ADMIN", async () => {
+    const account = { id: "admin-1", email: "admin@example.com", role: "ADMIN" as const, createdAt: "2026-10-02T00:00:00Z" };
+    const api = { refresh: vi.fn().mockResolvedValue(undefined), me: vi.fn().mockResolvedValue(account), logout: vi.fn(), login: vi.fn(), register: vi.fn() };
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ items: [], limit: 20, offset: 0 }) }));
+
+    render(<MemoryRouter initialEntries={["/admin/reports"]}><AuthProvider api={api}><AppRoutes /></AuthProvider></MemoryRouter>);
+
+    expect(await screen.findByRole("heading", { level: 1, name: "ตรวจสอบรายงานชุมชน" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "ตรวจสอบรายงานชุมชน" })).toBeInTheDocument();
   });
 });

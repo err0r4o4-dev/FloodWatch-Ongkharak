@@ -1,8 +1,8 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AuthProvider, useAuth } from "./AuthProvider";
-import { ApiClient, createAuthApi, createPasswordRecoveryApi } from "./api";
+import { accountApi, apiClient, ApiClient, createAuthApi, createPasswordRecoveryApi } from "./api";
 import { RequireAdmin, RequireAuth } from "./RequireAuth";
 
 const account = {
@@ -45,6 +45,24 @@ afterEach(() => {
 });
 
 describe("AuthProvider", () => {
+  it("does not restore a logged-out account after a pending username update", async () => {
+    let resolveSave!: (value: typeof account) => void;
+    const updateUsername = vi.fn(() => new Promise<typeof account>((resolve) => { resolveSave = resolve; }));
+    const api = { refresh: vi.fn().mockResolvedValue(undefined), me: vi.fn().mockResolvedValue(account), login: vi.fn(), logout: vi.fn().mockResolvedValue(undefined), register: vi.fn() };
+    function PendingAccount() {
+      const current = useAuth();
+      return <><p>{current.status}</p><button onClick={() => void current.updateUsername("new_user")}>Rename</button><button onClick={() => void current.logout()}>Logout</button></>;
+    }
+    render(<AuthProvider api={api} accountApi={{ updateUsername }}><PendingAccount /></AuthProvider>);
+    await screen.findByText("authenticated");
+    fireEvent.click(screen.getByRole("button", { name: "Rename" }));
+    fireEvent.click(screen.getByRole("button", { name: "Logout" }));
+    await screen.findByText("anonymous");
+    await act(async () => { resolveSave({ ...account }); });
+    expect(screen.getByText("anonymous")).toBeInTheDocument();
+    expect(screen.queryByText("authenticated")).not.toBeInTheDocument();
+  });
+
   it("bootstraps by refreshing the session before loading the account", async () => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(response({ user: account, accessToken: "access-token", expiresIn: 900 }))
@@ -101,6 +119,37 @@ describe("AuthProvider", () => {
 });
 
 describe("ApiClient", () => {
+  it("never refreshes and replays a username mutation after an unauthorized response", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(response({ error: { code: "UNAUTHENTICATED", message: "expired" } }, 401));
+    vi.stubGlobal("fetch", fetchMock);
+    const refresh = vi.fn().mockResolvedValue(true);
+    apiClient.setUnauthorizedHandler(refresh);
+    try {
+      await expect(accountApi.updateUsername("new_user")).rejects.toMatchObject({ status: 401 });
+      expect(refresh).not.toHaveBeenCalled();
+      expect(fetchMock).toHaveBeenCalledOnce();
+    } finally {
+      createAuthApi(apiClient);
+      apiClient.clearAccessToken();
+    }
+  });
+
+  it("updates only the authenticated username using the shared API client", async () => {
+    const updated = { ...account, username: "new_user" };
+    const fetchMock = vi.fn().mockResolvedValue(response({ user: updated }));
+    vi.stubGlobal("fetch", fetchMock);
+    apiClient.setAccessToken("test-token");
+    try {
+      await expect(accountApi.updateUsername("new_user")).resolves.toEqual(updated);
+      expect(fetchMock).toHaveBeenCalledExactlyOnceWith("/api/v1/auth/me", expect.objectContaining({ method: "PATCH", body: JSON.stringify({ username: "new_user" }) }));
+      const headers = fetchMock.mock.calls[0][1].headers as Headers;
+      expect(headers.get("Authorization")).toBe("Bearer test-token");
+      expect(headers.get("Content-Type")).toBe("application/json");
+    } finally {
+      apiClient.clearAccessToken();
+    }
+  });
+
   it("uses the unauthenticated password recovery contract for all three steps", async () => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(response({ challengeId: "challenge-1", expiresIn: 600, resendAfter: 60, message: "generic" }))
@@ -178,7 +227,7 @@ describe("auth route guards", () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByRole("status")).toHaveTextContent("Checking your session");
+    expect(screen.getByRole("status")).toHaveTextContent("กำลังตรวจสอบเซสชัน");
   });
 
   it("shows anonymous and forbidden states before protected content", async () => {
@@ -195,7 +244,7 @@ describe("auth route guards", () => {
       </MemoryRouter>
     );
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("Sign in is required");
+    expect(await screen.findByRole("alert")).toHaveTextContent("กรุณาเข้าสู่ระบบเพื่อดำเนินการต่อ");
     anonymousView.unmount();
 
     fetchMock.mockReset()
@@ -212,7 +261,7 @@ describe("auth route guards", () => {
       </MemoryRouter>
     );
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("do not have permission");
+    expect(await screen.findByRole("alert")).toHaveTextContent("ไม่มีสิทธิ์ดูหน้านี้");
     expect(screen.queryByText("Admin content")).not.toBeInTheDocument();
   });
 });

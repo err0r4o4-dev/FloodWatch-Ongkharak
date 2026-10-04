@@ -56,12 +56,12 @@
 }
 
 html {
-  min-width: 20rem;
+  min-width: 320px;
   background: var(--color-canvas);
 }
 
 body {
-  min-width: 20rem;
+  min-width: 320px;
   min-height: 100vh;
   margin: 0;
   color: var(--color-ink);
@@ -554,6 +554,9 @@ code {
   max-width: 72rem;
   margin-inline: auto;
 }
+
+.admin-user-detail { overflow-wrap: anywhere; }
+.admin-user-detail .panel { min-width: 0; }
 
 .admin-dashboard-grid {
   display: grid;

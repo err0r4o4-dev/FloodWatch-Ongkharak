@@ -38,6 +38,11 @@ type ReportService interface {
 	OpenMedia(context.Context, string, string, report.Access) (report.MediaFile, error)
 }
 
+type GuestReportService interface {
+	CreateGuest(context.Context, string, report.GuestInput) (report.GuestCreation, error)
+	UploadGuestMedia(context.Context, string, string, report.Image) (report.Media, error)
+}
+
 type ReportHandler struct{ service ReportService }
 
 func NewReportHandler(service ReportService) *ReportHandler { return &ReportHandler{service: service} }
@@ -96,6 +101,29 @@ func (handler *ReportHandler) Create(response http.ResponseWriter, request *http
 		return
 	}
 	writeJSON(response, http.StatusCreated, map[string]any{"report": reportPayload(item, true)})
+}
+
+func (handler *ReportHandler) CreateGuest(response http.ResponseWriter, request *http.Request) {
+	guestService, ok := handler.service.(GuestReportService)
+	if !ok {
+		writeReportResponseError(response, http.StatusInternalServerError, "INTERNAL_ERROR", "Request could not be completed")
+		return
+	}
+	var input report.GuestInput
+	if !readReportJSON(response, request, &input) {
+		return
+	}
+	userID := ""
+	if principal, ok := middleware.PrincipalFromContext(request.Context()); ok {
+		userID = principal.UserID
+	}
+	created, err := guestService.CreateGuest(request.Context(), userID, input)
+	if err != nil {
+		writeReportError(response, err)
+		return
+	}
+	response.Header().Set("Cache-Control", "no-store")
+	writeJSON(response, http.StatusCreated, map[string]any{"report": reportPayload(created.Report, false), "uploadToken": created.UploadToken})
 }
 
 func (handler *ReportHandler) Update(response http.ResponseWriter, request *http.Request) {
@@ -185,6 +213,29 @@ func (handler *ReportHandler) UploadMedia(response http.ResponseWriter, request 
 		return
 	}
 	item, err := handler.service.UploadMedia(request.Context(), chi.URLParam(request, "id"), principal.UserID, image)
+	if err != nil {
+		writeReportError(response, err)
+		return
+	}
+	writeJSON(response, http.StatusCreated, map[string]any{"media": mediaPayload(item)})
+}
+
+func (handler *ReportHandler) UploadGuestMedia(response http.ResponseWriter, request *http.Request) {
+	guestService, ok := handler.service.(GuestReportService)
+	if !ok {
+		writeReportResponseError(response, http.StatusInternalServerError, "INTERNAL_ERROR", "Request could not be completed")
+		return
+	}
+	tokens := request.Header.Values("X-Report-Upload-Token")
+	if len(tokens) != 1 || tokens[0] == "" {
+		writeReportError(response, report.ErrInvalid)
+		return
+	}
+	image, ok := readReportImage(response, request)
+	if !ok {
+		return
+	}
+	item, err := guestService.UploadGuestMedia(request.Context(), chi.URLParam(request, "id"), tokens[0], image)
 	if err != nil {
 		writeReportError(response, err)
 		return
@@ -405,6 +456,7 @@ func reportPrincipal(response http.ResponseWriter, request *http.Request) (middl
 
 type reportResponse struct {
 	ID                   string          `json:"id"`
+	DisplayName          string          `json:"displayName"`
 	Type                 report.Type     `json:"type"`
 	Description          string          `json:"description"`
 	Location             report.Location `json:"location"`
@@ -433,8 +485,12 @@ type mediaResponse struct {
 }
 
 func reportPayload(item report.Report, private bool) any {
+	displayName := item.DisplayName
+	if strings.TrimSpace(displayName) == "" {
+		displayName = "Guest"
+	}
 	payload := reportResponse{
-		ID: item.ID, Type: item.Type, Description: item.Description, Location: item.Location, EstimatedWaterDepthM: item.EstimatedWaterDepthM,
+		ID: item.ID, DisplayName: displayName, Type: item.Type, Description: item.Description, Location: item.Location, EstimatedWaterDepthM: item.EstimatedWaterDepthM,
 		Status: item.Status, VerificationStatus: item.VerificationStatus, SourceType: item.SourceType, CreatedAt: item.CreatedAt, UpdatedAt: item.UpdatedAt,
 		VerifiedAt: item.VerifiedAt, Media: make([]mediaResponse, 0, len(item.Media)),
 	}

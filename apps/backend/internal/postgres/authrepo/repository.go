@@ -129,6 +129,47 @@ func (repository *Repository) FindUserByUsername(ctx context.Context, username s
 	return user, nil
 }
 
+func (repository *Repository) UpdateUsername(ctx context.Context, id, username string) (auth.User, error) {
+	tx, err := repository.pool.Begin(ctx)
+	if err != nil {
+		return auth.User{}, fmt.Errorf("begin username update: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	user, err := scanUser(tx.QueryRow(ctx, `
+		SELECT id, email, COALESCE(password_hash, ''), role, created_at, updated_at, disabled_at, COALESCE(username, ''), auth_version
+		FROM users
+		WHERE id = $1
+		FOR UPDATE
+	`, id))
+	if errors.Is(err, pgx.ErrNoRows) {
+		return auth.User{}, auth.ErrNotFound
+	}
+	if err != nil {
+		return auth.User{}, fmt.Errorf("lock user for username update: %w", err)
+	}
+	if user.DisabledAt != nil {
+		return auth.User{}, auth.ErrAccountDisabled
+	}
+
+	updatedUser, err := scanUser(tx.QueryRow(ctx, `
+		UPDATE users
+		SET username = $2, updated_at = CURRENT_TIMESTAMP
+		WHERE id = $1 AND disabled_at IS NULL
+		RETURNING id, email, COALESCE(password_hash, ''), role, created_at, updated_at, disabled_at, COALESCE(username, ''), auth_version
+	`, id, strings.ToLower(strings.TrimSpace(username))))
+	if err != nil {
+		if isUniqueUsernameError(err) {
+			return auth.User{}, auth.ErrUsernameExists
+		}
+		return auth.User{}, fmt.Errorf("update username: %w", err)
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return auth.User{}, fmt.Errorf("commit username update: %w", err)
+	}
+	return updatedUser, nil
+}
+
 func (repository *Repository) RotateRefreshSession(ctx context.Context, oldTokenHash []byte, replacement auth.RefreshSession, now time.Time) (auth.User, error) {
 	tx, err := repository.pool.Begin(ctx)
 	if err != nil {
@@ -252,6 +293,11 @@ func normalizeEmail(email string) string {
 func isUniqueEmailError(err error) bool {
 	var databaseError *pgconn.PgError
 	return errors.As(err, &databaseError) && databaseError.Code == "23505" && databaseError.ConstraintName == "users_email_unique"
+}
+
+func isUniqueUsernameError(err error) bool {
+	var databaseError *pgconn.PgError
+	return errors.As(err, &databaseError) && databaseError.Code == "23505" && databaseError.ConstraintName == "users_username_unique"
 }
 
 func isUserForeignKeyError(err error) bool {

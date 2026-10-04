@@ -26,7 +26,7 @@ function renderToggle() {
 describe("NotificationToggle", () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    vi.mocked(useOptionalAuth).mockReturnValue({ account, status: "authenticated", login: vi.fn(), logout: vi.fn(), register: vi.fn() });
+    vi.mocked(useOptionalAuth).mockReturnValue({ account, status: "authenticated", login: vi.fn(), logout: vi.fn(), register: vi.fn(), updateUsername: vi.fn() });
     subscription.unsubscribe.mockResolvedValue(true);
     getSubscription.mockResolvedValue(null);
     subscribe.mockResolvedValue(subscription);
@@ -44,21 +44,22 @@ describe("NotificationToggle", () => {
   it("explains browser support instead of exposing a broken toggle", () => {
     vi.stubGlobal("PushManager", undefined);
     renderToggle();
-    expect(screen.getByText("เบราว์เซอร์นี้ไม่รองรับการแจ้งเตือนแบบ Push")).toBeInTheDocument();
+    expect(screen.getByText("เบราว์เซอร์นี้ไม่รองรับการแจ้งเตือน")).toBeInTheDocument();
     expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
   });
 
-  it("asks guests to sign in without requesting browser permission", () => {
-    vi.mocked(useOptionalAuth).mockReturnValue({ account: null, status: "anonymous", login: vi.fn(), logout: vi.fn(), register: vi.fn() });
+  it("explains that browser push is optional without asking guests to sign in", () => {
+    vi.mocked(useOptionalAuth).mockReturnValue({ account: null, status: "anonymous", login: vi.fn(), logout: vi.fn(), register: vi.fn(), updateUsername: vi.fn() });
     renderToggle();
-    expect(screen.getByRole("link", { name: "เข้าสู่ระบบเพื่อเปิดแจ้งเตือน" })).toHaveAttribute("href", "/login");
+    expect(screen.getByText("ดูการแจ้งเตือนในหน้านี้ได้โดยไม่ต้องเข้าสู่ระบบ" )).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "เข้าสู่ระบบเพื่อเปิดแจ้งเตือน" })).not.toBeInTheDocument();
     expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
     expect(Notification.requestPermission).not.toHaveBeenCalled();
     expect(subscribe).not.toHaveBeenCalled();
   });
 
   it("waits for authentication before exposing account settings", () => {
-    vi.mocked(useOptionalAuth).mockReturnValue({ account: null, status: "loading", login: vi.fn(), logout: vi.fn(), register: vi.fn() });
+    vi.mocked(useOptionalAuth).mockReturnValue({ account: null, status: "loading", login: vi.fn(), logout: vi.fn(), register: vi.fn(), updateUsername: vi.fn() });
     renderToggle();
     expect(screen.getByRole("status")).toHaveTextContent("กำลังตรวจสอบบัญชี");
     expect(screen.queryByRole("link", { name: "เข้าสู่ระบบเพื่อเปิดแจ้งเตือน" })).not.toBeInTheDocument();
@@ -159,5 +160,18 @@ describe("NotificationToggle", () => {
     expect(screen.getByRole("checkbox")).not.toBeChecked();
     expect(subscribe).not.toHaveBeenCalled();
     expect(notificationApi.subscribe).not.toHaveBeenCalled();
+  });
+  it("does not enroll or remove a device after the account changes during lookup", async () => {
+    const view = renderToggle();
+    await waitFor(() => expect(screen.getByRole("checkbox")).toBeEnabled());
+    let finish: (registration: unknown) => void = () => {};
+    getRegistration.mockImplementationOnce(() => new Promise((resolve) => { finish = resolve; }));
+    fireEvent.click(screen.getByRole("checkbox"));
+    vi.mocked(useOptionalAuth).mockReturnValue({ account: { ...account, id: "other-user" }, status: "authenticated", login: vi.fn(), logout: vi.fn(), register: vi.fn(), updateUsername: vi.fn() });
+    view.rerender(<MemoryRouter><NotificationToggle /></MemoryRouter>);
+    finish({ active: {}, pushManager: { getSubscription, subscribe } });
+    await waitFor(() => expect(screen.getByRole("checkbox")).toBeEnabled());
+    expect(notificationApi.subscribe).not.toHaveBeenCalled();
+    expect(notificationApi.unsubscribe).not.toHaveBeenCalled();
   });
 });

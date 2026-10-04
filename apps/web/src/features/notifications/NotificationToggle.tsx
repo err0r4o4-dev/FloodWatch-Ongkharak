@@ -1,5 +1,8 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router";
+import { useTranslation } from "../../i18n";
+import th from "../../i18n/locales/th/notifications";
+import en from "../../i18n/locales/en/notifications";
+const messages = { th, en };
+import { useEffect, useRef, useState } from "react";
 import { useOptionalAuth } from "../auth/AuthProvider";
 import { notificationApi } from "./api";
 import { notifyError, notifySuccess } from "../../shared/alerts";
@@ -14,15 +17,25 @@ function applicationServerKey(publicKey: string) {
 }
 
 export function NotificationToggle() {
+  const { t } = useTranslation(messages);
   const { account, status: authStatus } = useOptionalAuth();
   const [status, setStatus] = useState<SubscriptionStatus>("checking");
   const [subscribed, setSubscribed] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<keyof typeof th | null>(null);
   const [revision, setRevision] = useState(0);
   const supported = "serviceWorker" in navigator && typeof PushManager !== "undefined";
   const permissionDenied = typeof Notification !== "undefined" && Notification.permission === "denied";
   const accountId = account?.id;
+  const currentAccount = useRef(accountId);
+  currentAccount.current = accountId;
+  const mounted = useRef(true);
+  const togglePending = useRef(false);
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
 
   useEffect(() => {
     if (!supported || !accountId) return;
@@ -46,7 +59,7 @@ export function NotificationToggle() {
       } catch {
         if (active) {
           setStatus("error");
-          setError("ตรวจสอบการแจ้งเตือนไม่สำเร็จ กรุณาลองอีกครั้ง");
+          setError("couldNotCheckBrowserNotificationsPleaseTry");
         }
       }
     };
@@ -56,71 +69,82 @@ export function NotificationToggle() {
   }, [supported, accountId, revision]);
 
   const handleToggle = async () => {
-    if (!account || loading || status !== "ready" || permissionDenied) return;
+    if (!account || loading || togglePending.current || status !== "ready" || permissionDenied) return;
+    const mutationAccount = account.id;
+    const stillCurrent = () => mounted.current && currentAccount.current === mutationAccount;
+    togglePending.current = true;
     setLoading(true);
     setError(null);
 
     try {
       const registration = await navigator.serviceWorker.getRegistration();
+      if (!stillCurrent()) return;
       if (!registration?.active) {
         setStatus("unavailable");
         return;
       }
       const existingSubscription = await registration.pushManager.getSubscription();
+      if (!stillCurrent()) return;
 
       if (subscribed) {
         if (existingSubscription) {
           await notificationApi.unsubscribe(existingSubscription.endpoint);
+          if (!stillCurrent()) return;
           if (!await existingSubscription.unsubscribe()) throw new Error("Browser unsubscribe failed");
         }
         setSubscribed(false);
-        void notifySuccess("ปิดการแจ้งเตือนแล้ว", "เบราว์เซอร์นี้จะไม่รับ Push จาก Flood Watch");
+        void notifySuccess(t("browserAlertsTurnedOff"), t("thisBrowserWillNoLongerReceiveFlood"));
       } else {
         const { publicKey } = await notificationApi.getPublicKey();
+        if (!stillCurrent()) return;
         const subscription = existingSubscription ?? await registration.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey: applicationServerKey(publicKey)
         });
+        if (!stillCurrent()) return;
         try {
           await notificationApi.subscribe(subscription);
         } catch (cause) {
           if (!existingSubscription) await subscription.unsubscribe();
           throw cause;
         }
+        if (!stillCurrent()) return;
         setSubscribed(true);
-        void notifySuccess("เปิดการแจ้งเตือนแล้ว", "เบราว์เซอร์นี้พร้อมรับ Push จาก Flood Watch");
+        window.dispatchEvent(new Event("floodwatch:push-enrolled"));
+        void notifySuccess(t("browserAlertsTurnedOn"), t("thisBrowserCanNowReceiveFloodWatch"));
       }
     } catch {
-      const message = "เปลี่ยนการตั้งค่าไม่สำเร็จ กรุณาตรวจสอบการเชื่อมต่อและสิทธิ์ของเบราว์เซอร์ แล้วลองอีกครั้ง";
-      setError(message);
-      void notifyError("เปลี่ยนการตั้งค่าไม่สำเร็จ", message);
+      if (!stillCurrent()) return;
+      const message = t("couldNotSaveYourSettingsCheckYour");
+      setError("couldNotSaveYourSettingsCheckYour");
+      void notifyError(t("couldNotSaveSettings"), message);
     } finally {
-      setLoading(false);
+      togglePending.current = false;
+      if (mounted.current) setLoading(false);
     }
   };
 
-  if (authStatus === "loading") return <p className="notification-preference__message" role="status">กำลังตรวจสอบบัญชี…</p>;
+  if (authStatus === "loading") return <p className="notification-preference__message" role="status">{t("checkingYourAccount")}</p>;
 
   if (!account) return <div className="notification-preference notification-preference--guest">
-    <p>เข้าสู่ระบบเพื่อจัดการการรับแจ้งเตือนบนอุปกรณ์นี้</p>
-    <Link className="notification-preference__login" to="/login">เข้าสู่ระบบเพื่อเปิดแจ้งเตือน<span aria-hidden="true">→</span></Link>
-    {!supported && <p className="notification-preference__message">เบราว์เซอร์นี้ไม่รองรับการแจ้งเตือนแบบ Push</p>}
+    <p>{t("public.guestPush")}</p>
+    {!supported && <p className="notification-preference__message">{t("thisBrowserDoesNotSupportBrowserNotifications")}</p>}
   </div>;
 
-  if (!supported) return <p className="notification-preference__message">เบราว์เซอร์นี้ไม่รองรับการแจ้งเตือนแบบ Push</p>;
+  if (!supported) return <p className="notification-preference__message">{t("thisBrowserDoesNotSupportBrowserNotifications")}</p>;
 
   return <div className="notification-preference" aria-busy={loading || status === "checking"}>
     <label className="notification-preference__control">
       <input type="checkbox" checked={subscribed} onChange={() => void handleToggle()} disabled={loading || status !== "ready" || permissionDenied} aria-describedby="notification-preference-status" />
       <span className="notification-preference__switch" aria-hidden="true" />
-      <span>รับการแจ้งเตือนผ่านเบราว์เซอร์</span>
+      <span>{t("receiveBrowserNotifications")}</span>
     </label>
     <p id="notification-preference-status" className="notification-preference__message" role="status">
-      {loading ? "กำลังบันทึกการตั้งค่า…" : permissionDenied ? "เบราว์เซอร์ปิดกั้นการแจ้งเตือนอยู่" : status === "checking" ? "กำลังตรวจสอบการแจ้งเตือน…" : status === "unavailable" ? "ระบบแจ้งเตือนบนเบราว์เซอร์ยังไม่พร้อมใช้งาน" : status === "error" ? "ยังไม่สามารถยืนยันการตั้งค่าบนเบราว์เซอร์นี้ได้" : subscribed ? "เปิดการแจ้งเตือนในเบราว์เซอร์นี้แล้ว" : "ยังไม่ได้เปิดการแจ้งเตือนในเบราว์เซอร์นี้"}
+      {loading ? t("savingSettings") : permissionDenied ? t("notificationsAreBlockedInYourBrowser") : status === "checking" ? t("checkingBrowserNotifications") : status === "unavailable" ? t("browserNotificationsAreNotReadyYet") : status === "error" ? t("couldNotCheckThisBrowserSNotification") : subscribed ? t("notificationsAreOnInThisBrowser") : t("notificationsAreOffInThisBrowser")}
     </p>
-    {permissionDenied && <p className="notification-preference__message">อนุญาตการแจ้งเตือนในการตั้งค่าเว็บไซต์ของเบราว์เซอร์ แล้วตรวจสอบอีกครั้ง</p>}
-    {status === "unavailable" && <p className="notification-preference__message">ต้องมี Service Worker ที่พร้อมทำงานก่อนเปิดรับ Push โดยโหมดพัฒนายังไม่เปิดใช้งานส่วนนี้</p>}
-    {error && <p className="notification-preference__error" role="alert">{error}</p>}
-    {(status === "unavailable" || status === "error" || permissionDenied) && <button type="button" className="notification-preference__retry" disabled={loading || status === "checking"} onClick={() => setRevision((previous) => previous + 1)}>ตรวจสอบอีกครั้ง</button>}
+    {permissionDenied && <p className="notification-preference__message">{t("allowNotificationsInYourBrowserSSite")}</p>}
+    {status === "unavailable" && <p className="notification-preference__message">{t("browserNotificationsAreNotReadyThisFeature")}</p>}
+    {error && <p className="notification-preference__error" role="alert">{t(error)}</p>}
+    {(status === "unavailable" || status === "error" || permissionDenied) && <button type="button" className="notification-preference__retry" disabled={loading || status === "checking"} onClick={() => setRevision((previous) => previous + 1)}>{t("checkAgain")}</button>}
   </div>;
 }

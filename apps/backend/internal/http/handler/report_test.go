@@ -30,6 +30,100 @@ func TestReportCreateRejectsUnknownFields(t *testing.T) {
 	}
 }
 
+func TestReportCreateGuestReturnsPublicReportAndUploadToken(t *testing.T) {
+	service := &fakeReportService{guestCreation: report.GuestCreation{
+		Report:      report.Report{ID: "ddfd74fd-9561-4c5e-a304-b1cb704508d9", DisplayName: "Guest", Status: report.StatusPending, VerificationStatus: report.StatusPending, SourceType: report.SourceCommunity},
+		UploadToken: "opaque-upload-capability",
+	}}
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/reports", strings.NewReader(`{"type":"FLOOD","description":"Water","location":{"type":"Point","coordinates":[101,14]}}`))
+	request.Header.Set("Content-Type", "application/json")
+	response := httptest.NewRecorder()
+
+	NewReportHandler(service).CreateGuest(response, request)
+	if response.Code != http.StatusCreated {
+		t.Fatalf("CreateGuest() status = %d: %s", response.Code, response.Body)
+	}
+	if response.Header().Get("Cache-Control") != "no-store" {
+		t.Fatalf("CreateGuest() Cache-Control = %q, want no-store", response.Header().Get("Cache-Control"))
+	}
+	var body map[string]any
+	if err := json.Unmarshal(response.Body.Bytes(), &body); err != nil {
+		t.Fatal(err)
+	}
+	if body["uploadToken"] != "opaque-upload-capability" {
+		t.Fatalf("CreateGuest() uploadToken = %v", body["uploadToken"])
+	}
+	reportBody := body["report"].(map[string]any)
+	if reportBody["displayName"] != "Guest" {
+		t.Fatalf("CreateGuest() displayName = %v", reportBody["displayName"])
+	}
+	if _, ok := reportBody["userId"]; ok {
+		t.Fatalf("CreateGuest() leaked userId: %s", response.Body)
+	}
+	if service.guestInput.DisplayName != "" {
+		t.Fatalf("CreateGuest() input displayName = %q", service.guestInput.DisplayName)
+	}
+}
+
+func TestReportCreateGuestUsesOptionalTrustedPrincipalWithoutReturningAccountIdentity(t *testing.T) {
+	service := &fakeReportService{guestCreation: report.GuestCreation{Report: report.Report{ID: "ddfd74fd-9561-4c5e-a304-b1cb704508d9", DisplayName: "Guest"}, UploadToken: "opaque-upload-capability"}}
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/reports", strings.NewReader(`{"type":"FLOOD","description":"Water","location":{"type":"Point","coordinates":[101,14]}}`))
+	request.Header.Set("Authorization", "Bearer valid")
+	request.Header.Set("Content-Type", "application/json")
+	response := httptest.NewRecorder()
+
+	middleware.OptionalAuthentication(fakeReportAuthenticator{})(http.HandlerFunc(NewReportHandler(service).CreateGuest)).ServeHTTP(response, request)
+	if response.Code != http.StatusCreated || service.guestUserID != "7b6a2a68-688a-4c59-82cf-0b541dfa0d49" {
+		t.Fatalf("CreateGuest() status/user = %d/%q: %s", response.Code, service.guestUserID, response.Body)
+	}
+	if strings.Contains(response.Body.String(), `"userId"`) {
+		t.Fatalf("CreateGuest() leaked account identity: %s", response.Body)
+	}
+}
+
+func TestReportUploadGuestMediaRequiresCapabilityHeader(t *testing.T) {
+	service := &fakeReportService{}
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/reports/ddfd74fd-9561-4c5e-a304-b1cb704508d9/media", strings.NewReader(""))
+	request.Header.Set("Content-Type", "multipart/form-data; boundary=missing")
+	response := httptest.NewRecorder()
+
+	NewReportHandler(service).UploadGuestMedia(response, request)
+	if response.Code != http.StatusBadRequest {
+		t.Fatalf("UploadGuestMedia() missing token status = %d: %s", response.Code, response.Body)
+	}
+	if service.guestMediaToken != "" {
+		t.Fatalf("UploadGuestMedia() called service without token")
+	}
+}
+
+func TestReportUploadGuestMediaPassesCapabilityAndReturnsMedia(t *testing.T) {
+	service := &fakeReportService{item: report.Report{ID: "f58e07e0-77ec-488d-9a5c-4ed1e142ecfd"}}
+	var body bytes.Buffer
+	writer := multipart.NewWriter(&body)
+	part, err := writer.CreateFormFile("file", "guest.png")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := part.Write([]byte{0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00}); err != nil {
+		t.Fatal(err)
+	}
+	if err := writer.Close(); err != nil {
+		t.Fatal(err)
+	}
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/reports/"+service.item.ID+"/media", &body)
+	request.Header.Set("Content-Type", writer.FormDataContentType())
+	request.Header.Set("X-Report-Upload-Token", "opaque-upload-capability")
+	response := httptest.NewRecorder()
+
+	NewReportHandler(service).UploadGuestMedia(response, request)
+	if response.Code != http.StatusCreated || service.guestMediaToken != "opaque-upload-capability" {
+		t.Fatalf("UploadGuestMedia() status/token = %d/%q: %s", response.Code, service.guestMediaToken, response.Body)
+	}
+	if strings.Contains(response.Body.String(), "uploadToken") {
+		t.Fatalf("UploadGuestMedia() exposed upload token: %s", response.Body)
+	}
+}
+
 func TestReportGetOmitsPrivateFieldsFromPublicResponse(t *testing.T) {
 	service := &fakeReportService{item: report.Report{
 		ID: "ddfd74fd-9561-4c5e-a304-b1cb704508d9", UserID: "7b6a2a68-688a-4c59-82cf-0b541dfa0d49", Type: report.TypeFlood, Description: "Water", Location: report.Location{Type: "Point", Coordinates: []float64{101, 14}}, Status: report.StatusVerified, VerificationStatus: report.StatusVerified, SourceType: report.SourceCommunity,
@@ -97,10 +191,21 @@ func TestReportVerifyRejectsChunkedRequestBody(t *testing.T) {
 	}
 }
 
-type fakeReportService struct{ item report.Report }
+type fakeReportService struct {
+	item            report.Report
+	guestCreation   report.GuestCreation
+	guestInput      report.GuestInput
+	guestUserID     string
+	guestMediaToken string
+}
 
 func (service *fakeReportService) Create(context.Context, string, report.Input) (report.Report, error) {
 	return service.item, nil
+}
+func (service *fakeReportService) CreateGuest(_ context.Context, userID string, input report.GuestInput) (report.GuestCreation, error) {
+	service.guestUserID = userID
+	service.guestInput = input
+	return service.guestCreation, nil
 }
 func (service *fakeReportService) GetVerified(context.Context, string) (report.Report, error) {
 	return service.item, nil
@@ -127,6 +232,10 @@ func (service *fakeReportService) Reject(context.Context, string, string, string
 	return service.item, nil
 }
 func (service *fakeReportService) UploadMedia(context.Context, string, string, report.Image) (report.Media, error) {
+	return report.Media{}, nil
+}
+func (service *fakeReportService) UploadGuestMedia(_ context.Context, _ string, token string, _ report.Image) (report.Media, error) {
+	service.guestMediaToken = token
 	return report.Media{}, nil
 }
 func (service *fakeReportService) OpenMedia(context.Context, string, string, report.Access) (report.MediaFile, error) {

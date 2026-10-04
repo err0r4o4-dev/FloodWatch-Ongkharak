@@ -1,0 +1,9 @@
+
+> floodwatch-ongkharak@ typecheck D:\!Project\FloodWatch-Ongkharak(Web_Application)
+> corepack pnpm --filter @floodwatch/web typecheck
+
+No projects matched the filters "D:\!Project\FloodWatch-Ongkharak(Web_Application)" in "D:\!Project\FloodWatch-Ongkharak(Web_Application)"
+
+> @floodwatch/web@0.0.0 typecheck D:\!Project\FloodWatch-Ongkharak(Web_Application)\apps\web
+> tsc -b --pretty false
+

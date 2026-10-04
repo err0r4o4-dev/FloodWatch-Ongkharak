@@ -45,7 +45,7 @@ describe("ReportForm uploads", () => {
   });
 
   it("retries only failed files against the created report without duplicating it", async () => {
-    reportsApi.create.mockReset().mockResolvedValue(pendingReport);
+    reportsApi.create.mockReset().mockResolvedValue({ ...pendingReport, uploadToken: "private-upload-capability" });
     reportsApi.uploadMedia.mockReset().mockResolvedValueOnce({ id: "image-1" }).mockRejectedValueOnce(new Error("storage unavailable")).mockResolvedValueOnce({ id: "image-2" });
     const onComplete = vi.fn();
     const successfulFile = new File(["first"], "same.png", { type: "image/png" });
@@ -62,15 +62,16 @@ describe("ReportForm uploads", () => {
     expect(onComplete).toHaveBeenCalledWith(true);
     expect(reportsApi.create).toHaveBeenCalledTimes(1);
     expect(reportsApi.uploadMedia).toHaveBeenCalledTimes(2);
-    expect(reportsApi.uploadMedia).toHaveBeenNthCalledWith(1, pendingReport.id, successfulFile);
-    expect(reportsApi.uploadMedia).toHaveBeenNthCalledWith(2, pendingReport.id, failedFile);
+    expect(reportsApi.uploadMedia).toHaveBeenNthCalledWith(1, pendingReport.id, successfulFile, "private-upload-capability");
+    expect(reportsApi.uploadMedia).toHaveBeenNthCalledWith(2, pendingReport.id, failedFile, "private-upload-capability");
 
     fireEvent.click(screen.getByRole("button", { name: "อัปโหลดไฟล์ที่เหลืออีกครั้ง" }));
     await waitFor(() => expect(onComplete).toHaveBeenLastCalledWith());
     expect(reportsApi.create).toHaveBeenCalledTimes(1);
     expect(reportsApi.uploadMedia).toHaveBeenCalledTimes(3);
-    expect(reportsApi.uploadMedia).toHaveBeenNthCalledWith(3, pendingReport.id, failedFile);
+    expect(reportsApi.uploadMedia).toHaveBeenNthCalledWith(3, pendingReport.id, failedFile, "private-upload-capability");
     expect(notifySuccess).toHaveBeenCalledTimes(1);
+    expect(Object.values(window.localStorage).join(" ")).not.toContain("private-upload-capability");
   });
 
   it("notifies on save failure while keeping the form error and draft", async () => {
@@ -81,5 +82,21 @@ describe("ReportForm uploads", () => {
     expect(notifyError).toHaveBeenCalledTimes(1);
     expect(notifySuccess).not.toHaveBeenCalled();
     expect(screen.getByLabelText("รายละเอียด")).toHaveValue(pendingReport.description);
+  });
+
+  it("submits a trimmed guest-name snapshot and prevents duplicate creates", async () => {
+    let finish!: (value: typeof pendingReport & { uploadToken: string }) => void;
+    reportsApi.create.mockReset().mockImplementation(() => new Promise((resolve) => { finish = resolve; }));
+    render(<ReportForm editing={null} onComplete={vi.fn()} onCancel={vi.fn()} />);
+    fireEvent.change(screen.getByLabelText("ชื่อที่แสดง (ไม่ใช่บัญชีผู้ใช้งาน)"), { target: { value: "  ชุมชนทดสอบ  " } });
+    fireEvent.change(screen.getByLabelText("รายละเอียด"), { target: { value: "รายงานทดสอบ" } });
+    fireEvent.click(screen.getByRole("button", { name: "เลือกพิกัด" }));
+    const form = screen.getByLabelText("รายละเอียด").closest("form")!;
+    fireEvent.submit(form);
+    fireEvent.submit(form);
+    expect(reportsApi.create).toHaveBeenCalledTimes(1);
+    expect(reportsApi.create).toHaveBeenCalledWith(expect.objectContaining({ displayName: "ชุมชนทดสอบ" }));
+    finish({ ...pendingReport, uploadToken: "private-upload-capability" });
+    expect(await screen.findByRole("status")).toHaveTextContent("รายงานยังรอการตรวจสอบ");
   });
 });

@@ -3,7 +3,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { BrowserRouter } from "react-router";
 import { AdminDashboardPage } from "./AdminDashboardPage";
 import { UsersPage } from "./UsersPage";
-import { RequireAdmin } from "./RequireAdmin";
+import { RequireAdmin, safeAdminReturnTo } from "./RequireAdmin";
 import { AuthProvider } from "../auth/AuthProvider";
 import type { AuthApi } from "../auth/api";
 import type { Account } from "../auth/types";
@@ -66,7 +66,7 @@ describe("AdminDashboardPage", () => {
       expect(screen.getByText("ไม่มีสิทธิ์เข้าถึง")).toBeInTheDocument();
     });
 
-    expect(screen.getByText("คุณไม่มีสิทธิ์เข้าถึงส่วนจัดการระบบ")).toBeInTheDocument();
+    expect(screen.getByText("คุณต้องเป็นผู้ดูแลระบบเพื่อเข้าถึงหน้านี้")).toBeInTheDocument();
   });
 
   it("has accessible navigation links", async () => {
@@ -91,6 +91,13 @@ describe("AdminDashboardPage", () => {
 });
 
 describe("RequireAdmin", () => {
+  it("accepts only same-origin admin return targets", () => {
+    expect(safeAdminReturnTo("/admin/reports?status=pending#queue")).toBe("/admin/reports?status=pending#queue");
+    expect(safeAdminReturnTo("/reports")).toBe("/admin");
+    expect(safeAdminReturnTo("//evil.example/admin")).toBe("/admin");
+    expect(safeAdminReturnTo("/admin/login")).toBe("/admin");
+  });
+
   it("shows loading state while checking auth", () => {
     const mockApi: AuthApi = {
       register: vi.fn(),

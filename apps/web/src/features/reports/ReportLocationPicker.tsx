@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { CircleMarker, MapContainer, TileLayer, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
+import { useTranslation } from "../../i18n";
+import th from "../../i18n/locales/th/reports";
+import en from "../../i18n/locales/en/reports";
 import type { ReportLocation } from "./types";
 
 const initialCenter: [number, number] = [14.1, 101.0];
@@ -17,6 +20,7 @@ export function ReportLocationPicker({ location, onChange, resetKey }: {
   onChange: (location: ReportLocation | null) => void;
   resetKey: string | number;
 }) {
+  const { t } = useTranslation({ th, en });
   const [longitudeDraft, setLongitudeDraft] = useState(location?.coordinates[0].toString() ?? "");
   const [latitudeDraft, setLatitudeDraft] = useState(location?.coordinates[1].toString() ?? "");
 
@@ -43,9 +47,9 @@ export function ReportLocationPicker({ location, onChange, resetKey }: {
   };
 
   return <fieldset className="report-location-picker">
-    <legend>ตำแหน่งเหตุการณ์</legend>
-    <p>แตะแผนที่เพื่อเลือกตำแหน่ง หรือกรอกพิกัดด้วยตนเอง ข้อมูลตำแหน่งจะถูกส่งพร้อมรายงาน</p>
-    <div className="report-location-map" aria-label="แผนที่เลือกตำแหน่งรายงาน">
+    <legend>{t("location.legend")}</legend>
+    <p>{t("location.description")}</p>
+    <div className="report-location-map" aria-label={t("location.mapLabel")}>
       <MapContainer center={location ? [location.coordinates[1], location.coordinates[0]] : initialCenter} zoom={11} minZoom={8} maxZoom={16} className="leaflet-map" scrollWheelZoom={false}>
         <TileLayer url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' />
         <LocationEvents onSelect={selectMapLocation} />
@@ -53,8 +57,8 @@ export function ReportLocationPicker({ location, onChange, resetKey }: {
       </MapContainer>
     </div>
     <div className="report-coordinate-fields">
-      <label>ลองจิจูด<input type="number" inputMode="decimal" step="any" value={longitudeDraft} onChange={(event) => changeCoordinate(0, event.target.value)} /></label>
-      <label>ละติจูด<input type="number" inputMode="decimal" step="any" value={latitudeDraft} onChange={(event) => changeCoordinate(1, event.target.value)} /></label>
+      <label>{t("location.longitude")}<input type="number" inputMode="decimal" step="any" value={longitudeDraft} onChange={(event) => changeCoordinate(0, event.target.value)} /></label>
+      <label>{t("location.latitude")}<input type="number" inputMode="decimal" step="any" value={latitudeDraft} onChange={(event) => changeCoordinate(1, event.target.value)} /></label>
     </div>
   </fieldset>;
 }

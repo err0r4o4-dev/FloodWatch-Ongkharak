@@ -1,0 +1,235 @@
+ Container floodwatch-ongkharak-go-test-run-ef6da34d82a5 Creating 
+ Container floodwatch-ongkharak-go-test-run-ef6da34d82a5 Created 
+=== RUN   TestLocalizedDeliveryUsesDeviceLanguageWithoutTranslatingOriginal
+--- PASS: TestLocalizedDeliveryUsesDeviceLanguageWithoutTranslatingOriginal (0.00s)
+=== RUN   TestPushSubscriptionRejectsUnsupportedLocale
+--- PASS: TestPushSubscriptionRejectsUnsupportedLocale (0.00s)
+=== RUN   TestServiceMaterializesHistoryWhenPushIsUnavailable
+--- PASS: TestServiceMaterializesHistoryWhenPushIsUnavailable (0.00s)
+=== RUN   TestServiceRejectsUnboundedHistoryPage
+--- PASS: TestServiceRejectsUnboundedHistoryPage (0.00s)
+=== RUN   TestServiceReadStateUsesAuthenticatedUserScope
+--- PASS: TestServiceReadStateUsesAuthenticatedUserScope (0.00s)
+=== RUN   TestServiceUpdatesSubscriptionLocaleWithoutPushConfig
+--- PASS: TestServiceUpdatesSubscriptionLocaleWithoutPushConfig (0.00s)
+=== RUN   TestServiceRejectsInvalidSubscriptionLocaleUpdate
+=== RUN   TestServiceRejectsInvalidSubscriptionLocaleUpdate/missing_endpoint
+=== RUN   TestServiceRejectsInvalidSubscriptionLocaleUpdate/unsafe_endpoint
+=== RUN   TestServiceRejectsInvalidSubscriptionLocaleUpdate/unsupported_locale
+--- PASS: TestServiceRejectsInvalidSubscriptionLocaleUpdate (0.00s)
+    --- PASS: TestServiceRejectsInvalidSubscriptionLocaleUpdate/missing_endpoint (0.00s)
+    --- PASS: TestServiceRejectsInvalidSubscriptionLocaleUpdate/unsafe_endpoint (0.00s)
+    --- PASS: TestServiceRejectsInvalidSubscriptionLocaleUpdate/unsupported_locale (0.00s)
+=== RUN   TestServiceRetriesFailedDeliveryWithoutLeakingEndpoint
+--- PASS: TestServiceRetriesFailedDeliveryWithoutLeakingEndpoint (0.00s)
+=== RUN   TestServiceFencesGonePushCleanupByDeliveryLeaseAndSubscriptionRevision
+=== RUN   TestServiceFencesGonePushCleanupByDeliveryLeaseAndSubscriptionRevision/Not_Found
+=== RUN   TestServiceFencesGonePushCleanupByDeliveryLeaseAndSubscriptionRevision/Gone
+--- PASS: TestServiceFencesGonePushCleanupByDeliveryLeaseAndSubscriptionRevision (0.00s)
+    --- PASS: TestServiceFencesGonePushCleanupByDeliveryLeaseAndSubscriptionRevision/Not_Found (0.00s)
+    --- PASS: TestServiceFencesGonePushCleanupByDeliveryLeaseAndSubscriptionRevision/Gone (0.00s)
+=== RUN   TestPushSubscriptionValidationRejectsUnsafeEndpointsAndKeys
+--- PASS: TestPushSubscriptionValidationRejectsUnsafeEndpointsAndKeys (0.00s)
+=== RUN   TestHardenedPushDialFencesDNSRebinding
+--- PASS: TestHardenedPushDialFencesDNSRebinding (0.00s)
+=== RUN   TestHardenedPushClientDisablesRedirectsAndBoundsTimeout
+--- PASS: TestHardenedPushClientDisablesRedirectsAndBoundsTimeout (0.00s)
+PASS
+ok  	github.com/floodwatch-ongkharak/backend/internal/notification	0.006s
+=== RUN   TestPublicAlertListOmitsPrivateEvidenceAndRuleDetails
+--- PASS: TestPublicAlertListOmitsPrivateEvidenceAndRuleDetails (0.00s)
+=== RUN   TestPublicAlertListRejectsDeepPagination
+--- PASS: TestPublicAlertListRejectsDeepPagination (0.00s)
+=== RUN   TestAlertRuleRequestRejectsClientSourceAndRequiresEnabled
+--- PASS: TestAlertRuleRequestRejectsClientSourceAndRequiresEnabled (0.00s)
+=== RUN   TestRegisterRejectsClientSuppliedRole
+--- PASS: TestRegisterRejectsClientSuppliedRole (0.00s)
+=== RUN   TestRegisterReturnsOnlySafeUserFields
+--- PASS: TestRegisterReturnsOnlySafeUserFields (0.00s)
+=== RUN   TestRegisterAcceptsUsername
+--- PASS: TestRegisterAcceptsUsername (0.00s)
+=== RUN   TestLoginSetsHttpOnlyRefreshCookie
+--- PASS: TestLoginSetsHttpOnlyRefreshCookie (0.00s)
+=== RUN   TestLogoutWithoutSessionClearsCookie
+--- PASS: TestLogoutWithoutSessionClearsCookie (0.00s)
+=== RUN   TestMeRequiresPrincipalAndReturnsSafeUser
+--- PASS: TestMeRequiresPrincipalAndReturnsSafeUser (0.00s)
+=== RUN   TestUpdateMeRequiresPrincipalAndUsesOnlyAuthenticatedAccount
+--- PASS: TestUpdateMeRequiresPrincipalAndUsesOnlyAuthenticatedAccount (0.00s)
+=== RUN   TestUpdateMeRejectsClientAccountIDAndMapsUsernameErrors
+=== RUN   TestUpdateMeRejectsClientAccountIDAndMapsUsernameErrors/client_account_id
+=== RUN   TestUpdateMeRejectsClientAccountIDAndMapsUsernameErrors/invalid_username
+=== RUN   TestUpdateMeRejectsClientAccountIDAndMapsUsernameErrors/duplicate_username
+--- PASS: TestUpdateMeRejectsClientAccountIDAndMapsUsernameErrors (0.00s)
+    --- PASS: TestUpdateMeRejectsClientAccountIDAndMapsUsernameErrors/client_account_id (0.00s)
+    --- PASS: TestUpdateMeRejectsClientAccountIDAndMapsUsernameErrors/invalid_username (0.00s)
+    --- PASS: TestUpdateMeRejectsClientAccountIDAndMapsUsernameErrors/duplicate_username (0.00s)
+=== RUN   TestRefreshAndLogoutRejectCrossOriginCookieRequests
+=== RUN   TestRefreshAndLogoutRejectCrossOriginCookieRequests/refresh
+=== RUN   TestRefreshAndLogoutRejectCrossOriginCookieRequests/logout
+--- PASS: TestRefreshAndLogoutRejectCrossOriginCookieRequests (0.00s)
+    --- PASS: TestRefreshAndLogoutRejectCrossOriginCookieRequests/refresh (0.00s)
+    --- PASS: TestRefreshAndLogoutRejectCrossOriginCookieRequests/logout (0.00s)
+=== RUN   TestRefreshRejectsSameSiteRequestWithoutOrigin
+--- PASS: TestRefreshRejectsSameSiteRequestWithoutOrigin (0.00s)
+=== RUN   TestRegisterRejectsOversizedAndTrailingJSON
+--- PASS: TestRegisterRejectsOversizedAndTrailingJSON (0.00s)
+=== RUN   TestEventStreamUsesCursorFallbackAndRedisIDs
+--- PASS: TestEventStreamUsesCursorFallbackAndRedisIDs (0.00s)
+=== RUN   TestEventStreamRejectsInvalidCursor
+--- PASS: TestEventStreamRejectsInvalidCursor (0.00s)
+=== RUN   TestEventStreamResetsFutureCursor
+--- PASS: TestEventStreamResetsFutureCursor (0.00s)
+=== RUN   TestEventStreamBoundsConcurrentGuestConnections
+--- PASS: TestEventStreamBoundsConcurrentGuestConnections (0.00s)
+=== RUN   TestEventStreamPrefersLastEventIDOverCursorQuery
+--- PASS: TestEventStreamPrefersLastEventIDOverCursorQuery (0.00s)
+=== RUN   TestEventStreamDoesNotCheckHistoryForInitialConnection
+--- PASS: TestEventStreamDoesNotCheckHistoryForInitialConnection (0.00s)
+=== RUN   TestEventStreamSignalsResetForExpiredCursor
+--- PASS: TestEventStreamSignalsResetForExpiredCursor (0.00s)
+=== RUN   TestEventStreamSignalsResetWhenHistoryIsUnavailable
+--- PASS: TestEventStreamSignalsResetWhenHistoryIsUnavailable (0.00s)
+=== RUN   TestEventStreamStopsOnClientBackpressure
+--- PASS: TestEventStreamStopsOnClientBackpressure (0.00s)
+=== RUN   TestEventStreamResetsOnlyWhenReplayLimitLeavesBacklog
+--- PASS: TestEventStreamResetsOnlyWhenReplayLimitLeavesBacklog (0.00s)
+=== RUN   TestEventStreamDoesNotResetWhenReplayLimitReachesEnd
+--- PASS: TestEventStreamDoesNotResetWhenReplayLimitReachesEnd (0.00s)
+=== RUN   TestGoogleDisabledConfiguration
+--- PASS: TestGoogleDisabledConfiguration (0.00s)
+=== RUN   TestGoogleStartOriginAndCookiePolicy
+--- PASS: TestGoogleStartOriginAndCookiePolicy (0.00s)
+=== RUN   TestGoogleCallbackUsesBrowserCookieAndNeverLeaksTokens
+--- PASS: TestGoogleCallbackUsesBrowserCookieAndNeverLeaksTokens (0.00s)
+=== RUN   TestGoogleLinkRequiresOriginStrictJSONAndHandlesAttempts
+--- PASS: TestGoogleLinkRequiresOriginStrictJSONAndHandlesAttempts (0.00s)
+=== RUN   TestGoogleCallbackFailureSafeAndDuplicateQueryRejected
+--- PASS: TestGoogleCallbackFailureSafeAndDuplicateQueryRejected (0.00s)
+=== RUN   TestHealthHandlerReturnsOK
+--- PASS: TestHealthHandlerReturnsOK (0.00s)
+=== RUN   TestWriteJSONRejectsNonFiniteNumbersWithoutSendingSuccess
+--- PASS: TestWriteJSONRejectsNonFiniteNumbersWithoutSendingSuccess (0.00s)
+=== RUN   TestPublicNotificationsHandlerReturnsBoundedPublicPage
+--- PASS: TestPublicNotificationsHandlerReturnsBoundedPublicPage (0.00s)
+=== RUN   TestPublicNotificationsHandlerRejectsInvalidFiltersWithoutCallingService
+--- PASS: TestPublicNotificationsHandlerRejectsInvalidFiltersWithoutCallingService (0.00s)
+=== RUN   TestReadinessHandlerReturnsServiceUnavailableForFailedDependency
+--- PASS: TestReadinessHandlerReturnsServiceUnavailableForFailedDependency (0.00s)
+=== RUN   TestRecoveryHTTPMapsResultsAndErrorsWithoutSecrets
+--- PASS: TestRecoveryHTTPMapsResultsAndErrorsWithoutSecrets (0.00s)
+=== RUN   TestRecoveryHTTPRejectsMalformedAndCrossOriginRequests
+--- PASS: TestRecoveryHTTPRejectsMalformedAndCrossOriginRequests (0.00s)
+=== RUN   TestReportCreateRejectsUnknownFields
+--- PASS: TestReportCreateRejectsUnknownFields (0.00s)
+=== RUN   TestReportCreateGuestReturnsPublicReportAndUploadToken
+--- PASS: TestReportCreateGuestReturnsPublicReportAndUploadToken (0.00s)
+=== RUN   TestReportCreateGuestUsesOptionalTrustedPrincipalWithoutReturningAccountIdentity
+--- PASS: TestReportCreateGuestUsesOptionalTrustedPrincipalWithoutReturningAccountIdentity (0.00s)
+=== RUN   TestReportUploadGuestMediaRequiresCapabilityHeader
+--- PASS: TestReportUploadGuestMediaRequiresCapabilityHeader (0.00s)
+=== RUN   TestReportUploadGuestMediaPassesCapabilityAndReturnsMedia
+--- PASS: TestReportUploadGuestMediaPassesCapabilityAndReturnsMedia (0.00s)
+=== RUN   TestReportGetOmitsPrivateFieldsFromPublicResponse
+--- PASS: TestReportGetOmitsPrivateFieldsFromPublicResponse (0.00s)
+=== RUN   TestReportUploadRejectsUnsafeOriginalFilename
+--- PASS: TestReportUploadRejectsUnsafeOriginalFilename (0.00s)
+=== RUN   TestReportVerifyRejectsChunkedRequestBody
+--- PASS: TestReportVerifyRejectsChunkedRequestBody (0.00s)
+=== RUN   TestListUsersHandler
+--- PASS: TestListUsersHandler (0.00s)
+=== RUN   TestGetDashboardStatsHandler
+--- PASS: TestGetDashboardStatsHandler (0.00s)
+=== RUN   TestGetDashboardStatsHandlerReturnsInternalError
+--- PASS: TestGetDashboardStatsHandlerReturnsInternalError (0.00s)
+=== RUN   TestGetUserHandler
+--- PASS: TestGetUserHandler (0.00s)
+=== RUN   TestGetUserNotFound
+--- PASS: TestGetUserNotFound (0.00s)
+=== RUN   TestUpdateUserRole
+--- PASS: TestUpdateUserRole (0.00s)
+=== RUN   TestUpdateUserRoleInvalid
+--- PASS: TestUpdateUserRoleInvalid (0.00s)
+=== RUN   TestDisableUser
+--- PASS: TestDisableUser (0.00s)
+=== RUN   TestDisableUserCannotDisableSelf
+--- PASS: TestDisableUserCannotDisableSelf (0.00s)
+=== RUN   TestListSettings
+--- PASS: TestListSettings (0.00s)
+=== RUN   TestUpdateSetting
+--- PASS: TestUpdateSetting (0.00s)
+=== RUN   TestUpdateSettingReadOnly
+--- PASS: TestUpdateSettingReadOnly (0.00s)
+=== RUN   TestListAuditLogs
+--- PASS: TestListAuditLogs (0.00s)
+=== RUN   TestListAuditLogsWithFilters
+--- PASS: TestListAuditLogsWithFilters (0.00s)
+=== RUN   TestAdminChiRouteParametersReachHandlers
+--- PASS: TestAdminChiRouteParametersReachHandlers (0.00s)
+=== RUN   TestAdminListsUseEmptyArraysAndBoundedPagination
+--- PASS: TestAdminListsUseEmptyArraysAndBoundedPagination (0.00s)
+=== RUN   TestListAIEvidenceDefaultsToUnverifiedAndBoundsPagination
+--- PASS: TestListAIEvidenceDefaultsToUnverifiedAndBoundsPagination (0.00s)
+=== RUN   TestVerifyAIEvidencePassesAdminActorAndRoadID
+--- PASS: TestVerifyAIEvidencePassesAdminActorAndRoadID (0.00s)
+=== RUN   TestRejectAIEvidenceRequiresBoundedReason
+--- PASS: TestRejectAIEvidenceRequiresBoundedReason (0.00s)
+=== RUN   TestReviewHandlerMapsConflict
+--- PASS: TestReviewHandlerMapsConflict (0.00s)
+=== RUN   TestNotificationHandler_Subscribe
+--- PASS: TestNotificationHandler_Subscribe (0.00s)
+=== RUN   TestNotificationHandler_SubscribeReturnsTypedUnavailableWithoutPushConfig
+--- PASS: TestNotificationHandler_SubscribeReturnsTypedUnavailableWithoutPushConfig (0.00s)
+=== RUN   TestNotificationHandler_PublicKey
+--- PASS: TestNotificationHandler_PublicKey (0.00s)
+=== RUN   TestNotificationHandler_ListReturnsOwnedHistoryContract
+--- PASS: TestNotificationHandler_ListReturnsOwnedHistoryContract (0.00s)
+=== RUN   TestNotificationHandlerReadStateRequiresPrincipalAndUsesPathID
+--- PASS: TestNotificationHandlerReadStateRequiresPrincipalAndUsesPathID (0.00s)
+=== RUN   TestNotificationHandlerUnreadAndMarkAllRead
+--- PASS: TestNotificationHandlerUnreadAndMarkAllRead (0.00s)
+=== RUN   TestNotificationHandlerUpdatesSubscriptionLocale
+--- PASS: TestNotificationHandlerUpdatesSubscriptionLocale (0.00s)
+=== RUN   TestNotificationHandlerMapsLocaleUpdateErrors
+=== RUN   TestNotificationHandlerMapsLocaleUpdateErrors/invalid_locale
+=== RUN   TestNotificationHandlerMapsLocaleUpdateErrors/invalid_endpoint
+=== RUN   TestNotificationHandlerMapsLocaleUpdateErrors/missing_or_foreign_subscription
+--- PASS: TestNotificationHandlerMapsLocaleUpdateErrors (0.00s)
+    --- PASS: TestNotificationHandlerMapsLocaleUpdateErrors/invalid_locale (0.00s)
+    --- PASS: TestNotificationHandlerMapsLocaleUpdateErrors/invalid_endpoint (0.00s)
+    --- PASS: TestNotificationHandlerMapsLocaleUpdateErrors/missing_or_foreign_subscription (0.00s)
+=== RUN   TestNotificationHandlerPersistsOnlySupportedDeviceLanguages
+=== RUN   TestNotificationHandlerPersistsOnlySupportedDeviceLanguages/#00
+=== RUN   TestNotificationHandlerPersistsOnlySupportedDeviceLanguages/th
+=== RUN   TestNotificationHandlerPersistsOnlySupportedDeviceLanguages/en
+=== RUN   TestNotificationHandlerPersistsOnlySupportedDeviceLanguages/unsupported
+--- PASS: TestNotificationHandlerPersistsOnlySupportedDeviceLanguages (0.00s)
+    --- PASS: TestNotificationHandlerPersistsOnlySupportedDeviceLanguages/#00 (0.00s)
+    --- PASS: TestNotificationHandlerPersistsOnlySupportedDeviceLanguages/th (0.00s)
+    --- PASS: TestNotificationHandlerPersistsOnlySupportedDeviceLanguages/en (0.00s)
+    --- PASS: TestNotificationHandlerPersistsOnlySupportedDeviceLanguages/unsupported (0.00s)
+PASS
+ok  	github.com/floodwatch-ongkharak/backend/internal/http/handler	0.016s
+=== RUN   TestNotificationLanguageRouteRequiresAuthentication
+2026/10/04 03:11:18 INFO HTTP request complete method=PATCH path=/api/v1/notifications/language request_id=ba7b763c3e95/SFnr1TyQBm-000001 duration=34.056µs
+--- PASS: TestNotificationLanguageRouteRequiresAuthentication (0.00s)
+=== RUN   TestFeatureRoutesHaveOpenAPIContracts
+--- PASS: TestFeatureRoutesHaveOpenAPIContracts (0.00s)
+=== RUN   TestOpenAPIComponentReferencesResolve
+--- PASS: TestOpenAPIComponentReferencesResolve (0.00s)
+=== RUN   TestEmbeddedOpenAPIContractMatchesCanonicalDocument
+--- PASS: TestEmbeddedOpenAPIContractMatchesCanonicalDocument (0.02s)
+PASS
+ok  	github.com/floodwatch-ongkharak/backend/internal/http/router	0.034s
+=== RUN   TestRepository_UpsertAndList
+--- PASS: TestRepository_UpsertAndList (0.02s)
+=== RUN   TestRepositoryDeliveryCleanupRequiresCurrentLeaseAndSubscriptionRevision
+--- PASS: TestRepositoryDeliveryCleanupRequiresCurrentLeaseAndSubscriptionRevision (0.04s)
+=== RUN   TestRepositoryUpdateSubscriptionLocaleIsOwnerScopedAndDoesNotResurrect
+--- PASS: TestRepositoryUpdateSubscriptionLocaleIsOwnerScopedAndDoesNotResurrect (0.03s)
+=== RUN   TestRepositoryCleanupAndRenewalUseSubscriptionThenJobLockOrder
+--- PASS: TestRepositoryCleanupAndRenewalUseSubscriptionThenJobLockOrder (0.04s)
+=== RUN   TestRepositoryMaterializesAlertAndMaintainsReadStateIdempotently
+--- PASS: TestRepositoryMaterializesAlertAndMaintainsReadStateIdempotently (0.05s)
+PASS
+ok  	github.com/floodwatch-ongkharak/backend/internal/postgres/notificationrepo	0.182s

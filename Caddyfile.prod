@@ -10,6 +10,7 @@
 				}
 				request>headers>Cookie delete
 				request>headers>Authorization delete
+				request>headers>X-Report-Upload-Token delete
 				resp_headers>Set-Cookie delete
 			}
 		}

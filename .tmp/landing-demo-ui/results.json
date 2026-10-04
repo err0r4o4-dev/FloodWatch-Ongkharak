@@ -1,0 +1,59 @@
+{
+  "viewports": [
+    {
+      "width": 320,
+      "height": 800,
+      "pageHeight": 2314,
+      "scrollWidth": 305
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "pageHeight": 1897,
+      "scrollWidth": 375
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "pageHeight": 1603,
+      "scrollWidth": 753
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "pageHeight": 961,
+      "scrollWidth": 1009
+    },
+    {
+      "width": 1536,
+      "height": 864,
+      "pageHeight": 864,
+      "scrollWidth": 1521
+    },
+    {
+      "width": 1920,
+      "height": 900,
+      "pageHeight": 900,
+      "scrollWidth": 1905
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "pageHeight": 1080,
+      "scrollWidth": 1905
+    },
+    {
+      "width": 2560,
+      "height": 1440,
+      "pageHeight": 1440,
+      "scrollWidth": 2545
+    }
+  ],
+  "externalAssetsOnMain": 0,
+  "mapWeatherRequestsOnMain": 0,
+  "english": "pass",
+  "enlargedText": "pass",
+  "keyboard": "pass",
+  "realMapNavigation": "pass",
+  "pageErrors": []
+}

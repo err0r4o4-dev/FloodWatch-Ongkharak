@@ -16,6 +16,44 @@ function subscriptionFixture(): PushSubscription {
 }
 
 describe("notificationApi", () => {
+  it("loads the public feed with bounded pagination and an optional map area", async () => {
+    const payload = {
+      items: [{
+        id: "public-1",
+        severity: "INFO",
+        sourceType: "COMMUNITY",
+        createdAt: "2026-10-04T08:00:00Z",
+        title: "Community report",
+        message: "Water near the market",
+        url: "/reports?report=public-1",
+        location: { type: "Point", coordinates: [101, 14] }
+      }],
+      pagination: { total: 1, limit: 10, offset: 20 }
+    };
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify(payload), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(notificationApi.listPublic({ limit: 10, offset: 20, bbox: "100,13,102,15" })).resolves.toEqual(payload);
+    expect(fetchMock.mock.calls[0]?.[0]).toBe("/api/v1/notifications/public?limit=10&offset=20&bbox=100%2C13%2C102%2C15");
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBeUndefined();
+  });
+
+  it("rejects public items with invalid or missing coordinates", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      items: [{ id: "public-1", severity: "INFO", sourceType: "COMMUNITY", createdAt: "2026-10-04T08:00:00Z", title: "Report", message: "Message", url: "/reports", location: { type: "Point", coordinates: [181, 14] } }],
+      pagination: { total: 1, limit: 10, offset: 0 }
+    }), { status: 200 })));
+    await expect(notificationApi.listPublic({ limit: 10, offset: 0 })).rejects.toThrow("Invalid public notifications response");
+  });
+
+  it("rejects public items with invalid dates or external links", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      items: [{ id: "public-1", severity: "INFO", sourceType: "COMMUNITY", createdAt: "not-a-date", title: "Report", message: "Message", url: "https://evil.example", location: null }],
+      pagination: { total: 1, limit: 10, offset: 0 }
+    }), { status: 200 })));
+    await expect(notificationApi.listPublic({ limit: 10, offset: 0 })).rejects.toThrow("Invalid public notifications response");
+  });
+
   it("loads the authenticated inbox page with bounded query parameters", async () => {
     const payload = {
       items: [{
@@ -80,7 +118,7 @@ describe("notificationApi", () => {
     expect(url).toBe("/api/v1/notifications/subscribe");
     expect(init.method).toBe("POST");
     expect(new Headers(init.headers).get("Authorization")).toBe("Bearer synthetic-test-token");
-    expect(JSON.parse(String(init.body))).toEqual({ endpoint: "https://push.example.test/device", keys: { p256dh: "public-key", auth: "test-auth" } });
+    expect(JSON.parse(String(init.body))).toEqual({ endpoint: "https://push.example.test/device", keys: { p256dh: "public-key", auth: "test-auth" }, locale: "th" });
   });
 
   it("authorizes and encodes the exact subscription endpoint when unsubscribing", async () => {
@@ -103,5 +141,36 @@ describe("notificationApi", () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, { status: 503 })));
     const subscription = subscriptionFixture();
     await expect(notificationApi.subscribe(subscription)).rejects.toThrow();
+  });
+
+  it("does not refresh and replay a language mutation under another account", async () => {
+    const refresh = vi.fn().mockImplementation(async () => { apiClient.setAccessToken("other-account-test-token"); return true; });
+    apiClient.setUnauthorizedHandler(refresh);
+    apiClient.setAccessToken("original-account-test-token");
+    const request = vi.fn().mockResolvedValue(new Response(JSON.stringify({ error: { code: "UNAUTHENTICATED", message: "expired" } }), { status: 401 }));
+    vi.stubGlobal("fetch", request);
+    await expect(notificationApi.subscribe(subscriptionFixture(), "en")).rejects.toThrow();
+    expect(refresh).not.toHaveBeenCalled();
+    expect(request).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(String(request.mock.calls[0][1].body)).locale).toBe("en");
+  });
+  it("updates language without enrolling a device or sending subscription keys", async () => {
+    const request = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
+    vi.stubGlobal("fetch", request);
+    await notificationApi.updateLanguage("https://push.example.test/device", "en");
+    const [url, init] = request.mock.calls[0];
+    expect(url).toBe("/api/v1/notifications/language");
+    expect(init.method).toBe("PATCH");
+    expect(JSON.parse(init.body)).toEqual({ endpoint: "https://push.example.test/device", locale: "en" });
+  });
+  it("does not refresh or replay locale updates and device removal on 401", async () => {
+    const refresh = vi.fn().mockResolvedValue(true);
+    apiClient.setUnauthorizedHandler(refresh);
+    const request = vi.fn().mockImplementation(async () => new Response(JSON.stringify({ error: { code: "UNAUTHENTICATED", message: "expired" } }), { status: 401 }));
+    vi.stubGlobal("fetch", request);
+    await expect(notificationApi.updateLanguage("https://push.example.test/device", "en")).rejects.toThrow();
+    await expect(notificationApi.unsubscribe("https://push.example.test/device")).rejects.toThrow();
+    expect(refresh).not.toHaveBeenCalled();
+    expect(request).toHaveBeenCalledTimes(2);
   });
 });

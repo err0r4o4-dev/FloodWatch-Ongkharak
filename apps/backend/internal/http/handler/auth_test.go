@@ -15,9 +15,13 @@ import (
 
 type fakeAuthService struct {
 	registerCalls int
+	updateCalls   int
+	updatedID     string
+	updatedName   string
 	user          auth.User
 	result        auth.SessionResult
 	err           error
+	updateErr     error
 }
 
 func (fake *fakeAuthService) RegisterWithUsername(context.Context, string, string, string) (auth.User, error) {
@@ -37,6 +41,15 @@ func (fake *fakeAuthService) Logout(context.Context, string) error { return fake
 
 func (fake *fakeAuthService) GetUser(context.Context, string) (auth.User, error) {
 	return fake.user, fake.err
+}
+
+func (fake *fakeAuthService) UpdateUsername(_ context.Context, id, username string) (auth.User, error) {
+	fake.updateCalls++
+	fake.updatedID = id
+	fake.updatedName = username
+	user := fake.user
+	user.Username = username
+	return user, fake.updateErr
 }
 
 func TestRegisterRejectsClientSuppliedRole(t *testing.T) {
@@ -129,6 +142,62 @@ func TestMeRequiresPrincipalAndReturnsSafeUser(t *testing.T) {
 	withPrincipal.ServeHTTP(response, request)
 	if response.Code != http.StatusOK || strings.Contains(response.Body.String(), "secret-hash") {
 		t.Fatalf("me status = %d, body = %s", response.Code, response.Body.String())
+	}
+}
+
+func TestUpdateMeRequiresPrincipalAndUsesOnlyAuthenticatedAccount(t *testing.T) {
+	service := &fakeAuthService{user: auth.User{ID: "current-user", Email: "person@example.test", PasswordHash: "secret-hash", Role: auth.RoleUser, CreatedAt: time.Now().UTC()}}
+	handler := NewAuthHandler(service, testCookieOptions())
+	request := httptest.NewRequest(http.MethodPatch, "/api/v1/auth/me", strings.NewReader(`{"username":"Renamed_User"}`))
+	request.Header.Set("Content-Type", "application/json")
+	response := httptest.NewRecorder()
+	handler.UpdateMe(response, request)
+	if response.Code != http.StatusUnauthorized || service.updateCalls != 0 {
+		t.Fatalf("unauthenticated update status = %d, calls = %d, want 401 and 0", response.Code, service.updateCalls)
+	}
+
+	withPrincipal := middleware.RequireAuthentication(fakeAuthenticatorForHandler{user: service.user})(http.HandlerFunc(handler.UpdateMe))
+	request = httptest.NewRequest(http.MethodPatch, "/api/v1/auth/me", strings.NewReader(`{"username":"Renamed_User"}`))
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("Authorization", "Bearer valid")
+	response = httptest.NewRecorder()
+	withPrincipal.ServeHTTP(response, request)
+	if response.Code != http.StatusOK || service.updatedID != "current-user" || service.updatedName != "Renamed_User" {
+		t.Fatalf("authenticated update status = %d, id = %q, username = %q, body = %s", response.Code, service.updatedID, service.updatedName, response.Body.String())
+	}
+	if strings.Contains(response.Body.String(), "secret-hash") {
+		t.Fatal("username update returned password hash")
+	}
+}
+
+func TestUpdateMeRejectsClientAccountIDAndMapsUsernameErrors(t *testing.T) {
+	for _, testCase := range []struct {
+		name       string
+		body       string
+		serviceErr error
+		status     int
+		code       string
+	}{
+		{name: "client account id", body: `{"username":"new_name","userId":"other-user"}`, status: http.StatusBadRequest, code: "INVALID_REQUEST"},
+		{name: "invalid username", body: `{"username":"ab"}`, serviceErr: auth.ErrInvalidRequest, status: http.StatusBadRequest, code: "INVALID_REQUEST"},
+		{name: "duplicate username", body: `{"username":"taken_name"}`, serviceErr: auth.ErrUsernameExists, status: http.StatusConflict, code: "USERNAME_EXISTS"},
+	} {
+		t.Run(testCase.name, func(t *testing.T) {
+			service := &fakeAuthService{user: auth.User{ID: "current-user", Role: auth.RoleUser}, updateErr: testCase.serviceErr}
+			handler := NewAuthHandler(service, testCookieOptions())
+			wrapped := middleware.RequireAuthentication(fakeAuthenticatorForHandler{user: service.user})(http.HandlerFunc(handler.UpdateMe))
+			request := httptest.NewRequest(http.MethodPatch, "/api/v1/auth/me", strings.NewReader(testCase.body))
+			request.Header.Set("Content-Type", "application/json")
+			request.Header.Set("Authorization", "Bearer valid")
+			response := httptest.NewRecorder()
+			wrapped.ServeHTTP(response, request)
+			if response.Code != testCase.status || !strings.Contains(response.Body.String(), `"code":"`+testCase.code+`"`) {
+				t.Fatalf("status = %d, body = %s, want %d/%s", response.Code, response.Body.String(), testCase.status, testCase.code)
+			}
+			if testCase.name == "client account id" && service.updateCalls != 0 {
+				t.Fatal("client-supplied account ID reached the update service")
+			}
+		})
 	}
 }
 

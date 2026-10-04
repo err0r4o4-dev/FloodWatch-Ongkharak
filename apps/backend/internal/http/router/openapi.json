@@ -1155,6 +1155,60 @@
         ],
         "type": "string"
       },
+      "GuestReportInput": {
+        "additionalProperties": false,
+        "properties": {
+          "description": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "displayName": {
+            "default": "Guest",
+            "description": "Trimmed Unicode display label",
+            "maxLength": 80,
+            "not a unique identity or ownership credential.": null,
+            "type": "string"
+          },
+          "estimatedWaterDepthM": {
+            "maximum": 100,
+            "minimum": 0,
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "location": {
+            "$ref": "#/components/schemas/PointGeometry"
+          },
+          "type": {
+            "$ref": "#/components/schemas/ReportType"
+          }
+        },
+        "required": [
+          "type",
+          "description",
+          "location"
+        ],
+        "type": "object"
+      },
+      "GuestReportResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "report": {
+            "$ref": "#/components/schemas/Report"
+          },
+          "uploadToken": {
+            "description": "Private short-lived upload capability returned only at creation.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "report",
+          "uploadToken"
+        ],
+        "type": "object"
+      },
       "HealthResponse": {
         "properties": {
           "status": {
@@ -1569,6 +1623,131 @@
         ],
         "type": "object"
       },
+      "PublicNotification": {
+        "additionalProperties": false,
+        "properties": {
+          "createdAt": {
+            "description": "Publication time for community reports.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "description": "Namespaced public notification identifier.",
+            "type": "string"
+          },
+          "location": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/PointGeometry"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "severity": {
+            "enum": [
+              "INFO",
+              "WATCH",
+              "WARNING",
+              "CRITICAL"
+            ],
+            "type": "string"
+          },
+          "sourceType": {
+            "enum": [
+              "OFFICIAL",
+              "COMMUNITY",
+              "AI"
+            ],
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "url": {
+            "description": "Internal report or announcement destination.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "severity",
+          "sourceType",
+          "createdAt",
+          "title",
+          "message",
+          "url",
+          "location"
+        ],
+        "type": "object"
+      },
+      "PublicNotificationPage": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PublicNotification"
+            },
+            "type": "array"
+          },
+          "pagination": {
+            "additionalProperties": false,
+            "properties": {
+              "limit": {
+                "maximum": 50,
+                "minimum": 1,
+                "type": "integer"
+              },
+              "offset": {
+                "maximum": 100000,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "total": {
+                "minimum": 0,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "total",
+              "limit",
+              "offset"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "items",
+          "pagination"
+        ],
+        "type": "object"
+      },
+      "PushLanguageInput": {
+        "additionalProperties": false,
+        "properties": {
+          "endpoint": {
+            "format": "uri",
+            "maxLength": 2048,
+            "type": "string"
+          },
+          "locale": {
+            "enum": [
+              "th",
+              "en"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "endpoint",
+          "locale"
+        ],
+        "type": "object"
+      },
       "PushPublicKey": {
         "properties": {
           "publicKey": {
@@ -1604,6 +1783,15 @@
               "auth"
             ],
             "type": "object"
+          },
+          "locale": {
+            "default": "th",
+            "description": "Device language for system-generated Push summaries. Original announcements are not automatically translated.",
+            "enum": [
+              "th",
+              "en"
+            ],
+            "type": "string"
           }
         },
         "required": [
@@ -1727,6 +1915,11 @@
           "description": {
             "type": "string"
           },
+          "displayName": {
+            "description": "Submitted display-name snapshot; not verified identity.",
+            "maxLength": 80,
+            "type": "string"
+          },
           "estimatedWaterDepthM": {
             "maximum": 100,
             "minimum": 0,
@@ -1788,7 +1981,7 @@
             "type": "string"
           },
           "userId": {
-            "description": "Only exposed in owner and ADMIN responses.",
+            "description": "Only exposed for legacy owners in owner and ADMIN responses.",
             "format": "uuid",
             "type": "string"
           },
@@ -4261,6 +4454,101 @@
         "tags": [
           "Auth"
         ]
+      },
+      "patch": {
+        "operationId": "updateCurrentUsername",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "username": {
+                    "description": "Leading and trailing whitespace is trimmed before validation; the normalized username is lowercase, 3-32 ASCII letters, digits, or underscores and globally unique.",
+                    "pattern": "^\\s*[A-Za-z0-9_]{3,32}\\s*$",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "username"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            },
+            "description": "The authenticated user after the username update."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid username or JSON body, including unknown fields (INVALID_REQUEST)."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Authentication is required, the bearer token is invalid, or the account is unavailable."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The normalized username is already registered (USERNAME_EXISTS)."
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Expected application/json."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Username persistence failure."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Update the current user's username",
+        "tags": [
+          "Auth"
+        ]
       }
     },
     "/api/v1/auth/password/request-otp": {
@@ -4557,17 +4845,7 @@
           "required": true
         },
         "responses": {
-          "201": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UserResponse"
-                }
-              }
-            },
-            "description": "The user account was created with the USER role."
-          },
-          "400": {
+          "403": {
             "content": {
               "application/json": {
                 "schema": {
@@ -4575,20 +4853,10 @@
                 }
               }
             },
-            "description": "Registration data is invalid or an impermissible role was requested."
-          },
-          "409": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "The email or normalized username is already registered (EMAIL_EXISTS or USERNAME_EXISTS)."
+            "description": "REGISTRATION_DISABLED. Existing users are retained; visitors submit as Guest."
           }
         },
-        "summary": "Register a user account",
+        "summary": "Public registration is disabled in the Guest flow",
         "tags": [
           "Auth"
         ]
@@ -4844,6 +5112,84 @@
         ]
       }
     },
+    "/api/v1/notifications/language": {
+      "patch": {
+        "description": "Updates only locale and the subscription revision. Never creates or transfers a subscription; missing and foreign-owned endpoints both return 404. Does not require Push delivery to be configured.",
+        "operationId": "updatePushLanguage",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PushLanguageInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Language saved, including an unchanged preference."
+          },
+          "400": {
+            "$ref": "#/components/responses/DomainError"
+          },
+          "401": {
+            "$ref": "#/components/responses/DomainError"
+          },
+          "404": {
+            "$ref": "#/components/responses/DomainError"
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Update the language of an existing owned Push subscription",
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/api/v1/notifications/public": {
+      "get": {
+        "operationId": "listPublicNotifications",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Limit"
+          },
+          {
+            "$ref": "#/components/parameters/Offset"
+          },
+          {
+            "$ref": "#/components/parameters/BBox"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicNotificationPage"
+                }
+              }
+            },
+            "description": "Publication-ordered public feed. Global announcements remain visible with an area filter. Read state is browser-local, not server account data. No PENDING or REJECTED reports."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [],
+        "summary": "Read public announcements and verified community report notifications without login",
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
     "/api/v1/notifications/public-key": {
       "get": {
         "description": "Push may be unavailable when VAPID is not configured; this does not disable the account inbox.",
@@ -5053,7 +5399,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ReportInput"
+                "$ref": "#/components/schemas/GuestReportInput"
               }
             }
           },
@@ -5064,21 +5410,17 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ReportResponse"
+                  "$ref": "#/components/schemas/GuestReportResponse"
                 }
               }
             },
-            "description": "Created as PENDING and COMMUNITY regardless of client intent."
+            "description": "Guest submission is PENDING and COMMUNITY. A short-lived report-scoped upload token is returned once; it does not permit reading unpublished data or editing text. Rate-limited per trusted client address."
           },
           "default": {
             "$ref": "#/components/responses/DomainError"
           }
         },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
+        "security": [],
         "summary": "Submit a pending community report",
         "tags": [
           "Reports"
@@ -5199,6 +5541,15 @@
         "parameters": [
           {
             "$ref": "#/components/parameters/ResourceID"
+          },
+          {
+            "description": "Expiring capability from the create response. Kept in memory, never in URLs. Server checks its hash, report scope, expiry and PENDING state.",
+            "in": "header",
+            "name": "X-Report-Upload-Token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
@@ -5237,12 +5588,8 @@
             "$ref": "#/components/responses/DomainError"
           }
         },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "Upload an image to an owned pending report",
+        "security": [],
+        "summary": "Upload an image to a pending report with its scoped upload capability",
         "tags": [
           "Reports"
         ]

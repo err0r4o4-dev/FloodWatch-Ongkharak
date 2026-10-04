@@ -378,6 +378,59 @@ func TestGetUserReturnsSanitizedCurrentUserAndRejectsUnavailableAccounts(t *test
 	}
 }
 
+func TestUpdateUsernameNormalizesAndReturnsSanitizedUser(t *testing.T) {
+	t.Parallel()
+
+	repository := newFakeRepository()
+	service := newTestService(t, repository)
+	context := context.Background()
+	registeredUser, err := service.RegisterWithUsername(context, "person@example.com", "original_name", "correct horse battery staple")
+	if err != nil {
+		t.Fatalf("RegisterWithUsername() error = %v", err)
+	}
+
+	updatedUser, err := service.UpdateUsername(context, registeredUser.ID, "  Renamed_User  ")
+	if err != nil {
+		t.Fatalf("UpdateUsername() error = %v", err)
+	}
+	if updatedUser.Username != "renamed_user" || updatedUser.PasswordHash != "" {
+		t.Fatalf("UpdateUsername() user = %+v, want normalized sanitized user", updatedUser)
+	}
+
+	storedUser, err := repository.FindUserByUsername(context, "renamed_user")
+	if err != nil || storedUser.ID != registeredUser.ID {
+		t.Fatalf("FindUserByUsername() user = %+v, error = %v", storedUser, err)
+	}
+}
+
+func TestUpdateUsernameRejectsDuplicateAndDisabledAccounts(t *testing.T) {
+	t.Parallel()
+
+	repository := newFakeRepository()
+	service := newTestService(t, repository)
+	context := context.Background()
+	first, err := service.RegisterWithUsername(context, "first@example.com", "first_name", "correct horse battery staple")
+	if err != nil {
+		t.Fatalf("first RegisterWithUsername() error = %v", err)
+	}
+	second, err := service.RegisterWithUsername(context, "second@example.com", "second_name", "correct horse battery staple")
+	if err != nil {
+		t.Fatalf("second RegisterWithUsername() error = %v", err)
+	}
+
+	if _, err := service.UpdateUsername(context, first.ID, second.Username); !errors.Is(err, ErrUsernameExists) {
+		t.Fatalf("duplicate UpdateUsername() error = %v, want ErrUsernameExists", err)
+	}
+
+	disabledAt := time.Now().UTC()
+	disabled := repository.usersByID[first.ID]
+	disabled.DisabledAt = &disabledAt
+	repository.storeUser(disabled)
+	if _, err := service.UpdateUsername(context, first.ID, "replacement_name"); !errors.Is(err, ErrUnauthenticated) {
+		t.Fatalf("disabled UpdateUsername() error = %v, want ErrUnauthenticated", err)
+	}
+}
+
 func newTestService(t *testing.T, repository Repository) *Service {
 	t.Helper()
 
@@ -427,6 +480,25 @@ func (repository *fakeRepository) FindUserByUsername(_ context.Context, username
 		}
 	}
 	return User{}, ErrNotFound
+}
+
+func (repository *fakeRepository) UpdateUsername(_ context.Context, id, username string) (User, error) {
+	user, exists := repository.usersByID[id]
+	if !exists {
+		return User{}, ErrNotFound
+	}
+	if user.DisabledAt != nil {
+		return User{}, ErrAccountDisabled
+	}
+	for existingID, existing := range repository.usersByID {
+		if existingID != id && existing.Username == username {
+			return User{}, ErrUsernameExists
+		}
+	}
+	user.Username = username
+	user.UpdatedAt = time.Now().UTC()
+	repository.storeUser(user)
+	return user, nil
 }
 
 func (repository *fakeRepository) FindUserByEmail(_ context.Context, email string) (User, error) {

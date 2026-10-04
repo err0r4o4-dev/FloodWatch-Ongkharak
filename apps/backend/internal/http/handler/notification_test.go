@@ -24,6 +24,12 @@ type mockNotificationRepo struct {
 	count      int
 	markedRead string
 	markedAll  string
+	localeUpdate struct {
+		endpoint string
+		userID   string
+		locale   string
+	}
+	localeUpdateErr error
 }
 
 func (m *mockNotificationRepo) UpsertSubscription(ctx context.Context, sub notification.Subscription) error {
@@ -32,6 +38,14 @@ func (m *mockNotificationRepo) UpsertSubscription(ctx context.Context, sub notif
 }
 func (m *mockNotificationRepo) DeleteSubscription(ctx context.Context, endpoint string, userID string) error {
 	return nil
+}
+func (m *mockNotificationRepo) UpdateSubscriptionLocale(_ context.Context, endpoint, userID, locale string) error {
+	m.localeUpdate = struct {
+		endpoint string
+		userID   string
+		locale   string
+	}{endpoint: endpoint, userID: userID, locale: locale}
+	return m.localeUpdateErr
 }
 func (m *mockNotificationRepo) DeleteSubscriptionAfterDeliveryFailure(context.Context, string, string, string, string, string, int64) (bool, error) {
 	return false, nil
@@ -193,7 +207,91 @@ func TestNotificationHandlerUnreadAndMarkAllRead(t *testing.T) {
 	}
 }
 
+func TestNotificationHandlerUpdatesSubscriptionLocale(t *testing.T) {
+	repo := &mockNotificationRepo{}
+	h := handler.NewNotificationHandler(notification.NewService(nil, repo, "", "", ""))
+	request := httptest.NewRequest(http.MethodPatch, "/api/v1/notifications/language", strings.NewReader("{\"endpoint\":\"https://push.example.test/subscription\",\"locale\":\"en\"}"))
+	request.Header.Set("Authorization", "Bearer valid")
+	response := httptest.NewRecorder()
+	middleware.RequireAuthentication(notificationTestAuthenticator{})(http.HandlerFunc(h.UpdateSubscriptionLocale)).ServeHTTP(response, request)
+	if response.Code != http.StatusNoContent {
+		t.Fatalf("UpdateSubscriptionLocale() status = %d: %s", response.Code, response.Body.String())
+	}
+	want := struct {
+		endpoint string
+		userID   string
+		locale   string
+	}{endpoint: "https://push.example.test/subscription", userID: "7b6a2a68-688a-4c59-82cf-0b541dfa0d49", locale: "en"}
+	if repo.localeUpdate != want {
+		t.Fatalf("locale update = %+v, want %+v", repo.localeUpdate, want)
+	}
+}
+
+func TestNotificationHandlerMapsLocaleUpdateErrors(t *testing.T) {
+	for _, test := range []struct {
+		name       string
+		body       string
+		repository error
+		wantStatus int
+	}{
+		{name: "invalid locale", body: "{\"endpoint\":\"https://push.example.test/subscription\",\"locale\":\"ja\"}", wantStatus: http.StatusBadRequest},
+		{name: "invalid endpoint", body: "{\"endpoint\":\"http://push.example.test/subscription\",\"locale\":\"en\"}", wantStatus: http.StatusBadRequest},
+		{name: "missing or foreign subscription", body: "{\"endpoint\":\"https://push.example.test/subscription\",\"locale\":\"en\"}", repository: notification.ErrNotFound, wantStatus: http.StatusNotFound},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			repo := &mockNotificationRepo{localeUpdateErr: test.repository}
+			h := handler.NewNotificationHandler(notification.NewService(nil, repo, "", "", ""))
+			request := httptest.NewRequest(http.MethodPatch, "/api/v1/notifications/language", strings.NewReader(test.body))
+			request.Header.Set("Authorization", "Bearer valid")
+			response := httptest.NewRecorder()
+			middleware.RequireAuthentication(notificationTestAuthenticator{})(http.HandlerFunc(h.UpdateSubscriptionLocale)).ServeHTTP(response, request)
+			if response.Code != test.wantStatus {
+				t.Fatalf("UpdateSubscriptionLocale() status = %d, want %d: %s", response.Code, test.wantStatus, response.Body.String())
+			}
+		})
+	}
+
+	request := httptest.NewRequest(http.MethodPatch, "/api/v1/notifications/language", strings.NewReader("{\"endpoint\":\"https://push.example.test/subscription\",\"locale\":\"en\"}"))
+	response := httptest.NewRecorder()
+	repo := &mockNotificationRepo{}
+	h := handler.NewNotificationHandler(notification.NewService(nil, repo, "", "", ""))
+	middleware.RequireAuthentication(notificationTestAuthenticator{})(http.HandlerFunc(h.UpdateSubscriptionLocale)).ServeHTTP(response, request)
+	if response.Code != http.StatusUnauthorized {
+		t.Fatalf("guest UpdateSubscriptionLocale() status = %d, want 401", response.Code)
+	}
+}
+
 type notificationTestAuthenticator struct{}
+
+func TestNotificationHandlerPersistsOnlySupportedDeviceLanguages(t *testing.T) {
+	for _, locale := range []string{"", "th", "en", "unsupported"} {
+		t.Run(locale, func(t *testing.T) {
+			repo := &mockNotificationRepo{}
+			h := handler.NewNotificationHandler(notification.NewService(nil, repo, "pub", "priv", "sub"))
+			body, err := json.Marshal(map[string]any{"endpoint": "https://push.example.test/device", "locale": locale, "keys": map[string]string{"p256dh": strings.Repeat("A", 87), "auth": strings.Repeat("A", 22)}})
+			if err != nil {
+				t.Fatal(err)
+			}
+			request := httptest.NewRequest(http.MethodPost, "/api/v1/notifications/subscribe", bytes.NewReader(body))
+			request.Header.Set("Authorization", "Bearer valid")
+			response := httptest.NewRecorder()
+			middleware.RequireAuthentication(notificationTestAuthenticator{})(http.HandlerFunc(h.Subscribe)).ServeHTTP(response, request)
+			if locale == "unsupported" {
+				if response.Code != http.StatusBadRequest || len(repo.subs) != 0 {
+					t.Fatalf("unsupported language accepted: %d", response.Code)
+				}
+				return
+			}
+			expected := locale
+			if expected == "" {
+				expected = "th"
+			}
+			if response.Code != http.StatusNoContent || len(repo.subs) != 1 || repo.subs[0].Locale != expected || repo.subs[0].UserID != "7b6a2a68-688a-4c59-82cf-0b541dfa0d49" {
+				t.Fatalf("language or principal not persisted correctly: status %d, subscriptions %#v", response.Code, repo.subs)
+			}
+		})
+	}
+}
 
 func (notificationTestAuthenticator) Authenticate(context.Context, string) (auth.User, error) {
 	return auth.User{ID: "7b6a2a68-688a-4c59-82cf-0b541dfa0d49", Role: auth.RoleUser}, nil

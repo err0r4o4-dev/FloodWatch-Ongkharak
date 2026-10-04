@@ -1,12 +1,18 @@
 import { useEffect, useState } from "react";
 import { NavLink } from "react-router";
+import { formatDate, formatNumber, useTranslation } from "../../i18n";
+import th from "../../i18n/locales/th/admin";
+import en from "../../i18n/locales/en/admin";
 import { adminApi } from "./api";
 import type { UserManagement } from "./types";
+import { adminErrorState, formatAdminDate, formatAdminNumber } from "./localization";
+import type { AdminErrorState } from "./localization";
 
 export function UsersPage() {
+  const { locale, t } = useTranslation({ th, en });
   const [users, setUsers] = useState<UserManagement[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<AdminErrorState | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("");
   const [includeDisabled, setIncludeDisabled] = useState(false);
@@ -26,7 +32,7 @@ export function UsersPage() {
       setUsers(response.users);
       setPagination(response.pagination);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load users");
+      setError(adminErrorState(err, "errors.loadUsers"));
     } finally {
       setLoading(false);
     }
@@ -50,25 +56,15 @@ export function UsersPage() {
     setPagination(prev => ({ ...prev, offset: Math.max(0, prev.offset - prev.limit) }));
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("th-TH", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
   return (
     <div className="page-container admin-page">
       <header className="page-header">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
-            <h1>จัดการผู้ใช้งาน</h1>
-            <p>ดูรายชื่อและจัดการบัญชีผู้ใช้งาน</p>
+            <h1>{t("users.title")}</h1>
+            <p>{t("users.description")}</p>
           </div>
-          <NavLink to="/admin" className="button">← กลับ</NavLink>
+          <NavLink to="/admin" className="button">{t("common.back")}</NavLink>
         </div>
       </header>
 
@@ -76,14 +72,15 @@ export function UsersPage() {
         <form onSubmit={handleSearch} className="admin-toolbar">
           <input
             type="search"
-            placeholder="ค้นหาอีเมล..."
+            placeholder={t("users.search.placeholder")}
+            aria-label={t("users.search.placeholder")}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="admin-search"
           />
           
           <div className="admin-filter-group">
-            <label htmlFor="role-filter">บทบาท:</label>
+            <label htmlFor="role-filter">{t("users.filter.role")}</label>
             <select
               id="role-filter"
               value={roleFilter}
@@ -91,9 +88,9 @@ export function UsersPage() {
               className="admin-search"
               style={{ minWidth: "8rem" }}
             >
-              <option value="">ทั้งหมด</option>
-              <option value="USER">ผู้ใช้งาน</option>
-              <option value="ADMIN">ผู้ดูแลระบบ</option>
+              <option value="">{t("common.all")}</option>
+              <option value="USER">{t("users.filter.user")}</option>
+              <option value="ADMIN">{t("users.filter.admin")}</option>
             </select>
           </div>
 
@@ -103,32 +100,32 @@ export function UsersPage() {
               checked={includeDisabled}
               onChange={(e) => setIncludeDisabled(e.target.checked)}
             />
-            <span>แสดงบัญชีที่ปิดการใช้งาน</span>
+            <span>{t("users.filter.includeDisabled")}</span>
           </label>
 
           <button type="submit" className="button button--primary">
-            ค้นหา
+            {t("common.search")}
           </button>
         </form>
 
         {loading && (
           <div className="loading-state" style={{ padding: "var(--space-8)" }}>
-            <p>กำลังโหลดรายชื่อผู้ใช้งาน...</p>
+            <p>{t("users.loading")}</p>
           </div>
         )}
 
         {error && (
           <div className="error-state" style={{ padding: "var(--space-8)" }}>
-            <p>เกิดข้อผิดพลาด: {error}</p>
+            <p>{t("common.errorPrefix")} {t(error.key, error.params)}</p>
             <button onClick={() => void loadUsers()} className="button">
-              ลองอีกครั้ง
+              {t("common.retry")}
             </button>
           </div>
         )}
 
         {!loading && !error && users.length === 0 && (
           <div className="empty-state" style={{ padding: "var(--space-8)", textAlign: "center" }}>
-            <p>ไม่พบผู้ใช้งาน</p>
+            <p>{t("common.noUsers")}</p>
           </div>
         )}
 
@@ -138,11 +135,11 @@ export function UsersPage() {
               <table className="admin-table">
                 <thead>
                   <tr>
-                    <th>อีเมล</th>
-                    <th>บทบาท</th>
-                    <th>สถานะ</th>
-                    <th>สร้างเมื่อ</th>
-                    <th>การกระทำ</th>
+                    <th>{t("common.email")}</th>
+                    <th>{t("users.table.role")}</th>
+                    <th>{t("users.table.status")}</th>
+                    <th>{t("users.table.createdAt")}</th>
+                    <th>{t("users.table.actions")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -153,24 +150,24 @@ export function UsersPage() {
                       </td>
                       <td>
                         <span className={`admin-badge admin-badge--${user.role.toLowerCase()}`}>
-                          {user.role === "ADMIN" ? "ผู้ดูแลระบบ" : "ผู้ใช้งาน"}
+                          {user.role === "ADMIN" ? t("common.admin") : t("common.user")}
                         </span>
                       </td>
                       <td>
                         {user.disabledAt ? (
-                          <span className="admin-badge admin-badge--disabled">ปิดใช้งาน</span>
+                          <span className="admin-badge admin-badge--disabled">{t("common.disabled")}</span>
                         ) : (
-                          <span className="admin-badge admin-badge--active">ใช้งานอยู่</span>
+                          <span className="admin-badge admin-badge--active">{t("common.active")}</span>
                         )}
                       </td>
-                      <td className="muted small">{formatDate(user.createdAt)}</td>
+                      <td className="muted small">{formatAdminDate(user.createdAt, locale, formatDate, { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</td>
                       <td>
                         <div className="admin-actions">
                           <NavLink
                             to={`/admin/users/${user.id}`}
                             className="button button--small"
                           >
-                            ดูรายละเอียด
+                            {t("common.details")}
                           </NavLink>
                         </div>
                       </td>
@@ -182,7 +179,11 @@ export function UsersPage() {
 
             <div className="admin-pagination">
               <div>
-                แสดง {pagination.offset + 1} ถึง {Math.min(pagination.offset + pagination.limit, pagination.total)} จากทั้งหมด {pagination.total} รายการ
+                {t("common.showing", {
+                  from: formatAdminNumber(pagination.offset + 1, locale, formatNumber),
+                  to: formatAdminNumber(Math.min(pagination.offset + pagination.limit, pagination.total), locale, formatNumber),
+                  total: formatAdminNumber(pagination.total, locale, formatNumber),
+                })}
               </div>
               <div className="admin-actions">
                 <button
@@ -190,14 +191,14 @@ export function UsersPage() {
                   disabled={pagination.offset === 0}
                   className="button"
                 >
-                  ← ก่อนหน้า
+                  {t("common.previous")}
                 </button>
                 <button
                   onClick={handleNextPage}
                   disabled={pagination.offset + pagination.limit >= pagination.total}
                   className="button"
                 >
-                  ถัดไป →
+                  {t("common.next")}
                 </button>
               </div>
             </div>

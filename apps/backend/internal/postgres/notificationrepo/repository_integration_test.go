@@ -59,13 +59,22 @@ func TestRepository_UpsertAndList(t *testing.T) {
 	for _, s := range subs {
 		if s.Endpoint == sub.Endpoint {
 			found = true
-			if s.UserID != userID || s.P256dh != "test-p256dh" || s.Auth != "test-auth" {
+			if s.UserID != userID || s.P256dh != "test-p256dh" || s.Auth != "test-auth" || s.Locale != "th" {
 				t.Errorf("mismatched fields in stored subscription: %+v", s)
 			}
 		}
 	}
 	if !found {
 		t.Error("subscription not found in list")
+	}
+
+	sub.Locale = "en"
+	if err := repo.UpsertSubscription(ctx, sub); err != nil {
+		t.Fatal(err)
+	}
+	var locale string
+	if err := pool.QueryRow(ctx, `SELECT locale FROM notification_subscriptions WHERE endpoint=$1 AND user_id=$2`, sub.Endpoint, userID).Scan(&locale); err != nil || locale != "en" {
+		t.Fatalf("language not persisted: %q, %v", locale, err)
 	}
 
 	err = repo.DeleteSubscription(ctx, sub.Endpoint, userID)
@@ -161,7 +170,7 @@ func TestRepositoryDeliveryCleanupRequiresCurrentLeaseAndSubscriptionRevision(t 
 	if claimed.SubscriptionVersion != 1 {
 		t.Fatalf("claimed subscription version = %d, want 1", claimed.SubscriptionVersion)
 	}
-	if err := repository.UpsertSubscription(ctx, notification.Subscription{UserID: userID, Endpoint: endpoint, P256dh: "renewed-p256dh", Auth: "renewed-auth"}); err != nil {
+	if err := repository.UpdateSubscriptionLocale(ctx, endpoint, userID, "en"); err != nil {
 		t.Fatal(err)
 	}
 	deleted, err := repository.DeleteSubscriptionAfterDeliveryFailure(ctx, claimed.ID, claimed.LeaseToken, claimed.SubscriptionID, claimed.UserID, claimed.Endpoint, claimed.SubscriptionVersion)
@@ -178,6 +187,103 @@ func TestRepositoryDeliveryCleanupRequiresCurrentLeaseAndSubscriptionRevision(t 
 	}
 	if owner != userID || version != 2 {
 		t.Fatalf("subscription after stale cleanup = owner %s version %d", owner, version)
+	}
+	var locale, p256dh, auth string
+	if err := pool.QueryRow(ctx, `SELECT locale, p256dh, auth FROM notification_subscriptions WHERE id=$1`, subscriptionID).Scan(&locale, &p256dh, &auth); err != nil {
+		t.Fatal(err)
+	}
+	if locale != "en" || p256dh != "test-p256dh" || auth != "test-auth" {
+		t.Fatalf("locale-only update changed subscription material: locale=%q p256dh=%q auth=%q", locale, p256dh, auth)
+	}
+	var jobCount int
+	if err := pool.QueryRow(ctx, `SELECT count(*) FROM notification_delivery_jobs WHERE id=$1`, jobID).Scan(&jobCount); err != nil {
+		t.Fatal(err)
+	}
+	if jobCount != 1 {
+		t.Fatalf("locale-only update removed delivery job, count=%d", jobCount)
+	}
+}
+
+func TestRepositoryUpdateSubscriptionLocaleIsOwnerScopedAndDoesNotResurrect(t *testing.T) {
+	databaseURL := os.Getenv("TEST_DATABASE_URL")
+	if databaseURL == "" {
+		t.Skip("set TEST_DATABASE_URL to run PostgreSQL notification integration")
+	}
+	ctx := context.Background()
+	pool, err := pgxpool.New(ctx, databaseURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(pool.Close)
+
+	ownerID := uuid.NewString()
+	otherID := uuid.NewString()
+	endpoint := "https://push.example.test/" + uuid.NewString()
+	otherEndpoint := "https://push.example.test/" + uuid.NewString()
+	for _, userID := range []string{ownerID, otherID} {
+		if _, err := pool.Exec(ctx, `INSERT INTO users (id, email, password_hash, role) VALUES ($1, $2, 'hash', 'USER')`, userID, "notification-"+uuid.NewString()+"@example.test"); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := pool.Exec(ctx, `
+		INSERT INTO notification_subscriptions (user_id, endpoint, p256dh, auth, locale)
+		VALUES ($1, $2, 'owner-p256dh', 'owner-auth', 'th'), ($3, $4, 'other-p256dh', 'other-auth', 'th')
+	`, ownerID, endpoint, otherID, otherEndpoint); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		cleanupCtx := context.Background()
+		_, _ = pool.Exec(cleanupCtx, `DELETE FROM notification_subscriptions WHERE endpoint = ANY($1)`, []string{endpoint, otherEndpoint})
+		_, _ = pool.Exec(cleanupCtx, `DELETE FROM users WHERE id = ANY($1)`, []string{ownerID, otherID})
+	})
+
+	repository := notificationrepo.New(pool)
+	if err := repository.UpdateSubscriptionLocale(ctx, endpoint, ownerID, "en"); err != nil {
+		t.Fatal(err)
+	}
+	var locale, p256dh, auth string
+	var version int64
+	if err := pool.QueryRow(ctx, `SELECT locale, p256dh, auth, version FROM notification_subscriptions WHERE endpoint=$1`, endpoint).Scan(&locale, &p256dh, &auth, &version); err != nil {
+		t.Fatal(err)
+	}
+	if locale != "en" || p256dh != "owner-p256dh" || auth != "owner-auth" || version != 2 {
+		t.Fatalf("owner update = locale=%q p256dh=%q auth=%q version=%d", locale, p256dh, auth, version)
+	}
+	var otherLocale string
+	var otherVersion int64
+	if err := pool.QueryRow(ctx, `SELECT locale, version FROM notification_subscriptions WHERE endpoint=$1`, otherEndpoint).Scan(&otherLocale, &otherVersion); err != nil {
+		t.Fatal(err)
+	}
+	if otherLocale != "th" || otherVersion != 1 {
+		t.Fatalf("foreign subscription changed: locale=%q version=%d", otherLocale, otherVersion)
+	}
+	if err := repository.UpdateSubscriptionLocale(ctx, endpoint, ownerID, "en"); err != nil {
+		t.Fatal(err)
+	}
+	if err := pool.QueryRow(ctx, `SELECT version FROM notification_subscriptions WHERE endpoint=$1`, endpoint).Scan(&version); err != nil {
+		t.Fatal(err)
+	}
+	if version != 2 {
+		t.Fatalf("same-locale update version = %d, want 2", version)
+	}
+	if err := repository.UpdateSubscriptionLocale(ctx, endpoint, otherID, "th"); err != notification.ErrNotFound {
+		t.Fatalf("foreign update error = %v, want ErrNotFound", err)
+	}
+	if err := repository.UpdateSubscriptionLocale(ctx, "https://push.example.test/missing", ownerID, "en"); err != notification.ErrNotFound {
+		t.Fatalf("missing update error = %v, want ErrNotFound", err)
+	}
+	if _, err := pool.Exec(ctx, `DELETE FROM notification_subscriptions WHERE endpoint=$1`, endpoint); err != nil {
+		t.Fatal(err)
+	}
+	if err := repository.UpdateSubscriptionLocale(ctx, endpoint, ownerID, "th"); err != notification.ErrNotFound {
+		t.Fatalf("deleted update error = %v, want ErrNotFound", err)
+	}
+	var count int
+	if err := pool.QueryRow(ctx, `SELECT count(*) FROM notification_subscriptions WHERE endpoint=$1`, endpoint).Scan(&count); err != nil {
+		t.Fatal(err)
+	}
+	if count != 0 {
+		t.Fatalf("deleted endpoint was resurrected, count=%d", count)
 	}
 }
 
@@ -401,6 +507,25 @@ func TestRepositoryMaterializesAlertAndMaintainsReadStateIdempotently(t *testing
 	}
 	if err := repository.EnqueueAlert(ctx, alertID); err != nil {
 		t.Fatal(err)
+	}
+	if err := repository.UpdateSubscriptionLocale(ctx, endpointOne, userID, "en"); err != nil {
+		t.Fatal(err)
+	}
+	seenEnglish := false
+	for delivery := 0; delivery < 2; delivery++ {
+		job, found, err := repository.ClaimPendingDelivery(ctx, time.Now())
+		if err != nil || !found {
+			t.Fatalf("delivery missing: %v, %v", found, err)
+		}
+		if job.Endpoint == endpointOne {
+			seenEnglish = true
+			if job.Locale != "en" || job.Severity != "WARNING" || job.SourceType != "OFFICIAL" || job.Payload.Title != "Road warning" {
+				t.Fatalf("latest language or original evidence missing: %#v", job)
+			}
+		}
+	}
+	if !seenEnglish {
+		t.Fatal("English subscription was not selected")
 	}
 
 	page, err := repository.List(ctx, userID, notification.Page{Limit: 10})

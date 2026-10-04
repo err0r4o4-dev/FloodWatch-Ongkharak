@@ -1,0 +1,3 @@
+./admin_test.go
+./ai_test.go
+./notification_test.go

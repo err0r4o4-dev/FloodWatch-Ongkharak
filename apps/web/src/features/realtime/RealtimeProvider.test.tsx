@@ -133,7 +133,7 @@ describe("public realtime subscription", () => {
     const request = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ items: [], limit: 20, offset: 0 }) });
     vi.stubGlobal("fetch", request);
     const view = render(<MemoryRouter><RealtimeProvider><OverviewPage /></RealtimeProvider></MemoryRouter>);
-    expect(await screen.findByText("ยังไม่มีข้อมูลสถานการณ์ที่เผยแพร่")).toBeInTheDocument();
+    expect(await screen.findByText("ยังไม่มีสถานีในรายการที่เรียกดู")).toBeInTheDocument();
     expect(request).toHaveBeenCalledTimes(6);
     act(() => FakeEventSource.connections[0].onopen?.());
     await waitFor(() => expect(request).toHaveBeenCalledTimes(12));

@@ -1,0 +1,51 @@
+[
+  {
+    "width": 320,
+    "height": 800,
+    "pageHeight": 2394,
+    "scrollWidth": 305,
+    "interactions": "pass"
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "pageHeight": 1940,
+    "scrollWidth": 375,
+    "interactions": "pass"
+  },
+  {
+    "width": 768,
+    "height": 1024,
+    "pageHeight": 1752,
+    "scrollWidth": 753,
+    "interactions": "pass"
+  },
+  {
+    "width": 1536,
+    "height": 864,
+    "pageHeight": 996,
+    "scrollWidth": 1521,
+    "interactions": "pass"
+  },
+  {
+    "width": 1920,
+    "height": 900,
+    "pageHeight": 996,
+    "scrollWidth": 1905,
+    "interactions": "pass"
+  },
+  {
+    "width": 1920,
+    "height": 1080,
+    "pageHeight": 1137,
+    "scrollWidth": 1905,
+    "interactions": "pass"
+  },
+  {
+    "width": 2560,
+    "height": 1440,
+    "pageHeight": 1440,
+    "scrollWidth": 2545,
+    "interactions": "pass"
+  }
+]

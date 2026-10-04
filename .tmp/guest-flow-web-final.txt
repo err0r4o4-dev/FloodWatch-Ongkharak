@@ -1,0 +1,17 @@
+
+> @floodwatch/web@0.0.0 test
+> vitest run
+
+
+ RUN  v5.0.3 D:/!Project/FloodWatch-Ongkharak(Web_Application)/apps/web
+
+
+ Test Files  50 passed (50)
+      Tests  305 passed (305)
+   Start at  13:39:37
+   Duration  10.37s (environment 61%, setup 17%, tests 15%, import 5%, transform 2%)
+
+Environment  jsdom was created 50 times · 156.76s total, 61% of tracked time
+             create it once per worker with pool: 'vmThreads' (keeps per-file isolation) or isolate: false (shares it across files)
+             learn more: https://vitest.dev/guide/improving-performance#test-environments
+

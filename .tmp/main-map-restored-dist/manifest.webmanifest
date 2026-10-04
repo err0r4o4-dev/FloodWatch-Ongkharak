@@ -1,0 +1,17 @@
+{
+  "name": "Flood Watch Ongkharak",
+  "short_name": "Flood Watch",
+  "lang": "th",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f5f9ff",
+  "theme_color": "#f5f9ff",
+  "icons": [
+    {
+      "src": "/flood-watch-mark.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

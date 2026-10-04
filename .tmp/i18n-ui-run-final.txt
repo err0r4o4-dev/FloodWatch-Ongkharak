@@ -1,0 +1,5 @@
+{
+  "checks": 67,
+  "failures": [],
+  "output": "D:\\!Project\\FloodWatch-Ongkharak(Web_Application)\\.tmp\\i18n-ui"
+}

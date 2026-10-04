@@ -6,9 +6,13 @@ import { MapSidePanel } from "./components/MapSidePanel";
 import { MapToolbar } from "./components/MapToolbar";
 import { MapLegend } from "./components/MapLegend";
 import { MapDataStatus } from "./components/MapDataStatus";
+import { MapSearch } from "./components/MapSearch";
 import { SituationMap } from "./components/SituationMap";
 import { useMapData } from "./hooks/useMapData";
 import { useRealtimeRevision } from "../realtime/RealtimeProvider";
+import { useTranslation } from "../../i18n";
+import th from "../../i18n/locales/th/map";
+import en from "../../i18n/locales/en/map";
 import { layerKeys } from "./types";
 import { validBounds } from "./utils";
 import type { LayerKey, LayerVisibility, MapBounds, MapMode, MapSelection, Position } from "./types";
@@ -18,6 +22,10 @@ import "./MapPage.css";
 const defaultVisibility: LayerVisibility = { flood: true, water: true, risk: true, roads: true, reports: true };
 const emptyPoint: RoutePoint = { longitude: "", latitude: "" };
 const mapEvents = ["water_level.updated", "flood_event.created", "flood_event.updated", "road.status.changed", "report.verified"] as const;
+
+function sameBounds(first: MapBounds | null, second: MapBounds) {
+  return first?.west === second.west && first.south === second.south && first.east === second.east && first.north === second.north;
+}
 
 function parseInitialBounds(value: string | null): MapBounds | undefined {
   if (!value) return undefined;
@@ -29,6 +37,7 @@ function parseInitialBounds(value: string | null): MapBounds | undefined {
 }
 
 export function MapPage() {
+  const { t } = useTranslation({ th, en });
   const [params] = useSearchParams();
   const initialBounds = parseInitialBounds(params.get("bbox"));
   const initialRiskId = params.get("risk");
@@ -45,6 +54,7 @@ export function MapPage() {
   const riskButton = useRef<HTMLButtonElement>(null);
   const expandButton = useRef<HTMLButtonElement>(null);
   const workspace = useRef<HTMLElement>(null);
+  const boundsRef = useRef<MapBounds | null>(null);
   const [retry, setRetry] = useState(0);
   const realtimeRevision = useRealtimeRevision(mapEvents);
   const [points, setPoints] = useState<RoutePoints>({ origin: emptyPoint, destination: emptyPoint });
@@ -55,7 +65,9 @@ export function MapPage() {
   const allFailed = !data.loading && enabled.length > 0 && data.failed.length === enabled.length;
   const panelOpen = listOpen || riskOpen || selection !== null || mode === "ROUTE";
   const onBoundsChange = useCallback((next: MapBounds) => {
-    setBounds((previous) => previous && previous.west === next.west && previous.south === next.south && previous.east === next.east && previous.north === next.north ? previous : next);
+    if (sameBounds(boundsRef.current, next)) return;
+    boundsRef.current = next;
+    setBounds(next);
     setSelection(null);
   }, []);
   const onMapPoint = useCallback((position: Position) => {
@@ -106,21 +118,21 @@ export function MapPage() {
   }}>
     <header className="page-hero map-page__hero">
       <div className="page-hero__copy">
-        <p className="eyebrow">SITUATION MAP · ONGKHARAK</p>
-        <h1 id="situation-map-title">แผนที่สถานการณ์น้ำ</h1>
-        <p>สำรวจสถานีวัดน้ำ พื้นที่เสี่ยง และรายงานจากชุมชนในแผนที่เดียว</p>
+        <p className="eyebrow">{t("hero.eyebrow")}</p>
+        <h1 id="situation-map-title">{t("hero.title")}</h1>
+        <p>{t("hero.description")}</p>
       </div>
       <PageHeroArt kind="map" />
     </header>
     <div className={`map-page__workspace${panelOpen ? " has-panel" : ""}`}>
       <SituationMap key={`${initialRiskId ?? ""}:${params.get("bbox") ?? ""}`} items={data.items} visible={visible} mode={mode} points={points} picking={picking} onBoundsChange={onBoundsChange} onMapPoint={onMapPoint} onSelect={setSelection} onPreview={(item) => { setSelectedRiskId(item?.layer === "risk" ? item.feature.id : null); }} enablePopups focusSelection={focusSelection} initialBounds={initialBounds} initialRiskId={initialRiskId} />
       <div className="map-page__layers"><LayerControl visible={visible} onToggle={toggle} /></div>
-      <div className="map-page__tools"><MapToolbar mode={mode} onModeChange={(next) => { setMode(next); setPicking(null); setSelection(null); setRiskOpen(false); }} /><button ref={riskButton} type="button" className="map-tool-button" aria-label="พื้นที่เสี่ยง" aria-expanded={riskOpen} aria-controls="map-information-panel" onClick={() => { setRiskOpen((previous) => !previous); setListOpen(false); setMode("SITUATION"); setPicking(null); setSelection(null); setVisible((previous) => ({ ...previous, risk: true })); }}><span aria-hidden="true">◇</span><span>พื้นที่เสี่ยง</span></button><button ref={listButton} type="button" className="map-tool-button map-tool-button--list" aria-expanded={listOpen} aria-controls="map-information-panel" onClick={() => { setListOpen((previous) => !previous); setRiskOpen(false); }}><span aria-hidden="true">☷</span><span>รายการในขอบเขต</span><span className="map-tool-button__count">{data.loading ? "…" : count}</span></button><button ref={expandButton} type="button" className="map-tool-button map-tool-button--square" aria-label={expanded ? "ออกจากแผนที่เต็มหน้าจอ" : "แสดงแผนที่เต็มหน้าจอ"} title={expanded ? "ออกจากแผนที่เต็มหน้าจอ" : "แสดงแผนที่เต็มหน้าจอ"} aria-pressed={expanded} onClick={() => setExpanded((previous) => !previous)}><span aria-hidden="true">⛶</span></button></div>
+      <div className="map-page__tools"><MapSearch items={data.items} loading={data.loading} onSelect={setSelection} /><MapToolbar mode={mode} onModeChange={(next) => { setMode(next); setPicking(null); setSelection(null); setRiskOpen(false); }} /><button ref={riskButton} type="button" className="map-tool-button" aria-label={t("button.risk")} aria-expanded={riskOpen} aria-controls="map-information-panel" onClick={() => { setRiskOpen((previous) => !previous); setListOpen(false); setMode("SITUATION"); setPicking(null); setSelection(null); setVisible((previous) => ({ ...previous, risk: true })); }}><span aria-hidden="true">◇</span><span>{t("button.risk")}</span></button><button ref={listButton} type="button" className="map-tool-button map-tool-button--list" aria-label={t("button.list")} aria-expanded={listOpen} aria-controls="map-information-panel" onClick={() => { setListOpen((previous) => !previous); setRiskOpen(false); }}><span aria-hidden="true">☷</span><span>{t("button.list")}</span><span className="map-tool-button__count">{data.loading ? "…" : count}</span></button><button ref={expandButton} type="button" className="map-tool-button map-tool-button--square" aria-label={t(expanded ? "button.fullscreen.exit" : "button.fullscreen.enter")} title={t(expanded ? "button.fullscreen.exit" : "button.fullscreen.enter")} aria-pressed={expanded} onClick={() => setExpanded((previous) => !previous)}><span aria-hidden="true">⛶</span></button></div>
       {panelOpen && <MapSidePanel mode={mode} items={data.items} visible={visible} loading={data.loading} failed={allFailed} failedLayers={data.failed} truncated={data.truncated} onRetry={() => setRetry((previous) => previous + 1)} selection={selection} onSelect={setSelection} onClose={() => { setSelection(null); if (!listOpen && !riskOpen && mode === "SITUATION") workspace.current?.querySelector<HTMLElement>(".leaflet-map")?.focus({ preventScroll: true }); }} onDismiss={dismissPanel} showList={listOpen} showRisk={riskOpen} selectedRiskId={selectedRiskId} onRiskSelect={(item) => { setSelectedRiskId(item.feature.id); setFocusSelection({ ...item }); }} points={points} onPointChange={(key, point) => setPoints((previous) => ({ ...previous, [key]: point }))} picking={picking} onPickingChange={setPicking} />}
       <div className="map-page__legend"><MapLegend visible={visible} /></div>
     </div>
     <MapDataStatus items={data.items} visible={visible} loading={data.loading} failed={allFailed} failedLayers={data.failed} truncated={data.truncated} onRetry={() => setRetry((previous) => previous + 1)} />
-    {initialRiskId && !data.loading && !data.items.risk.some((item) => item.id === initialRiskId) && <p className="map-page__caution" role="status">ไม่พบพื้นที่ที่เลือกในข้อมูลของขอบเขตนี้ อาจไม่พร้อมใช้งานหรือเกินจำนวนรายการที่โหลด</p>}
-    <p className="map-page__caution">ข้อมูลที่ไม่พร้อมใช้งานหรือเก่าไม่ใช่การยืนยันว่าพื้นที่ปลอดภัย · เลือกสัญลักษณ์เพื่อดูแหล่งที่มาและเวลาของข้อมูล</p>
+    {initialRiskId && !data.loading && !data.items.risk.some((item) => item.id === initialRiskId) && <p className="map-page__caution" role="status">{t("caution.selectionMissing")}</p>}
+    <p className="map-page__caution">{t("caution.evidence")}</p>
   </section>;
 }

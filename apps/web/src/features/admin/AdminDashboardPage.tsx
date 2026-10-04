@@ -1,14 +1,20 @@
 import { useEffect, useState } from "react";
 import { NavLink } from "react-router";
 import { useAuth } from "../auth/AuthProvider";
+import { formatNumber, useTranslation } from "../../i18n";
+import th from "../../i18n/locales/th/admin";
+import en from "../../i18n/locales/en/admin";
 import { adminApi } from "./api";
 import type { AdminDashboardStats } from "./types";
+import { adminErrorState, formatAdminNumber } from "./localization";
+import type { AdminErrorState } from "./localization";
 
 export function AdminDashboardPage() {
   const { account } = useAuth();
+  const { locale, t } = useTranslation({ th, en });
   const [stats, setStats] = useState<AdminDashboardStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(false);
-  const [statsError, setStatsError] = useState<string | null>(null);
+  const [statsError, setStatsError] = useState<AdminErrorState | null>(null);
   const [retry, setRetry] = useState(0);
 
   useEffect(() => {
@@ -29,7 +35,7 @@ export function AdminDashboardPage() {
       })
       .catch((error: unknown) => {
         if (active) {
-          setStatsError(error instanceof Error ? error.message : "ไม่สามารถโหลดสถิติแดชบอร์ดได้");
+          setStatsError(adminErrorState(error, "errors.loadDashboard"));
         }
       })
       .finally(() => {
@@ -47,9 +53,9 @@ export function AdminDashboardPage() {
     return (
       <div className="page-container">
         <div className="panel error-state">
-          <h1>ไม่มีสิทธิ์เข้าถึง</h1>
-          <p>คุณไม่มีสิทธิ์เข้าถึงส่วนจัดการระบบ</p>
-          <NavLink to="/" className="button">กลับหน้าหลัก</NavLink>
+          <h1>{t("common.accessDenied")}</h1>
+          <p>{t("common.adminOnly")}</p>
+          <NavLink to="/" className="button">{t("common.home")}</NavLink>
         </div>
       </div>
     );
@@ -58,41 +64,41 @@ export function AdminDashboardPage() {
   return (
     <div className="page-container admin-page">
       <header className="page-header">
-        <h1>ส่วนจัดการระบบ</h1>
-        <p>จัดการผู้ใช้งาน ตั้งค่าระบบ และตรวจสอบการดำเนินการ</p>
+        <h1>{t("dashboard.title")}</h1>
+        <p>{t("dashboard.description")}</p>
       </header>
 
       <section className="panel admin-stats-panel" aria-labelledby="admin-stats-heading" aria-live="polite">
-        <h2 id="admin-stats-heading">ภาพรวมระบบ</h2>
-        {statsLoading && <p role="status">กำลังโหลดสถิติแดชบอร์ด...</p>}
+        <h2 id="admin-stats-heading">{t("dashboard.stats.title")}</h2>
+        {statsLoading && <p role="status">{t("dashboard.stats.loading")}</p>}
         {statsError && (
           <div className="error-state" role="alert">
-            <p>ไม่สามารถโหลดสถิติแดชบอร์ดได้</p>
-            <p className="muted">{statsError}</p>
-            <button type="button" className="action-button" onClick={() => setRetry((current) => current + 1)}>ลองโหลดสถิติอีกครั้ง</button>
+            <p>{t("dashboard.stats.error")}</p>
+            <p className="muted">{t(statsError.key, statsError.params)}</p>
+            <button type="button" className="action-button" onClick={() => setRetry((current) => current + 1)}>{t("dashboard.stats.retry")}</button>
           </div>
         )}
         {stats && (
           <dl className="admin-dashboard-grid">
             <div className="admin-card">
-              <dt>ผู้ใช้งานทั้งหมด</dt>
-              <dd>{stats.totalUsers}</dd>
+              <dt>{t("dashboard.stats.totalUsers")}</dt>
+              <dd>{formatAdminNumber(stats.totalUsers, locale, formatNumber)}</dd>
             </div>
             <div className="admin-card">
-              <dt>ผู้ใช้งานที่ใช้งานอยู่</dt>
-              <dd>{stats.activeUsers}</dd>
+              <dt>{t("dashboard.stats.activeUsers")}</dt>
+              <dd>{formatAdminNumber(stats.activeUsers, locale, formatNumber)}</dd>
             </div>
             <div className="admin-card">
-              <dt>รายงานทั้งหมด</dt>
-              <dd>{stats.totalReports}</dd>
+              <dt>{t("dashboard.stats.totalReports")}</dt>
+              <dd>{formatAdminNumber(stats.totalReports, locale, formatNumber)}</dd>
             </div>
             <div className="admin-card">
-              <dt>รายงานรอตรวจสอบ</dt>
-              <dd>{stats.pendingReports}</dd>
+              <dt>{t("dashboard.stats.pendingReports")}</dt>
+              <dd>{formatAdminNumber(stats.pendingReports, locale, formatNumber)}</dd>
             </div>
             <div className="admin-card">
-              <dt>กิจกรรมใน 24 ชั่วโมงล่าสุด</dt>
-              <dd>{stats.recentActivity}</dd>
+              <dt>{t("dashboard.stats.recentActivity")}</dt>
+              <dd>{formatAdminNumber(stats.recentActivity, locale, formatNumber)}</dd>
             </div>
           </dl>
         )}
@@ -100,69 +106,69 @@ export function AdminDashboardPage() {
 
       <div className="admin-dashboard-grid">
         <section className="panel admin-card">
-          <h2>จัดการผู้ใช้งาน</h2>
-          <p className="muted">ดูรายชื่อผู้ใช้งาน เปลี่ยนบทบาท และจัดการสถานะบัญชี</p>
+          <h2>{t("dashboard.cards.users.title")}</h2>
+          <p className="muted">{t("dashboard.cards.users.description")}</p>
           <NavLink to="/admin/users" className="button button--primary">
-            เปิดการจัดการผู้ใช้งาน
+            {t("dashboard.cards.users.action")}
           </NavLink>
         </section>
 
         <section className="panel admin-card">
-          <h2>ตั้งค่าระบบ</h2>
-          <p className="muted">กำหนดค่าการทำงานของระบบ อัตราการจำกัด และฟีเจอร์ต่างๆ</p>
+          <h2>{t("dashboard.cards.settings.title")}</h2>
+          <p className="muted">{t("dashboard.cards.settings.description")}</p>
           <NavLink to="/admin/settings" className="button button--primary">
-            เปิดการตั้งค่า
+            {t("dashboard.cards.settings.action")}
           </NavLink>
         </section>
 
         <section className="panel admin-card">
-          <h2>บันทึกการดำเนินการ</h2>
-          <p className="muted">ตรวจสอบประวัติการกระทำของผู้ดูแลระบบและผู้ใช้งาน</p>
+          <h2>{t("dashboard.cards.audit.title")}</h2>
+          <p className="muted">{t("dashboard.cards.audit.description")}</p>
           <NavLink to="/admin/audit-logs" className="button button--primary">
-            เปิดบันทึก
+            {t("dashboard.cards.audit.action")}
           </NavLink>
         </section>
 
         <section className="panel admin-card">
-          <h2>รายงานจากชุมชน</h2>
-          <p className="muted">ตรวจสอบและอนุมัติรายงานสถานการณ์จากชุมชน</p>
+          <h2>{t("dashboard.cards.reports.title")}</h2>
+          <p className="muted">{t("dashboard.cards.reports.description")}</p>
           <NavLink to="/admin/reports" className="button button--primary">
-            ตรวจสอบรายงาน
+            {t("dashboard.cards.reports.action")}
           </NavLink>
         </section>
 
         <section className="panel admin-card">
-          <h2>หลักฐานจาก AI</h2>
-          <p className="muted">ตรวจสอบและยืนยันข้อมูลที่ประมวลผลโดย AI</p>
+          <h2>{t("dashboard.cards.ai.title")}</h2>
+          <p className="muted">{t("dashboard.cards.ai.description")}</p>
           <NavLink to="/admin/ai-evidence" className="button button--primary">
-            ตรวจสอบหลักฐาน AI
+            {t("dashboard.cards.ai.action")}
           </NavLink>
         </section>
         <section className="panel admin-card">
-          <h2>กฎการแจ้งเตือน</h2>
-          <p className="muted">สร้างและจัดการกฎการแจ้งเตือนอัตโนมัติ</p>
+          <h2>{t("dashboard.cards.alertRules.title")}</h2>
+          <p className="muted">{t("dashboard.cards.alertRules.description")}</p>
           <NavLink to="/admin/alert-rules" className="button button--primary">
-            จัดการการแจ้งเตือน
+            {t("dashboard.cards.alertRules.action")}
           </NavLink>
         </section>
 
         <section className="panel admin-card">
-          <h2>สถานะระบบ</h2>
-          <p className="muted">ตรวจสอบสุขภาพและประสิทธิภาพของระบบ</p>
+          <h2>{t("dashboard.cards.system.title")}</h2>
+          <p className="muted">{t("dashboard.cards.system.description")}</p>
           <NavLink to="/system-status" className="button button--primary">
-            เปิดสถานะระบบ
+            {t("dashboard.cards.system.action")}
           </NavLink>
         </section>
       </div>
 
       <aside className="admin-info-panel panel">
-        <h3>ข้อมูลสำคัญ</h3>
+        <h3>{t("dashboard.important.title")}</h3>
         <ul>
-          <li><strong>บัญชีของคุณ:</strong> {account.email}</li>
-          <li><strong>บทบาท:</strong> ผู้ดูแลระบบ (ADMIN)</li>
+          <li><strong>{t("common.account")}</strong> {account.email}</li>
+          <li><strong>{t("common.role")}</strong> {t("dashboard.important.role")}</li>
         </ul>
         <p className="muted small">
-          การกระทำทั้งหมดในส่วนนี้จะถูกบันทึกเพื่อความปลอดภัยและการตรวจสอบ
+          {t("dashboard.important.note")}
         </p>
       </aside>
     </div>

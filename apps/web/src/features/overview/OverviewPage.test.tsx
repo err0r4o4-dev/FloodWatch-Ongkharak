@@ -79,7 +79,9 @@ describe("OverviewPage", () => {
     const request = mockCollections({});
     render(<OverviewPage />);
     expect(screen.getByRole("status", { name: "กำลังโหลดข้อมูล" })).toBeInTheDocument();
-    expect(await screen.findByText("ยังไม่มีข้อมูลสถานการณ์ที่เผยแพร่")).toBeInTheDocument();
+    expect(await screen.findByRole("region", { name: "เหตุการณ์น้ำที่รายงาน" })).toHaveTextContent("ยังไม่มีเหตุการณ์ในรายการ");
+    expect(screen.getByRole("region", { name: "ระดับน้ำ (จุดสำคัญ)" })).toHaveTextContent("ยังไม่มีสถานีในรายการที่เรียกดู");
+    expect(screen.getByRole("region", { name: "ประกาศล่าสุด" })).toHaveTextContent("ยังไม่มีประกาศที่เผยแพร่");
     expect(request.mock.calls.map(([url]) => url)).toEqual([
       "/api/v1/flood-events?limit=20", "/api/v1/risk-areas?limit=20", "/api/v1/roads?limit=20", "/api/v1/water-stations?limit=5",
       "/api/v1/alerts?limit=20&offset=0", "/api/v1/reports?limit=20&offset=0"

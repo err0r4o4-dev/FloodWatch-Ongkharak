@@ -31,6 +31,52 @@ afterEach(() => {
 });
 
 describe("AuthPage", () => {
+  it("keeps admin login password-only and preserves an admin return target", async () => {
+    const api = {
+      refresh: vi.fn().mockRejectedValue(new Error("anonymous")),
+      me: vi.fn().mockResolvedValue(account), login: vi.fn(), register: vi.fn(), logout: vi.fn()
+    };
+    render(<MemoryRouter initialEntries={["/admin/login?returnTo=%2Fadmin%2Freports"]}><AuthProvider api={api}><AuthPage mode="login" adminMode /></AuthProvider></MemoryRouter>);
+
+    expect(await screen.findByRole("heading", { name: "เข้าสู่ระบบผู้ดูแลระบบ" })).toBeInTheDocument();
+    expect(screen.getByText("เข้าสู่ระบบด้วยบัญชีผู้ดูแลระบบเพื่อเข้าถึงพื้นที่จัดการ")).toBeInTheDocument();
+    expect(await screen.findByLabelText("อีเมล หรือ ชื่อผู้ใช้งาน")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /ดำเนินการต่อด้วย Google/ })).not.toBeInTheDocument();
+    expect(screen.queryByText("ยังไม่มีบัญชี?")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /ลืมรหัสผ่าน/ })).toHaveAttribute("href", "/forgot-password?returnTo=%2Fadmin%2Freports");
+  });
+
+  it("lets an authenticated non-admin sign out before using the admin login", async () => {
+    const api = {
+      refresh: vi.fn().mockResolvedValue(undefined),
+      me: vi.fn().mockResolvedValue(account), login: vi.fn(), register: vi.fn(), logout: vi.fn().mockResolvedValue(undefined)
+    };
+    render(<MemoryRouter initialEntries={["/admin/login"]}><AuthProvider api={api}><AuthPage mode="login" adminMode /></AuthProvider></MemoryRouter>);
+
+    expect(await screen.findByRole("heading", { name: "บัญชีนี้ไม่มีสิทธิ์ผู้ดูแลระบบ" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "ออกจากระบบเพื่อเปลี่ยนบัญชี" }));
+    expect(api.logout).toHaveBeenCalledOnce();
+    expect(await screen.findByRole("heading", { name: "เข้าสู่ระบบผู้ดูแลระบบ" })).toBeInTheDocument();
+  });
+
+  it("does not navigate or report admin success when admin login returns a USER", async () => {
+    const api = {
+      refresh: vi.fn().mockRejectedValue(new Error("anonymous")),
+      me: vi.fn().mockResolvedValue(account),
+      login: vi.fn().mockResolvedValue({ user: account, accessToken: "token", expiresIn: 900 }),
+      register: vi.fn(), logout: vi.fn()
+    };
+    render(<MemoryRouter initialEntries={["/admin/login?returnTo=%2Fadmin%2Freports"]}><AuthProvider api={api}><AuthPage mode="login" adminMode /></AuthProvider></MemoryRouter>);
+
+    fireEvent.change(await screen.findByLabelText("อีเมล หรือ ชื่อผู้ใช้งาน"), { target: { value: account.email } });
+    fireEvent.change(screen.getByLabelText("รหัสผ่าน"), { target: { value: "password1234" } });
+    fireEvent.click(screen.getByRole("button", { name: "เข้าสู่ระบบผู้ดูแลระบบ" }));
+
+    expect(await screen.findByRole("heading", { name: "บัญชีนี้ไม่มีสิทธิ์ผู้ดูแลระบบ" })).toBeInTheDocument();
+    expect(screen.queryByText("Reports destination")).not.toBeInTheDocument();
+    expect(alertMocks.notifySuccess).not.toHaveBeenCalled();
+  });
+
   it("keeps pending integrations visibly unavailable while allowing password visibility", async () => {
     const api = {
       refresh: vi.fn().mockRejectedValue(new Error("anonymous")),
@@ -41,7 +87,7 @@ describe("AuthPage", () => {
     fireEvent.change(password, { target: { value: "secret" } });
     fireEvent.click(screen.getByRole("checkbox", { name: "แสดงรหัสผ่าน" }));
     expect(password).toHaveAttribute("type", "text");
-    expect(screen.getByRole("button", { name: /Continue with Google/ })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /ดำเนินการต่อด้วย Google/ })).toBeDisabled();
     expect(screen.getByText(/ลืมรหัสผ่าน/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("link", { name: /ลืมรหัสผ่าน/ }));
     expect(await screen.findByRole("heading", { name: "ลืมรหัสผ่าน?" })).toBeInTheDocument();
@@ -81,8 +127,8 @@ describe("AuthPage", () => {
     fireEvent.change(screen.getByLabelText("รหัสผ่าน"), { target: { value: "password1234" } });
     fireEvent.click(screen.getByRole("button", { name: /เข้าสู่ระบบ/ }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("บัญชีไม่พร้อมใช้งาน");
-    expect(alertMocks.notifyError).toHaveBeenCalledWith("เข้าสู่ระบบไม่สำเร็จ", "บัญชีไม่พร้อมใช้งาน");
+    expect(await screen.findByRole("alert")).toHaveTextContent("ไม่สามารถเข้าสู่ระบบได้ กรุณาลองใหม่");
+    expect(alertMocks.notifyError).toHaveBeenCalledWith("เข้าสู่ระบบไม่สำเร็จ", "ไม่สามารถเข้าสู่ระบบได้ กรุณาลองใหม่");
     expect(alertMocks.notifySuccess).not.toHaveBeenCalled();
   });
 
@@ -101,7 +147,7 @@ describe("AuthPage", () => {
     fireEvent.click(screen.getByRole("button", { name: /เข้าสู่ระบบ/ }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("ไม่สามารถเข้าสู่ระบบได้");
-    expect(alertMocks.notifyError).toHaveBeenCalledWith("เข้าสู่ระบบไม่สำเร็จ", "ไม่สามารถเข้าสู่ระบบได้");
+    expect(alertMocks.notifyError).toHaveBeenCalledWith("เข้าสู่ระบบไม่สำเร็จ", "ไม่สามารถเข้าสู่ระบบได้ กรุณาลองใหม่");
   });
 
   it("does not submit twice while the request is pending", async () => {
@@ -183,8 +229,35 @@ describe("AuthPage", () => {
     fireEvent.change(screen.getByLabelText("รหัสผ่าน"), { target: { value: "short" } });
     fireEvent.click(screen.getByRole("button", { name: /เข้าสู่ระบบ/ }));
 
-    expect(screen.getByRole("alert")).toHaveTextContent("รหัสผ่านต้องมีความยาว 12–128 ไบต์");
+    expect(screen.getByRole("alert")).toHaveTextContent("รหัสผ่านสั้นเกินไป");
     expect(api.login).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["ไทยไทยไทยไทย", true],
+    ["😀😀😀", true],
+    ["😀".repeat(33), false]
+  ])("uses UTF-8 byte length for Thai and emoji passwords (%s)", async (password, accepted) => {
+    const api = {
+      refresh: vi.fn().mockRejectedValue(new Error("anonymous")),
+      me: vi.fn().mockResolvedValue(account),
+      login: vi.fn().mockResolvedValue({ user: account, accessToken: "token", expiresIn: 900 }),
+      register: vi.fn(),
+      logout: vi.fn()
+    };
+    renderAuth("login", api);
+
+    fireEvent.change(await screen.findByLabelText("อีเมล หรือ ชื่อผู้ใช้งาน"), { target: { value: account.email } });
+    fireEvent.change(screen.getByLabelText("รหัสผ่าน"), { target: { value: password } });
+    fireEvent.click(screen.getByRole("button", { name: /เข้าสู่ระบบ/ }));
+
+    if (accepted) {
+      expect(await screen.findByText("Reports destination")).toBeInTheDocument();
+      expect(api.login).toHaveBeenCalledWith({ email: account.email, password });
+    } else {
+      expect(await screen.findByRole("alert")).toHaveTextContent("รหัสผ่านยาวเกินไป");
+      expect(api.login).not.toHaveBeenCalled();
+    }
   });
 
   it("maps backend account conflicts to honest Thai guidance", async () => {
@@ -202,7 +275,7 @@ describe("AuthPage", () => {
     fireEvent.change(screen.getByLabelText("รหัสผ่าน"), { target: { value: "password1234" } });
     fireEvent.click(screen.getByRole("button", { name: /สมัครสมาชิก/ }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("ชื่อผู้ใช้งานนี้ถูกใช้แล้ว");
+    expect(await screen.findByRole("alert")).toHaveTextContent("ชื่อผู้ใช้นี้ถูกใช้งานแล้ว");
     expect(api.login).not.toHaveBeenCalled();
   });
 });

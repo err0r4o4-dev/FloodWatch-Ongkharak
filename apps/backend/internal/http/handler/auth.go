@@ -22,6 +22,10 @@ type AuthService interface {
 	GetUser(context.Context, string) (auth.User, error)
 }
 
+type UsernameUpdater interface {
+	UpdateUsername(context.Context, string, string) (auth.User, error)
+}
+
 type CookieOptions struct {
 	Name           string
 	Secure         bool
@@ -44,6 +48,10 @@ type registrationRequest struct {
 	Email    string `json:"email"`
 	Username string `json:"username"`
 	Password string `json:"password"`
+}
+
+type usernameUpdateRequest struct {
+	Username string `json:"username"`
 }
 
 type publicUser struct {
@@ -149,6 +157,38 @@ func (handler *AuthHandler) Me(response http.ResponseWriter, request *http.Reque
 		if errors.Is(err, auth.ErrUnauthenticated) {
 			writeAuthError(response, http.StatusUnauthorized, "UNAUTHENTICATED", "Authentication required")
 		} else {
+			writeAuthError(response, http.StatusInternalServerError, "INTERNAL_ERROR", "Request could not be completed")
+		}
+		return
+	}
+	writeJSON(response, http.StatusOK, map[string]any{"user": safeUser(user)})
+}
+
+func (handler *AuthHandler) UpdateMe(response http.ResponseWriter, request *http.Request) {
+	principal, ok := middleware.PrincipalFromContext(request.Context())
+	if !ok {
+		writeAuthError(response, http.StatusUnauthorized, "UNAUTHENTICATED", "Authentication required")
+		return
+	}
+	var input usernameUpdateRequest
+	if !readAuthJSON(response, request, &input) {
+		return
+	}
+	updater, ok := handler.service.(UsernameUpdater)
+	if !ok {
+		writeAuthError(response, http.StatusInternalServerError, "INTERNAL_ERROR", "Request could not be completed")
+		return
+	}
+	user, err := updater.UpdateUsername(request.Context(), principal.UserID, input.Username)
+	if err != nil {
+		switch {
+		case errors.Is(err, auth.ErrInvalidRequest):
+			writeAuthError(response, http.StatusBadRequest, "INVALID_REQUEST", "Invalid username")
+		case errors.Is(err, auth.ErrUnauthenticated), errors.Is(err, auth.ErrAccountDisabled), errors.Is(err, auth.ErrNotFound):
+			writeAuthError(response, http.StatusUnauthorized, "UNAUTHENTICATED", "Authentication required")
+		case errors.Is(err, auth.ErrUsernameExists):
+			writeAuthError(response, http.StatusConflict, "USERNAME_EXISTS", "Username already registered")
+		default:
 			writeAuthError(response, http.StatusInternalServerError, "INTERNAL_ERROR", "Request could not be completed")
 		}
 		return

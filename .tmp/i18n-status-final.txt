@@ -1,0 +1,202 @@
+ M Caddyfile.prod
+ M README.md
+ M TODO.md
+ M apps/backend/cmd/api/main.go
+ M apps/backend/internal/auth/service.go
+ M apps/backend/internal/auth/service_test.go
+ M apps/backend/internal/http/handler/auth.go
+ M apps/backend/internal/http/handler/auth_test.go
+ M apps/backend/internal/http/handler/notification.go
+ M apps/backend/internal/http/handler/notification_test.go
+ M apps/backend/internal/http/handler/report.go
+ M apps/backend/internal/http/handler/report_test.go
+ M apps/backend/internal/http/router/openapi.json
+ M apps/backend/internal/http/router/openapi_contract_test.go
+ M apps/backend/internal/http/router/report_integration_test.go
+ M apps/backend/internal/http/router/router.go
+ M apps/backend/internal/notification/model.go
+ M apps/backend/internal/notification/service.go
+ M apps/backend/internal/notification/service_test.go
+ M apps/backend/internal/postgres/authrepo/repository.go
+ M apps/backend/internal/postgres/authrepo/repository_integration_test.go
+ M apps/backend/internal/postgres/notificationrepo/repository.go
+ M apps/backend/internal/postgres/notificationrepo/repository_integration_test.go
+ M apps/backend/internal/postgres/reportrepo/repository.go
+ M apps/backend/internal/postgres/reportrepo/repository_integration_test.go
+ M apps/backend/internal/report/model.go
+ M apps/backend/internal/report/service.go
+ M apps/backend/internal/report/service_test.go
+ M apps/backend/migrations/README.md
+ M apps/web/public/sw.js
+ M apps/web/src/app/App.test.tsx
+ M apps/web/src/app/App.tsx
+ M apps/web/src/app/AppRoutes.tsx
+ M apps/web/src/app/AppShell.alerts.test.tsx
+ M apps/web/src/app/AppShell.tsx
+ M apps/web/src/app/LandingRoutes.test.tsx
+ M apps/web/src/features/admin/AIEvidenceReview.alerts.test.tsx
+ M apps/web/src/features/admin/AIEvidenceReview.tsx
+ M apps/web/src/features/admin/AdminDashboardPage.test.tsx
+ M apps/web/src/features/admin/AdminDashboardPage.tsx
+ M apps/web/src/features/admin/AuditLogsPage.tsx
+ M apps/web/src/features/admin/RequireAdmin.tsx
+ M apps/web/src/features/admin/SettingsPage.tsx
+ M apps/web/src/features/admin/UserDetailPage.tsx
+ M apps/web/src/features/admin/UsersPage.tsx
+ M apps/web/src/features/admin/admin.test.tsx
+ M apps/web/src/features/announcements/AnnouncementsPage.tsx
+ M apps/web/src/features/auth/AuthPage.test.tsx
+ M apps/web/src/features/auth/AuthPage.tsx
+ M apps/web/src/features/auth/AuthProvider.tsx
+ M apps/web/src/features/auth/ForgotPasswordPage.test.tsx
+ M apps/web/src/features/auth/ForgotPasswordPage.tsx
+ M apps/web/src/features/auth/GoogleAuthPages.tsx
+ M apps/web/src/features/auth/GoogleSignInButton.tsx
+ M apps/web/src/features/auth/RequireAuth.tsx
+ M apps/web/src/features/auth/api.ts
+ M apps/web/src/features/auth/auth.test.tsx
+ M apps/web/src/features/auth/google.test.tsx
+ M apps/web/src/features/auth/google.ts
+ M apps/web/src/features/health/HealthPage.tsx
+ M apps/web/src/features/landing/LandingMapPreview.tsx
+ M apps/web/src/features/landing/LandingPage.css
+ M apps/web/src/features/landing/LandingPage.tsx
+ M apps/web/src/features/map/MapPage.test.tsx
+ M apps/web/src/features/map/MapPage.tsx
+ M apps/web/src/features/map/components/FeatureDetails.tsx
+ M apps/web/src/features/map/components/FeaturePopup.tsx
+ M apps/web/src/features/map/components/LayerControl.tsx
+ M apps/web/src/features/map/components/MapDataStatus.tsx
+ M apps/web/src/features/map/components/MapLegend.tsx
+ M apps/web/src/features/map/components/MapSearch.tsx
+ M apps/web/src/features/map/components/MapSidePanel.tsx
+ M apps/web/src/features/map/components/MapToolbar.tsx
+ M apps/web/src/features/map/components/RiskDirectory.tsx
+ M apps/web/src/features/map/components/RoutePanel.tsx
+ M apps/web/src/features/map/components/SituationMap.test.tsx
+ M apps/web/src/features/map/components/SituationMap.tsx
+ M apps/web/src/features/notifications/NotificationToggle.test.tsx
+ M apps/web/src/features/notifications/NotificationToggle.tsx
+ M apps/web/src/features/notifications/NotificationsPage.css
+ M apps/web/src/features/notifications/NotificationsPage.test.tsx
+ M apps/web/src/features/notifications/NotificationsPage.tsx
+ M apps/web/src/features/notifications/api.test.ts
+ M apps/web/src/features/notifications/api.ts
+ M apps/web/src/features/overview/OverviewMapPreview.test.tsx
+ M apps/web/src/features/overview/OverviewMapPreview.tsx
+ M apps/web/src/features/overview/OverviewPage.test.tsx
+ M apps/web/src/features/overview/OverviewPage.tsx
+ M apps/web/src/features/realtime/RealtimeProvider.test.tsx
+ M apps/web/src/features/reports/AdminReviewPanel.tsx
+ M apps/web/src/features/reports/ReportCard.tsx
+ M apps/web/src/features/reports/ReportForm.test.tsx
+ M apps/web/src/features/reports/ReportForm.tsx
+ M apps/web/src/features/reports/ReportLocationPicker.tsx
+ M apps/web/src/features/reports/ReportMediaImage.tsx
+ M apps/web/src/features/reports/ReportsPage.test.tsx
+ M apps/web/src/features/reports/ReportsPage.tsx
+ M apps/web/src/features/reports/api.test.ts
+ M apps/web/src/features/reports/api.ts
+ M apps/web/src/features/reports/types.ts
+ M apps/web/src/shared/alerts.ts
+ M apps/web/src/shared/components/DataStates.tsx
+ M apps/web/src/shared/components/HeroImageCredit.tsx
+ M apps/web/src/styles/design.css
+ M apps/web/src/styles/index.css
+ M docs/api/openapi.yaml
+ M docs/architecture/system-overview.md
+ M infra/caddy/Caddyfile
+?? .tmp/account-menu-ui-check.cjs
+?? .tmp/account-menu-ui/
+?? .tmp/desktop-fit-dist/
+?? .tmp/desktop-fit-ui/
+?? .tmp/go-cache-guest-flow/
+?? .tmp/go-cache-guest-reports-final/
+?? .tmp/go-cache-guest-reports-final2/
+?? .tmp/go-cache-guest-reports-final3/
+?? .tmp/go-cache-guest-reports-final4/
+?? .tmp/go-cache-guest-reports-final5/
+?? .tmp/go-cache-guest-reports-handler-full/
+?? .tmp/go-cache-guest-reports-handler/
+?? .tmp/go-cache-guest-reports-red/
+?? .tmp/go-cache-guest-reports-red2/
+?? .tmp/go-cache-guest-reports/
+?? .tmp/go-cache-locale-sync/
+?? .tmp/go-cache-public-notifications/
+?? .tmp/go-cache-username-update/
+?? .tmp/guest-feed-error-red.txt
+?? .tmp/guest-flow-focused.txt
+?? .tmp/guest-flow-frontend-tests.txt
+?? .tmp/guest-flow-ui-check.cjs
+?? .tmp/guest-flow-ui/
+?? .tmp/guest-openapi-sync.go
+?? .tmp/i18n-api-red.txt
+?? .tmp/i18n-backend-diff.txt
+?? .tmp/i18n-build-final.txt
+?? .tmp/i18n-build.txt
+?? .tmp/i18n-diffcheck.txt
+?? .tmp/i18n-focused-final.txt
+?? .tmp/i18n-focused.txt
+?? .tmp/i18n-full-tests.txt
+?? .tmp/i18n-go-final.txt
+?? .tmp/i18n-go-focused-integration-final.txt
+?? .tmp/i18n-go-focused-integration.txt
+?? .tmp/i18n-go-integration-final.txt
+?? .tmp/i18n-go-integration.txt
+?? .tmp/i18n-inbox-test.txt
+?? .tmp/i18n-landing-test.txt
+?? .tmp/i18n-language-patch-red.txt
+?? .tmp/i18n-migration-roundtrip.txt
+?? .tmp/i18n-migration-up.txt
+?? .tmp/i18n-review-final.txt
+?? .tmp/i18n-status-final.txt
+?? .tmp/i18n-sync-red.txt
+?? .tmp/i18n-thai-audit.txt
+?? .tmp/i18n-toggle-red.txt
+?? .tmp/i18n-typecheck-final.txt
+?? .tmp/i18n-typecheck.txt
+?? .tmp/i18n-ui-check.cjs
+?? .tmp/i18n-ui-run-final.txt
+?? .tmp/i18n-ui-run.txt
+?? .tmp/i18n-ui/
+?? .tmp/i18n-vitest-final.txt
+?? .tmp/landing-demo-dist/
+?? .tmp/landing-demo-ui/
+?? .tmp/locale-vite.err
+?? .tmp/main-map-restored-dist/
+?? .tmp/main-map-restored-ui/
+?? .tmp/main-shared-map-dist/
+?? .tmp/main-shared-map-ui/
+?? apps/backend/internal/http/handler/public_notifications.go
+?? apps/backend/internal/http/handler/public_notifications_test.go
+?? apps/backend/internal/http/router/auth_test.go
+?? apps/backend/internal/http/router/notification_test.go
+?? apps/backend/internal/notification/language.go
+?? apps/backend/internal/notification/language_test.go
+?? apps/backend/internal/notification/public.go
+?? apps/backend/internal/postgres/notificationrepo/public.go
+?? apps/backend/internal/postgres/notificationrepo/public_test.go
+?? apps/backend/migrations/000017_notification_locale.down.sql
+?? apps/backend/migrations/000017_notification_locale.up.sql
+?? apps/backend/migrations/000018_guest_reports.down.sql
+?? apps/backend/migrations/000018_guest_reports.up.sql
+?? apps/web/src/features/admin/admin.localization.test.tsx
+?? apps/web/src/features/admin/localization.ts
+?? apps/web/src/features/announcements/AnnouncementsPage.localization.test.tsx
+?? apps/web/src/features/auth/AccountMenu.test.tsx
+?? apps/web/src/features/auth/AccountMenu.tsx
+?? apps/web/src/features/auth/auth.localization.test.tsx
+?? apps/web/src/features/auth/messages.ts
+?? apps/web/src/features/guest/
+?? apps/web/src/features/map/bilingual.test.tsx
+?? apps/web/src/features/map/localization.test.ts
+?? apps/web/src/features/notifications/NotificationLanguageSync.test.tsx
+?? apps/web/src/features/notifications/NotificationLanguageSync.tsx
+?? apps/web/src/features/overview/bilingual.test.tsx
+?? apps/web/src/features/overview/localization.test.ts
+?? apps/web/src/features/reports/ReportsLocalization.test.tsx
+?? apps/web/src/features/reports/guest.test.tsx
+?? apps/web/src/i18n/
+?? docs/architecture/guest-public-flow.md
+?? docs/architecture/localization.md
+?? docs/superpowers/plans/2026-10-04-guest-public-flow.md

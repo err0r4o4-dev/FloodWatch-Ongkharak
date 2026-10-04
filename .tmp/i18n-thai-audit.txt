@@ -1,0 +1,32 @@
+apps/web/src\i18n\index.tsx:39:    document.title = locale === "th" ? "Flood Watch องครักษ์" : "Flood Watch Ongkharak";
+apps/web/src\i18n\index.tsx:40:    document.querySelector('meta[name="description"]')?.setAttribute("content", locale === "th" ? "ติดตามสถานการณ์น้ำและการแจ้งเตือน อำเภอองครักษ์ จังหวัดนครนายก" : "Water situation monitoring and alerts for Ongkharak, Nakhon Nayok.");
+apps/web/src\i18n\index.tsx:63:  return <div className={className} role="group" aria-label={locale === "th" ? "ภาษา" : "Language"}>
+apps/web/src\features\risk\RiskPage.tsx:20:  { key: "ALL", label: "ทั้งหมด" },
+apps/web/src\features\risk\RiskPage.tsx:21:  { key: "VERY_HIGH", label: "ความเสี่ยงสูงมาก" },
+apps/web/src\features\risk\RiskPage.tsx:22:  { key: "HIGH", label: "ความเสี่ยงสูง" },
+apps/web/src\features\risk\RiskPage.tsx:23:  { key: "MODERATE", label: "ความเสี่ยงปานกลาง" },
+apps/web/src\features\risk\RiskPage.tsx:24:  { key: "LOW", label: "ความเสี่ยงต่ำ" },
+apps/web/src\features\risk\RiskPage.tsx:25:  { key: "UNKNOWN", label: "ไม่ทราบสถานะ" }
+apps/web/src\features\risk\RiskPage.tsx:39:    { level: "VERY_HIGH", label: "ความเสี่ยงสูงมาก", description: "ตรวจสอบประกาศและหลีกเลี่ยงพื้นที่ที่ได้รับผลกระทบ" },
+apps/web/src\features\risk\RiskPage.tsx:40:    { level: "HIGH", label: "ความเสี่ยงสูง", description: "ต้องตรวจสอบหลักฐานล่าสุดก่อนเดินทาง" },
+apps/web/src\features\risk\RiskPage.tsx:41:    { level: "MODERATE", label: "ความเสี่ยงปานกลาง", description: "ควรติดตามสถานการณ์และประกาศ" },
+apps/web/src\features\risk\RiskPage.tsx:42:    { level: "LOW", label: "ความเสี่ยงต่ำ", description: "ไม่ใช่การยืนยันว่าพื้นที่ปลอดภัย" },
+apps/web/src\features\risk\RiskPage.tsx:43:    { level: "UNKNOWN", label: "ไม่ทราบสถานะ", description: "ข้อมูลเก่าหรือไม่พร้อมใช้งาน" }
+apps/web/src\features\risk\RiskPage.tsx:46:  return <section className="summary-metrics" aria-label="สรุประดับความเสี่ยงจากรายการที่เรียกดู">
+apps/web/src\features\risk\RiskPage.tsx:72:      <div><h3>{item.name}</h3><p className="section-caption">{item.description || "ไม่มีคำอธิบายจากแหล่งข้อมูล"}</p></div>
+apps/web/src\features\risk\RiskPage.tsx:77:    <div className="risk-card__times"><DataTimestamp label="เริ่มมีผล" value={item.validFrom} /><DataTimestamp label="สิ้นสุด" value={item.validTo} /></div>
+apps/web/src\features\risk\RiskPage.tsx:78:    {stale && <p className="uncertainty risk-card__uncertainty">ข้อมูลเก่าหรือไม่พร้อมใช้งาน จึงแสดงเป็นไม่ทราบสถานะและไม่ยืนยันว่าพื้นที่ปลอดภัย</p>}
+apps/web/src\features\risk\RiskPage.tsx:79:    <a className="risk-card__map-link" href={`/map?${query}`} aria-label={`ดูบนแผนที่: ${item.name}`}>ดูบนแผนที่ <span aria-hidden="true">↗</span></a>
+apps/web/src\features\risk\RiskPage.tsx:91:    <div className="overview-section-header risk-map-panel__heading"><div><h2 id="risk-map-title">แผนที่พื้นที่เสี่ยง</h2><p className="section-caption">ขอบเขตพื้นที่เสี่ยงจาก API ตามบริเวณที่กำลังดู</p></div><a className="risk-map-panel__link" href="/map">เปิดแผนที่พื้นที่เสี่ยง <span aria-hidden="true">→</span></a></div>
+apps/web/src\features\risk\RiskPage.tsx:94:      {data.loading && <p className="overview-map__status risk-map-panel__status" role="status">กำลังโหลดขอบเขตพื้นที่เสี่ยง</p>}
+apps/web/src\features\risk\RiskPage.tsx:95:      {!data.loading && data.failed.length > 0 && <div className="overview-map__status overview-map__status--error risk-map-panel__status risk-map-panel__status--error" role="status">ไม่สามารถโหลดพื้นที่เสี่ยงบนแผนที่ได้ · สถานะไม่ทราบ <button type="button" onClick={() => setRetry((previous) => previous + 1)}>ลองโหลดแผนที่อีกครั้ง</button></div>}
+apps/web/src\features\risk\RiskPage.tsx:99:    {data.truncated.length > 0 && <p className="risk-map-panel__note section-caption">ขอบเขตที่โหลดมีรายการเกินกำหนด โปรดขยายแผนที่เพื่อตรวจสอบพื้นที่ย่อย</p>}
+apps/web/src\features\risk\RiskPage.tsx:100:    <p className="risk-map-panel__note section-caption">พื้นที่ที่ไม่มีข้อมูลหรือข้อมูลเก่าไม่ใช่การยืนยันว่าปลอดภัย</p>
+apps/web/src\features\risk\RiskPage.tsx:128:    directoryContent = <EmptyState title="ยังไม่มีพื้นที่เสี่ยงที่เผยแพร่">ยังไม่มีผลประเมินในรายการที่เรียกดู การไม่มีข้อมูลไม่ได้หมายความว่าไม่มีความเสี่ยงหรือปลอดภัย</EmptyState>;
+apps/web/src\features\risk\RiskPage.tsx:130:    directoryContent = visibleItems.length ? <ul className="data-list risk-list">{visibleItems.map((item) => <RiskCard item={item} key={item.id} />)}</ul> : <p className="section-empty risk-directory__empty">ไม่มีรายการ {filters.find((option) => option.key === filter)?.label} ในข้อมูลที่เรียกดู</p>;
+apps/web/src\features\risk\RiskPage.tsx:137:        <h1>พื้นที่เสี่ยงน้ำท่วม</h1>
+apps/web/src\features\risk\RiskPage.tsx:138:        <p>ประเมินพื้นที่จากข้อมูลที่เผยแพร่พร้อมแหล่งที่มาและช่วงเวลาที่มีผล</p>
+apps/web/src\features\risk\RiskPage.tsx:139:        <small>ข้อมูลที่ขาดหายหรือเก่าไม่ใช่หลักฐานว่าปลอดภัย แสดงสูงสุด 20 รายการล่าสุดจาก API สาธารณะ</small>
+apps/web/src\features\risk\RiskPage.tsx:147:          <div><h2 id="risk-directory-title">รายการพื้นที่ประเมิน</h2><p className="section-caption">เลือกดูตามสถานะที่มีผลจากความใหม่ของข้อมูล</p></div>
+apps/web/src\features\risk\RiskPage.tsx:148:          <p className="risk-directory__count" aria-live="polite">{hasItems ? `พบ ${visibleItems.length} รายการจากข้อมูลที่โหลด` : "—"}</p>
+apps/web/src\features\risk\RiskPage.tsx:150:        <div className="overview-map__layers risk-filter" role="group" aria-label="กรองระดับความเสี่ยง">

@@ -1,5 +1,7 @@
 # Community reports (Phase 6)
 
+The approved October 4, 2026 Guest flow adds anonymous creation with a submitted display-name snapshot and a 15-minute report-scoped upload capability. The display name does not prove identity or ownership. Guests cannot edit reports or read unpublished reports/images. ADMIN review and verified-only publication still apply. Historical account-owned records and their protected interfaces below remain compatible. Migration 18 and deployment boundaries are documented in `guest-public-flow.md`.
+
 Community reports are user-submitted evidence, not official flood or road classifications. Their `sourceType` is always `COMMUNITY`, including after ADMIN verification. Verification permits publication but never certifies roads as passable or areas as safe. An empty public list is not `SAFE`. `createdAt` is submission time, not an independently verified observation time.
 
 The server assigns the authenticated creator, `PENDING` status, and source; clients supply only type, description, a manually selectable WGS84 Point (`[longitude, latitude]`), and optional estimated depth in metres. Pending reports are editable only by their owner. Verified and rejected reports are immutable; rejected submissions require a new report. ADMIN cannot verify their own report; each review records actor and time, with separate verification fields only for verified reports. Rejection reasons are bounded and private to the owner and ADMIN.

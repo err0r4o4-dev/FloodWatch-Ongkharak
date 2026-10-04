@@ -1,12 +1,17 @@
+import { translate } from "../i18n";
+import th from "../i18n/locales/th/common";
+import en from "../i18n/locales/en/common";
+const messages = { th, en };
+const t = (key: keyof typeof th) => translate(messages, key);
 import Swal from "sweetalert2";
 import type { SweetAlertIcon, SweetAlertOptions } from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
 import "./alerts.css";
 
-const appearance: SweetAlertOptions = {
+const appearance = (): SweetAlertOptions => ({
   buttonsStyling: false,
-  confirmButtonText: "รับทราบ",
-  cancelButtonText: "ยกเลิก",
+  confirmButtonText: t("ok"),
+  cancelButtonText: t("cancel"),
   reverseButtons: true,
   returnFocus: true,
   heightAuto: false,
@@ -21,7 +26,7 @@ const appearance: SweetAlertOptions = {
     cancelButton: "fw-alert__button fw-alert__button--cancel",
     loader: "fw-alert__loader"
   }
-};
+});
 
 let pending: Promise<void> = Promise.resolve();
 
@@ -32,7 +37,7 @@ function enqueue<Result>(task: () => Promise<Result>): Promise<Result> {
 }
 
 async function message(icon: SweetAlertIcon, title: string, text?: string): Promise<void> {
-  await Swal.fire({ ...appearance, icon, titleText: title, text });
+  await Swal.fire({ ...appearance(), icon, titleText: title, text });
 }
 
 export const notifySuccess = (title: string, text?: string) => enqueue(() => message("success", title, text));
@@ -59,7 +64,7 @@ export function confirmAction(options: ConfirmActionOptions): Promise<boolean> {
     let failed = false;
     let completed = false;
     const result = await Swal.fire({
-      ...appearance,
+      ...appearance(),
       icon: "warning",
       titleText: options.title,
       text: options.text,
@@ -67,9 +72,9 @@ export function confirmAction(options: ConfirmActionOptions): Promise<boolean> {
       focusCancel: true,
       focusConfirm: false,
       confirmButtonText: options.confirmText,
-      cancelButtonText: options.cancelText ?? "ยกเลิก",
+      cancelButtonText: options.cancelText ?? t("cancel"),
       customClass: {
-        ...appearance.customClass,
+        ...appearance().customClass,
         confirmButton: `fw-alert__button fw-alert__button--${options.danger ? "danger" : "confirm"}`
       },
       showLoaderOnConfirm: true,
@@ -77,7 +82,7 @@ export function confirmAction(options: ConfirmActionOptions): Promise<boolean> {
       allowEscapeKey: () => !Swal.isLoading(),
       preConfirm: async () => {
         Swal.disableButtons();
-        Swal.update({ titleText: "กำลังดำเนินการ…" });
+        Swal.update({ titleText: t("working") });
         try {
           await options.action();
           completed = true;
@@ -90,7 +95,7 @@ export function confirmAction(options: ConfirmActionOptions): Promise<boolean> {
     });
     if (failed) {
       const text = typeof options.errorText === "function" ? options.errorText(failure) : options.errorText;
-      await message("error", options.errorTitle ?? "ดำเนินการไม่สำเร็จ", text ?? "กรุณาลองใหม่อีกครั้ง");
+      await message("error", options.errorTitle ?? t("couldNotCompleteThisAction"), text ?? t("pleaseTryAgain"));
       return false;
     }
     if (!result.isConfirmed || !completed) return false;

@@ -1,0 +1,4 @@
+ok  	github.com/floodwatch-ongkharak/backend/internal/notification	0.586s
+ok  	github.com/floodwatch-ongkharak/backend/internal/http/handler	0.505s
+ok  	github.com/floodwatch-ongkharak/backend/internal/http/router	0.120s
+ok  	github.com/floodwatch-ongkharak/backend/internal/postgres/notificationrepo	0.088s

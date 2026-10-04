@@ -1,0 +1,86 @@
+
+ RUN  v5.0.3 D:/!Project/FloodWatch-Ongkharak(Web_Application)/apps/web
+
+·x··········x
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/features/notifications/NotificationToggle.test.tsx > NotificationToggle > explains that browser push is optional without asking guests to sign in
+TestingLibraryElementError: Unable to find an element with the text: การแจ้งเตือนในหน้านี้ใช้งานได้โดยไม่ต้องเข้าสู่ระบบ. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      class="notification-preference notification-preference--guest"
+    >
+      <p>
+        เข้าสู่ระบบเพื่อจัดการการรับแจ้งเตือนบนอุปกรณ์นี้
+      </p>
+      <a
+        class="notification-preference__login"
+        data-discover="true"
+        href="/login"
+      >
+        เข้าสู่ระบบเพื่อเปิดแจ้งเตือน
+        <span
+          aria-hidden="true"
+        >
+          →
+        </span>
+      </a>
+    </div>
+  </div>
+</body>
+ ❯ Object.getElementError ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/features/notifications/NotificationToggle.test.tsx:54:19
+     52|     vi.mocked(useOptionalAuth).mockReturnValue({ account: null, status…
+     53|     renderToggle();
+     54|     expect(screen.getByText("การแจ้งเตือนในหน้านี้ใช้งานได้โดยไม่ต้องเ…
+       |                   ^
+     55|     expect(screen.queryByRole("link", { name: "เข้าสู่ระบบเพื่อเปิดแจ้…
+     56|     expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/features/notifications/NotificationToggle.test.tsx > NotificationToggle > does not enroll or remove a device after the account changes during lookup
+AssertionError: expected "vi.fn()" to not be called at all, but actually been called 1 times
+
+Received:
+
+  1st vi.fn() call:
+
+    Array [
+      Object {
+        "endpoint": "https://push.example.test/subscription",
+        "keys": Object {
+          "auth": "test-auth",
+          "p256dh": "test-key",
+        },
+      },
+    ]
+
+
+Number of calls: 1
+
+ ❯ src/features/notifications/NotificationToggle.test.tsx:174:43
+    172|     finish({ active: {}, pushManager: { getSubscription, subscribe } }…
+    173|     await waitFor(() => expect(screen.getByRole("checkbox")).toBeEnabl…
+    174|     expect(notificationApi.subscribe).not.toHaveBeenCalled();
+       |                                           ^
+    175|     expect(notificationApi.unsubscribe).not.toHaveBeenCalled();
+    176|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 11 passed (13)
+   Start at  09:49:50
+   Duration  3.79s (environment 56%, setup 16%, tests 15%, import 7%, transform 5%, worker 1%)
+
+undefined
+ ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL  Command "vitest" not found

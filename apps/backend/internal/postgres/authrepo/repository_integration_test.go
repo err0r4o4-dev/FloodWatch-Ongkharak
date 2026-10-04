@@ -59,6 +59,64 @@ func TestFindUserReturnsNormalizedEmailAndMissingAccountSentinel(t *testing.T) {
 	}
 }
 
+func TestUpdateUsernamePersistsRenamedLoginAndProtectsUniquenessAndDisabledAccounts(t *testing.T) {
+	ctx, repository, pool := integrationRepository(t)
+	service, err := auth.NewService(repository, []byte("integration-only-secret-at-least-32-characters"), "username-update-integration", 0, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	usernameSuffix := testUUID()[24:]
+	originalUsername := "original_" + usernameSuffix
+	takenUsername := "taken_" + usernameSuffix
+	renamedUsername := "renamed_" + usernameSuffix
+	replacementUsername := "replacement_" + usernameSuffix
+	first, err := service.RegisterWithUsername(ctx, testEmail(), originalUsername, "original long passphrase")
+	if err != nil {
+		t.Fatalf("register first user: %v", err)
+	}
+	t.Cleanup(func() {
+		if _, err := pool.Exec(context.Background(), `DELETE FROM users WHERE id = $1`, first.ID); err != nil {
+			t.Errorf("cleanup first username update user: %v", err)
+		}
+	})
+	second, err := service.RegisterWithUsername(ctx, testEmail(), takenUsername, "original long passphrase")
+	if err != nil {
+		t.Fatalf("register second user: %v", err)
+	}
+	t.Cleanup(func() {
+		if _, err := pool.Exec(context.Background(), `DELETE FROM users WHERE id = $1`, second.ID); err != nil {
+			t.Errorf("cleanup second username update user: %v", err)
+		}
+	})
+
+	updated, err := service.UpdateUsername(ctx, first.ID, "  "+renamedUsername+"  ")
+	if err != nil || updated.Username != renamedUsername {
+		t.Fatalf("UpdateUsername() user = %+v, error = %v", updated, err)
+	}
+	if _, err := service.Login(ctx, renamedUsername, "original long passphrase"); err != nil {
+		t.Fatalf("login with persisted renamed username: %v", err)
+	}
+	if _, err := service.Login(ctx, originalUsername, "original long passphrase"); !errors.Is(err, auth.ErrInvalidCredentials) {
+		t.Fatalf("login with old username error = %v, want ErrInvalidCredentials", err)
+	}
+	if _, err := service.UpdateUsername(ctx, first.ID, takenUsername); !errors.Is(err, auth.ErrUsernameExists) {
+		t.Fatalf("duplicate UpdateUsername() error = %v, want ErrUsernameExists", err)
+	}
+	unchangedSecond, err := repository.FindUserByID(ctx, second.ID)
+	if err != nil {
+		t.Fatalf("find second user after duplicate update: %v", err)
+	}
+	if unchangedSecond.Username != takenUsername {
+		t.Fatalf("second username = %q after duplicate update, want %q", unchangedSecond.Username, takenUsername)
+	}
+	if _, err := pool.Exec(ctx, `UPDATE users SET disabled_at = CURRENT_TIMESTAMP WHERE id = $1`, first.ID); err != nil {
+		t.Fatalf("disable first user: %v", err)
+	}
+	if _, err := service.UpdateUsername(ctx, first.ID, replacementUsername); !errors.Is(err, auth.ErrUnauthenticated) {
+		t.Fatalf("disabled UpdateUsername() error = %v, want ErrUnauthenticated", err)
+	}
+}
+
 func TestUsersRoleConstraintRejectsUnsupportedRole(t *testing.T) {
 	ctx, _, pool := integrationRepository(t)
 

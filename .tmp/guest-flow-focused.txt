@@ -1,0 +1,13 @@
+
+> @floodwatch/web@0.0.0 test D:\!Project\FloodWatch-Ongkharak(Web_Application)\apps\web
+> vitest run "src/features/notifications" "src/features/auth/AccountMenu.test.tsx" "src/features/guest" "src/app/App.test.tsx" "src/app/AppShell.alerts.test.tsx"
+
+
+ RUN  v5.0.3 D:/!Project/FloodWatch-Ongkharak(Web_Application)/apps/web
+
+
+ Test Files  9 passed (9)
+      Tests  83 passed (83)
+   Start at  13:22:09
+   Duration  4.30s (environment 54%, tests 18%, setup 16%, import 6%, transform 5%, worker 1%)
+

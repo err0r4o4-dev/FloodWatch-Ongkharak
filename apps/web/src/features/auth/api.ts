@@ -27,6 +27,10 @@ type AuthApi = {
   logout(): Promise<void>;
 };
 
+export type AccountApi = {
+  updateUsername(username: string): Promise<Account>;
+};
+
 type RequestOtpResponse = {
   challengeId: string;
   expiresIn: number;
@@ -267,6 +271,16 @@ export function createPasswordRecoveryApi(client: ApiClient): PasswordRecoveryAp
 
 export const apiClient = new ApiClient();
 export const authApi = createAuthApi(apiClient);
+export const accountApi: AccountApi = {
+  async updateUsername(username) {
+    const response = await apiClient.request<{ user: Account }>("/auth/me", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username })
+    }, { retryUnauthorized: false });
+    return response.user;
+  }
+};
 export const passwordRecoveryApi = createPasswordRecoveryApi(apiClient);
 
 export type { AuthApi, AuthSession, RequestOtpResponse, VerifyOtpResponse };

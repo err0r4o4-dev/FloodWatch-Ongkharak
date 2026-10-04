@@ -1,5 +1,7 @@
 import { apiConfig } from "../../shared/config/api";
 import { ApiError } from "./api";
+import { authMessage, translateAuthMessage } from "./messages";
+import type { AuthMessage } from "./messages";
 
 export type GoogleAuthApi = {
   available(): Promise<boolean>;
@@ -47,16 +49,21 @@ export const googleAuthApi: GoogleAuthApi = {
   }
 };
 
-export function googleErrorMessage(code: string | null): string | null {
+export function googleErrorKey(code: string | null): AuthMessage | null {
   if (!code) return null;
   switch (code) {
-    case "GOOGLE_CANCELED": return "คุณยกเลิกการเข้าสู่ระบบด้วย Google สามารถลองใหม่ได้";
-    case "GOOGLE_STATE_INVALID": return "คำขอ Google Login หมดอายุหรือไม่ถูกต้อง กรุณาเริ่มใหม่";
-    case "GOOGLE_PROVIDER_UNAVAILABLE": return "เชื่อมต่อ Google ไม่สำเร็จ กรุณาลองใหม่ภายหลัง";
-    case "GOOGLE_LINK_REQUIRED": return "รหัสผ่านไม่ถูกต้อง หรือคำขอหมดอายุ กรุณาลองใหม่หรือเริ่มเข้าสู่ระบบอีกครั้ง";
-    case "GOOGLE_LINK_LIMIT": return "ยืนยันรหัสผ่านครบจำนวนครั้งแล้ว กรุณาเริ่มเข้าสู่ระบบด้วย Google ใหม่";
-    case "GOOGLE_IDENTITY_CONFLICT": return "ไม่สามารถเชื่อม Google กับบัญชีนี้ได้ กรุณาใช้ช่องทางเข้าสู่ระบบเดิม";
-    case "GOOGLE_ACCOUNT_UNAVAILABLE": return "บัญชีนี้ไม่พร้อมใช้งาน กรุณาติดต่อผู้ดูแลระบบ";
-    default: return "เข้าสู่ระบบด้วย Google ไม่สำเร็จ กรุณาลองใหม่หรือใช้อีเมลและรหัสผ่าน";
+    case "GOOGLE_CANCELED": return authMessage("googleCanceled");
+    case "GOOGLE_STATE_INVALID": return authMessage("googleStateInvalid");
+    case "GOOGLE_PROVIDER_UNAVAILABLE": return authMessage("googleProviderUnavailable");
+    case "GOOGLE_LINK_REQUIRED": return authMessage("googleLinkRequired");
+    case "GOOGLE_LINK_LIMIT": return authMessage("googleLinkLimit");
+    case "GOOGLE_IDENTITY_CONFLICT": return authMessage("googleIdentityConflict");
+    case "GOOGLE_ACCOUNT_UNAVAILABLE": return authMessage("googleAccountUnavailable");
+    default: return authMessage("googleGenericError");
   }
+}
+
+export function googleErrorMessage(code: string | null): string | null {
+  const message = googleErrorKey(code);
+  return message ? translateAuthMessage(message) : null;
 }

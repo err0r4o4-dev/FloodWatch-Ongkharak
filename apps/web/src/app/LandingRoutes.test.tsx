@@ -3,6 +3,7 @@ import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AuthProvider } from "../features/auth/AuthProvider";
 import { AppRoutes } from "./AppRoutes";
+import { LanguageProvider } from "../i18n";
 import type { MapBounds } from "../features/map/types";
 
 vi.mock("../features/map/components/SituationMap", async () => {
@@ -27,17 +28,20 @@ describe("landing and overview navigation", () => {
     expect(screen.queryByRole("navigation", { name: "การนำทางมือถือ" })).not.toBeInTheDocument();
     const goals = screen.getByRole("region", { name: "สร้างชุมชนที่ปลอดภัย พร้อมรับมือสถานการณ์น้ำ" });
     expect(within(goals).getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent)).toEqual(["เชื่อถือได้", "เข้าถึงง่าย", "ใช้เทคโนโลยี AI", "ลดความเสี่ยง"]);
-    expect(screen.getByRole("button", { name: "EN" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "EN" })).toHaveAccessibleDescription("ภาษาอังกฤษยังไม่พร้อมใช้งาน");
+    expect(screen.getByRole("button", { name: "EN" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "TH" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.queryByRole("link", { name: /รู้จักระบบ|เลื่อนลง|เป้าหมายของเรา/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: /3 ขั้นตอน/ })).not.toBeInTheDocument();
-    expect(screen.getByText("ข้อมูลสภาพอากาศยังไม่พร้อมใช้งาน")).toBeInTheDocument();
-    expect(screen.queryByText(/25°C|ฝนเล็กน้อย/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "ดูภาพรวมโดยไม่เข้าสู่ระบบ" })).not.toBeInTheDocument();
+    expect(screen.getByText("ตัวอย่างสภาพอากาศ")).toBeInTheDocument();
+    expect(screen.queryByRole("group", { name: "ชั้นข้อมูลที่แสดง" })).not.toBeInTheDocument();
+    expect(screen.getByText("28°C")).toBeInTheDocument();
+    expect(screen.getByText("ตัวอย่างการแสดงผล · ไม่ใช่ข้อมูลสถานการณ์จริง")).toBeInTheDocument();
   });
 
   it("opens the original overview without login and preserves navigation and brand return", async () => {
     render(<MemoryRouter><AppRoutes /></MemoryRouter>);
-    fireEvent.click(screen.getByRole("link", { name: "ดูภาพรวมโดยไม่เข้าสู่ระบบ" }));
+    fireEvent.click(screen.getByRole("link", { name: "เข้าสู่เมนู" }));
     expect(await screen.findByRole("heading", { level: 1, name: "ภาพรวมสถานการณ์น้ำ" })).toBeInTheDocument();
     const navigation = screen.getByRole("navigation", { name: "การนำทางหลัก" });
     expect(within(navigation).getByRole("link", { name: "ภาพรวม" })).toHaveAttribute("href", "/overview");
@@ -56,70 +60,59 @@ describe("landing and overview navigation", () => {
     }
   });
 
-  it("offers direct and expanded map access and both login returns to overview", () => {
+  it("offers direct and expanded map access without public auth entry links", () => {
     render(<MemoryRouter><AppRoutes /></MemoryRouter>);
     expect(screen.getByRole("link", { name: "ดูแผนที่" })).toHaveAttribute("href", "/map");
     expect(screen.getByRole("link", { name: "เปิดแผนที่เต็มหน้า" })).toHaveAttribute("href", "/map");
-    const signIn = screen.getByRole("link", { name: "เข้าสู่ระบบ" });
-    expect(signIn).toHaveAttribute("href", "/login?returnTo=%2Foverview");
-    expect(signIn).toHaveTextContent(/^เข้าสู่ระบบ$/);
+    expect(screen.queryByRole("link", { name: "เข้าสู่ระบบ" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "สมัครสมาชิก" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "เข้าสู่เมนู" })).toHaveAttribute("href", "/overview");
     expect(within(screen.getByRole("navigation", { name: "การนำทางหน้าแรก" })).queryByRole("link", { name: "เข้าสู่เมนู" })).not.toBeInTheDocument();
   });
 
-  it.each(["USER", "ADMIN"] as const)("keeps the header sign-in label and authenticated %s menu destination", async (role) => {
+  it.each(["USER", "ADMIN"] as const)("keeps public auth entry links out of the landing header for authenticated %s users", async (role) => {
     const account = { id: "member-1", email: "member@example.test", role, createdAt: "2026-10-02T00:00:00Z" };
     const api = { refresh: vi.fn().mockResolvedValue(undefined), me: vi.fn().mockResolvedValue(account), logout: vi.fn(), login: vi.fn(), register: vi.fn() };
     render(<MemoryRouter><AuthProvider api={api}><AppRoutes /></AuthProvider></MemoryRouter>);
     await waitFor(() => expect(screen.getAllByRole("link", { name: "เข้าสู่เมนู" })).toHaveLength(1));
     const header = screen.getByRole("navigation", { name: "การนำทางหน้าแรก" });
-    expect(within(header).getByRole("link", { name: "เข้าสู่ระบบ" })).toHaveAttribute("href", "/overview");
-    expect(within(header).getByRole("link", { name: "เข้าสู่ระบบ" })).toHaveTextContent(/^เข้าสู่ระบบ$/);
+    expect(within(header).queryByRole("link", { name: "เข้าสู่ระบบ" })).not.toBeInTheDocument();
+    expect(within(header).queryByRole("link", { name: "สมัครสมาชิก" })).not.toBeInTheDocument();
     expect(screen.getAllByRole("link", { name: "เข้าสู่เมนู" }).every((link) => link.getAttribute("href") === "/overview")).toBe(true);
   });
 
-  it("loads existing map APIs and never represents an empty map as safe", async () => {
+  it.each(["unavailable", "pending"])("shows illustrative map and weather without requesting %s APIs", (state) => {
+    vi.stubGlobal("fetch", state === "unavailable" ? vi.fn().mockRejectedValue(new Error("offline")) : vi.fn(() => new Promise(() => {})));
     render(<MemoryRouter><AppRoutes /></MemoryRouter>);
-    expect(await screen.findByText("ยังไม่มีข้อมูลสถานการณ์ในขอบเขตนี้ · ไม่ทราบสถานะ")).toBeInTheDocument();
-    expect(vi.mocked(fetch).mock.calls.map(([url]) => String(url))).toEqual(expect.arrayContaining([expect.stringContaining("/risk-areas?bbox="), expect.stringContaining("/flood-events?bbox=")]));
-    expect(screen.getByText("ไม่ทราบสถานะ")).toBeInTheDocument();
-    expect(screen.queryByText("ปลอดภัย")).not.toBeInTheDocument();
-  });
-
-  it("discloses failed layers and recovers with retry without inventing observations", async () => {
-    const request = vi.fn().mockRejectedValue(new Error("offline"));
-    vi.stubGlobal("fetch", request);
-    render(<MemoryRouter><AppRoutes /></MemoryRouter>);
-    expect(await screen.findByRole("alert")).toHaveTextContent("ไม่สามารถโหลดข้อมูลแผนที่ได้ · สถานะไม่ทราบ");
-    request.mockResolvedValue({ ok: true, status: 200, json: async () => ({ items: [] }) });
-    fireEvent.click(screen.getByRole("button", { name: "ลองอีกครั้ง" }));
-    expect(await screen.findByText("ยังไม่มีข้อมูลสถานการณ์ในขอบเขตนี้ · ไม่ทราบสถานะ")).toBeInTheDocument();
-    expect(request).toHaveBeenCalledTimes(10);
-  });
-
-  it("discloses a partial failure even if the other collections are empty", async () => {
-    vi.stubGlobal("fetch", vi.fn((url: string) => url.includes("/risk-areas?") ? Promise.reject(new Error("offline")) : Promise.resolve({ ok: true, json: async () => ({ items: [] }) })));
-    render(<MemoryRouter><AppRoutes /></MemoryRouter>);
-    expect(await screen.findByText("ข้อมูลบางชั้นไม่พร้อมใช้งาน · ไม่สามารถสรุปว่าปลอดภัย")).toBeInTheDocument();
-    expect(screen.queryByText("ยังไม่มีข้อมูลสถานการณ์ในขอบเขตนี้ · ไม่ทราบสถานะ")).not.toBeInTheDocument();
-  });
-
-  it("offers a keyboard-accessible record with source, timestamps and stale UNKNOWN status", async () => {
-    const risk = { id: "risk-test", name: "พื้นที่สังเคราะห์สำหรับทดสอบ", description: "ไม่ใช่ข้อมูลจริง", geometry: { type: "MultiPolygon", coordinates: [[[[101, 14], [101.1, 14], [101.1, 14.1], [101, 14]]]] }, source: { id: "source-test", name: "ชุดทดสอบเท่านั้น", sourceType: "AI" }, riskLevel: "HIGH", effectiveRiskLevel: "HIGH", freshness: "STALE", validFrom: "2026-10-02T00:00:00Z", validTo: null };
-    vi.stubGlobal("fetch", vi.fn((url: string) => Promise.resolve({ ok: true, json: async () => ({ items: url.includes("/risk-areas?") ? [risk] : [] }) })));
-    render(<MemoryRouter><AppRoutes /></MemoryRouter>);
-    fireEvent.click(await screen.findByRole("button", { name: risk.name }));
-    const details = screen.getByRole("region", { name: "ข้อมูลตำแหน่งที่เลือก" });
-    expect(within(details).getByText("ไม่ทราบสถานะ")).toBeInTheDocument();
-    expect(within(details).getByText("ข้อมูลเก่า")).toBeInTheDocument();
-    expect(within(details).getByText("หลักฐาน AI")).toBeInTheDocument();
-    expect(within(details).getByText("แหล่งข้อมูล: ชุดทดสอบเท่านั้น")).toBeInTheDocument();
-    expect(details.querySelector("time")).toHaveAttribute("datetime", risk.validFrom);
-    fireEvent.click(screen.getByRole("button", { name: "เผยแพร่ขอบเขตเดิมอีกครั้ง" }));
-    expect(screen.getByRole("region", { name: "ข้อมูลตำแหน่งที่เลือก" })).toBeInTheDocument();
-    const close = within(details).getByRole("button", { name: "ปิดข้อมูลตำแหน่ง" });
-    expect(close).toHaveFocus();
-    fireEvent.keyDown(close, { key: "Escape" });
+    expect(screen.getByRole("img", { name: "แผนที่ตัวอย่าง" })).toBeInTheDocument();
+    expect(screen.getByText("ตัวอย่างสภาพอากาศ")).toBeInTheDocument();
+    expect(screen.getByText("28°C")).toBeInTheDocument();
+    expect(fetch).not.toHaveBeenCalled();
+    expect(screen.queryByRole("button", { name: /ขยายแผนที่|ย่อแผนที่|ลองอีกครั้ง/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "ข้อมูลตำแหน่งที่เลือก" })).not.toBeInTheDocument();
+  });
+
+  it("keeps the real map destination requesting its existing APIs", async () => {
+    render(<MemoryRouter><AppRoutes /></MemoryRouter>);
+    expect(fetch).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("link", { name: "เปิดแผนที่เต็มหน้า" }));
+    expect(await screen.findByRole("heading", { level: 1, name: "แผนที่สถานการณ์น้ำ" })).toBeInTheDocument();
+    await waitFor(() => expect(vi.mocked(fetch).mock.calls.map(([url]) => String(url))).toEqual(expect.arrayContaining([expect.stringContaining("/risk-areas?bbox="), expect.stringContaining("/flood-events?bbox=")])));
+  });
+
+  it("localizes the demonstration labels and embeds no remote map assets", () => {
+    render(<LanguageProvider><MemoryRouter><AppRoutes /></MemoryRouter></LanguageProvider>);
+    const map = screen.getByRole("img", { name: "แผนที่ตัวอย่าง" });
+    expect(map).toHaveAccessibleDescription(/ไม่ใช่แผนที่อ้างอิงตำแหน่งหรือสถานการณ์จริง/);
+    expect(map.querySelector("image, foreignObject, a")).toBeNull();
+    expect(document.querySelector(".landing-map .leaflet-map, .landing-map iframe")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: /^EN$/ }));
+    expect(screen.getByRole("img", { name: "Example map" })).toBeInTheDocument();
+    expect(screen.getByText("Display example · Not actual situation data")).toBeInTheDocument();
+    expect(screen.getByText("Example weather")).toBeInTheDocument();
+    expect(screen.getByText("UI demo values · Not current weather")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Open full map" })).toHaveAttribute("href", "/map");
+    fireEvent.click(screen.getByRole("button", { name: /^TH$/ }));
   });
 });

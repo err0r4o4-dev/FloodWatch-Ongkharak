@@ -1,0 +1,202 @@
+[
+  {
+    "width": 320,
+    "viewport": 320,
+    "document": 305,
+    "height": 800,
+    "pageHeight": 2360,
+    "footerBottom": 2359.578125,
+    "contentWidth": 273,
+    "mapHeight": 304,
+    "touchTargets": "pass"
+  },
+  {
+    "width": 390,
+    "viewport": 390,
+    "document": 375,
+    "height": 844,
+    "pageHeight": 1925,
+    "footerBottom": 1925.015625,
+    "contentWidth": 343,
+    "mapHeight": 304,
+    "touchTargets": "pass"
+  },
+  {
+    "width": 768,
+    "viewport": 768,
+    "document": 753,
+    "height": 1024,
+    "pageHeight": 1659,
+    "footerBottom": 1659.234375,
+    "contentWidth": 705,
+    "mapHeight": 320,
+    "touchTargets": "pass"
+  },
+  {
+    "width": 1024,
+    "viewport": 1024,
+    "document": 1009,
+    "height": 768,
+    "pageHeight": 961,
+    "footerBottom": 961.25,
+    "contentWidth": 961,
+    "mapHeight": 272,
+    "touchTargets": "pass"
+  },
+  {
+    "width": 1280,
+    "viewport": 1280,
+    "document": 1265,
+    "height": 720,
+    "pageHeight": 861,
+    "footerBottom": 861.078125,
+    "contentWidth": 1201,
+    "mapHeight": 192,
+    "touchTargets": "pass"
+  },
+  {
+    "width": 1440,
+    "viewport": 1440,
+    "document": 1425,
+    "height": 900,
+    "pageHeight": 900,
+    "footerBottom": 900,
+    "contentWidth": 1361,
+    "mapHeight": 200,
+    "touchTargets": "pass"
+  },
+  {
+    "width": 1536,
+    "viewport": 1536,
+    "document": 1521,
+    "height": 864,
+    "pageHeight": 864,
+    "footerBottom": 864,
+    "contentWidth": 1440,
+    "mapHeight": 192,
+    "touchTargets": "pass"
+  },
+  {
+    "width": 1920,
+    "viewport": 1920,
+    "document": 1905,
+    "height": 900,
+    "pageHeight": 900,
+    "footerBottom": 900,
+    "contentWidth": 1440,
+    "mapHeight": 200,
+    "touchTargets": "pass"
+  },
+  {
+    "width": 1920,
+    "viewport": 1920,
+    "document": 1905,
+    "height": 1080,
+    "pageHeight": 1080,
+    "footerBottom": 1080,
+    "contentWidth": 1440,
+    "mapHeight": 304,
+    "touchTargets": "pass"
+  },
+  {
+    "width": 2560,
+    "viewport": 2560,
+    "document": 2545,
+    "height": 1280,
+    "pageHeight": 1280,
+    "footerBottom": 1280,
+    "contentWidth": 1760,
+    "mapHeight": 384,
+    "touchTargets": "pass"
+  },
+  {
+    "width": 2560,
+    "viewport": 2560,
+    "document": 2545,
+    "height": 1440,
+    "pageHeight": 1440,
+    "footerBottom": 1440,
+    "contentWidth": 1760,
+    "mapHeight": 448,
+    "touchTargets": "pass"
+  },
+  {
+    "width": 1536,
+    "state": "empty",
+    "height": 864,
+    "pageHeight": 864
+  },
+  {
+    "width": 1536,
+    "state": "error",
+    "height": 864,
+    "pageHeight": 864
+  },
+  {
+    "width": 1920,
+    "state": "empty",
+    "height": 900,
+    "pageHeight": 900
+  },
+  {
+    "width": 1920,
+    "state": "error",
+    "height": 900,
+    "pageHeight": 900
+  },
+  {
+    "width": 1920,
+    "state": "empty",
+    "height": 1080,
+    "pageHeight": 1080
+  },
+  {
+    "width": 1920,
+    "state": "error",
+    "height": 1080,
+    "pageHeight": 1080
+  },
+  {
+    "width": 2560,
+    "state": "empty",
+    "height": 1280,
+    "pageHeight": 1280
+  },
+  {
+    "width": 2560,
+    "state": "error",
+    "height": 1280,
+    "pageHeight": 1280
+  },
+  {
+    "width": 2560,
+    "state": "empty",
+    "height": 1440,
+    "pageHeight": 1440
+  },
+  {
+    "width": 2560,
+    "state": "error",
+    "height": 1440,
+    "pageHeight": 1440
+  },
+  {
+    "loadedOpenStreetMapTiles": 8
+  },
+  {
+    "states": [
+      "loading",
+      "empty",
+      "error",
+      "partial"
+    ],
+    "keyboard": "pass",
+    "recordDetails": "pass",
+    "routes": "pass",
+    "rootText200Percent": {
+      "viewport": 390,
+      "document": 375
+    },
+    "pageErrors": []
+  }
+]

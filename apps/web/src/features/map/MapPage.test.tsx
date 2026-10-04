@@ -11,8 +11,9 @@ function render(view: ReactElement) {
 vi.mock("./components/SituationMap", async () => {
   const React = await import("react");
   return { SituationMap: ({ onBoundsChange }: { onBoundsChange: (bounds: { west: number; south: number; east: number; north: number }) => void }) => {
-    React.useEffect(() => { onBoundsChange({ west: 100.9, south: 14, east: 101.2, north: 14.3 }); }, [onBoundsChange]);
-    return <div aria-label="แผนที่สถานการณ์แบบโต้ตอบ" />;
+    const bounds = { west: 100.9, south: 14, east: 101.2, north: 14.3 };
+    React.useEffect(() => { onBoundsChange(bounds); }, [onBoundsChange]);
+    return <div aria-label="แผนที่สถานการณ์แบบโต้ตอบ"><button type="button" aria-label="เผยแพร่ขอบเขตเดิมอีกครั้ง" onClick={() => onBoundsChange(bounds)}>เผยแพร่ขอบเขตเดิมอีกครั้ง</button></div>;
   } };
 });
 
@@ -116,6 +117,17 @@ describe("MapPage", () => {
     expect(screen.queryByText("เส้นทางแนะนำ")).not.toBeInTheDocument();
   });
 
+  it("keeps a selected item when the map republishes identical bounds", async () => {
+    const station = { id: "station-repeat", name: "สถานีขอบเขตเดิม", source, active: true, location: { type: "Point", coordinates: [101, 14.1] } };
+    mockApi({ "/api/v1/water-stations": [station] });
+    render(<MapPage />);
+    fireEvent.click(screen.getByRole("button", { name: /รายการในขอบเขต/ }));
+    fireEvent.click(await screen.findByRole("button", { name: /สถานีขอบเขตเดิม/ }));
+    expect(screen.getByRole("region", { name: "ข้อมูลตำแหน่งที่เลือก" })).toHaveTextContent("สถานีขอบเขตเดิม");
+    fireEvent.click(screen.getByRole("button", { name: "เผยแพร่ขอบเขตเดิมอีกครั้ง" }));
+    expect(screen.getByRole("region", { name: "ข้อมูลตำแหน่งที่เลือก" })).toHaveTextContent("สถานีขอบเขตเดิม");
+  });
+
   it("keeps AI event provenance and observation evidence visible on selection", async () => {
     const flood = {
       id: "event-ai", title: "เหตุการณ์ทดสอบ", description: "หลักฐานทดสอบ", source: { ...source, sourceType: "AI" },
@@ -172,7 +184,7 @@ describe("MapPage", () => {
     expect(screen.getAllByText("ค้นหาเฉพาะสถานีและพื้นที่ในขอบเขตที่โหลด").length).toBeGreaterThan(0);
     fireEvent.click(result);
     expect(input).toHaveValue("");
-    expect(screen.queryByRole("region", { name: "ข้อมูลตำแหน่งที่เลือก" })).not.toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "ข้อมูลตำแหน่งที่เลือก" })).toHaveTextContent("สถานีคลองทดสอบ");
     fireEvent.change(input, { target: { value: "ไม่พบสถานี" } });
     expect(screen.getByText("ไม่พบสถานีหรือพื้นที่ในข้อมูลที่โหลด")).toBeInTheDocument();
     fireEvent.keyDown(input, { key: "Escape" });

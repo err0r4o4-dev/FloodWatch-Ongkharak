@@ -3,8 +3,10 @@ package report
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"errors"
 	"io"
+	"strings"
 	"testing"
 	"time"
 )
@@ -43,6 +45,108 @@ func TestCreateRejectsWaterDepthAboveSupportedRange(t *testing.T) {
 	_, err = service.Create(context.Background(), "7b6a2a68-688a-4c59-82cf-0b541dfa0d49", Input{Type: TypeFlood, Description: "Water", Location: Location{Type: "Point", Coordinates: []float64{101, 14}}, EstimatedWaterDepthM: &depth})
 	if !errors.Is(err, ErrInvalid) {
 		t.Fatalf("Create() depth error = %v, want ErrInvalid", err)
+	}
+}
+
+func TestCreateGuestDefaultsDisplayNameAndStoresOnlyHashedUploadCapability(t *testing.T) {
+	repository := &fakeRepository{}
+	service, err := NewService(repository, &fakeStorage{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	created, err := service.CreateGuest(context.Background(), "", GuestInput{Input: Input{
+		Type:        TypeFlood,
+		Description: "Water",
+		Location:    Location{Type: "Point", Coordinates: []float64{101, 14}},
+	}})
+	if err != nil {
+		t.Fatalf("CreateGuest() error = %v", err)
+	}
+	if created.Report.DisplayName != "Guest" || created.Report.UserID != "" {
+		t.Fatalf("CreateGuest() identity = %+v", created.Report)
+	}
+	if created.UploadToken == "" || string(repository.guestTokenHash) == created.UploadToken || len(repository.guestTokenHash) != sha256.Size {
+		t.Fatalf("CreateGuest() capability storage = %q / %x", created.UploadToken, repository.guestTokenHash)
+	}
+	if repository.guestExpiresAt.Before(time.Now().UTC()) {
+		t.Fatalf("CreateGuest() capability already expired at %s", repository.guestExpiresAt)
+	}
+}
+
+func TestCreateGuestTrimsAndBoundsDisplayName(t *testing.T) {
+	service, err := NewService(&fakeRepository{}, &fakeStorage{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	created, err := service.CreateGuest(context.Background(), "f58e07e0-77ec-488d-9a5c-4ed1e142ecfd", GuestInput{
+		DisplayName: "  ผู้แจ้ง  ",
+		Input:       Input{Type: TypeRoad, Description: "Water", Location: Location{Type: "Point", Coordinates: []float64{101, 14}}},
+	})
+	if err != nil || created.Report.DisplayName != "ผู้แจ้ง" || created.Report.UserID == "" {
+		t.Fatalf("CreateGuest() = %+v, %v", created, err)
+	}
+	for _, displayName := range []string{strings.Repeat("a", 81), strings.Repeat("ก", 81)} {
+		if _, err := service.CreateGuest(context.Background(), "", GuestInput{DisplayName: displayName, Input: Input{Type: TypeFlood, Description: "Water", Location: Location{Type: "Point", Coordinates: []float64{101, 14}}}}); !errors.Is(err, ErrInvalid) {
+			t.Fatalf("CreateGuest(%q) error = %v, want ErrInvalid", displayName, err)
+		}
+	}
+}
+
+func TestUploadGuestMediaUsesCapabilityAndDoesNotReadPendingMediaAnonymously(t *testing.T) {
+	reportID := "ddfd74fd-9561-4c5e-a304-b1cb704508d9"
+	repository := &fakeRepository{reports: map[string]Report{reportID: {ID: reportID, Status: StatusPending, VerificationStatus: StatusPending, SourceType: SourceCommunity}}}
+	service, err := NewService(repository, &fakeStorage{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	created, err := service.CreateGuest(context.Background(), "", GuestInput{Input: Input{Type: TypeFlood, Description: "Water", Location: Location{Type: "Point", Coordinates: []float64{101, 14}}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	repository.reports[created.Report.ID] = created.Report
+	media, err := service.UploadGuestMedia(context.Background(), created.Report.ID, created.UploadToken, Image{ContentType: "image/png", Data: pngFixture()})
+	if err != nil {
+		t.Fatalf("UploadGuestMedia() error = %v", err)
+	}
+	if media.ReportID != created.Report.ID || repository.guestMediaTokenHash == nil {
+		t.Fatalf("UploadGuestMedia() = %+v, token hash = %x", media, repository.guestMediaTokenHash)
+	}
+	if _, err := service.OpenMedia(context.Background(), created.Report.ID, media.ID, Access{}); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("OpenMedia() anonymous pending guest error = %v, want ErrNotFound", err)
+	}
+}
+
+func TestUploadGuestMediaRejectsWrongOrExpiredCapabilityBeforeStorageWrite(t *testing.T) {
+	repository := &fakeRepository{}
+	storage := &fakeStorage{}
+	service, err := NewService(repository, storage)
+	if err != nil {
+		t.Fatal(err)
+	}
+	created, err := service.CreateGuest(context.Background(), "", GuestInput{Input: Input{Type: TypeFlood, Description: "Water", Location: Location{Type: "Point", Coordinates: []float64{101, 14}}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if repository.reports == nil {
+		t.Fatal("guest report was not retained by test repository")
+	}
+	wrongToken, _, err := newGuestUploadToken()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := service.UploadGuestMedia(context.Background(), created.Report.ID, wrongToken, Image{ContentType: "image/png", Data: pngFixture()}); !errors.Is(err, ErrForbidden) {
+		t.Fatalf("UploadGuestMedia() wrong token error = %v, want ErrForbidden", err)
+	}
+	if storage.storedKey != "" {
+		t.Fatalf("UploadGuestMedia() wrote wrong-token object %q", storage.storedKey)
+	}
+	repository.guestExpiresAt = time.Now().UTC().Add(-time.Minute)
+	if _, err := service.UploadGuestMedia(context.Background(), created.Report.ID, created.UploadToken, Image{ContentType: "image/png", Data: pngFixture()}); !errors.Is(err, ErrForbidden) {
+		t.Fatalf("UploadGuestMedia() expired token error = %v, want ErrForbidden", err)
+	}
+	if storage.storedKey != "" {
+		t.Fatalf("UploadGuestMedia() wrote expired-token object %q", storage.storedKey)
 	}
 }
 
@@ -140,10 +244,13 @@ func TestOpenMediaHidesUnpublishedReportsFromNonOwners(t *testing.T) {
 }
 
 type fakeRepository struct {
-	created        Report
-	reports        map[string]Report
-	createMediaErr error
-	media          map[string]Media
+	created             Report
+	reports             map[string]Report
+	createMediaErr      error
+	media               map[string]Media
+	guestTokenHash      []byte
+	guestExpiresAt      time.Time
+	guestMediaTokenHash []byte
 }
 
 func (repository *fakeRepository) Create(_ context.Context, item Report) (Report, error) {
@@ -151,6 +258,33 @@ func (repository *fakeRepository) Create(_ context.Context, item Report) (Report
 	item.CreatedAt = time.Now().UTC()
 	item.UpdatedAt = item.CreatedAt
 	return item, nil
+}
+
+func (repository *fakeRepository) CreateGuest(_ context.Context, item Report, tokenHash []byte, expiresAt time.Time) (Report, error) {
+	repository.created = item
+	repository.guestTokenHash = bytes.Clone(tokenHash)
+	repository.guestExpiresAt = expiresAt
+	item.CreatedAt = time.Now().UTC()
+	item.UpdatedAt = item.CreatedAt
+	if repository.reports == nil {
+		repository.reports = map[string]Report{}
+	}
+	repository.reports[item.ID] = item
+	return item, nil
+}
+
+func (repository *fakeRepository) ValidateGuestUpload(_ context.Context, reportID string, tokenHash []byte, now time.Time) error {
+	item, ok := repository.reports[reportID]
+	if !ok {
+		return ErrNotFound
+	}
+	if item.Status != StatusPending {
+		return ErrConflict
+	}
+	if !bytes.Equal(repository.guestTokenHash, tokenHash) || !repository.guestExpiresAt.After(now) {
+		return ErrForbidden
+	}
+	return nil
 }
 
 func (repository *fakeRepository) Get(_ context.Context, id string) (Report, error) {
@@ -199,6 +333,10 @@ func (repository *fakeRepository) CreateMedia(_ context.Context, item Media, _ s
 	if repository.createMediaErr != nil {
 		return Media{}, repository.createMediaErr
 	}
+	return item, nil
+}
+func (repository *fakeRepository) CreateGuestMedia(_ context.Context, item Media, tokenHash []byte, _ time.Time) (Media, error) {
+	repository.guestMediaTokenHash = bytes.Clone(tokenHash)
 	return item, nil
 }
 func (repository *fakeRepository) GetMedia(_ context.Context, _ string, mediaID string) (Media, error) {

@@ -29,11 +29,19 @@ type serviceRepository struct {
 	retried      string
 	cleanup      deliveryCleanupCall
 	cleanupFound bool
+	localeUpdate localeUpdateCall
+	localeErr    error
 }
 
 type deliveryCleanupCall struct {
 	jobID, leaseToken, subscriptionID, userID, endpoint string
 	version                                             int64
+}
+
+type localeUpdateCall struct {
+	endpoint string
+	userID   string
+	locale   string
 }
 
 func (repository *serviceRepository) UpsertSubscription(context.Context, Subscription) error {
@@ -44,6 +52,10 @@ func (repository *serviceRepository) DeleteSubscription(context.Context, string,
 }
 func (repository *serviceRepository) DeleteSubscriptionByEndpoint(context.Context, string) error {
 	return nil
+}
+func (repository *serviceRepository) UpdateSubscriptionLocale(_ context.Context, endpoint, userID, locale string) error {
+	repository.localeUpdate = localeUpdateCall{endpoint: endpoint, userID: userID, locale: locale}
+	return repository.localeErr
 }
 func (repository *serviceRepository) DeleteSubscriptionAfterDeliveryFailure(_ context.Context, jobID, leaseToken, subscriptionID, userID, endpoint string, version int64) (bool, error) {
 	repository.cleanup = deliveryCleanupCall{jobID: jobID, leaseToken: leaseToken, subscriptionID: subscriptionID, userID: userID, endpoint: endpoint, version: version}
@@ -130,6 +142,41 @@ func TestServiceReadStateUsesAuthenticatedUserScope(t *testing.T) {
 	}
 	if repository.markedAll != userID {
 		t.Fatalf("MarkAllRead() scope = %q", repository.markedAll)
+	}
+}
+
+func TestServiceUpdatesSubscriptionLocaleWithoutPushConfig(t *testing.T) {
+	repository := &serviceRepository{}
+	service := NewService(nil, repository, "", "", "")
+	endpoint := "https://push.example.test/subscription"
+	if err := service.UpdateSubscriptionLocale(context.Background(), endpoint, "user-id", "en"); err != nil {
+		t.Fatalf("UpdateSubscriptionLocale() error = %v", err)
+	}
+	if repository.localeUpdate != (localeUpdateCall{endpoint: endpoint, userID: "user-id", locale: "en"}) {
+		t.Fatalf("locale update = %+v", repository.localeUpdate)
+	}
+}
+
+func TestServiceRejectsInvalidSubscriptionLocaleUpdate(t *testing.T) {
+	for _, test := range []struct {
+		name     string
+		endpoint string
+		locale   string
+	}{
+		{name: "missing endpoint", endpoint: "", locale: "en"},
+		{name: "unsafe endpoint", endpoint: "http://push.example.test/subscription", locale: "en"},
+		{name: "unsupported locale", endpoint: "https://push.example.test/subscription", locale: "ja"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			repository := &serviceRepository{}
+			service := NewService(nil, repository, "public", "private", "subscriber")
+			if err := service.UpdateSubscriptionLocale(context.Background(), test.endpoint, "user-id", test.locale); err != ErrInvalid {
+				t.Fatalf("UpdateSubscriptionLocale() error = %v, want ErrInvalid", err)
+			}
+			if repository.localeUpdate != (localeUpdateCall{}) {
+				t.Fatalf("repository was called for invalid update: %+v", repository.localeUpdate)
+			}
+		})
 	}
 }
 

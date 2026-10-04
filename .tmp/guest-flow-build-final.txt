@@ -1,0 +1,19 @@
+
+> @floodwatch/web@0.0.0 build
+> tsc -b && vite build
+
+[36mvite v8.3.2 [32mbuilding client environment for production...[36m[39m
+transforming...
+✓ 231 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.77 kB │ gzip:   0.48 kB
+dist/assets/index-DpEpXaZB.css  176.53 kB │ gzip:  34.49 kB
+dist/assets/index-BbZ4gnNm.js   847.63 kB │ gzip: 231.61 kB
+
+[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+[32m✓ built in 376ms[39m

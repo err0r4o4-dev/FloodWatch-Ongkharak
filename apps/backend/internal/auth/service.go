@@ -215,6 +215,33 @@ func (service *Service) GetUser(ctx context.Context, id string) (User, error) {
 	return sanitizedUser(user), nil
 }
 
+func (service *Service) UpdateUsername(ctx context.Context, id, username string) (User, error) {
+	if strings.TrimSpace(id) == "" {
+		return User{}, ErrUnauthenticated
+	}
+	normalizedUsername, err := normalizeUsername(username)
+	if err != nil {
+		return User{}, err
+	}
+	repository, ok := service.repository.(interface {
+		UpdateUsername(context.Context, string, string) (User, error)
+	})
+	if !ok {
+		return User{}, errors.New("username update repository capability unavailable")
+	}
+	user, err := repository.UpdateUsername(ctx, id, normalizedUsername)
+	if errors.Is(err, ErrNotFound) || errors.Is(err, ErrAccountDisabled) {
+		return User{}, ErrUnauthenticated
+	}
+	if err != nil {
+		return User{}, err
+	}
+	if user.DisabledAt != nil || !validRole(user.Role) {
+		return User{}, ErrUnauthenticated
+	}
+	return sanitizedUser(user), nil
+}
+
 func (service *Service) BootstrapAdmin(ctx context.Context, email, password string) (User, error) {
 	normalizedEmail, err := normalizeEmail(email)
 	if err != nil {

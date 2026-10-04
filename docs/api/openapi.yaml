@@ -227,7 +227,7 @@ paths:
   /api/v1/auth/register:
     post:
       tags: [Auth]
-      summary: Register a user account
+      summary: Public registration is disabled in the Guest flow
       operationId: register
       requestBody:
         required: true
@@ -236,20 +236,8 @@ paths:
             schema:
               $ref: '#/components/schemas/RegistrationRequest'
       responses:
-        '201':
-          description: The user account was created with the USER role.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UserResponse'
-        '400':
-          description: Registration data is invalid or an impermissible role was requested.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '409':
-          description: The email or normalized username is already registered (EMAIL_EXISTS or USERNAME_EXISTS).
+        '403':
+          description: REGISTRATION_DISABLED. Existing users are retained; visitors submit as Guest.
           content:
             application/json:
               schema:
@@ -480,6 +468,62 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+    patch:
+      tags: [Auth]
+      summary: Update the current user's username
+      operationId: updateCurrentUsername
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [username]
+              properties:
+                username:
+                  type: string
+                  pattern: '^\s*[A-Za-z0-9_]{3,32}\s*$'
+                  description: Leading and trailing whitespace is trimmed before validation; the normalized username is lowercase, 3-32 ASCII letters, digits, or underscores and globally unique.
+      responses:
+        '200':
+          description: The authenticated user after the username update.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          description: Invalid username or JSON body, including unknown fields (INVALID_REQUEST).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication is required, the bearer token is invalid, or the account is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: The normalized username is already registered (USERNAME_EXISTS).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '415':
+          description: Expected application/json.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Username persistence failure.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /api/v1/user/ping:
     get:
       tags: [Auth]
@@ -674,14 +718,14 @@ paths:
       tags: [Reports]
       summary: Submit a pending community report
       operationId: createReport
-      security: [{ bearerAuth: [] }]
+      security: []
       requestBody:
         required: true
-        content: { application/json: { schema: { $ref: '#/components/schemas/ReportInput' } } }
+        content: { application/json: { schema: { $ref: '#/components/schemas/GuestReportInput' } } }
       responses:
         '201':
-          description: Created as PENDING and COMMUNITY regardless of client intent.
-          content: { application/json: { schema: { $ref: '#/components/schemas/ReportResponse' } } }
+          description: Guest submission is PENDING and COMMUNITY. A short-lived report-scoped upload token is returned once; it does not permit reading unpublished data or editing text. Rate-limited per trusted client address.
+          content: { application/json: { schema: { $ref: '#/components/schemas/GuestReportResponse' } } }
         default: { $ref: '#/components/responses/DomainError' }
   /api/v1/reports/mine:
     get:
@@ -725,10 +769,16 @@ paths:
   /api/v1/reports/{id}/media:
     post:
       tags: [Reports]
-      summary: Upload an image to an owned pending report
+      summary: Upload an image to a pending report with its scoped upload capability
       operationId: uploadReportImage
-      security: [{ bearerAuth: [] }]
-      parameters: [{ $ref: '#/components/parameters/ResourceID' }]
+      security: []
+      parameters:
+        - { $ref: '#/components/parameters/ResourceID' }
+        - name: X-Report-Upload-Token
+          in: header
+          required: true
+          schema: { type: string }
+          description: Expiring capability from the create response. Kept in memory, never in URLs. Server checks its hash, report scope, expiry and PENDING state.
       requestBody:
         required: true
         content:
@@ -1323,6 +1373,23 @@ paths:
           $ref: '#/components/responses/DomainError'
       security:
       - bearerAuth: []
+  /api/v1/notifications/public:
+    get:
+      tags: [Notifications]
+      summary: Read public announcements and verified community report notifications without login
+      operationId: listPublicNotifications
+      security: []
+      parameters:
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Offset' }
+        - { $ref: '#/components/parameters/BBox' }
+      responses:
+        '200':
+          description: Publication-ordered public feed. Global announcements remain visible with an area filter. Read state is browser-local, not server account data. No PENDING or REJECTED reports.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PublicNotificationPage' }
+        default: { $ref: '#/components/responses/DomainError' }
   /api/v1/notifications/public-key:
     get:
       tags:
@@ -1359,6 +1426,32 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PushSubscriptionInput'
+  /api/v1/notifications/language:
+    patch:
+      tags:
+      - Notifications
+      operationId: updatePushLanguage
+      summary: Update the language of an existing owned Push subscription
+      description: Updates only locale and the subscription revision. Never creates or transfers a subscription; missing and foreign-owned endpoints both return 404. Does not require Push delivery to be configured.
+      security:
+      - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PushLanguageInput'
+      responses:
+        '204':
+          description: Language saved, including an unchanged preference.
+        '400':
+          $ref: '#/components/responses/DomainError'
+        '401':
+          $ref: '#/components/responses/DomainError'
+        '404':
+          $ref: '#/components/responses/DomainError'
+        default:
+          $ref: '#/components/responses/DomainError'
   /api/v1/notifications/unsubscribe:
     delete:
       tags:
@@ -1568,6 +1661,36 @@ components:
       schema:
         type: string
   schemas:
+    PublicNotificationPage:
+      type: object
+      additionalProperties: false
+      required: [items, pagination]
+      properties:
+        items: { type: array, items: { $ref: '#/components/schemas/PublicNotification' } }
+        pagination:
+          type: object
+          additionalProperties: false
+          required: [total, limit, offset]
+          properties:
+            total: { type: integer, minimum: 0 }
+            limit: { type: integer, minimum: 1, maximum: 50 }
+            offset: { type: integer, minimum: 0, maximum: 100000 }
+    PublicNotification:
+      type: object
+      additionalProperties: false
+      required: [id, severity, sourceType, createdAt, title, message, url, location]
+      properties:
+        id: { type: string, description: Namespaced public notification identifier. }
+        severity: { type: string, enum: [INFO, WATCH, WARNING, CRITICAL] }
+        sourceType: { type: string, enum: [OFFICIAL, COMMUNITY, AI] }
+        createdAt: { type: string, format: date-time, description: Publication time for community reports. }
+        title: { type: string }
+        message: { type: string }
+        url: { type: string, description: Internal report or announcement destination. }
+        location:
+          oneOf:
+            - { $ref: '#/components/schemas/PointGeometry' }
+            - { type: 'null' }
     AIEvidenceRejectInput:
       type: object
       required:
@@ -1733,6 +1856,11 @@ components:
       - endpoint
       - keys
       properties:
+        locale:
+          type: string
+          enum: [th, en]
+          default: th
+          description: Device language for system-generated Push summaries. Original announcements are not automatically translated.
         endpoint:
           type: string
           format: uri
@@ -1749,6 +1877,20 @@ components:
               type: string
               minLength: 1
           additionalProperties: false
+      additionalProperties: false
+    PushLanguageInput:
+      type: object
+      required:
+      - endpoint
+      - locale
+      properties:
+        endpoint:
+          type: string
+          format: uri
+          maxLength: 2048
+        locale:
+          type: string
+          enum: [th, en]
       additionalProperties: false
     PushPublicKey:
       type: object
@@ -2178,6 +2320,23 @@ components:
         description: { type: string, minLength: 1, maxLength: 2000 }
         location: { $ref: '#/components/schemas/PointGeometry' }
         estimatedWaterDepthM: { type: [number, 'null'], minimum: 0, maximum: 100 }
+    GuestReportInput:
+      type: object
+      additionalProperties: false
+      required: [type, description, location]
+      properties:
+        displayName: { type: string, maxLength: 80, default: Guest, description: Trimmed Unicode display label, not a unique identity or ownership credential. }
+        type: { $ref: '#/components/schemas/ReportType' }
+        description: { type: string, minLength: 1, maxLength: 2000 }
+        location: { $ref: '#/components/schemas/PointGeometry' }
+        estimatedWaterDepthM: { type: [number, 'null'], minimum: 0, maximum: 100 }
+    GuestReportResponse:
+      type: object
+      additionalProperties: false
+      required: [report, uploadToken]
+      properties:
+        report: { $ref: '#/components/schemas/Report' }
+        uploadToken: { type: string, description: Private short-lived upload capability returned only at creation. }
     ReviewReportInput:
       type: object
       additionalProperties: false
@@ -2205,7 +2364,8 @@ components:
       description: COMMUNITY evidence; verification permits publication but does not make it OFFICIAL or prove safety. createdAt is submission time rather than a measured observation timestamp.
       properties:
         id: { type: string, format: uuid }
-        userId: { type: string, format: uuid, description: 'Only exposed in owner and ADMIN responses.' }
+        userId: { type: string, format: uuid, description: 'Only exposed for legacy owners in owner and ADMIN responses.' }
+        displayName: { type: string, maxLength: 80, description: Submitted display-name snapshot; not verified identity. }
         type: { $ref: '#/components/schemas/ReportType' }
         description: { type: string }
         location: { $ref: '#/components/schemas/PointGeometry' }

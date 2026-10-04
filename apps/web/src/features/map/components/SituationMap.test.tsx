@@ -48,6 +48,13 @@ describe("SituationMap popup flow", () => {
     expect(screen.getByRole("button", { name: "สถานีทดสอบ" })).toBeInTheDocument();
     expect(props.onBoundsChange).toHaveBeenCalled();
   });
+  it("supports compact controls without removing translated labels", () => {
+    const { props } = prepare();
+    render(<SituationMap {...props} compactControls />);
+    expect(screen.getByRole("button", { name: "กลับมุมมองเริ่มต้น" })).toHaveTextContent("⌖");
+    expect(screen.getByRole("button", { name: "ปรับให้พอดีกับข้อมูล" })).toHaveTextContent("⤢");
+    expect(screen.getByRole("button", { name: "กลับมุมมองเริ่มต้น" })).toHaveAttribute("title", "กลับมุมมองเริ่มต้น");
+  });
   it("opens marker popups with Enter and dismisses them with Escape", async () => {
     const { props } = prepare();
     render(<SituationMap {...props} />);

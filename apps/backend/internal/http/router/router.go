@@ -25,23 +25,24 @@ import (
 var staticFiles embed.FS
 
 type Dependencies struct {
-	Logger              *slog.Logger
-	Readiness           *health.Service
-	CORSAllowedOrigins  []string
-	TrustedProxyCIDRs   []netip.Prefix
-	SwaggerEnabled      bool
-	AuthService         *auth.Service
-	RecoveryService     *auth.RecoveryService
-	GoogleService       *auth.GoogleService
-	AuthFrontendOrigin  string
-	FloodService        *flood.Service
-	ReportService       *report.Service
-	AlertService        *alert.Service
-	AdminService        handler.AdminService
-	AIService           handler.AIService
-	NotificationService *notification.Service
-	RedisClient         redis.UniversalClient
-	CookieOptions       handler.CookieOptions
+	Logger                    *slog.Logger
+	Readiness                 *health.Service
+	CORSAllowedOrigins        []string
+	TrustedProxyCIDRs         []netip.Prefix
+	SwaggerEnabled            bool
+	AuthService               *auth.Service
+	RecoveryService           *auth.RecoveryService
+	GoogleService             *auth.GoogleService
+	AuthFrontendOrigin        string
+	FloodService              *flood.Service
+	ReportService             *report.Service
+	AlertService              *alert.Service
+	AdminService              handler.AdminService
+	AIService                 handler.AIService
+	NotificationService       *notification.Service
+	PublicNotificationService handler.PublicNotificationService
+	RedisClient               redis.UniversalClient
+	CookieOptions             handler.CookieOptions
 }
 
 func New(dependencies Dependencies) http.Handler {
@@ -91,11 +92,16 @@ func New(dependencies Dependencies) http.Handler {
 			api.With(recoveryLimiter.Limit("request-otp", 5, time.Hour)).Post("/auth/password/request-otp", recoveryHandler.RequestOTP)
 			api.With(recoveryLimiter.Limit("verify-otp", 30, time.Minute)).Post("/auth/password/verify-otp", recoveryHandler.VerifyOTP)
 			api.With(recoveryLimiter.Limit("reset-password", 10, time.Minute)).Post("/auth/password/reset", recoveryHandler.Reset)
-			api.With(limiter.Limit("register", 5, time.Minute)).Post("/auth/register", authHandler.Register)
+			api.Post("/auth/register", func(response http.ResponseWriter, _ *http.Request) {
+				response.Header().Set("Content-Type", "application/json")
+				response.WriteHeader(http.StatusForbidden)
+				_, _ = response.Write([]byte(`{"error":{"code":"REGISTRATION_DISABLED","message":"Public registration is disabled"}}`))
+			})
 			api.With(limiter.Limit("login", 10, time.Minute)).Post("/auth/login", authHandler.Login)
 			api.With(limiter.Limit("refresh", 30, time.Minute)).Post("/auth/refresh", authHandler.Refresh)
 			api.Post("/auth/logout", authHandler.Logout)
 			api.With(middleware.RequireAuthentication(dependencies.AuthService)).Get("/auth/me", authHandler.Me)
+			api.With(middleware.RequireAuthentication(dependencies.AuthService)).Patch("/auth/me", authHandler.UpdateMe)
 			api.With(middleware.RequireAuthentication(dependencies.AuthService)).Get("/user/ping", func(response http.ResponseWriter, _ *http.Request) {
 				response.WriteHeader(http.StatusOK)
 			})
@@ -124,20 +130,23 @@ func New(dependencies Dependencies) http.Handler {
 		}
 		if dependencies.ReportService != nil && dependencies.AuthService != nil {
 			reportHandler := handler.NewReportHandler(dependencies.ReportService)
-			writeLimiter := middleware.NewRateLimiter()
+			writeLimiter := middleware.NewRateLimiterWithTrustedProxies(dependencies.TrustedProxyCIDRs)
 			authenticated := middleware.RequireAuthentication(dependencies.AuthService)
 			admin := []func(http.Handler) http.Handler{authenticated, middleware.RequireRole(auth.RoleAdmin)}
 			api.Get("/reports", reportHandler.List)
 			api.Get("/reports/{id}", reportHandler.Get)
 			api.With(middleware.OptionalAuthentication(dependencies.AuthService)).Get("/reports/{id}/media/{mediaId}", reportHandler.Media)
 			api.With(authenticated).Get("/reports/mine", reportHandler.ListMine)
-			api.With(authenticated, writeLimiter.LimitAuthenticated("report-create", 10, time.Hour)).Post("/reports", reportHandler.Create)
+			api.With(middleware.OptionalAuthentication(dependencies.AuthService), writeLimiter.Limit("report-create", 10, time.Hour)).Post("/reports", reportHandler.CreateGuest)
 			api.With(authenticated, writeLimiter.LimitAuthenticated("report-edit", 30, time.Hour)).Patch("/reports/{id}", reportHandler.Update)
-			api.With(authenticated, writeLimiter.LimitAuthenticated("report-upload", 30, time.Hour)).Post("/reports/{id}/media", reportHandler.UploadMedia)
+			api.With(writeLimiter.Limit("report-upload", 30, time.Hour)).Post("/reports/{id}/media", reportHandler.UploadGuestMedia)
 			api.With(admin...).Get("/admin/reports", reportHandler.ListAdmin)
 			api.With(admin...).Get("/admin/reports/{id}", reportHandler.GetAdmin)
 			api.With(authenticated, middleware.RequireRole(auth.RoleAdmin), writeLimiter.LimitAuthenticated("report-review", 30, time.Hour)).Post("/admin/reports/{id}/verify", reportHandler.Verify)
 			api.With(authenticated, middleware.RequireRole(auth.RoleAdmin), writeLimiter.LimitAuthenticated("report-review", 30, time.Hour)).Post("/admin/reports/{id}/reject", reportHandler.Reject)
+		}
+		if dependencies.PublicNotificationService != nil {
+			api.Get("/notifications/public", handler.NewPublicNotificationsHandler(dependencies.PublicNotificationService).List)
 		}
 		if dependencies.NotificationService != nil {
 			notificationHandler := handler.NewNotificationHandler(dependencies.NotificationService)
@@ -149,6 +158,7 @@ func New(dependencies Dependencies) http.Handler {
 				api.With(authenticated).Patch("/notifications/{id}/read", notificationHandler.MarkRead)
 				api.With(authenticated).Post("/notifications/read-all", notificationHandler.MarkAllRead)
 				api.With(authenticated).Post("/notifications/subscribe", notificationHandler.Subscribe)
+				api.With(authenticated).Patch("/notifications/language", notificationHandler.UpdateSubscriptionLocale)
 				api.With(authenticated).Delete("/notifications/unsubscribe", notificationHandler.Unsubscribe)
 			}
 		}
@@ -220,7 +230,7 @@ func cors(allowedOrigins []string) func(http.Handler) http.Handler {
 				response.Header().Set("Access-Control-Allow-Origin", origin)
 				response.Header().Set("Vary", "Origin")
 				response.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
-				response.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
+				response.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Report-Upload-Token")
 				response.Header().Set("Access-Control-Allow-Credentials", "true")
 			}
 			if request.Method == http.MethodOptions {

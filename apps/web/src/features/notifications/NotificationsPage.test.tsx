@@ -1,176 +1,136 @@
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useOptionalAuth } from "../auth/AuthProvider";
 import { notificationApi } from "./api";
 import { NotificationsPage } from "./NotificationsPage";
+import { LanguageProvider, LanguageSwitcher } from "../../i18n";
+
+const realtime = vi.hoisted(() => ({ revision: 0 }));
 
 vi.mock("../auth/AuthProvider");
 vi.mock("./api");
-vi.mock("./NotificationToggle", () => ({ NotificationToggle: () => <p>Push controls</p> }));
+vi.mock("../realtime/RealtimeProvider", () => ({ useRealtimeRevision: () => realtime.revision }));
+
+const publicItem = {
+  id: "report:public-1",
+  severity: "INFO" as const,
+  sourceType: "COMMUNITY" as const,
+  createdAt: "2026-10-04T08:00:00Z",
+  title: "Community report",
+  message: "Water near the market",
+  url: "/reports?report=public-1",
+  location: { type: "Point" as const, coordinates: [101, 14] as [number, number] }
+};
 
 const account = { id: "test-user", email: "user@example.test", role: "USER" as const, createdAt: "2026-01-01T00:00:00Z" };
-const notification = {
-  id: "notification-1",
-  alertId: "alert-1",
-  title: "ฝนตกหนักในพื้นที่",
-  message: "โปรดติดตามประกาศจากหน่วยงานทางการ",
-  severity: "WARNING" as const,
-  sourceType: "OFFICIAL" as const,
-  createdAt: "2026-10-04T08:00:00Z",
-  readAt: null
-};
-const otherAccount = { id: "other-user", email: "other@example.test", role: "USER" as const, createdAt: "2026-01-01T00:00:00Z" };
-const otherNotification = { ...notification, id: "notification-2", title: "ประกาศสำหรับบัญชีใหม่" };
 
 function renderPage() {
   return render(<MemoryRouter><NotificationsPage /></MemoryRouter>);
 }
 
-function authenticated() {
-  vi.mocked(useOptionalAuth).mockReturnValue({ account, status: "authenticated", login: vi.fn(), logout: vi.fn(), register: vi.fn() });
-}
-
-describe("NotificationsPage", () => {
+describe("NotificationsPage public feed", () => {
+  it("switches public system copy while preserving originals, filters, drafts, and read state without refetching", async () => {
+    const original = { ...publicItem, title: "รายงานต้นฉบับ", message: "ข้อความชุมชนต้นฉบับ" };
+    vi.mocked(notificationApi.listPublic).mockResolvedValue({ items: [original], pagination: { total: 1, limit: 10, offset: 0 } });
+    render(<LanguageProvider><LanguageSwitcher /><MemoryRouter><NotificationsPage /></MemoryRouter></LanguageProvider>);
+    await screen.findByText(original.title);
+    fireEvent.change(screen.getByLabelText("ขอบเขตพื้นที่บนแผนที่"), { target: { value: "100,13,102,15" } });
+    fireEvent.click(screen.getByRole("button", { name: "ข้อมูล" }));
+    fireEvent.click(screen.getByRole("button", { name: `ทำเครื่องหมายว่าอ่านแล้ว: ${original.title}` }));
+    fireEvent.click(screen.getByRole("button", { name: "EN" }));
+    expect(screen.getByText(original.title)).toBeInTheDocument();
+    expect(screen.getByText(original.message)).toBeInTheDocument();
+    expect(screen.getByText("Original announcement · Not automatically translated")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Information" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByLabelText("Map area bounds")).toHaveValue("100,13,102,15");
+    expect(screen.getByText("Read")).toBeInTheDocument();
+    expect(notificationApi.listPublic).toHaveBeenCalledTimes(1);
+  });
   beforeEach(() => {
     vi.resetAllMocks();
-    authenticated();
-    vi.mocked(notificationApi.list).mockResolvedValue({ items: [], pagination: { total: 0, limit: 10, offset: 0 } });
-    vi.mocked(notificationApi.getUnreadCount).mockResolvedValue({ count: 0 });
-    vi.mocked(notificationApi.markRead).mockResolvedValue(undefined);
-    vi.mocked(notificationApi.markAllRead).mockResolvedValue(undefined);
+    realtime.revision = 0;
+    localStorage.clear();
+    vi.mocked(useOptionalAuth).mockReturnValue({ account: null, status: "anonymous", login: vi.fn(), logout: vi.fn(), register: vi.fn(), updateUsername: vi.fn() });
+    vi.mocked(notificationApi.listPublic).mockResolvedValue({ items: [publicItem], pagination: { total: 1, limit: 10, offset: 0 } });
   });
 
-  it("does not request an authenticated inbox for guests", () => {
-    vi.mocked(useOptionalAuth).mockReturnValue({ account: null, status: "anonymous", login: vi.fn(), logout: vi.fn(), register: vi.fn() });
+  it("loads the public feed without waiting for authentication", async () => {
     renderPage();
-
-    expect(screen.getByRole("heading", { name: "ลงชื่อเข้าใช้เพื่อดูการแจ้งเตือน" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "เข้าสู่ระบบ" })).toHaveAttribute("href", "/login");
+    expect(await screen.findByText(publicItem.title)).toBeInTheDocument();
+    expect(notificationApi.listPublic).toHaveBeenCalledWith({ limit: 10, offset: 0, bbox: undefined, signal: expect.any(AbortSignal) });
     expect(notificationApi.list).not.toHaveBeenCalled();
     expect(notificationApi.getUnreadCount).not.toHaveBeenCalled();
+    expect(screen.queryByRole("link", { name: /เข้าสู่ระบบ/ })).not.toBeInTheDocument();
   });
 
-  it("shows account loading while authentication is unresolved", () => {
-    vi.mocked(useOptionalAuth).mockReturnValue({ account: null, status: "loading", login: vi.fn(), logout: vi.fn(), register: vi.fn() });
+  it("keeps the same public feed for authenticated sessions", async () => {
+    vi.mocked(useOptionalAuth).mockReturnValue({ account, status: "authenticated", login: vi.fn(), logout: vi.fn(), register: vi.fn(), updateUsername: vi.fn() });
     renderPage();
-
-    expect(screen.getByRole("status")).toHaveTextContent("กำลังตรวจสอบบัญชี");
+    expect(await screen.findByText(publicItem.title)).toBeInTheDocument();
+    expect(notificationApi.listPublic).toHaveBeenCalledTimes(1);
     expect(notificationApi.list).not.toHaveBeenCalled();
   });
 
-  it("shows inbox loading, then an honest empty state", async () => {
-    let resolveList: (value: Awaited<ReturnType<typeof notificationApi.list>>) => void = () => undefined;
-    vi.mocked(notificationApi.list).mockReturnValue(new Promise((resolve) => { resolveList = resolve; }));
+  it("stores public read state in the browser", async () => {
     renderPage();
-
-    expect(screen.getByRole("status")).toHaveTextContent("กำลังโหลดการแจ้งเตือน");
-    resolveList({ items: [], pagination: { total: 0, limit: 10, offset: 0 } });
-
-    expect(await screen.findByRole("heading", { name: "ยังไม่มีการแจ้งเตือน" })).toBeInTheDocument();
-    expect(screen.getByText("เมื่อมีการแจ้งเตือนใหม่ รายการจะแสดงที่นี่")).toBeInTheDocument();
+    fireEvent.click(await screen.findByRole("button", { name: `ทำเครื่องหมายว่าอ่านแล้ว: ${publicItem.title}` }));
+    await waitFor(() => expect(localStorage.getItem("floodwatch.public-notifications.read")).toContain(publicItem.id));
+    expect(screen.getByText("อ่านแล้ว")).toBeInTheDocument();
   });
 
-  it("shows an error and retries both inbox requests", async () => {
-    vi.mocked(notificationApi.list).mockRejectedValueOnce(new Error("offline"));
+  it("restores the selected area from safe browser storage", async () => {
+    localStorage.setItem("floodwatch.public-notifications.area", "100,13,102,15");
     renderPage();
+    expect(await screen.findByText(publicItem.title)).toBeInTheDocument();
+    expect(screen.getByLabelText("ขอบเขตพื้นที่บนแผนที่")).toHaveValue("100,13,102,15");
+    expect(notificationApi.listPublic).toHaveBeenCalledWith({ limit: 10, offset: 0, bbox: "100,13,102,15", signal: expect.any(AbortSignal) });
+  });
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("โหลดการแจ้งเตือนไม่สำเร็จ");
-    vi.mocked(notificationApi.list).mockResolvedValueOnce({ items: [notification], pagination: { total: 1, limit: 10, offset: 0 } });
-    vi.mocked(notificationApi.getUnreadCount).mockResolvedValueOnce({ count: 1 });
+  it("marks the initial public feed error as an alert", async () => {
+    vi.mocked(notificationApi.listPublic).mockRejectedValueOnce(new Error("unavailable"));
+    renderPage();
+    expect(await screen.findByRole("alert")).toBeInTheDocument();
+  });
+
+  it("does not keep an old area's results when loading the new area fails", async () => {
+    vi.mocked(notificationApi.listPublic)
+      .mockResolvedValueOnce({ items: [publicItem], pagination: { total: 1, limit: 10, offset: 0 } })
+      .mockRejectedValueOnce(new Error("unavailable"))
+      .mockResolvedValueOnce({ items: [publicItem], pagination: { total: 1, limit: 10, offset: 0 } });
+    renderPage();
+    await screen.findByText(publicItem.title);
+    fireEvent.change(screen.getByLabelText("ขอบเขตพื้นที่บนแผนที่"), { target: { value: "102,15,103,16" } });
+    fireEvent.click(screen.getByRole("button", { name: "ใช้พื้นที่นี้" }));
+    expect(await screen.findByRole("alert")).toBeInTheDocument();
+    expect(screen.queryByText(publicItem.title)).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "ลองอีกครั้ง" }));
-
-    expect(await screen.findByText(notification.title)).toBeInTheDocument();
-    expect(notificationApi.list).toHaveBeenCalledTimes(2);
-    expect(notificationApi.getUnreadCount).toHaveBeenCalledTimes(2);
+    expect(await screen.findByText(publicItem.title)).toBeInTheDocument();
   });
 
-  it("does not present zero when the unread count request fails", async () => {
-    vi.mocked(notificationApi.list).mockResolvedValue({ items: [notification], pagination: { total: 1, limit: 10, offset: 0 } });
-    vi.mocked(notificationApi.getUnreadCount).mockRejectedValue(new Error("count unavailable"));
+  it("keeps the area controls available when the selected bbox is empty and can clear it", async () => {
+    vi.mocked(notificationApi.listPublic)
+      .mockResolvedValueOnce({ items: [publicItem], pagination: { total: 1, limit: 10, offset: 0 } })
+      .mockResolvedValueOnce({ items: [], pagination: { total: 0, limit: 10, offset: 0 } })
+      .mockResolvedValueOnce({ items: [publicItem], pagination: { total: 1, limit: 10, offset: 0 } });
     renderPage();
-
-    expect(await screen.findByRole("alert")).toHaveTextContent("โหลดการแจ้งเตือนไม่สำเร็จ");
-    expect(screen.getByRole("button", { name: "อ่านทั้งหมดแล้ว" })).toBeDisabled();
-    expect(screen.queryByRole("button", { name: "อ่านทั้งหมดแล้ว (0)" })).not.toBeInTheDocument();
-    expect(screen.getByText("จำนวนที่ยังไม่ได้อ่านยังไม่พร้อมใช้งาน")).toBeInTheDocument();
+    await screen.findByText(publicItem.title);
+    fireEvent.change(screen.getByLabelText("ขอบเขตพื้นที่บนแผนที่"), { target: { value: "102,15,103,16" } });
+    fireEvent.click(screen.getByRole("button", { name: "ใช้พื้นที่นี้" }));
+    expect(await screen.findByRole("heading", { name: "ยังไม่มีการแจ้งเตือนสาธารณะ" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "ล้างพื้นที่" }));
+    await waitFor(() => expect(screen.getByText(publicItem.title)).toBeInTheDocument());
   });
 
-  it("marks an unread item and updates the unread state", async () => {
-    vi.mocked(notificationApi.list)
-      .mockResolvedValueOnce({ items: [notification], pagination: { total: 1, limit: 10, offset: 0 } })
-      .mockResolvedValueOnce({ items: [{ ...notification, readAt: "2026-10-04T08:01:00Z" }], pagination: { total: 1, limit: 10, offset: 0 } });
-    vi.mocked(notificationApi.getUnreadCount).mockResolvedValueOnce({ count: 1 }).mockResolvedValueOnce({ count: 3 });
-    renderPage();
-
-    const markRead = await screen.findByRole("button", { name: `ทำเครื่องหมายว่าอ่านแล้ว: ${notification.title}` });
-    expect(screen.getByText("ยังไม่ได้อ่าน")).toBeInTheDocument();
-    fireEvent.click(markRead);
-
-    await waitFor(() => expect(notificationApi.markRead).toHaveBeenCalledWith(notification.id));
-    expect(await screen.findByText("อ่านแล้ว")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "อ่านทั้งหมดแล้ว (3)" })).toBeEnabled();
-    expect(notificationApi.list).toHaveBeenCalledTimes(2);
-    expect(notificationApi.getUnreadCount).toHaveBeenCalledTimes(2);
-    expect(screen.queryByRole("button", { name: `ทำเครื่องหมายว่าอ่านแล้ว: ${notification.title}` })).not.toBeInTheDocument();
-  });
-
-  it("marks all visible notifications read and bounds pagination", async () => {
-    vi.mocked(notificationApi.list)
-      .mockResolvedValueOnce({ items: [notification], pagination: { total: 21, limit: 10, offset: 0 } })
-      .mockResolvedValueOnce({ items: [{ ...notification, readAt: "2026-10-04T08:02:00Z" }], pagination: { total: 21, limit: 10, offset: 0 } })
-      .mockResolvedValueOnce({ items: [{ ...notification, readAt: "2026-10-04T08:03:00Z" }], pagination: { total: 21, limit: 10, offset: 10 } });
-    vi.mocked(notificationApi.getUnreadCount).mockResolvedValueOnce({ count: 2 }).mockResolvedValueOnce({ count: 1 }).mockResolvedValueOnce({ count: 0 });
-    renderPage();
-
-    expect(await screen.findByRole("button", { name: "อ่านทั้งหมดแล้ว (2)" })).toBeEnabled();
-    expect(screen.getByRole("button", { name: "หน้าก่อนหน้า" })).toBeDisabled();
-    fireEvent.click(screen.getByRole("button", { name: "อ่านทั้งหมดแล้ว (2)" }));
-    await waitFor(() => expect(notificationApi.markAllRead).toHaveBeenCalledTimes(1));
-    expect(await screen.findByRole("button", { name: "อ่านทั้งหมดแล้ว (1)" })).toBeEnabled();
-
-    fireEvent.click(screen.getByRole("button", { name: "หน้าถัดไป" }));
-    await waitFor(() => expect(notificationApi.list).toHaveBeenLastCalledWith({ limit: 10, offset: 10, signal: expect.any(AbortSignal) }));
-    expect(screen.getByRole("button", { name: "หน้าถัดไป" })).toBeEnabled();
-    expect(screen.getByRole("button", { name: "หน้าก่อนหน้า" })).toBeEnabled();
-  });
-
-  it("shows an unknown unread count when the canonical reload after mark-all fails", async () => {
-    vi.mocked(notificationApi.list)
-      .mockResolvedValueOnce({ items: [notification], pagination: { total: 1, limit: 10, offset: 0 } })
-      .mockRejectedValueOnce(new Error("reload failed"));
-    vi.mocked(notificationApi.getUnreadCount).mockResolvedValueOnce({ count: 1 }).mockResolvedValueOnce({ count: 0 });
-    renderPage();
-
-    fireEvent.click(await screen.findByRole("button", { name: "อ่านทั้งหมดแล้ว (1)" }));
-    await waitFor(() => expect(notificationApi.markAllRead).toHaveBeenCalledTimes(1));
-    expect(await screen.findByRole("alert")).toHaveTextContent("โหลดการแจ้งเตือนไม่สำเร็จ");
-    expect(screen.getByRole("button", { name: "อ่านทั้งหมดแล้ว" })).toBeDisabled();
-    expect(screen.queryByRole("button", { name: "อ่านทั้งหมดแล้ว (0)" })).not.toBeInTheDocument();
-    expect(screen.getByText("จำนวนที่ยังไม่ได้อ่านยังไม่พร้อมใช้งาน")).toBeInTheDocument();
-  });
-
-  it("ignores a pending mark-read completion after the account changes", async () => {
-    let activeAccount = account;
-    let resolveMarkRead: () => void = () => undefined;
-    vi.mocked(useOptionalAuth).mockImplementation(() => ({ account: activeAccount, status: "authenticated", login: vi.fn(), logout: vi.fn(), register: vi.fn() }));
-    vi.mocked(notificationApi.list)
-      .mockResolvedValueOnce({ items: [notification], pagination: { total: 1, limit: 10, offset: 0 } })
-      .mockResolvedValueOnce({ items: [otherNotification], pagination: { total: 1, limit: 10, offset: 0 } });
-    vi.mocked(notificationApi.getUnreadCount).mockResolvedValueOnce({ count: 1 }).mockResolvedValueOnce({ count: 1 });
-    vi.mocked(notificationApi.markRead).mockReturnValue(new Promise((resolve) => { resolveMarkRead = resolve; }));
+  it("refetches the public feed when alert or verified-report revisions change", async () => {
+    vi.mocked(notificationApi.listPublic)
+      .mockResolvedValueOnce({ items: [publicItem], pagination: { total: 1, limit: 10, offset: 0 } })
+      .mockResolvedValueOnce({ items: [{ ...publicItem, id: "alert:public-2", title: "New alert" }], pagination: { total: 1, limit: 10, offset: 0 } });
     const view = renderPage();
-
-    fireEvent.click(await screen.findByRole("button", { name: `ทำเครื่องหมายว่าอ่านแล้ว: ${notification.title}` }));
-    activeAccount = otherAccount;
+    await screen.findByText(publicItem.title);
+    realtime.revision = 1;
     view.rerender(<MemoryRouter><NotificationsPage /></MemoryRouter>);
-    expect(screen.queryByText(notification.title)).not.toBeInTheDocument();
-    expect(await screen.findByText(otherNotification.title)).toBeInTheDocument();
-
-    await act(async () => { resolveMarkRead(); });
-    expect(screen.getByText("ยังไม่ได้อ่าน")).toBeInTheDocument();
-    expect(screen.getByText("ยังไม่ได้อ่าน 1 รายการ")).toBeInTheDocument();
-    expect(notificationApi.list).toHaveBeenCalledTimes(2);
-    expect(notificationApi.getUnreadCount).toHaveBeenCalledTimes(2);
+    await waitFor(() => expect(notificationApi.listPublic).toHaveBeenCalledTimes(2));
+    expect(await screen.findByText("New alert")).toBeInTheDocument();
   });
 });

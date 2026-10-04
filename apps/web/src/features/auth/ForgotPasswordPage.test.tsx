@@ -39,7 +39,7 @@ describe("ForgotPasswordPage", () => {
     fireEvent.click(screen.getByRole("button", { name: "ส่งรหัส OTP" }));
 
     expect(await screen.findByRole("heading", { name: "ยืนยันรหัส OTP" })).toBeInTheDocument();
-    expect(screen.getByText(`รหัส OTP สำหรับ ${email}`)).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(`รหัส OTP สำหรับ ${email}`))).toBeInTheDocument();
     expect(screen.getByRole("status", { name: "ข้อมูลการกู้คืน" })).toHaveTextContent("หากอีเมลนี้มีบัญชี");
     expect(screen.getByRole("timer", { name: "เวลารอส่งรหัสอีกครั้ง" })).toHaveAttribute("aria-live", "off");
     expect(screen.getByRole("button", { name: /ส่งรหัสอีกครั้ง/ })).toBeDisabled();

@@ -1,0 +1,176 @@
+diff --git a/apps/backend/internal/notification/model.go b/apps/backend/internal/notification/model.go
+index d980a2f..4d199a3 100644
+--- a/apps/backend/internal/notification/model.go
++++ b/apps/backend/internal/notification/model.go
+@@ -16,6 +16,7 @@ var (
+ )
+ 
+ type Subscription struct {
++	Locale    string    `json:"locale"`
+ 	ID        string    `json:"id"`
+ 	UserID    string    `json:"userId"`
+ 	Endpoint  string    `json:"endpoint"`
+@@ -27,6 +28,7 @@ type Subscription struct {
+ }
+ 
+ type Payload struct {
++	Locale  string `json:"locale,omitempty"`
+ 	Title   string `json:"title"`
+ 	Message string `json:"message"`
+ 	URL     string `json:"url,omitempty"`
+@@ -54,6 +56,9 @@ type PageResult struct {
+ }
+ 
+ type DeliveryJob struct {
++	Locale              string
++	Severity            flood.Severity
++	SourceType          flood.SourceType
+ 	ID                  string
+ 	SubscriptionID      string
+ 	UserID              string
+@@ -69,6 +74,7 @@ type DeliveryJob struct {
+ 
+ type Repository interface {
+ 	UpsertSubscription(ctx context.Context, sub Subscription) error
++	UpdateSubscriptionLocale(ctx context.Context, endpoint, userID, locale string) error
+ 	DeleteSubscription(ctx context.Context, endpoint string, userID string) error
+ 	DeleteSubscriptionAfterDeliveryFailure(ctx context.Context, jobID, leaseToken, subscriptionID, userID, endpoint string, subscriptionVersion int64) (bool, error)
+ 	ListAllSubscriptions(ctx context.Context) ([]Subscription, error)
+diff --git a/apps/backend/internal/notification/service.go b/apps/backend/internal/notification/service.go
+index f09b0db..e5c0b4f 100644
+--- a/apps/backend/internal/notification/service.go
++++ b/apps/backend/internal/notification/service.go
+@@ -63,9 +63,19 @@ func (s *Service) Subscribe(ctx context.Context, sub Subscription) error {
+ 	if !s.pushEnabled() {
+ 		return ErrUnavailable
+ 	}
++	if sub.Locale == "" {
++		sub.Locale = "th"
++	}
+ 	return s.repo.UpsertSubscription(ctx, sub)
+ }
+ 
++func (s *Service) UpdateSubscriptionLocale(ctx context.Context, endpoint, userID, locale string) error {
++	if userID == "" || !validPushEndpoint(endpoint) || !validNotificationLocale(locale) {
++		return ErrInvalid
++	}
++	return s.repo.UpdateSubscriptionLocale(ctx, endpoint, userID, locale)
++}
++
+ func (s *Service) Unsubscribe(ctx context.Context, endpoint string, userID string) error {
+ 	if endpoint == "" {
+ 		return ErrInvalid
+@@ -136,7 +146,7 @@ func (s *Service) DeliverPending(ctx context.Context) (int, error) {
+ 		}
+ 
+ 		deliveryContext, cancel := context.WithTimeout(workContext, deliveryTimeout)
+-		err = s.sendPushNotification(deliveryContext, Subscription{ID: job.SubscriptionID, UserID: job.UserID, Endpoint: job.Endpoint, P256dh: job.P256dh, Auth: job.Auth}, job.Payload)
++		err = s.sendPushNotification(deliveryContext, Subscription{ID: job.SubscriptionID, UserID: job.UserID, Endpoint: job.Endpoint, P256dh: job.P256dh, Auth: job.Auth}, localizedDeliveryPayload(job))
+ 		cancel()
+ 		if err == nil {
+ 			if err := s.repo.CompleteDelivery(workContext, job.ID, job.LeaseToken); err != nil {
+@@ -243,7 +253,7 @@ func (s *Service) pushEnabled() bool {
+ }
+ 
+ func validPushSubscription(sub Subscription) bool {
+-	if sub.UserID == "" || !validPushEndpoint(sub.Endpoint) {
++	if (sub.Locale != "" && sub.Locale != "th" && sub.Locale != "en") || sub.UserID == "" || !validPushEndpoint(sub.Endpoint) {
+ 		return false
+ 	}
+ 	p256dh, ok := decodePushKey(sub.P256dh)
+diff --git a/apps/backend/internal/postgres/notificationrepo/repository.go b/apps/backend/internal/postgres/notificationrepo/repository.go
+index e589a74..86faae3 100644
+--- a/apps/backend/internal/postgres/notificationrepo/repository.go
++++ b/apps/backend/internal/postgres/notificationrepo/repository.go
+@@ -31,17 +31,18 @@ func (r *Repository) UpsertSubscription(ctx context.Context, sub notification.Su
+ 	defer transaction.Rollback(ctx)
+ 
+ 	const query = `
+-		INSERT INTO notification_subscriptions (user_id, endpoint, p256dh, auth)
+-		VALUES ($1, $2, $3, $4)
++		INSERT INTO notification_subscriptions (user_id, endpoint, p256dh, auth, locale)
++		VALUES ($1, $2, $3, $4, COALESCE(NULLIF($5, ''), 'th'))
+ 		ON CONFLICT (endpoint) DO UPDATE
+ 		SET user_id = EXCLUDED.user_id,
+ 		    p256dh = EXCLUDED.p256dh,
+ 		    auth = EXCLUDED.auth,
++		    locale = EXCLUDED.locale,
+ 		    version = notification_subscriptions.version + 1,
+ 		    updated_at = CURRENT_TIMESTAMP
+ 	`
+ 	var subscriptionID string
+-	if err := transaction.QueryRow(ctx, query+` RETURNING id`, sub.UserID, sub.Endpoint, sub.P256dh, sub.Auth).Scan(&subscriptionID); err != nil {
++	if err := transaction.QueryRow(ctx, query+` RETURNING id`, sub.UserID, sub.Endpoint, sub.P256dh, sub.Auth, sub.Locale).Scan(&subscriptionID); err != nil {
+ 		return fmt.Errorf("upsert subscription: %w", err)
+ 	}
+ 	if _, err := transaction.Exec(ctx, `
+@@ -56,6 +57,24 @@ func (r *Repository) UpsertSubscription(ctx context.Context, sub notification.Su
+ 	return nil
+ }
+ 
++func (r *Repository) UpdateSubscriptionLocale(ctx context.Context, endpoint, userID, locale string) error {
++	const query = `
++		UPDATE notification_subscriptions
++		SET locale = $3,
++		    version = CASE WHEN locale IS DISTINCT FROM $3 THEN version + 1 ELSE version END,
++		    updated_at = CURRENT_TIMESTAMP
++		WHERE endpoint = $1 AND user_id = $2
++		RETURNING id
++	`
++	var subscriptionID string
++	if err := r.pool.QueryRow(ctx, query, endpoint, userID, locale).Scan(&subscriptionID); errors.Is(err, pgx.ErrNoRows) {
++		return notification.ErrNotFound
++	} else if err != nil {
++		return fmt.Errorf("update subscription locale: %w", err)
++	}
++	return nil
++}
++
+ func (r *Repository) DeleteSubscription(ctx context.Context, endpoint string, userID string) error {
+ 	const query = `DELETE FROM notification_subscriptions WHERE endpoint = $1 AND user_id = $2`
+ 	_, err := r.pool.Exec(ctx, query, endpoint, userID)
+@@ -118,7 +137,7 @@ func (r *Repository) DeleteSubscriptionAfterDeliveryFailure(ctx context.Context,
+ 
+ func (r *Repository) ListAllSubscriptions(ctx context.Context) ([]notification.Subscription, error) {
+ 	const query = `
+-		SELECT id, user_id, endpoint, p256dh, auth, version, created_at, updated_at
++		SELECT id, user_id, endpoint, p256dh, auth, version, created_at, updated_at, locale
+ 		FROM notification_subscriptions
+ 	`
+ 	rows, err := r.pool.Query(ctx, query)
+@@ -130,7 +149,7 @@ func (r *Repository) ListAllSubscriptions(ctx context.Context) ([]notification.S
+ 	var subs []notification.Subscription
+ 	for rows.Next() {
+ 		var s notification.Subscription
+-		if err := rows.Scan(&s.ID, &s.UserID, &s.Endpoint, &s.P256dh, &s.Auth, &s.Version, &s.CreatedAt, &s.UpdatedAt); err != nil {
++		if err := rows.Scan(&s.ID, &s.UserID, &s.Endpoint, &s.P256dh, &s.Auth, &s.Version, &s.CreatedAt, &s.UpdatedAt, &s.Locale); err != nil {
+ 			return nil, err
+ 		}
+ 		subs = append(subs, s)
+@@ -327,14 +346,14 @@ func (r *Repository) ClaimPendingDelivery(ctx context.Context, now time.Time) (n
+ 			return notification.DeliveryJob{}, false, fmt.Errorf("select notification delivery candidate: %w", err)
+ 		}
+ 		if err := transaction.QueryRow(ctx, `
+-			SELECT id, user_id, endpoint, p256dh, auth, version
++			SELECT id, user_id, endpoint, p256dh, auth, version, locale
+ 			FROM notification_subscriptions
+ 			WHERE id = $1
+-		`, candidateSubscriptionID).Scan(&job.SubscriptionID, &job.UserID, &job.Endpoint, &job.P256dh, &job.Auth, &job.SubscriptionVersion); err != nil {
++		`, candidateSubscriptionID).Scan(&job.SubscriptionID, &job.UserID, &job.Endpoint, &job.P256dh, &job.Auth, &job.SubscriptionVersion, &job.Locale); err != nil {
+ 			return notification.DeliveryJob{}, false, fmt.Errorf("read locked notification subscription: %w", err)
+ 		}
+ 		if err := transaction.QueryRow(ctx, `
+-			SELECT job.alert_id, inbox.title, inbox.message, job.attempts
++			SELECT job.alert_id, inbox.title, inbox.message, job.attempts, inbox.severity, inbox.source_type
+ 			FROM notification_delivery_jobs job
+ 			JOIN notification_inbox inbox ON inbox.user_id = job.user_id AND inbox.alert_id = job.alert_id
+ 			WHERE job.id = $1
+@@ -345,7 +364,7 @@ func (r *Repository) ClaimPendingDelivery(ctx context.Context, now time.Time) (n
+ 			  AND job.next_attempt_at <= $4
+ 			  AND (job.locked_until IS NULL OR job.locked_until <= $4)
+ 			FOR UPDATE OF job SKIP LOCKED
+-		`, job.ID, job.SubscriptionID, job.UserID, now).Scan(&job.AlertID, &job.Payload.Title, &job.Payload.Message, &job.Attempts); err != nil {
++		`, job.ID, job.SubscriptionID, job.UserID, now).Scan(&job.AlertID, &job.Payload.Title, &job.Payload.Message, &job.Attempts, &job.Severity, &job.SourceType); err != nil {
+ 			if !errors.Is(err, pgx.ErrNoRows) {
+ 				return notification.DeliveryJob{}, false, fmt.Errorf("lock notification delivery job: %w", err)
+ 			}

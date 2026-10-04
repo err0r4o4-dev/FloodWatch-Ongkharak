@@ -1,0 +1,8 @@
+./config.go
+./google.go
+./mail.go
+./proxy.go
+./config_test.go
+./google_test.go
+./mail_test.go
+./proxy_test.go

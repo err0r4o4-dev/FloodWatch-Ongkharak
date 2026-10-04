@@ -16,6 +16,7 @@ var (
 )
 
 type Subscription struct {
+	Locale    string    `json:"locale"`
 	ID        string    `json:"id"`
 	UserID    string    `json:"userId"`
 	Endpoint  string    `json:"endpoint"`
@@ -27,6 +28,7 @@ type Subscription struct {
 }
 
 type Payload struct {
+	Locale  string `json:"locale,omitempty"`
 	Title   string `json:"title"`
 	Message string `json:"message"`
 	URL     string `json:"url,omitempty"`
@@ -54,6 +56,9 @@ type PageResult struct {
 }
 
 type DeliveryJob struct {
+	Locale              string
+	Severity            flood.Severity
+	SourceType          flood.SourceType
 	ID                  string
 	SubscriptionID      string
 	UserID              string
@@ -69,6 +74,7 @@ type DeliveryJob struct {
 
 type Repository interface {
 	UpsertSubscription(ctx context.Context, sub Subscription) error
+	UpdateSubscriptionLocale(ctx context.Context, endpoint, userID, locale string) error
 	DeleteSubscription(ctx context.Context, endpoint string, userID string) error
 	DeleteSubscriptionAfterDeliveryFailure(ctx context.Context, jobID, leaseToken, subscriptionID, userID, endpoint string, subscriptionVersion int64) (bool, error)
 	ListAllSubscriptions(ctx context.Context) ([]Subscription, error)

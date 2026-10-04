@@ -147,7 +147,7 @@ describe("ReportsPage public list", () => {
     expect(screen.queryByText("ไม่สามารถโหลดรายงานได้")).not.toBeInTheDocument();
   });
 
-  it("shows verified community reports to a guest and offers sign in", async () => {
+  it("shows verified community reports and lets a guest submit directly", async () => {
     const fetchMock = vi.fn().mockResolvedValue(response({ items: [verifiedReport], limit: 20, offset: 0 }));
     vi.stubGlobal("fetch", fetchMock);
 
@@ -156,7 +156,7 @@ describe("ReportsPage public list", () => {
     expect(screen.getByRole("status")).toHaveTextContent("กำลังโหลดข้อมูล");
     expect(await screen.findAllByText(verifiedReport.description)).not.toHaveLength(0);
     expect(screen.getAllByText("ยืนยันแล้ว")).not.toHaveLength(0);
-    expect(screen.getByRole("link", { name: "เข้าสู่ระบบเพื่อส่งรายงาน" })).toHaveAttribute("href", "/login?returnTo=%2Freports");
+    expect(screen.getByRole("link", { name: "ส่งรายงานสถานการณ์" })).toHaveAttribute("href", "#submit-report");
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/v1/reports?limit=20&offset=0",
       expect.objectContaining({ credentials: "same-origin" })
@@ -241,7 +241,7 @@ describe("ReportsPage public list", () => {
 });
 
 describe("ReportsPage authenticated workflow", () => {
-  it("validates the report form, uploads selected media, and shows pending ownership", async () => {
+  it("validates guest submission and uploads without exposing pending ownership", async () => {
     const api = {
       refresh: vi.fn().mockResolvedValue({ accessToken: "token" }),
       me: vi.fn().mockResolvedValue({ id: "user-1", email: "user@example.com", role: "USER" as const, createdAt: "2026-10-02T00:00:00Z" }),
@@ -251,8 +251,7 @@ describe("ReportsPage authenticated workflow", () => {
     };
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(response({ items: [], limit: 20, offset: 0 }))
-      .mockResolvedValueOnce(response({ items: [], limit: 20, offset: 0 }))
-      .mockResolvedValueOnce(response({ report: { ...verifiedReport, status: "PENDING", verificationStatus: "PENDING" } }))
+      .mockResolvedValueOnce(response({ report: { ...verifiedReport, status: "PENDING", verificationStatus: "PENDING" }, uploadToken: "upload-capability" }))
       .mockResolvedValueOnce(response({ media: { id: "media-1", url: "/api/v1/reports/report-1/media/media-1" } }))
       .mockResolvedValueOnce(response({ items: [{ ...verifiedReport, status: "PENDING", verificationStatus: "PENDING" }], limit: 20, offset: 0 }));
     vi.stubGlobal("fetch", fetchMock);
@@ -279,8 +278,8 @@ describe("ReportsPage authenticated workflow", () => {
       "/api/v1/reports/report-1/media",
       expect.objectContaining({ body: expect.any(FormData), method: "POST" })
     ));
-    expect(await screen.findByText("รอตรวจสอบ")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "แก้ไขรายงานที่รอตรวจสอบ" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "แก้ไขรายงานที่รอตรวจสอบ" })).not.toBeInTheDocument();
+    expect(fetchMock.mock.calls.some(([url]) => url === "/api/v1/reports/mine")).toBe(false);
   });
 
   it("aligns descriptions, depth, and media selection with backend limits", async () => {

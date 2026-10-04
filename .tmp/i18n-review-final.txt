@@ -1,0 +1,517 @@
+diff --git a/apps/web/src/app/App.tsx b/apps/web/src/app/App.tsx
+index e6d51d5..4580565 100644
+--- a/apps/web/src/app/App.tsx
++++ b/apps/web/src/app/App.tsx
+@@ -2,13 +2,16 @@ import { BrowserRouter } from "react-router";
+ import { AuthProvider } from "../features/auth/AuthProvider";
+ import { RealtimeProvider } from "../features/realtime/RealtimeProvider";
+ import { AppRoutes } from "./AppRoutes";
++import { LanguageProvider } from "../i18n";
++import { NotificationLanguageSync } from "../features/notifications/NotificationLanguageSync";
+ 
+ export function App() {
+   return (
+-    <BrowserRouter>
++    <LanguageProvider><BrowserRouter>
+       <AuthProvider>
++        <NotificationLanguageSync />
+         <RealtimeProvider><AppRoutes /></RealtimeProvider>
+       </AuthProvider>
+-    </BrowserRouter>
++    </BrowserRouter></LanguageProvider>
+   );
+ }
+diff --git a/apps/web/src/features/admin/UserDetailPage.tsx b/apps/web/src/features/admin/UserDetailPage.tsx
+index a3e8063..9c90d50 100644
+--- a/apps/web/src/features/admin/UserDetailPage.tsx
++++ b/apps/web/src/features/admin/UserDetailPage.tsx
+@@ -1,17 +1,23 @@
+ import { useEffect, useRef, useState } from "react";
+ import { NavLink, useParams } from "react-router";
++import { formatDate, formatNumber, useTranslation } from "../../i18n";
++import th from "../../i18n/locales/th/admin";
++import en from "../../i18n/locales/en/admin";
+ import { adminApi } from "./api";
+ import type { UserManagement, UserStats } from "./types";
+ import { confirmAction } from "../../shared/alerts";
++import { adminErrorMessage, adminErrorState, formatAdminDate, formatAdminNumber } from "./localization";
++import type { AdminErrorState } from "./localization";
+ 
+ export function UserDetailPage() {
++  const { locale, t } = useTranslation({ th, en });
+   const { id } = useParams<{ id: string }>();
+   const [user, setUser] = useState<UserManagement | null>(null);
+   const [stats, setStats] = useState<UserStats | null>(null);
+   const [loading, setLoading] = useState(true);
+-  const [error, setError] = useState<string | null>(null);
++  const [error, setError] = useState<AdminErrorState | null>(null);
+   const [actionLoading, setActionLoading] = useState(false);
+-  const [actionError, setActionError] = useState<string | null>(null);
++  const [actionError, setActionError] = useState<AdminErrorState | null>(null);
+   const actionPending = useRef(false);
+ 
+   const loadUser = async () => {
+@@ -24,7 +30,7 @@ export function UserDetailPage() {
+       setUser(response.user);
+       setStats(response.stats);
+     } catch (err) {
+-      setError(err instanceof Error ? err.message : "Failed to load user");
++      setError(adminErrorState(err, "errors.loadUser"));
+     } finally {
+       setLoading(false);
+     }
+@@ -41,8 +47,8 @@ export function UserDetailPage() {
+     setActionError(null);
+     try {
+       await confirmAction({ ...options, errorText: (cause) => {
+-        const message = cause instanceof Error ? cause.message : "ไม่สามารถดำเนินการได้ กรุณาลองใหม่อีกครั้ง";
+-        setActionError(message);
++        const message = adminErrorMessage(cause, t, "errors.actionFailed");
++        setActionError(adminErrorState(cause, "errors.actionFailed"));
+         return message;
+       } });
+     } finally {
+@@ -54,46 +60,35 @@ export function UserDetailPage() {
+   const handleUpdateRole = async (newRole: string) => {
+     if (!id || !user) return;
+     await manageUser({
+-      title: "เปลี่ยนบทบาทผู้ใช้งานหรือไม่?",
+-      text: `เปลี่ยนบทบาทของ ${user.email} เป็น ${newRole === "ADMIN" ? "ผู้ดูแลระบบ" : "ผู้ใช้งาน"} การเปลี่ยนแปลงนี้มีผลต่อสิทธิ์เข้าถึงระบบ`,
+-      confirmText: "เปลี่ยนบทบาท",
++      title: t("userDetail.confirm.role.title"),
++      text: t("userDetail.confirm.role.text", { email: user.email, role: newRole === "ADMIN" ? t("common.admin") : t("common.user") }),
++      confirmText: t("userDetail.confirm.role.confirm"),
+       danger: true,
+       action: async () => { await adminApi.updateUserRole(id, newRole); await loadUser(); },
+-      successTitle: "เปลี่ยนบทบาทแล้ว"
++      successTitle: t("userDetail.confirm.role.success")
+     });
+   };
+ 
+   const handleDisable = async () => {
+     if (!id || !user) return;
+     await manageUser({
+-      title: "ปิดการใช้งานบัญชีหรือไม่?",
+-      text: `บัญชี ${user.email} จะไม่สามารถใช้งานฟีเจอร์สมาชิกได้`,
+-      confirmText: "ปิดการใช้งาน",
++      title: t("userDetail.confirm.disable.title"),
++      text: t("userDetail.confirm.disable.text", { email: user.email }),
++      confirmText: t("userDetail.confirm.disable.confirm"),
+       danger: true,
+       action: async () => { await adminApi.disableUser(id); await loadUser(); },
+-      successTitle: "ปิดการใช้งานบัญชีแล้ว"
++      successTitle: t("userDetail.confirm.disable.success")
+     });
+   };
+ 
+   const handleEnable = async () => {
+     if (!id || !user) return;
+     await manageUser({
+-      title: "เปิดการใช้งานบัญชีหรือไม่?",
+-      text: `เปิดให้บัญชี ${user.email} กลับมาใช้งานฟีเจอร์สมาชิกอีกครั้ง`,
+-      confirmText: "เปิดการใช้งาน",
++      title: t("userDetail.confirm.enable.title"),
++      text: t("userDetail.confirm.enable.text", { email: user.email }),
++      confirmText: t("userDetail.confirm.enable.confirm"),
+       action: async () => { await adminApi.enableUser(id); await loadUser(); },
+-      successTitle: "เปิดการใช้งานบัญชีแล้ว"
+-    });
+-  };
+-
+-  const formatDate = (dateString: string | null) => {
+-    if (!dateString) return "-";
+-    return new Date(dateString).toLocaleDateString("th-TH", {
+-      year: "numeric",
+-      month: "long",
+-      day: "numeric",
+-      hour: "2-digit",
+-      minute: "2-digit",
++      successTitle: t("userDetail.confirm.enable.success")
+     });
+   };
+ 
+@@ -101,7 +96,7 @@ export function UserDetailPage() {
+     return (
+       <div className="page-container admin-page">
+         <div className="panel loading-state">
+-          <p>กำลังโหลดข้อมูลผู้ใช้งาน...</p>
++          <p>{t("userDetail.loading")}</p>
+         </div>
+       </div>
+     );
+@@ -111,137 +106,137 @@ export function UserDetailPage() {
+     return (
+       <div className="page-container admin-page">
+         <div className="panel error-state">
+-          <h1>เกิดข้อผิดพลาด</h1>
+-          <p>{error || "ไม่พบผู้ใช้งาน"}</p>
+-          <NavLink to="/admin/users" className="button">กลับไปรายชื่อผู้ใช้งาน</NavLink>
++          <h1>{t("common.error")}</h1>
++          <p>{error ? t(error.key, error.params) : t("userDetail.notFound")}</p>
++          <NavLink to="/admin/users" className="button">{t("common.back")}</NavLink>
+         </div>
+       </div>
+     );
+   }
+ 
+   return (
+-    <div className="page-container admin-page">
++    <div className="page-container admin-page admin-user-detail">
+       <header className="page-header">
+-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+-          <div>
+-            <h1>รายละเอียดผู้ใช้งาน</h1>
++        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "var(--space-3)" }}>
++          <div style={{ minWidth: 0, flex: "1 1 15rem" }}>
++            <h1>{t("userDetail.title")}</h1>
+             <p className="muted">{user.email}</p>
+           </div>
+-          <NavLink to="/admin/users" className="button">← กลับ</NavLink>
++          <NavLink to="/admin/users" className="button">{t("common.back")}</NavLink>
+         </div>
+       </header>
+ 
+       {actionError && (
+         <div className="panel error-state" style={{ marginBottom: "var(--space-6)" }}>
+-          <p>เกิดข้อผิดพลาด: {actionError}</p>
++          <p>{t("common.errorPrefix")} {t(actionError.key, actionError.params)}</p>
+         </div>
+       )}
+ 
+-      <div style={{ display: "grid", gap: "var(--space-6)", gridTemplateColumns: "repeat(auto-fit, minmax(20rem, 1fr))" }}>
++      <div style={{ display: "grid", gap: "var(--space-6)", gridTemplateColumns: "repeat(auto-fit, minmax(min(20rem, 100%), 1fr))" }}>
+         <section className="panel">
+-          <h2>ข้อมูลบัญชี</h2>
++          <h2>{t("userDetail.account.title")}</h2>
+           <dl style={{ display: "grid", gap: "var(--space-3)", marginTop: "var(--space-4)" }}>
+             <div>
+               <dt className="muted small">ID</dt>
+               <dd style={{ fontFamily: "monospace", fontSize: "0.875rem" }}>{user.id}</dd>
+             </div>
+             <div>
+-              <dt className="muted small">อีเมล</dt>
++              <dt className="muted small">{t("common.email")}</dt>
+               <dd><strong>{user.email}</strong></dd>
+             </div>
+             <div>
+-              <dt className="muted small">บทบาท</dt>
++              <dt className="muted small">{t("common.role")}</dt>
+               <dd>
+                 <span className={`admin-badge admin-badge--${user.role.toLowerCase()}`}>
+-                  {user.role === "ADMIN" ? "ผู้ดูแลระบบ" : "ผู้ใช้งาน"}
++                  {user.role === "ADMIN" ? t("common.admin") : t("common.user")}
+                 </span>
+               </dd>
+             </div>
+             <div>
+-              <dt className="muted small">สถานะ</dt>
++              <dt className="muted small">{t("common.status")}</dt>
+               <dd>
+                 {user.disabledAt ? (
+-                  <span className="admin-badge admin-badge--disabled">ปิดใช้งาน</span>
++                  <span className="admin-badge admin-badge--disabled">{t("common.disabled")}</span>
+                 ) : (
+-                  <span className="admin-badge admin-badge--active">ใช้งานอยู่</span>
++                  <span className="admin-badge admin-badge--active">{t("common.active")}</span>
+                 )}
+               </dd>
+             </div>
+             <div>
+-              <dt className="muted small">สร้างเมื่อ</dt>
+-              <dd>{formatDate(user.createdAt)}</dd>
++              <dt className="muted small">{t("common.createdAt")}</dt>
++              <dd>{formatAdminDate(user.createdAt, locale, formatDate, { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" })}</dd>
+             </div>
+             <div>
+-              <dt className="muted small">อัปเดตล่าสุด</dt>
+-              <dd>{formatDate(user.updatedAt)}</dd>
++              <dt className="muted small">{t("common.updatedAt")}</dt>
++              <dd>{formatAdminDate(user.updatedAt, locale, formatDate, { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" })}</dd>
+             </div>
+             {user.disabledAt && (
+               <div>
+-                <dt className="muted small">ปิดการใช้งานเมื่อ</dt>
+-                <dd>{formatDate(user.disabledAt)}</dd>
++                <dt className="muted small">{t("userDetail.disabledAt")}</dt>
++                <dd>{formatAdminDate(user.disabledAt, locale, formatDate, { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" })}</dd>
+               </div>
+             )}
+           </dl>
+         </section>
+ 
+         <section className="panel">
+-          <h2>สถิติกิจกรรม</h2>
++          <h2>{t("userDetail.activity.title")}</h2>
+           <dl style={{ display: "grid", gap: "var(--space-3)", marginTop: "var(--space-4)" }}>
+             <div>
+-              <dt className="muted small">รายงานทั้งหมด</dt>
+-              <dd><strong>{stats.reportCount}</strong> รายงาน</dd>
++              <dt className="muted small">{t("userDetail.activity.totalReports")}</dt>
++              <dd><strong>{formatAdminNumber(stats.reportCount, locale, formatNumber)}</strong> {t("common.reports")}</dd>
+             </div>
+             <div>
+-              <dt className="muted small">รายงานที่ได้รับการอนุมัติ</dt>
+-              <dd><strong>{stats.verifiedReports}</strong> รายงาน</dd>
++              <dt className="muted small">{t("userDetail.activity.verifiedReports")}</dt>
++              <dd><strong>{formatAdminNumber(stats.verifiedReports, locale, formatNumber)}</strong> {t("common.reports")}</dd>
+             </div>
+             <div>
+-              <dt className="muted small">รายงานที่ถูกปฏิเสธ</dt>
+-              <dd><strong>{stats.rejectedReports}</strong> รายงาน</dd>
++              <dt className="muted small">{t("userDetail.activity.rejectedReports")}</dt>
++              <dd><strong>{formatAdminNumber(stats.rejectedReports, locale, formatNumber)}</strong> {t("common.reports")}</dd>
+             </div>
+             <div>
+-              <dt className="muted small">บันทึกการดำเนินการ</dt>
+-              <dd><strong>{stats.auditLogCount}</strong> รายการ</dd>
++              <dt className="muted small">{t("userDetail.activity.auditLogs")}</dt>
++              <dd><strong>{formatAdminNumber(stats.auditLogCount, locale, formatNumber)}</strong> {t("common.records")}</dd>
+             </div>
+             <div>
+-              <dt className="muted small">เซสชันที่ใช้งาน</dt>
+-              <dd><strong>{stats.refreshSessionCount}</strong> เซสชัน</dd>
++              <dt className="muted small">{t("userDetail.activity.sessions")}</dt>
++              <dd><strong>{formatAdminNumber(stats.refreshSessionCount, locale, formatNumber)}</strong> {t("common.sessions")}</dd>
+             </div>
+             <div>
+-              <dt className="muted small">กิจกรรมล่าสุด</dt>
+-              <dd>{formatDate(stats.lastActivity)}</dd>
++              <dt className="muted small">{t("common.latestActivity")}</dt>
++              <dd>{formatAdminDate(stats.lastActivity, locale, formatDate, { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" })}</dd>
+             </div>
+           </dl>
+         </section>
+       </div>
+ 
+       <section className="panel" style={{ marginTop: "var(--space-6)" }}>
+-        <h2>การกระทำของผู้ดูแลระบบ</h2>
+-        <p className="muted">การกระทำเหล่านี้จะถูกบันทึกลงในบันทึกการดำเนินการ</p>
++        <h2>{t("userDetail.actions.title")}</h2>
++        <p className="muted">{t("userDetail.actions.note")}</p>
+ 
+         <div style={{ display: "flex", gap: "var(--space-4)", marginTop: "var(--space-4)", flexWrap: "wrap" }}>
+           <div>
+-            <h3 style={{ fontSize: "1rem", marginBottom: "var(--space-2)" }}>เปลี่ยนบทบาท</h3>
++            <h3 style={{ fontSize: "1rem", marginBottom: "var(--space-2)" }}>{t("userDetail.actions.role.title")}</h3>
+             <div className="admin-actions">
+               <button
+                 onClick={() => void handleUpdateRole("USER")}
+                 disabled={actionLoading || user.role === "USER"}
+                 className="button"
+               >
+-                ตั้งเป็นผู้ใช้งาน
++                {t("userDetail.actions.role.user")}
+               </button>
+               <button
+                 onClick={() => void handleUpdateRole("ADMIN")}
+                 disabled={actionLoading || user.role === "ADMIN"}
+                 className="button"
+               >
+-                ตั้งเป็นผู้ดูแลระบบ
++                {t("userDetail.actions.role.admin")}
+               </button>
+             </div>
+           </div>
+ 
+           <div>
+-            <h3 style={{ fontSize: "1rem", marginBottom: "var(--space-2)" }}>จัดการสถานะบัญชี</h3>
++            <h3 style={{ fontSize: "1rem", marginBottom: "var(--space-2)" }}>{t("userDetail.actions.account.title")}</h3>
+             <div className="admin-actions">
+               {user.disabledAt ? (
+                 <button
+@@ -249,7 +244,7 @@ export function UserDetailPage() {
+                   disabled={actionLoading}
+                   className="button button--primary"
+                 >
+-                  เปิดการใช้งานบัญชี
++                  {t("userDetail.actions.account.enable")}
+                 </button>
+               ) : (
+                 <button
+@@ -258,7 +253,7 @@ export function UserDetailPage() {
+                   className="button"
+                   style={{ background: "var(--color-danger-soft)", color: "var(--color-danger-ink)" }}
+                 >
+-                  ปิดการใช้งานบัญชี
++                  {t("userDetail.actions.account.disable")}
+                 </button>
+               )}
+             </div>
+@@ -266,18 +261,18 @@ export function UserDetailPage() {
+         </div>
+ 
+         {actionLoading && (
+-          <p className="muted" style={{ marginTop: "var(--space-4)" }}>กำลังดำเนินการ...</p>
++          <p className="muted" style={{ marginTop: "var(--space-4)" }}>{t("userDetail.actions.inProgress")}</p>
+         )}
+       </section>
+ 
+       <section className="panel" style={{ marginTop: "var(--space-6)", background: "var(--color-canvas-soft)" }}>
+-        <h3>ดูเพิ่มเติม</h3>
++        <h3>{t("userDetail.more.title")}</h3>
+         <div className="admin-actions" style={{ marginTop: "var(--space-3)" }}>
+           <NavLink
+             to={`/admin/audit-logs?actorId=${user.id}`}
+             className="button"
+           >
+-            ดูบันทึกการดำเนินการของผู้ใช้นี้
++            {t("userDetail.more.audit")}
+           </NavLink>
+         </div>
+       </section>
+diff --git a/apps/web/src/features/notifications/api.ts b/apps/web/src/features/notifications/api.ts
+index f3545b3..1eaf461 100644
+--- a/apps/web/src/features/notifications/api.ts
++++ b/apps/web/src/features/notifications/api.ts
+@@ -1,4 +1,6 @@
+ import { apiClient } from "../auth/api";
++import { getLocale } from "../../i18n";
++import type { Locale } from "../../i18n";
+ 
+ export const NOTIFICATION_PAGE_SIZE = 10;
+ 
+@@ -21,12 +23,30 @@ export type NotificationPage = {
+   pagination: { total: number; limit: number; offset: number };
+ };
+ 
++export type PublicNotification = {
++  id: string;
++  severity: NotificationSeverity;
++  sourceType: NotificationSourceType;
++  createdAt: string;
++  title: string;
++  message: string;
++  url: string;
++  location: { type: "Point"; coordinates: [number, number] } | null;
++};
++
++export type PublicNotificationPage = {
++  items: PublicNotification[];
++  pagination: { total: number; limit: number; offset: number };
++};
++
+ export type NotificationListOptions = {
+   limit: number;
+   offset: number;
+   signal?: AbortSignal;
+ };
+ 
++export type PublicNotificationListOptions = NotificationListOptions & { bbox?: string };
++
+ const severities = new Set<NotificationSeverity>(["INFO", "WATCH", "WARNING", "CRITICAL"]);
+ const sourceTypes = new Set<NotificationSourceType>(["OFFICIAL", "COMMUNITY", "AI"]);
+ 
+@@ -74,6 +94,40 @@ function parseUnreadCount(value: unknown): { count: number } {
+   return { count: value.count };
+ }
+ 
++function validPublicLocation(value: unknown): value is PublicNotification["location"] {
++  if (value === null) return true;
++  if (!isRecord(value) || value.type !== "Point" || !Array.isArray(value.coordinates) || value.coordinates.length !== 2) return false;
++  return value.coordinates.every((coordinate) => typeof coordinate === "number" && Number.isFinite(coordinate)) &&
++    Math.abs(value.coordinates[0] as number) <= 180 && Math.abs(value.coordinates[1] as number) <= 90;
++}
++
++function validPublicURL(value: string): boolean {
++  if (!value.startsWith("/") || value.startsWith("//") || value.includes("\\") || /[\u0000-\u001f\u007f-\u009f]/u.test(value)) return false;
++  try {
++    const pathname = new URL(value, "http://floodwatch.invalid").pathname;
++    return pathname === "/announcements" || pathname === "/reports";
++  } catch {
++    return false;
++  }
++}
++
++function parsePublicNotificationPage(value: unknown): PublicNotificationPage {
++  if (!isRecord(value) || !Array.isArray(value.items) || !isRecord(value.pagination)) {
++    throw new Error("Invalid public notifications response");
++  }
++  const { total, limit, offset } = value.pagination;
++  if (!isNonNegativeInteger(total) || !isNonNegativeInteger(limit) || limit === 0 || !isNonNegativeInteger(offset)) {
++    throw new Error("Invalid public notifications response");
++  }
++  const items = value.items.map((item) => {
++    if (!isRecord(item) || typeof item.id !== "string" || typeof item.createdAt !== "string" || Number.isNaN(new Date(item.createdAt).getTime()) || typeof item.title !== "string" || typeof item.message !== "string" || typeof item.url !== "string" || !validPublicURL(item.url) || typeof item.severity !== "string" || !severities.has(item.severity as NotificationSeverity) || typeof item.sourceType !== "string" || !sourceTypes.has(item.sourceType as NotificationSourceType) || !validPublicLocation(item.location)) {
++      throw new Error("Invalid public notifications response");
++    }
++    return item as unknown as PublicNotification;
++  });
++  return { items, pagination: { total, limit, offset } };
++}
++
+ export const notificationApi = {
+   list: async ({ limit, offset, signal }: NotificationListOptions): Promise<NotificationPage> => {
+     const searchParams = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+@@ -81,6 +135,13 @@ export const notificationApi = {
+     return parseNotificationPage(value);
+   },
+ 
++  listPublic: async ({ limit, offset, bbox, signal }: PublicNotificationListOptions): Promise<PublicNotificationPage> => {
++    const searchParams = new URLSearchParams({ limit: String(limit), offset: String(offset) });
++    if (bbox) searchParams.set("bbox", bbox);
++    const value = await apiClient.request<unknown>(`/notifications/public?${searchParams}`, { signal }, { authenticate: false, retryUnauthorized: false });
++    return parsePublicNotificationPage(value);
++  },
++
+   getUnreadCount: async (): Promise<{ count: number }> => {
+     const value = await apiClient.request<unknown>("/notifications/unread-count");
+     return parseUnreadCount(value);
+@@ -102,17 +163,25 @@ export const notificationApi = {
+     return { publicKey: value.publicKey };
+   },
+ 
+-  subscribe: async (subscription: PushSubscription): Promise<void> => {
++  subscribe: async (subscription: PushSubscription, locale: Locale = getLocale()): Promise<void> => {
+     const { endpoint, keys } = subscription.toJSON();
+     await apiClient.request<void>("/notifications/subscribe", {
+       method: "POST",
+       headers: { "Content-Type": "application/json" },
+-      body: JSON.stringify({ endpoint, keys })
+-    });
++      body: JSON.stringify({ endpoint, keys, locale })
++    }, { retryUnauthorized: false });
+   },
+ 
+   unsubscribe: async (endpoint: string): Promise<void> => {
+     const searchParams = new URLSearchParams({ endpoint });
+-    await apiClient.request<void>(`/notifications/unsubscribe?${searchParams}`, { method: "DELETE" });
++    await apiClient.request<void>(`/notifications/unsubscribe?${searchParams}`, { method: "DELETE" }, { retryUnauthorized: false });
++  },
++
++  updateLanguage: async (endpoint: string, locale: Locale): Promise<void> => {
++    await apiClient.request<void>("/notifications/language", {
++      method: "PATCH",
++      headers: { "Content-Type": "application/json" },
++      body: JSON.stringify({ endpoint, locale })
++    }, { retryUnauthorized: false });
+   }
+ };
+diff --git a/apps/web/src/styles/index.css b/apps/web/src/styles/index.css
+index 90bb266..3fc5942 100644
+--- a/apps/web/src/styles/index.css
++++ b/apps/web/src/styles/index.css
+@@ -56,12 +56,12 @@
+ }
+ 
+ html {
+-  min-width: 20rem;
++  min-width: 320px;
+   background: var(--color-canvas);
+ }
+ 
+ body {
+-  min-width: 20rem;
++  min-width: 320px;
+   min-height: 100vh;
+   margin: 0;
+   color: var(--color-ink);
+@@ -555,6 +555,9 @@ code {
+   margin-inline: auto;
+ }
+ 
++.admin-user-detail { overflow-wrap: anywhere; }
++.admin-user-detail .panel { min-width: 0; }
++
+ .admin-dashboard-grid {
+   display: grid;
+   grid-template-columns: repeat(auto-fit, minmax(min(18rem, 100%), 1fr));

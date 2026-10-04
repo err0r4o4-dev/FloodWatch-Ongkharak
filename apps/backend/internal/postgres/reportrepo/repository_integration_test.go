@@ -1,10 +1,12 @@
 package reportrepo
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/floodwatch-ongkharak/backend/internal/report"
 	"github.com/google/uuid"
@@ -45,6 +47,9 @@ func TestRepositoryPersistsPoint4326AndListsVerifiedOnly(t *testing.T) {
 			t.Errorf("clean up synthetic reviewer: %v", err)
 		}
 	})
+	if err := repository.ValidateGuestUpload(ctx, pending.ID, bytes.Repeat([]byte{0x4a}, 32), time.Now().UTC()); !errors.Is(err, report.ErrForbidden) {
+		t.Fatalf("ValidateGuestUpload() legacy report error = %v, want ErrForbidden", err)
+	}
 	media := report.Media{ID: uuid.NewString(), ReportID: pending.ID, ObjectKey: "reports/" + pending.ID + "/" + uuid.NewString() + ".png", ContentType: "image/png", SizeBytes: 1}
 	if _, err := repository.CreateMedia(ctx, media, uuid.NewString()); !errors.Is(err, report.ErrForbidden) {
 		t.Fatalf("CreateMedia() wrong owner error = %v, want ErrForbidden", err)
@@ -70,6 +75,9 @@ func TestRepositoryPersistsPoint4326AndListsVerifiedOnly(t *testing.T) {
 	if _, err := repository.CreateMedia(ctx, media, userID); !errors.Is(err, report.ErrConflict) {
 		t.Fatalf("CreateMedia() verified report error = %v, want ErrConflict", err)
 	}
+	if err := repository.ValidateGuestUpload(ctx, pending.ID, bytes.Repeat([]byte{0x4a}, 32), time.Now().UTC()); !errors.Is(err, report.ErrForbidden) {
+		t.Fatalf("invalid capability leaked verified state: %v", err)
+	}
 
 	var srid int
 	if err := pool.QueryRow(ctx, `SELECT ST_SRID(location) FROM community_reports WHERE id=$1`, pending.ID).Scan(&srid); err != nil || srid != 4326 {
@@ -78,5 +86,58 @@ func TestRepositoryPersistsPoint4326AndListsVerifiedOnly(t *testing.T) {
 	items, err := repository.ListVerified(ctx, report.ListFilter{Page: report.Page{Limit: 10}, BBox: &report.BoundingBox{MinLng: 100.9, MinLat: 14, MaxLng: 101.1, MaxLat: 14.1}})
 	if err != nil || len(items) != 1 || items[0].ID != pending.ID || items[0].Status != report.StatusVerified {
 		t.Fatalf("ListVerified() = %+v, %v", items, err)
+	}
+}
+
+func TestRepositoryPersistsGuestReportAndCapabilityScopedMedia(t *testing.T) {
+	databaseURL := os.Getenv("TEST_DATABASE_URL")
+	if databaseURL == "" {
+		t.Skip("set TEST_DATABASE_URL to run PostgreSQL-backed guest report repository integration")
+	}
+	ctx := context.Background()
+	pool, err := pgxpool.New(ctx, databaseURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(pool.Close)
+	repository := New(pool)
+	reportID := uuid.NewString()
+	createdAt := time.Now().UTC()
+	tokenHash := bytes.Repeat([]byte{0x4a}, 32)
+	created, err := repository.CreateGuest(ctx, report.Report{ID: reportID, DisplayName: "Guest", Type: report.TypeFlood, Description: "Synthetic guest report", Location: report.Location{Type: "Point", Coordinates: []float64{100.99, 14.02}}, Status: report.StatusPending, VerificationStatus: report.StatusPending, SourceType: report.SourceCommunity, CreatedAt: createdAt, UpdatedAt: createdAt}, tokenHash, createdAt.Add(15*time.Minute))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if _, err := pool.Exec(context.Background(), `DELETE FROM community_reports WHERE id=$1`, reportID); err != nil {
+			t.Errorf("clean up synthetic guest report: %v", err)
+		}
+	})
+	if created.UserID != "" || created.DisplayName != "Guest" {
+		t.Fatalf("guest report identity = %+v", created)
+	}
+	if err := repository.ValidateGuestUpload(ctx, reportID, bytes.Repeat([]byte{0x4b}, 32), time.Now().UTC()); !errors.Is(err, report.ErrForbidden) {
+		t.Fatalf("ValidateGuestUpload() wrong capability error = %v, want ErrForbidden", err)
+	}
+	if err := repository.ValidateGuestUpload(ctx, reportID, tokenHash, time.Now().UTC()); err != nil {
+		t.Fatalf("ValidateGuestUpload() valid capability error = %v", err)
+	}
+	media := report.Media{ID: uuid.NewString(), ReportID: reportID, ObjectKey: "reports/" + reportID + "/" + uuid.NewString() + ".png", ContentType: "image/png", SizeBytes: 1}
+	if _, err := repository.CreateGuestMedia(ctx, media, bytes.Repeat([]byte{0x4b}, 32), time.Now().UTC()); !errors.Is(err, report.ErrForbidden) {
+		t.Fatalf("CreateGuestMedia() wrong capability error = %v, want ErrForbidden", err)
+	}
+	if _, err := repository.CreateGuestMedia(ctx, media, tokenHash, time.Now().UTC()); err != nil {
+		t.Fatalf("CreateGuestMedia() valid capability error = %v", err)
+	}
+	if err := repository.ValidateGuestUpload(ctx, uuid.NewString(), tokenHash, time.Now().UTC()); !errors.Is(err, report.ErrForbidden) {
+		t.Fatalf("missing report capability error = %v, want ErrForbidden", err)
+	}
+	if _, err := pool.Exec(ctx, `UPDATE community_reports SET created_at=clock_timestamp() - interval '2 minutes', guest_upload_token_expires_at=clock_timestamp() - interval '1 second' WHERE id=$1`, reportID); err != nil {
+		t.Fatal(err)
+	}
+	media.ID = uuid.NewString()
+	media.ObjectKey = "reports/" + reportID + "/" + media.ID + ".png"
+	if _, err := repository.CreateGuestMedia(ctx, media, tokenHash, createdAt.Add(-time.Minute)); !errors.Is(err, report.ErrForbidden) {
+		t.Fatalf("expired capability accepted stale pre-lock time: %v", err)
 	}
 }

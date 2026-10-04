@@ -74,8 +74,8 @@ describe("AdminDashboardPage dashboard stats", () => {
 
     renderPage();
 
-    expect(await screen.findByText("ไม่สามารถโหลดสถิติแดชบอร์ดได้")).toBeInTheDocument();
-    expect(screen.getByText("database unavailable")).toBeInTheDocument();
+    expect(await screen.findByRole("alert")).toHaveTextContent("ไม่สามารถโหลดสถิติแดชบอร์ดได้");
+    expect(screen.queryByText("database unavailable")).not.toBeInTheDocument();
   });
 
   it("retries failed stats without substituting mock zeroes", async () => {

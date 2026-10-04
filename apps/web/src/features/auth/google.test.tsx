@@ -33,7 +33,7 @@ describe("Google login", () => {
     const navigate = vi.fn();
     const api = { available: vi.fn().mockResolvedValue(true), link: vi.fn() };
     render(<GoogleSignInButton returnTo="/reports?mode=mine" api={api} navigate={navigate} />);
-    const button = await screen.findByRole("button", { name: /Continue with Google/ });
+    const button = await screen.findByRole("button", { name: /ดำเนินการต่อด้วย Google/ });
     await waitFor(() => expect(button).toBeEnabled());
     fireEvent.click(button);
     expect(navigate).toHaveBeenCalledWith("/api/v1/auth/google/start?returnTo=%2Freports%3Fmode%3Dmine");
@@ -43,11 +43,11 @@ describe("Google login", () => {
   it("keeps disabled configuration distinct from a configuration outage", async () => {
     const api = { available: vi.fn().mockResolvedValue(false), link: vi.fn() };
     const { unmount } = render(<GoogleSignInButton returnTo="/reports" api={api} />);
-    expect(await screen.findByText("Google Login ยังไม่ได้ตั้งค่า")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Continue with Google/ })).toBeDisabled();
+    expect(await screen.findByText("การเข้าสู่ระบบด้วย Google ยังไม่ได้ตั้งค่า")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /ดำเนินการต่อด้วย Google/ })).toBeDisabled();
     unmount();
     render(<GoogleSignInButton returnTo="/reports" api={{ ...api, available: vi.fn().mockRejectedValue(new Error("outage")) }} />);
-    expect(await screen.findByText("ตรวจสอบ Google Login ไม่สำเร็จ ใช้อีเมลและรหัสผ่านได้ตามปกติ")).toBeInTheDocument();
+    expect(await screen.findByText("ตรวจสอบการเข้าสู่ระบบด้วย Google ไม่สำเร็จ ใช้อีเมลและรหัสผ่านได้ตามปกติ")).toBeInTheDocument();
   });
 
   it("requests only the password when linking and completes via bootstrap navigation", async () => {

@@ -1,5 +1,7 @@
 # Database migrations
 
+Migration 17 adds a per-device Web Push language (`th` or `en`), defaulting existing subscriptions to Thai. Apply it before deploying the locale-aware API and worker. Roll back those binaries before the down migration, which removes saved Push language preferences. Browser UI language storage is independent. See `docs/architecture/localization.md` for the language flow and update-only subscription ownership boundary.
+
 Migration 14 adds nullable, normalized unique usernames, account authentication versions, and expiring single-use password-recovery challenges. Existing accounts retain current sign-in methods; no username is invented. Deploy the updated API only after applying it. Down migration 14 permanently removes usernames and recovery metadata; populated installations need an approved backup and matching application rollback. See `docs/architecture/password-recovery.md` for setup and release gates.
 
 Migration 13 adds Google identities and five-minute OAuth/pending-link challenges, and allows null local passwords for Google-only accounts. Its down migration refuses rollback while Google-only accounts exist; explicitly provision valid local credentials through a reviewed administrative procedure before rollback, never delete users or fabricate hashes. See `docs/architecture/google-login.md` for deployment ordering and account policy.

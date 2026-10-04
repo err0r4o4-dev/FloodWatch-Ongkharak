@@ -1,0 +1,35 @@
+
+ RUN  v5.0.3 D:/!Project/FloodWatch-Ongkharak(Web_Application)/apps/web
+
+
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/features/notifications/NotificationLanguageSync.test.tsx [ src/features/notifications/NotificationLanguageSync.test.tsx ]
+Error: Failed to resolve import "./NotificationLanguageSync" from "src/features/notifications/NotificationLanguageSync.test.tsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: D:/!Project/FloodWatch-Ongkharak(Web_Application)/apps/web/src/features/notifications/NotificationLanguageSync.test.tsx:4:0
+  6  |  const __vi_import_0__ = await import("@testing-library/react");
+  7  |  const __vi_import_1__ = await import("../../i18n");
+  8  |  const __vi_import_2__ = await import("./NotificationLanguageSync");
+     |                                       ^
+  9  |  const __vi_import_3__ = await import("./api");
+  10 |  const __vi_import_4__ = await import("react/jsx-dev-runtime");
+ ❯ TransformPluginContext._formatLog ../../node_modules/.pnpm/vite@8.3.2_@types+node@26.6.3_jiti@2.7.0/node_modules/vite/dist/node/chunks/node.js:8766:39
+ ❯ TransformPluginContext.error ../../node_modules/.pnpm/vite@8.3.2_@types+node@26.6.3_jiti@2.7.0/node_modules/vite/dist/node/chunks/node.js:8763:14
+ ❯ normalizeUrl ../../node_modules/.pnpm/vite@8.3.2_@types+node@26.6.3_jiti@2.7.0/node_modules/vite/dist/node/chunks/node.js:26423:18
+ ❯ ../../node_modules/.pnpm/vite@8.3.2_@types+node@26.6.3_jiti@2.7.0/node_modules/vite/dist/node/chunks/node.js:26493:30
+ ❯ TransformPluginContext.transform ../../node_modules/.pnpm/vite@8.3.2_@types+node@26.6.3_jiti@2.7.0/node_modules/vite/dist/node/chunks/node.js:26459:4
+ ❯ EnvironmentPluginContainer.transform ../../node_modules/.pnpm/vite@8.3.2_@types+node@26.6.3_jiti@2.7.0/node_modules/vite/dist/node/chunks/node.js:8545:14
+ ❯ loadAndTransform ../../node_modules/.pnpm/vite@8.3.2_@types+node@26.6.3_jiti@2.7.0/node_modules/vite/dist/node/chunks/node.js:19988:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  no tests
+   Start at  09:21:43
+   Duration  1.38s (environment 77%, setup 21%, transform 1%, worker 1%)
+
+undefined
+ ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL  Command "vitest" not found

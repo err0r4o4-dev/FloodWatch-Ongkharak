@@ -27,6 +27,24 @@ afterEach(() => {
 });
 
 describe("reportsApi", () => {
+  it("submits a guest name without bearer authentication and keeps the upload capability", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(response({ report: publicReport, uploadToken: "private-upload-capability" }, 201));
+    vi.stubGlobal("fetch", fetchMock);
+    const created = await reportsApi.create({ type: "FLOOD", description: "Water", location: { type: "Point", coordinates: [101, 14] }, displayName: "Guest" });
+    expect(created.uploadToken).toBe("private-upload-capability");
+    const options = fetchMock.mock.calls[0][1] as RequestInit;
+    expect(new Headers(options.headers).has("Authorization")).toBe(false);
+  });
+
+  it("uses a report-scoped capability for guest uploads", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(response({ media: { id: "media-1", url: "/api/v1/reports/report-1/media/media-1" } }, 201));
+    vi.stubGlobal("fetch", fetchMock);
+    await reportsApi.uploadMedia("report-1", new File(["image"], "image.png", { type: "image/png" }), "private-upload-capability");
+    const options = fetchMock.mock.calls[0][1] as RequestInit;
+    expect(new Headers(options.headers).get("X-Report-Upload-Token")).toBe("private-upload-capability");
+    expect(new Headers(options.headers).has("Authorization")).toBe(false);
+  });
+
   it("accepts public-safe reports without an owner identifier", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response({ items: [publicReport], limit: 20, offset: 0 })));
 

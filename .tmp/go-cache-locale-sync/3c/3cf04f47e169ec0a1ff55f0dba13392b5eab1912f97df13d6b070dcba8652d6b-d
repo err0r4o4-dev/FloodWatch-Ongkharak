@@ -1,0 +1,3 @@
+./notification.go
+./auth.go
+./health.go

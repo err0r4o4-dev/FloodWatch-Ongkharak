@@ -46,7 +46,7 @@ describe("AIEvidenceReview", () => {
     renderPage();
     expect(await screen.findByText("vision-1", { exact: false })).toBeInTheDocument();
     expect(screen.getByText("หลักฐาน AI")).toBeInTheDocument();
-    expect(screen.getByText("น้ำท่วม: WARNING · ความมั่นใจ 0%", { exact: false })).toBeInTheDocument();
+    expect(screen.getByText("น้ำท่วม: เตือนภัย · ความมั่นใจ 0%", { exact: false })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "ดูรายงานที่เกี่ยวข้อง" })).toHaveAttribute("href", "/reports?report=report-1");
     fireEvent.click(screen.getByRole("button", { name: "เปิดรายละเอียด: evidence-1" }));
     expect(await screen.findByText("รายละเอียดหลักฐาน")).toBeInTheDocument();

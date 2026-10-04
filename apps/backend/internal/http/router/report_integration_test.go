@@ -82,15 +82,13 @@ func TestCommunityReportHTTPVisibilityAndReviewBoundaries(t *testing.T) {
 		return response
 	}
 	createBody := `{"type":"FLOOD","description":"Synthetic community report","location":{"type":"Point","coordinates":[100.99,14.02]},"estimatedWaterDepthM":0.4}`
-	if response := call(http.MethodPost, "/api/v1/reports", createBody, ""); response.Code != http.StatusUnauthorized {
-		t.Fatalf("guest create = %d: %s", response.Code, response.Body)
-	}
-	response := call(http.MethodPost, "/api/v1/reports", createBody, ownerSession.AccessToken)
+	response := call(http.MethodPost, "/api/v1/reports", createBody, "")
 	if response.Code != http.StatusCreated {
 		t.Fatalf("owner create = %d: %s", response.Code, response.Body)
 	}
 	var created struct {
-		Report struct {
+		UploadToken string `json:"uploadToken"`
+		Report      struct {
 			ID        string `json:"id"`
 			UpdatedAt string `json:"updatedAt"`
 		} `json:"report"`
@@ -98,6 +96,10 @@ func TestCommunityReportHTTPVisibilityAndReviewBoundaries(t *testing.T) {
 	if err := json.Unmarshal(response.Body.Bytes(), &created); err != nil || created.Report.ID == "" {
 		t.Fatalf("decode created report = %+v, %v", created, err)
 	}
+	t.Cleanup(func() {
+		_, _ = pool.Exec(context.Background(), `DELETE FROM event_outbox WHERE resource_type='COMMUNITY_REPORT' AND resource_id=$1`, created.Report.ID)
+		_, _ = pool.Exec(context.Background(), `DELETE FROM community_reports WHERE id=$1`, created.Report.ID)
+	})
 	image, err := base64.StdEncoding.DecodeString("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScL/nwAAAABJRU5ErkJggg==")
 	if err != nil {
 		t.Fatal(err)
@@ -119,7 +121,7 @@ func TestCommunityReportHTTPVisibilityAndReviewBoundaries(t *testing.T) {
 	}
 	uploadRequest := httptest.NewRequest(http.MethodPost, "/api/v1/reports/"+created.Report.ID+"/media", &upload)
 	uploadRequest.Header.Set("Content-Type", writer.FormDataContentType())
-	uploadRequest.Header.Set("Authorization", "Bearer "+ownerSession.AccessToken)
+	uploadRequest.Header.Set("X-Report-Upload-Token", created.UploadToken)
 	uploadResponse := httptest.NewRecorder()
 	api.ServeHTTP(uploadResponse, uploadRequest)
 	if uploadResponse.Code != http.StatusCreated {
@@ -136,8 +138,11 @@ func TestCommunityReportHTTPVisibilityAndReviewBoundaries(t *testing.T) {
 	if response := call(http.MethodGet, uploaded.Media.URL, "", ""); response.Code != http.StatusNotFound {
 		t.Fatalf("guest pending image = %d: %s", response.Code, response.Body)
 	}
-	if response := call(http.MethodGet, uploaded.Media.URL, "", ownerSession.AccessToken); response.Code != http.StatusOK || !bytes.Equal(response.Body.Bytes(), image) {
-		t.Fatalf("owner pending image = %d: %s", response.Code, response.Body)
+	if response := call(http.MethodGet, uploaded.Media.URL, "", ownerSession.AccessToken); response.Code != http.StatusNotFound {
+		t.Fatalf("unrelated account pending image = %d: %s", response.Code, response.Body)
+	}
+	if response := call(http.MethodGet, uploaded.Media.URL, "", adminSession.AccessToken); response.Code != http.StatusOK || !bytes.Equal(response.Body.Bytes(), image) {
+		t.Fatalf("admin pending image = %d: %s", response.Code, response.Body)
 	}
 	if response := call(http.MethodGet, "/api/v1/reports/"+created.Report.ID, "", ""); response.Code != http.StatusNotFound {
 		t.Fatalf("public pending detail = %d: %s", response.Code, response.Body)

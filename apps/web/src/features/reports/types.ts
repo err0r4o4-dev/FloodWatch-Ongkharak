@@ -14,6 +14,7 @@ export type ReportMedia = {
 export type CommunityReport = {
   id: string;
   userId?: string;
+  displayName?: string;
   type: ReportType;
   description: string;
   location: ReportLocation;
@@ -29,5 +30,6 @@ export type CommunityReport = {
 };
 
 export type ReportInput = Pick<CommunityReport, "type" | "description" | "location"> & {
+  displayName?: string;
   estimatedWaterDepthM?: number;
 };

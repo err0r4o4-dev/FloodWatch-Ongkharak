@@ -1,0 +1,4613 @@
+
+ RUN  v5.0.3 D:/!Project/FloodWatch-Ongkharak(Web_Application)/apps/web
+
+stderr | src/features/auth/AuthPage.test.tsx > AuthPage > does not submit twice while the request is pending
+An update to AuthProvider inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to AuthProvider inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/features/auth/AuthPage.test.tsx > AuthPage > does not submit twice while the request is pending
+An update to MemoryRouter inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to AuthPage inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/features/admin/AIEvidenceReview.alerts.test.tsx > AIEvidenceReview > requires an actual road selection before approving a road result
+An update to ReportMediaImage inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/features/admin/SettingsPage.alerts.test.tsx > setting save notifications > notifies after saving the parsed setting
+An update to SettingsPage inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to SettingsPage inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/features/admin/SettingsPage.alerts.test.tsx > setting save notifications > reports API failures and retains the unsaved draft
+An update to SettingsPage inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to SettingsPage inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/features/admin/admin.test.tsx > UsersPage accessibility > has accessible form labels
+An update to UsersPage inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to UsersPage inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/features/admin/admin.test.tsx > UsersPage accessibility > has accessible pagination buttons
+An update to UsersPage inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to UsersPage inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/app/LandingRoutes.test.tsx > landing and overview navigation > keeps overview bookmarks and original application destinations
+An update to OverviewPage inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/features/map/MapPage.test.tsx > MapPage > searches only loaded stations and areas without claiming global place search
+An update to WaterDetails inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+···················x········································x··········································································x·x········································xxx····················xx····x·······························································xxx·
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 13 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/app/App.test.tsx > AppRoutes > shows the development placeholder at its bookmarkable route
+TestingLibraryElementError: Unable to find an accessible element with the role "link" and name "สถานะระบบ"
+
+Here are the accessible roles:
+
+  link:
+
+  Name "ข้ามไปยังเนื้อหาหลัก":
+  <a
+    class="skip-link"
+    href="#main-content"
+  />
+
+  Name "Flood Watch Ongkharak หน้าหลัก":
+  <a
+    aria-label="Flood Watch Ongkharak หน้าหลัก"
+    class="brand"
+    data-discover="true"
+    href="/"
+  />
+
+  Name "ภาพรวม":
+  <a
+    class="shell-nav-link"
+    data-discover="true"
+    href="/overview"
+  />
+
+  Name "ประกาศ":
+  <a
+    class="shell-nav-link"
+    data-discover="true"
+    href="/announcements"
+  />
+
+  Name "แผนที่และพื้นที่เสี่ยง":
+  <a
+    class="shell-nav-link"
+    data-discover="true"
+    href="/map"
+  />
+
+  Name "รายงาน":
+  <a
+    class="shell-nav-link"
+    data-discover="true"
+    href="/reports"
+  />
+
+  Name "การแจ้งเตือน":
+  <a
+    aria-label="การแจ้งเตือน"
+    class="header-icon"
+    data-discover="true"
+    href="/notifications"
+  />
+
+  Name "เข้าสู่ระบบ":
+  <a
+    class=""
+    data-discover="true"
+    href="/login"
+  />
+
+  Name "Flood Watch Ongkharak หน้าหลัก":
+  <a
+    aria-label="Flood Watch Ongkharak หน้าหลัก"
+    class="brand"
+    data-discover="true"
+    href="/"
+  />
+
+  Name "ภาพรวม":
+  <a
+    class="shell-nav-link"
+    data-discover="true"
+    href="/overview"
+  />
+
+  Name "ประกาศ":
+  <a
+    class="shell-nav-link"
+    data-discover="true"
+    href="/announcements"
+  />
+
+  Name "แผนที่และพื้นที่เสี่ยง":
+  <a
+    class="shell-nav-link"
+    data-discover="true"
+    href="/map"
+  />
+
+  Name "รายงาน":
+  <a
+    class="shell-nav-link"
+    data-discover="true"
+    href="/reports"
+  />
+
+  --------------------------------------------------
+  complementary:
+
+  Name "":
+  <aside
+    class="desktop-sidebar"
+  />
+
+  Name "ข้อควรทราบ":
+  <aside
+    aria-labelledby="sidebar-status-title"
+    class="sidebar-status"
+  />
+
+  --------------------------------------------------
+  presentation:
+
+  Name "":
+  <img
+    alt=""
+    class="brand__image"
+    src="/flood-watch-mark.svg"
+  />
+
+  Name "":
+  <img
+    alt=""
+    class="brand__image"
+    src="/flood-watch-mark.svg"
+  />
+
+  --------------------------------------------------
+  strong:
+
+  Name "":
+  <strong />
+
+  Name "":
+  <strong
+    id="sidebar-status-title"
+  />
+
+  Name "":
+  <strong />
+
+  --------------------------------------------------
+  navigation:
+
+  Name "การนำทางหลัก":
+  <nav
+    aria-label="การนำทางหลัก"
+    class="sidebar-navigation"
+  />
+
+  Name "การนำทางมือถือ":
+  <nav
+    aria-label="การนำทางมือถือ"
+    class="bottom-navigation"
+  />
+
+  --------------------------------------------------
+  list:
+
+  Name "":
+  <ul />
+
+  Name "":
+  <ul />
+
+  --------------------------------------------------
+  listitem:
+
+  Name "":
+  <li />
+
+  Name "":
+  <li />
+
+  Name "":
+  <li />
+
+  Name "":
+  <li />
+
+  Name "":
+  <li />
+
+  Name "":
+  <li />
+
+  Name "":
+  <li />
+
+  Name "":
+  <li />
+
+  --------------------------------------------------
+  paragraph:
+
+  Name "":
+  <p />
+
+  Name "":
+  <p
+    class="eyebrow"
+  />
+
+  Name "":
+  <p
+    class="health-panel__lead"
+  />
+
+  Name "":
+  <p
+    class="health-panel__description"
+  />
+
+  --------------------------------------------------
+  banner:
+
+  Name "":
+  <header
+    class="institution-header"
+  />
+
+  Name "":
+  <header
+    class="mobile-header"
+  />
+
+  --------------------------------------------------
+  group:
+
+  Name "ภาษา":
+  <div
+    aria-label="ภาษา"
+    class="locale-toggle"
+    role="group"
+  />
+
+  Name "":
+  <details
+    class="account-menu"
+  />
+
+  --------------------------------------------------
+  button:
+
+  Name "TH":
+  <button
+    aria-pressed="true"
+    type="button"
+  />
+
+  Name "EN":
+  <button
+    aria-pressed="false"
+    type="button"
+  />
+
+  --------------------------------------------------
+  main:
+
+  Name "":
+  <main
+    class="page-content w-full"
+    id="main-content"
+    tabindex="-1"
+  />
+
+  --------------------------------------------------
+  region:
+
+  Name "สถานะระบบสำหรับการพัฒนา":
+  <section
+    aria-labelledby="health-title"
+    class="health-panel"
+  />
+
+  --------------------------------------------------
+  heading:
+
+  Name "สถานะระบบสำหรับการพัฒนา":
+  <h1
+    id="health-title"
+  />
+
+  --------------------------------------------------
+  term:
+
+  Name "":
+  <dt />
+
+  Name "":
+  <dt />
+
+  --------------------------------------------------
+  definition:
+
+  Name "":
+  <dd />
+
+  Name "":
+  <dd />
+
+  --------------------------------------------------
+  code:
+
+  Name "":
+  <code />
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      class="app-shell public-shell"
+    >
+      <a
+        class="skip-link"
+        href="#main-content"
+      >
+        ข้ามไปยังเนื้อหาหลัก
+      </a>
+      <aside
+        class="desktop-sidebar"
+      >
+        <a
+          aria-label="Flood Watch Ongkharak หน้าหลัก"
+          class="brand"
+          data-discover="true"
+          href="/"
+        >
+          <img
+            alt=""
+            class="brand__image"
+            src="/flood-watch-mark.svg"
+          />
+          <span>
+            <strong>
+              Flood Watch
+            </strong>
+            <small>
+              Ongkharak
+            </small>
+          </span>
+        </a>
+        <nav
+          aria-label="การนำทางหลัก"
+          class="sidebar-navigation"
+        >
+          <ul>
+            <li>
+              <a
+                class="shell-nav-link"
+                data-discover="true"
+                href="/overview"
+              >
+                <span
+                  aria-hidden="true"
+                  class="shell-nav-symbol"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="none"
+                    height="20"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    viewBox="0 0 24 24"
+                    width="20"
+                  >
+                    <path
+                      d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"
+                    />
+                    <path
+                      d="M9 21v-8h6v8"
+                    />
+                  </svg>
+                </span>
+                <span>
+                  ภาพรวม
+                </span>
+              </a>
+            </li>
+            <li>
+              <a
+                class="shell-nav-link"
+                data-discover="true"
+                href="/announcements"
+              >
+                <span
+                  aria-hidden="true"
+                  class="shell-nav-symbol"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="none"
+                    height="20"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    viewBox="0 0 24 24"
+                    width="20"
+                  >
+                    <path
+                      d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"
+                    />
+                    <path
+                      d="M10 21h4"
+                    />
+                  </svg>
+                </span>
+                <span>
+                  ประกาศ
+                </span>
+              </a>
+            </li>
+            <li>
+              <a
+                class="shell-nav-link"
+                data-discover="true"
+                href="/map"
+              >
+                <span
+                  aria-hidden="true"
+                  class="shell-nav-symbol"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="none"
+                    height="20"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    viewBox="0 0 24 24"
+                    width="20"
+                  >
+                    <path
+                      d="m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2z"
+                    />
+                    <path
+                      d="M9 3v16M15 5v16"
+                    />
+                  </svg>
+                </span>
+                <span>
+                  แผนที่และพื้นที่เสี่ยง
+                </span>
+              </a>
+            </li>
+            <li>
+              <a
+                class="shell-nav-link"
+                data-discover="true"
+                href="/reports"
+              >
+                <span
+                  aria-hidden="true"
+                  class="shell-nav-symbol"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="none"
+                    height="20"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    viewBox="0 0 24 24"
+                    width="20"
+                  >
+                    <rect
+                      height="18"
+                      rx="2"
+                      width="14"
+                      x="5"
+                      y="3"
+                    />
+                    <path
+                      d="M9 8h6M9 12h6M9 16h4"
+                    />
+                  </svg>
+                </span>
+                <span>
+                  รายงาน
+                </span>
+              </a>
+            </li>
+          </ul>
+        </nav>
+        <aside
+          aria-labelledby="sidebar-status-title"
+          class="sidebar-status"
+        >
+          <span
+            aria-hidden="true"
+            class="sidebar-status__dot"
+          />
+          <div>
+            <strong
+              id="sidebar-status-title"
+            >
+              ข้อควรทราบ
+            </strong>
+            <p>
+              ข้อมูลไม่พร้อมใช้งานไม่ได้หมายถึงพื้นที่ปลอดภัย
+            </p>
+          </div>
+        </aside>
+      </aside>
+      <div
+        class="shell-main"
+      >
+        <div
+          class="shell-top"
+        >
+          <header
+            class="institution-header"
+          >
+            <div
+              class="w-full max-w-[1600px] mx-auto px-4 sm:px-5 md:px-5 lg:px-5 flex items-center justify-between gap-4"
+            >
+              <span
+                class="institution-header__name"
+              >
+                ศูนย์ติดตามสถานการณ์น้ำ อำเภอองครักษ์ จังหวัดนครนายก
+              </span>
+              <div
+                class="institution-header__actions"
+              >
+                <div
+                  aria-label="ภาษา"
+                  class="locale-toggle"
+                  role="group"
+                >
+                  <button
+                    aria-pressed="true"
+                    type="button"
+                  >
+                    TH
+                  </button>
+                  <button
+                    aria-pressed="false"
+                    type="button"
+                  >
+                    EN
+                  </button>
+                </div>
+                <a
+                  aria-label="การแจ้งเตือน"
+                  class="header-icon"
+                  data-discover="true"
+                  href="/notifications"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="none"
+                    height="20"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    viewBox="0 0 24 24"
+                    width="20"
+                  >
+                    <path
+                      d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"
+                    />
+                    <path
+                      d="M10 21h4"
+                    />
+                  </svg>
+                </a>
+                <details
+                  class="account-menu"
+                >
+                  <summary
+                    aria-label="เมนูบัญชี"
+                    class=""
+                  >
+                    <span
+                      aria-hidden="true"
+                      class="account-user-icon"
+                    >
+                      <svg
+                        fill="none"
+                        height="22"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="1.8"
+                        viewBox="0 0 24 24"
+                        width="22"
+                      >
+                        <circle
+                          cx="12"
+                          cy="8"
+                          r="4"
+                        />
+                        <path
+                          d="M4 21a8 8 0 0 1 16 0"
+                        />
+                      </svg>
+                    </span>
+                    <span
+                      aria-hidden="true"
+                      class="account-chevron"
+                    >
+                      <svg
+                        fill="none"
+                        height="20"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        viewBox="0 0 24 24"
+                        width="20"
+                      >
+                        <path
+                          d="m6 9 6 6 6-6"
+                        />
+                      </svg>
+                    </span>
+                    <span
+                      class="sr-only"
+                    >
+                      ยังไม่ได้เข้าสู่ระบบ
+                    </span>
+                  </summary>
+                  <div
+                    class="account-menu__content"
+                  >
+                    <a
+                      class=""
+                      data-discover="true"
+                      href="/login"
+                    >
+                      เข้าสู่ระบบ
+                    </a>
+                  </div>
+                </details>
+              </div>
+            </div>
+          </header>
+          <header
+            class="mobile-header"
+          >
+            <div
+              class="w-full max-w-[1600px] mx-auto px-4 sm:px-5 md:px-5 lg:px-5 flex items-center h-full"
+            >
+              <a
+                aria-label="Flood Watch Ongkharak หน้าหลัก"
+                class="brand"
+                data-discover="true"
+                href="/"
+              >
+                <img
+                  alt=""
+                  class="brand__image"
+                  src="/flood-watch-mark.svg"
+                />
+                <span>
+                  <strong>
+                    Flood Watch
+                  </strong>
+                  <small>
+                    Ongkharak
+                  </small>
+                </span>
+              </a>
+            </div>
+          </header>
+        </div>
+        <main
+          class="page-content w-full"
+          id="main-content"
+          tabindex="-1"
+        >
+          <div
+            class="page-content__inner w-full max-w-[1600px] mx-auto px-4 sm:px-5 md:px-5 lg:px-5"
+          >
+            <section
+              aria-labelledby="health-title"
+              class="health-panel"
+            >
+              <p
+                class="eyebrow"
+              >
+                PHASE 0 / FOUNDATION
+              </p>
+              <h1
+                id="health-title"
+              >
+                สถานะระบบสำหรับการพัฒนา
+              </h1>
+              <p
+                class="health-panel__lead"
+              >
+                ยังไม่มีการเผยแพร่ข้อมูลสถานการณ์น้ำ
+              </p>
+              <p
+                class="health-panel__description"
+              >
+                พื้นที่นี้เตรียมไว้สำหรับตรวจสอบการเชื่อมต่อและโครงสร้างแอปพลิเคชัน ก่อนเริ่มเผยแพร่ข้อมูลที่ผ่านการตรวจสอบ
+              </p>
+              <dl
+                class="development-details"
+              >
+                <div>
+                  <dt>
+                    ปลายทาง API
+                  </dt>
+                  <dd>
+                    <code>
+                      /api/v1
+                    </code>
+                  </dd>
+                </div>
+                <div>
+                  <dt>
+                    สถานะข้อมูลสาธารณะ
+                  </dt>
+                  <dd>
+                    ยังไม่พร้อมใช้งาน
+                  </dd>
+                </div>
+              </dl>
+            </section>
+          </div>
+        </main>
+      </div>
+      <nav
+        aria-label="การนำทางมือถือ"
+        class="bottom-navigation"
+      >
+        <ul>
+          <li>
+            <a
+              class="shell-nav-link"
+              data-discover="true"
+              href="/overview"
+            >
+              <span
+                aria-hidden="true"
+                class="shell-nav-symbol"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="none"
+                  height="20"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                  width="20"
+                >
+                  <path
+                    d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"
+                  />
+                  <path
+                    d="M9 21v-8h6v8"
+                  />
+                </svg>
+              </span>
+              <span>
+                ภาพรวม
+              </span>
+            </a>
+          </li>
+          <li>
+            <a
+              class="shell-nav-link"
+              data-discover="true"
+              href="/announcements"
+            >
+              <span
+                aria-hidden="true"
+                class="shell-nav-symbol"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="none"
+                  height="20"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                  width="20"
+                >
+                  <path
+                    d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"
+                  />
+                  <path
+                    d="M10 21h4"
+                  />
+                </svg>
+              </span>
+              <span>
+                ประกาศ
+              </span>
+            </a>
+          </li>
+          <li>
+            <a
+              class="shell-nav-link"
+              data-discover="true"
+              href="/map"
+            >
+              <span
+                aria-hidden="true"
+                class="shell-nav-symbol"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="none"
+                  height="20"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                  width="20"
+                >
+                  <path
+                    d="m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2z"
+                  />
+                  <path
+                    d="M9 3v16M15 5v16"
+                  />
+                </svg>
+              </span>
+              <span>
+                แผนที่และพื้นที่เสี่ยง
+              </span>
+            </a>
+          </li>
+          <li>
+            <a
+              class="shell-nav-link"
+              data-discover="true"
+              href="/reports"
+            >
+              <span
+                aria-hidden="true"
+                class="shell-nav-symbol"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="none"
+                  height="20"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                  width="20"
+                >
+                  <rect
+                    height="18"
+                    rx="2"
+                    width="14"
+                    x="5"
+                    y="3"
+                  />
+                  <path
+                    d="M9 8h6M9 12h6M9 16h4"
+                  />
+                </svg>
+              </span>
+              <span>
+                รายงาน
+              </span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </div>
+</body>
+ ❯ Object.getElementError ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/app/App.test.tsx:17:19
+     15|     );
+     16|
+     17|     expect(screen.getByRole("link", { name: "สถานะระบบ" })).toHaveAttr…
+       |                   ^
+     18|     expect(
+     19|       screen.getByRole("heading", { name: "สถานะระบบสำหรับการพัฒนา" })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/13]⎯
+
+ FAIL  src/app/App.test.tsx > public routes > keeps a main landmark on /login
+TestingLibraryElementError: Found multiple elements with the role "main"
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+<main
+  id="main-content"
+>
+  <main
+    class="auth-page"
+  >
+    <div
+      aria-label="ภาษา"
+      class="locale-toggle"
+      role="group"
+    >
+      <button
+        aria-pressed="true"
+        type="button"
+      >
+        TH
+      </button>
+      <button
+        aria-pressed="false"
+        type="button"
+      >
+        EN
+      </button>
+    </div>
+    <a
+      aria-label="Flood Watch Ongkharak หน้าหลัก"
+      class="auth-brand"
+      data-discover="true"
+      href="/"
+    >
+      <img
+        alt=""
+        src="/flood-watch-mark.svg"
+      />
+      <div>
+        <strong>
+          Flood Watch
+        </strong>
+        <small>
+          ติดตามสถานการณ์น้ำองครักษ์
+        </small>
+      </div>
+    </a>
+    <form
+      class="auth-form data-section"
+      novalidate=""
+    >
+      <header
+        class="auth-heading"
+        style="text-align: left;"
+      >
+        <h1>
+          เข้าสู่ระบบ
+        </h1>
+        <p>
+          เข้าสู่ระบบเพื่อส่งและติดตามรายงานสถานการณ์น้ำในพื้นที่
+        </p>
+      </header>
+      <label>
+        อีเมล หรือ ชื่อผู้ใช้งาน
+        <input
+          autocomplete="username"
+          type="text"
+          value=""
+        />
+      </label>
+      <label>
+        รหัสผ่าน
+        <input
+          autocomplete="current-password"
+          type="password"
+          value=""
+        />
+      </label>
+      <small>
+        แนะนำให้ใช้วลีที่จำง่าย หากใช้ตัวอักษรอังกฤษ ตัวเลข และสัญลักษณ์ทั่วไป ให้ยาว 12–128 ตัวอักษร ภาษาไทยและอีโมจิใช้ได้ ระบบจะตรวจสอบให้อัตโนมัติ
+      </small>
+      <details>
+        <summary>
+          รายละเอียดการตรวจสอบความยาว
+        </summary>
+        <small>
+          ระบบจะตรวจความยาวแบบ UTF-8 รวม 12–128 ไบต์
+        </small>
+      </details>
+      <label
+        class="auth-show-password"
+      >
+        <input
+          aria-label="แสดงรหัสผ่าน"
+          type="checkbox"
+        />
+        แสดงรหัสผ่าน
+      </label>
+      <div
+        class="auth-actions"
+      >
+        <a
+          class="auth-text-action"
+          data-discover="true"
+          href="/forgot-password?returnTo=%2Freports"
+        >
+          ลืมรหัสผ่าน?
+        </a>
+        <button
+          class="action-button"
+          type="submit"
+        >
+          เข้าสู่ระบบ
+           
+          <span
+            aria-hidden="true"
+          >
+            →
+          </span>
+        </button>
+      </div>
+      <div
+        class="auth-divider"
+      >
+        หรือ
+      </div>
+      <div
+        class="flex flex-col gap-2"
+      >
+        <button
+          aria-describedby="_r_3_"
+          class="auth-google"
+          disabled=""
+          type="button"
+        >
+          ดำเนินการต่อด้วย Google
+        </button>
+        <p
+          class="text-center text-sm text-[var(--color-ink-muted)]"
+          id="_r_3_"
+          role="status"
+        >
+          ตรวจสอบการเข้าสู่ระบบด้วย Google ไม่สำเร็จ ใช้อีเมลและรหัสผ่านได้ตามปกติ
+        </p>
+      </div>
+      <p
+        class="section-caption"
+      >
+        ยังไม่มีบัญชี?
+         
+        <a
+          data-discover="true"
+          href="/register?returnTo=%2Freports"
+        >
+          สร้างบัญชีผู้ใช้
+        </a>
+      </p>
+    </form>
+  </main>
+</main>
+
+Ignored nodes: comments, script, style
+<main
+  class="auth-page"
+>
+  <div
+    aria-label="ภาษา"
+    class="locale-toggle"
+    role="group"
+  >
+    <button
+      aria-pressed="true"
+      type="button"
+    >
+      TH
+    </button>
+    <button
+      aria-pressed="false"
+      type="button"
+    >
+      EN
+    </button>
+  </div>
+  <a
+    aria-label="Flood Watch Ongkharak หน้าหลัก"
+    class="auth-brand"
+    data-discover="true"
+    href="/"
+  >
+    <img
+      alt=""
+      src="/flood-watch-mark.svg"
+    />
+    <div>
+      <strong>
+        Flood Watch
+      </strong>
+      <small>
+        ติดตามสถานการณ์น้ำองครักษ์
+      </small>
+    </div>
+  </a>
+  <form
+    class="auth-form data-section"
+    novalidate=""
+  >
+    <header
+      class="auth-heading"
+      style="text-align: left;"
+    >
+      <h1>
+        เข้าสู่ระบบ
+      </h1>
+      <p>
+        เข้าสู่ระบบเพื่อส่งและติดตามรายงานสถานการณ์น้ำในพื้นที่
+      </p>
+    </header>
+    <label>
+      อีเมล หรือ ชื่อผู้ใช้งาน
+      <input
+        autocomplete="username"
+        type="text"
+        value=""
+      />
+    </label>
+    <label>
+      รหัสผ่าน
+      <input
+        autocomplete="current-password"
+        type="password"
+        value=""
+      />
+    </label>
+    <small>
+      แนะนำให้ใช้วลีที่จำง่าย หากใช้ตัวอักษรอังกฤษ ตัวเลข และสัญลักษณ์ทั่วไป ให้ยาว 12–128 ตัวอักษร ภาษาไทยและอีโมจิใช้ได้ ระบบจะตรวจสอบให้อัตโนมัติ
+    </small>
+    <details>
+      <summary>
+        รายละเอียดการตรวจสอบความยาว
+      </summary>
+      <small>
+        ระบบจะตรวจความยาวแบบ UTF-8 รวม 12–128 ไบต์
+      </small>
+    </details>
+    <label
+      class="auth-show-password"
+    >
+      <input
+        aria-label="แสดงรหัสผ่าน"
+        type="checkbox"
+      />
+      แสดงรหัสผ่าน
+    </label>
+    <div
+      class="auth-actions"
+    >
+      <a
+        class="auth-text-action"
+        data-discover="true"
+        href="/forgot-password?returnTo=%2Freports"
+      >
+        ลืมรหัสผ่าน?
+      </a>
+      <button
+        class="action-button"
+        type="submit"
+      >
+        เข้าสู่ระบบ
+         
+        <span
+          aria-hidden="true"
+        >
+          →
+        </span>
+      </button>
+    </div>
+    <div
+      class="auth-divider"
+    >
+      หรือ
+    </div>
+    <div
+      class="flex flex-col gap-2"
+    >
+      <button
+        aria-describedby="_r_3_"
+        class="auth-google"
+        disabled=""
+        type="button"
+      >
+        ดำเนินการต่อด้วย Google
+      </button>
+      <p
+        class="text-center text-sm text-[var(--color-ink-muted)]"
+        id="_r_3_"
+        role="status"
+      >
+        ตรวจสอบการเข้าสู่ระบบด้วย Google ไม่สำเร็จ ใช้อีเมลและรหัสผ่านได้ตามปกติ
+      </p>
+    </div>
+    <p
+      class="section-caption"
+    >
+      ยังไม่มีบัญชี?
+       
+      <a
+        data-discover="true"
+        href="/register?returnTo=%2Freports"
+      >
+        สร้างบัญชีผู้ใช้
+      </a>
+    </p>
+  </form>
+</main>
+
+(If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <main
+      id="main-content"
+    >
+      <main
+        class="auth-page"
+      >
+        <div
+          aria-label="ภาษา"
+          class="locale-toggle"
+          role="group"
+        >
+          <button
+            aria-pressed="true"
+            type="button"
+          >
+            TH
+          </button>
+          <button
+            aria-pressed="false"
+            type="button"
+          >
+            EN
+          </button>
+        </div>
+        <a
+          aria-label="Flood Watch Ongkharak หน้าหลัก"
+          class="auth-brand"
+          data-discover="true"
+          href="/"
+        >
+          <img
+            alt=""
+            src="/flood-watch-mark.svg"
+          />
+          <div>
+            <strong>
+              Flood Watch
+            </strong>
+            <small>
+              ติดตามสถานการณ์น้ำองครักษ์
+            </small>
+          </div>
+        </a>
+        <form
+          class="auth-form data-section"
+          novalidate=""
+        >
+          <header
+            class="auth-heading"
+            style="text-align: left;"
+          >
+            <h1>
+              เข้าสู่ระบบ
+            </h1>
+            <p>
+              เข้าสู่ระบบเพื่อส่งและติดตามรายงานสถานการณ์น้ำในพื้นที่
+            </p>
+          </header>
+          <label>
+            อีเมล หรือ ชื่อผู้ใช้งาน
+            <input
+              autocomplete="username"
+              type="text"
+              value=""
+            />
+          </label>
+          <label>
+            รหัสผ่าน
+            <input
+              autocomplete="current-password"
+              type="password"
+              value=""
+            />
+          </label>
+          <small>
+            แนะนำให้ใช้วลีที่จำง่าย หากใช้ตัวอักษรอังกฤษ ตัวเลข และสัญลักษณ์ทั่วไป ให้ยาว 12–128 ตัวอักษร ภาษาไทยและอีโมจิใช้ได้ ระบบจะตรวจสอบให้อัตโนมัติ
+          </small>
+          <details>
+            <summary>
+              รายละเอียดการตรวจสอบความยาว
+            </summary>
+            <small>
+              ระบบจะตรวจความยาวแบบ UTF-8 รวม 12–128 ไบต์
+            </small>
+          </details>
+          <label
+            class="auth-show-password"
+          >
+            <input
+              aria-label="แสดงรหัสผ่าน"
+              type="checkbox"
+            />
+            แสดงรหัสผ่าน
+          </label>
+          <div
+            class="auth-actions"
+          >
+            <a
+              class="auth-text-action"
+              data-discover="true"
+              href="/forgot-password?returnTo=%2Freports"
+            >
+              ลืมรหัสผ่าน?
+            </a>
+            <button
+              class="action-button"
+              type="submit"
+            >
+              เข้าสู่ระบบ
+               
+              <span
+                aria-hidden="true"
+              >
+                →
+              </span>
+            </button>
+          </div>
+          <div
+            class="auth-divider"
+          >
+            หรือ
+          </div>
+          <div
+            class="flex flex-col gap-2"
+          >
+            <button
+              aria-describedby="_r_3_"
+              class="auth-google"
+              disabled=""
+              type="button"
+            >
+              ดำเนินการต่อด้วย Google
+            </button>
+            <p
+              class="text-center text-sm text-[var(--color-ink-muted)]"
+              id="_r_3_"
+              role="status"
+            >
+              ตรวจสอบการเข้าสู่ระบบด้วย Google ไม่สำเร็จ ใช้อีเมลและรหัสผ่านได้ตามปกติ
+            </p>
+          </div>
+          <p
+            class="section-caption"
+          >
+            ยังไม่มีบัญชี?
+             
+            <a
+              data-discover="true"
+              href="/register?returnTo=%2Freports"
+            >
+              สร้างบัญชีผู้ใช้
+            </a>
+          </p>
+        </form>
+      </main>
+    </main>
+  </div>
+</body>
+ ❯ Object.getElementError ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ getElementError ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:20:35
+ ❯ getMultipleElementsFoundError ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:23:10
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:55:13
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/app/App.test.tsx:47:19
+     45|     render(<MemoryRouter initialEntries={[path]}><AuthProvider api={ap…
+     46|     await act(async () => { await api.refresh.mock.results[0]?.value.c…
+     47|     expect(screen.getByRole("main")).toBeInTheDocument();
+       |                   ^
+     48|   });
+     49|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/13]⎯
+
+ FAIL  src/app/App.test.tsx > public routes > keeps a main landmark on /register
+TestingLibraryElementError: Found multiple elements with the role "main"
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+<main
+  id="main-content"
+>
+  <main
+    class="auth-page"
+  >
+    <div
+      aria-label="ภาษา"
+      class="locale-toggle"
+      role="group"
+    >
+      <button
+        aria-pressed="true"
+        type="button"
+      >
+        TH
+      </button>
+      <button
+        aria-pressed="false"
+        type="button"
+      >
+        EN
+      </button>
+    </div>
+    <a
+      aria-label="Flood Watch Ongkharak หน้าหลัก"
+      class="auth-brand"
+      data-discover="true"
+      href="/"
+    >
+      <img
+        alt=""
+        src="/flood-watch-mark.svg"
+      />
+      <div>
+        <strong>
+          Flood Watch
+        </strong>
+        <small>
+          ติดตามสถานการณ์น้ำองครักษ์
+        </small>
+      </div>
+    </a>
+    <form
+      class="auth-form data-section"
+      novalidate=""
+    >
+      <header
+        class="auth-heading"
+        style="text-align: left;"
+      >
+        <h1>
+          สมัครสมาชิก
+        </h1>
+        <p>
+          เข้าสู่ระบบเพื่อส่งและติดตามรายงานสถานการณ์น้ำในพื้นที่
+        </p>
+      </header>
+      <label>
+        อีเมล
+        <input
+          autocomplete="email"
+          type="email"
+          value=""
+        />
+      </label>
+      <label>
+        ชื่อผู้ใช้งาน
+        <input
+          autocomplete="username"
+          type="text"
+          value=""
+        />
+      </label>
+      <small>
+        ใช้ a–z, 0–9 หรือ _ ความยาว 3–32 ตัวอักษร
+      </small>
+      <label>
+        รหัสผ่าน
+        <input
+          autocomplete="new-password"
+          type="password"
+          value=""
+        />
+      </label>
+      <small>
+        แนะนำให้ใช้วลีที่จำง่าย หากใช้ตัวอักษรอังกฤษ ตัวเลข และสัญลักษณ์ทั่วไป ให้ยาว 12–128 ตัวอักษร ภาษาไทยและอีโมจิใช้ได้ ระบบจะตรวจสอบให้อัตโนมัติ
+      </small>
+      <details>
+        <summary>
+          รายละเอียดการตรวจสอบความยาว
+        </summary>
+        <small>
+          ระบบจะตรวจความยาวแบบ UTF-8 รวม 12–128 ไบต์
+        </small>
+      </details>
+      <label
+        class="auth-show-password"
+      >
+        <input
+          aria-label="แสดงรหัสผ่าน"
+          type="checkbox"
+        />
+        แสดงรหัสผ่าน
+      </label>
+      <div
+        class="auth-actions"
+      >
+        <a
+          class="auth-text-action"
+          data-discover="true"
+          href="/forgot-password?returnTo=%2Freports"
+        >
+          ลืมรหัสผ่าน?
+        </a>
+        <button
+          class="action-button"
+          type="submit"
+        >
+          สมัครสมาชิก
+           
+          <span
+            aria-hidden="true"
+          >
+            →
+          </span>
+        </button>
+      </div>
+      <div
+        class="auth-divider"
+      >
+        หรือ
+      </div>
+      <div
+        class="flex flex-col gap-2"
+      >
+        <button
+          aria-describedby="_r_4_"
+          class="auth-google"
+          disabled=""
+          type="button"
+        >
+          ดำเนินการต่อด้วย Google
+        </button>
+        <p
+          class="text-center text-sm text-[var(--color-ink-muted)]"
+          id="_r_4_"
+          role="status"
+        >
+          ตรวจสอบการเข้าสู่ระบบด้วย Google ไม่สำเร็จ ใช้อีเมลและรหัสผ่านได้ตามปกติ
+        </p>
+      </div>
+      <p
+        class="section-caption"
+      >
+        มีบัญชีอยู่แล้ว?
+         
+        <a
+          data-discover="true"
+          href="/login?returnTo=%2Freports"
+        >
+          เข้าสู่ระบบ
+        </a>
+      </p>
+    </form>
+  </main>
+</main>
+
+Ignored nodes: comments, script, style
+<main
+  class="auth-page"
+>
+  <div
+    aria-label="ภาษา"
+    class="locale-toggle"
+    role="group"
+  >
+    <button
+      aria-pressed="true"
+      type="button"
+    >
+      TH
+    </button>
+    <button
+      aria-pressed="false"
+      type="button"
+    >
+      EN
+    </button>
+  </div>
+  <a
+    aria-label="Flood Watch Ongkharak หน้าหลัก"
+    class="auth-brand"
+    data-discover="true"
+    href="/"
+  >
+    <img
+      alt=""
+      src="/flood-watch-mark.svg"
+    />
+    <div>
+      <strong>
+        Flood Watch
+      </strong>
+      <small>
+        ติดตามสถานการณ์น้ำองครักษ์
+      </small>
+    </div>
+  </a>
+  <form
+    class="auth-form data-section"
+    novalidate=""
+  >
+    <header
+      class="auth-heading"
+      style="text-align: left;"
+    >
+      <h1>
+        สมัครสมาชิก
+      </h1>
+      <p>
+        เข้าสู่ระบบเพื่อส่งและติดตามรายงานสถานการณ์น้ำในพื้นที่
+      </p>
+    </header>
+    <label>
+      อีเมล
+      <input
+        autocomplete="email"
+        type="email"
+        value=""
+      />
+    </label>
+    <label>
+      ชื่อผู้ใช้งาน
+      <input
+        autocomplete="username"
+        type="text"
+        value=""
+      />
+    </label>
+    <small>
+      ใช้ a–z, 0–9 หรือ _ ความยาว 3–32 ตัวอักษร
+    </small>
+    <label>
+      รหัสผ่าน
+      <input
+        autocomplete="new-password"
+        type="password"
+        value=""
+      />
+    </label>
+    <small>
+      แนะนำให้ใช้วลีที่จำง่าย หากใช้ตัวอักษรอังกฤษ ตัวเลข และสัญลักษณ์ทั่วไป ให้ยาว 12–128 ตัวอักษร ภาษาไทยและอีโมจิใช้ได้ ระบบจะตรวจสอบให้อัตโนมัติ
+    </small>
+    <details>
+      <summary>
+        รายละเอียดการตรวจสอบความยาว
+      </summary>
+      <small>
+        ระบบจะตรวจความยาวแบบ UTF-8 รวม 12–128 ไบต์
+      </small>
+    </details>
+    <label
+      class="auth-show-password"
+    >
+      <input
+        aria-label="แสดงรหัสผ่าน"
+        type="checkbox"
+      />
+      แสดงรหัสผ่าน
+    </label>
+    <div
+      class="auth-actions"
+    >
+      <a
+        class="auth-text-action"
+        data-discover="true"
+        href="/forgot-password?returnTo=%2Freports"
+      >
+        ลืมรหัสผ่าน?
+      </a>
+      <button
+        class="action-button"
+        type="submit"
+      >
+        สมัครสมาชิก
+         
+        <span
+          aria-hidden="true"
+        >
+          →
+        </span>
+      </button>
+    </div>
+    <div
+      class="auth-divider"
+    >
+      หรือ
+    </div>
+    <div
+      class="flex flex-col gap-2"
+    >
+      <button
+        aria-describedby="_r_4_"
+        class="auth-google"
+        disabled=""
+        type="button"
+      >
+        ดำเนินการต่อด้วย Google
+      </button>
+      <p
+        class="text-center text-sm text-[var(--color-ink-muted)]"
+        id="_r_4_"
+        role="status"
+      >
+        ตรวจสอบการเข้าสู่ระบบด้วย Google ไม่สำเร็จ ใช้อีเมลและรหัสผ่านได้ตามปกติ
+      </p>
+    </div>
+    <p
+      class="section-caption"
+    >
+      มีบัญชีอยู่แล้ว?
+       
+      <a
+        data-discover="true"
+        href="/login?returnTo=%2Freports"
+      >
+        เข้าสู่ระบบ
+      </a>
+    </p>
+  </form>
+</main>
+
+(If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <main
+      id="main-content"
+    >
+      <main
+        class="auth-page"
+      >
+        <div
+          aria-label="ภาษา"
+          class="locale-toggle"
+          role="group"
+        >
+          <button
+            aria-pressed="true"
+            type="button"
+          >
+            TH
+          </button>
+          <button
+            aria-pressed="false"
+            type="button"
+          >
+            EN
+          </button>
+        </div>
+        <a
+          aria-label="Flood Watch Ongkharak หน้าหลัก"
+          class="auth-brand"
+          data-discover="true"
+          href="/"
+        >
+          <img
+            alt=""
+            src="/flood-watch-mark.svg"
+          />
+          <div>
+            <strong>
+              Flood Watch
+            </strong>
+            <small>
+              ติดตามสถานการณ์น้ำองครักษ์
+            </small>
+          </div>
+        </a>
+        <form
+          class="auth-form data-section"
+          novalidate=""
+        >
+          <header
+            class="auth-heading"
+            style="text-align: left;"
+          >
+            <h1>
+              สมัครสมาชิก
+            </h1>
+            <p>
+              เข้าสู่ระบบเพื่อส่งและติดตามรายงานสถานการณ์น้ำในพื้นที่
+            </p>
+          </header>
+          <label>
+            อีเมล
+            <input
+              autocomplete="email"
+              type="email"
+              value=""
+            />
+          </label>
+          <label>
+            ชื่อผู้ใช้งาน
+            <input
+              autocomplete="username"
+              type="text"
+              value=""
+            />
+          </label>
+          <small>
+            ใช้ a–z, 0–9 หรือ _ ความยาว 3–32 ตัวอักษร
+          </small>
+          <label>
+            รหัสผ่าน
+            <input
+              autocomplete="new-password"
+              type="password"
+              value=""
+            />
+          </label>
+          <small>
+            แนะนำให้ใช้วลีที่จำง่าย หากใช้ตัวอักษรอังกฤษ ตัวเลข และสัญลักษณ์ทั่วไป ให้ยาว 12–128 ตัวอักษร ภาษาไทยและอีโมจิใช้ได้ ระบบจะตรวจสอบให้อัตโนมัติ
+          </small>
+          <details>
+            <summary>
+              รายละเอียดการตรวจสอบความยาว
+            </summary>
+            <small>
+              ระบบจะตรวจความยาวแบบ UTF-8 รวม 12–128 ไบต์
+            </small>
+          </details>
+          <label
+            class="auth-show-password"
+          >
+            <input
+              aria-label="แสดงรหัสผ่าน"
+              type="checkbox"
+            />
+            แสดงรหัสผ่าน
+          </label>
+          <div
+            class="auth-actions"
+          >
+            <a
+              class="auth-text-action"
+              data-discover="true"
+              href="/forgot-password?returnTo=%2Freports"
+            >
+              ลืมรหัสผ่าน?
+            </a>
+            <button
+              class="action-button"
+              type="submit"
+            >
+              สมัครสมาชิก
+               
+              <span
+                aria-hidden="true"
+              >
+                →
+              </span>
+            </button>
+          </div>
+          <div
+            class="auth-divider"
+          >
+            หรือ
+          </div>
+          <div
+            class="flex flex-col gap-2"
+          >
+            <button
+              aria-describedby="_r_4_"
+              class="auth-google"
+              disabled=""
+              type="button"
+            >
+              ดำเนินการต่อด้วย Google
+            </button>
+            <p
+              class="text-center text-sm text-[var(--color-ink-muted)]"
+              id="_r_4_"
+              role="status"
+            >
+              ตรวจสอบการเข้าสู่ระบบด้วย Google ไม่สำเร็จ ใช้อีเมลและรหัสผ่านได้ตามปกติ
+            </p>
+          </div>
+          <p
+            class="section-caption"
+          >
+            มีบัญชีอยู่แล้ว?
+             
+            <a
+              data-discover="true"
+              href="/login?returnTo=%2Freports"
+            >
+              เข้าสู่ระบบ
+            </a>
+          </p>
+        </form>
+      </main>
+    </main>
+  </div>
+</body>
+ ❯ Object.getElementError ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ getElementError ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:20:35
+ ❯ getMultipleElementsFoundError ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:23:10
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:55:13
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/app/App.test.tsx:47:19
+     45|     render(<MemoryRouter initialEntries={[path]}><AuthProvider api={ap…
+     46|     await act(async () => { await api.refresh.mock.results[0]?.value.c…
+     47|     expect(screen.getByRole("main")).toBeInTheDocument();
+       |                   ^
+     48|   });
+     49|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/13]⎯
+
+ FAIL  src/app/App.test.tsx > public routes > keeps a main landmark on /forgot-password
+TestingLibraryElementError: Found multiple elements with the role "main"
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+<main
+  id="main-content"
+>
+  <main
+    class="auth-page"
+  >
+    <div
+      aria-label="ภาษา"
+      class="locale-toggle"
+      role="group"
+    >
+      <button
+        aria-pressed="true"
+        type="button"
+      >
+        TH
+      </button>
+      <button
+        aria-pressed="false"
+        type="button"
+      >
+        EN
+      </button>
+    </div>
+    <a
+      aria-label="Flood Watch Ongkharak หน้าหลัก"
+      class="auth-brand"
+      data-discover="true"
+      href="/"
+    >
+      <img
+        alt=""
+        src="/flood-watch-mark.svg"
+      />
+      <div>
+        <strong>
+          Flood Watch
+        </strong>
+        <small>
+          ติดตามสถานการณ์น้ำองครักษ์
+        </small>
+      </div>
+    </a>
+    <form
+      class="auth-form data-section"
+      novalidate=""
+    >
+      <header
+        class="auth-heading"
+        style="text-align: left;"
+      >
+        <h1
+          tabindex="-1"
+        >
+          ลืมรหัสผ่าน?
+        </h1>
+        <p>
+          ระบุอีเมลที่ใช้สมัครบัญชีเพื่อเริ่มกู้คืนรหัสผ่าน
+        </p>
+      </header>
+      <label>
+        อีเมล
+        <input
+          autocomplete="email"
+          placeholder="อีเมลของคุณ"
+          type="email"
+          value=""
+        />
+      </label>
+      <div
+        class="auth-actions"
+        style="margin-top: 0.5rem;"
+      >
+        <button
+          class="action-button"
+          style="width: 100%; justify-content: center;"
+          type="submit"
+        >
+          ส่งรหัส OTP
+        </button>
+      </div>
+      <p
+        class="section-caption"
+      >
+        จำรหัสผ่านได้แล้ว?
+         
+        <a
+          data-discover="true"
+          href="/login?returnTo=%2Freports"
+        >
+          กลับไปหน้าเข้าสู่ระบบ
+        </a>
+      </p>
+    </form>
+  </main>
+</main>
+
+Ignored nodes: comments, script, style
+<main
+  class="auth-page"
+>
+  <div
+    aria-label="ภาษา"
+    class="locale-toggle"
+    role="group"
+  >
+    <button
+      aria-pressed="true"
+      type="button"
+    >
+      TH
+    </button>
+    <button
+      aria-pressed="false"
+      type="button"
+    >
+      EN
+    </button>
+  </div>
+  <a
+    aria-label="Flood Watch Ongkharak หน้าหลัก"
+    class="auth-brand"
+    data-discover="true"
+    href="/"
+  >
+    <img
+      alt=""
+      src="/flood-watch-mark.svg"
+    />
+    <div>
+      <strong>
+        Flood Watch
+      </strong>
+      <small>
+        ติดตามสถานการณ์น้ำองครักษ์
+      </small>
+    </div>
+  </a>
+  <form
+    class="auth-form data-section"
+    novalidate=""
+  >
+    <header
+      class="auth-heading"
+      style="text-align: left;"
+    >
+      <h1
+        tabindex="-1"
+      >
+        ลืมรหัสผ่าน?
+      </h1>
+      <p>
+        ระบุอีเมลที่ใช้สมัครบัญชีเพื่อเริ่มกู้คืนรหัสผ่าน
+      </p>
+    </header>
+    <label>
+      อีเมล
+      <input
+        autocomplete="email"
+        placeholder="อีเมลของคุณ"
+        type="email"
+        value=""
+      />
+    </label>
+    <div
+      class="auth-actions"
+      style="margin-top: 0.5rem;"
+    >
+      <button
+        class="action-button"
+        style="width: 100%; justify-content: center;"
+        type="submit"
+      >
+        ส่งรหัส OTP
+      </button>
+    </div>
+    <p
+      class="section-caption"
+    >
+      จำรหัสผ่านได้แล้ว?
+       
+      <a
+        data-discover="true"
+        href="/login?returnTo=%2Freports"
+      >
+        กลับไปหน้าเข้าสู่ระบบ
+      </a>
+    </p>
+  </form>
+</main>
+
+(If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <main
+      id="main-content"
+    >
+      <main
+        class="auth-page"
+      >
+        <div
+          aria-label="ภาษา"
+          class="locale-toggle"
+          role="group"
+        >
+          <button
+            aria-pressed="true"
+            type="button"
+          >
+            TH
+          </button>
+          <button
+            aria-pressed="false"
+            type="button"
+          >
+            EN
+          </button>
+        </div>
+        <a
+          aria-label="Flood Watch Ongkharak หน้าหลัก"
+          class="auth-brand"
+          data-discover="true"
+          href="/"
+        >
+          <img
+            alt=""
+            src="/flood-watch-mark.svg"
+          />
+          <div>
+            <strong>
+              Flood Watch
+            </strong>
+            <small>
+              ติดตามสถานการณ์น้ำองครักษ์
+            </small>
+          </div>
+        </a>
+        <form
+          class="auth-form data-section"
+          novalidate=""
+        >
+          <header
+            class="auth-heading"
+            style="text-align: left;"
+          >
+            <h1
+              tabindex="-1"
+            >
+              ลืมรหัสผ่าน?
+            </h1>
+            <p>
+              ระบุอีเมลที่ใช้สมัครบัญชีเพื่อเริ่มกู้คืนรหัสผ่าน
+            </p>
+          </header>
+          <label>
+            อีเมล
+            <input
+              autocomplete="email"
+              placeholder="อีเมลของคุณ"
+              type="email"
+              value=""
+            />
+          </label>
+          <div
+            class="auth-actions"
+            style="margin-top: 0.5rem;"
+          >
+            <button
+              class="action-button"
+              style="width: 100%; justify-content: center;"
+              type="submit"
+            >
+              ส่งรหัส OTP
+            </button>
+          </div>
+          <p
+            class="section-caption"
+          >
+            จำรหัสผ่านได้แล้ว?
+             
+            <a
+              data-discover="true"
+              href="/login?returnTo=%2Freports"
+            >
+              กลับไปหน้าเข้าสู่ระบบ
+            </a>
+          </p>
+        </form>
+      </main>
+    </main>
+  </div>
+</body>
+ ❯ Object.getElementError ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ getElementError ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:20:35
+ ❯ getMultipleElementsFoundError ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:23:10
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:55:13
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/app/App.test.tsx:47:19
+     45|     render(<MemoryRouter initialEntries={[path]}><AuthProvider api={ap…
+     46|     await act(async () => { await api.refresh.mock.results[0]?.value.c…
+     47|     expect(screen.getByRole("main")).toBeInTheDocument();
+       |                   ^
+     48|   });
+     49|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/13]⎯
+
+ FAIL  src/app/LandingRoutes.test.tsx > landing and overview navigation > matches the reference content with four goals, language availability and no scroll-down action
+TestingLibraryElementError: Unable to find an element with the text: ข้อมูลสภาพอากาศยังไม่พร้อมใช้งาน. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      class="landing-page"
+    >
+      <a
+        class="skip-link"
+        href="#main-content"
+      >
+        ข้ามไปยังเนื้อหาหลัก
+      </a>
+      <header
+        class="landing-header"
+      >
+        <div
+          class="landing-container landing-header__inner"
+        >
+          <a
+            aria-label="Flood Watch Ongkharak หน้าหลัก"
+            class="landing-brand"
+            data-discover="true"
+            href="/"
+          >
+            <img
+              alt=""
+              height="44"
+              src="/flood-watch-mark.svg"
+              width="44"
+            />
+            <span>
+              <strong>
+                Flood Watch
+              </strong>
+              <small>
+                ONGKHARAK
+              </small>
+            </span>
+          </a>
+          <nav
+            aria-label="การนำทางหน้าแรก"
+            class="landing-nav"
+          >
+            <div
+              aria-label="ภาษา"
+              class="landing-locale"
+              role="group"
+            >
+              <button
+                aria-pressed="true"
+                type="button"
+              >
+                TH
+              </button>
+              <button
+                aria-pressed="false"
+                type="button"
+              >
+                EN
+              </button>
+            </div>
+            <a
+              class="landing-button landing-button--primary landing-button--header"
+              data-discover="true"
+              href="/login?returnTo=%2Foverview"
+            >
+              เข้าสู่ระบบ
+            </a>
+          </nav>
+        </div>
+      </header>
+      <main
+        id="main-content"
+        tabindex="-1"
+      >
+        <section
+          aria-labelledby="landing-title"
+          class="landing-hero"
+        >
+          <svg
+            aria-hidden="true"
+            class="landing-waves"
+            preserveAspectRatio="none"
+            viewBox="0 0 1600 340"
+          >
+            <path
+              d="M0 40C200 90 260 320 590 260S730 150 940 230s370-30 660-140v250H0Z"
+            />
+            <path
+              d="M0 160c240 35 310 180 600 110s410-50 550 10 260-70 450-130v190H0Z"
+            />
+            <path
+              d="M0 230c280-55 400 160 690 80s450 15 640-60 170-40 270-70v160H0Z"
+            />
+          </svg>
+          <div
+            class="landing-container landing-hero__inner"
+          >
+            <div
+              class="landing-hero__copy"
+            >
+              <p
+                class="landing-eyebrow"
+              >
+                <span
+                  aria-hidden="true"
+                />
+                ศูนย์ติดตามสถานการณ์น้ำ อำเภอองครักษ์ จังหวัดนครนายก
+              </p>
+              <h1
+                id="landing-title"
+              >
+                ติดตามสถานการณ์น้ำ
+                 
+                <span>
+                  เพื่อความปลอดภัยของทุกคน
+                </span>
+              </h1>
+              <p
+                class="landing-hero__description"
+              >
+                รวบรวมข้อมูลจากหน่วยงานทางการและรายงานชุมชน พร้อมแยกหลักฐานจาก AI เพื่อให้คุณเข้าถึงข้อมูลสถานการณ์น้ำได้อย่างเข้าใจง่าย สำหรับอำเภอองครักษ์ จังหวัดนครนายก
+              </p>
+              <div
+                class="landing-hero__actions"
+              >
+                <a
+                  class="landing-button landing-button--primary"
+                  data-discover="true"
+                  href="/overview"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="none"
+                    height="24"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="1.8"
+                    viewBox="0 0 24 24"
+                    width="24"
+                  >
+                    <path
+                      d="m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2z"
+                    />
+                    <path
+                      d="M9 3v16M15 5v16"
+                    />
+                  </svg>
+                  เข้าสู่เมนู
+                   
+                  <span
+                    aria-hidden="true"
+                  >
+                    →
+                  </span>
+                </a>
+                <a
+                  class="landing-button landing-button--secondary"
+                  data-discover="true"
+                  href="/map"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="none"
+                    height="24"
+                    stroke="currentColor"
+                    stroke-linecap="round"...
+ ❯ Object.getElementError ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/app/LandingRoutes.test.tsx:35:19
+     33|     expect(screen.queryByRole("heading", { name: /3 ขั้นตอน/ })).not.t…
+     34|     expect(screen.queryByRole("link", { name: "ดูภาพรวมโดยไม่เข้าสู่ระ…
+     35|     expect(screen.getByText("ข้อมูลสภาพอากาศยังไม่พร้อมใช้งาน")).toBeI…
+       |                   ^
+     36|     expect(screen.queryByRole("group", { name: "ชั้นข้อมูลที่แสดง" }))…
+     37|     expect(screen.queryByText(/25°C|ฝนเล็กน้อย/)).not.toBeInTheDocumen…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/13]⎯
+
+ FAIL  src/app/LandingRoutes.test.tsx > landing and overview navigation > loads existing map APIs and never represents an empty map as safe
+TestingLibraryElementError: Unable to find an element with the text: ยังไม่มีข้อมูลสถานการณ์ในขอบเขตนี้ · ไม่ทราบสถานะ. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      class="landing-page"
+    >
+      <a
+        class="skip-link"
+        href="#main-content"
+      >
+        ข้ามไปยังเนื้อหาหลัก
+      </a>
+      <header
+        class="landing-header"
+      >
+        <div
+          class="landing-container landing-header__inner"
+        >
+          <a
+            aria-label="Flood Watch Ongkharak หน้าหลัก"
+            class="landing-brand"
+            data-discover="true"
+            href="/"
+          >
+            <img
+              alt=""
+              height="44"
+              src="/flood-watch-mark.svg"
+              width="44"
+            />
+            <span>
+              <strong>
+                Flood Watch
+              </strong>
+              <small>
+                ONGKHARAK
+              </small>
+            </span>
+          </a>
+          <nav
+            aria-label="การนำทางหน้าแรก"
+            class="landing-nav"
+          >
+            <div
+              aria-label="ภาษา"
+              class="landing-locale"
+              role="group"
+            >
+              <button
+                aria-pressed="true"
+                type="button"
+              >
+                TH
+              </button>
+              <button
+                aria-pressed="false"
+                type="button"
+              >
+                EN
+              </button>
+            </div>
+            <a
+              class="landing-button landing-button--primary landing-button--header"
+              data-discover="true"
+              href="/login?returnTo=%2Foverview"
+            >
+              เข้าสู่ระบบ
+            </a>
+          </nav>
+        </div>
+      </header>
+      <main
+        id="main-content"
+        tabindex="-1"
+      >
+        <section
+          aria-labelledby="landing-title"
+          class="landing-hero"
+        >
+          <svg
+            aria-hidden="true"
+            class="landing-waves"
+            preserveAspectRatio="none"
+            viewBox="0 0 1600 340"
+          >
+            <path
+              d="M0 40C200 90 260 320 590 260S730 150 940 230s370-30 660-140v250H0Z"
+            />
+            <path
+              d="M0 160c240 35 310 180 600 110s410-50 550 10 260-70 450-130v190H0Z"
+            />
+            <path
+              d="M0 230c280-55 400 160 690 80s450 15 640-60 170-40 270-70v160H0Z"
+            />
+          </svg>
+          <div
+            class="landing-container landing-hero__inner"
+          >
+            <div
+              class="landing-hero__copy"
+            >
+              <p
+                class="landing-eyebrow"
+              >
+                <span
+                  aria-hidden="true"
+                />
+                ศูนย์ติดตามสถานการณ์น้ำ อำเภอองครักษ์ จังหวัดนครนายก
+              </p>
+              <h1
+                id="landing-title"
+              >
+                ติดตามสถานการณ์น้ำ
+                 
+                <span>
+                  เพื่อความปลอดภัยของทุกคน
+                </span>
+              </h1>
+              <p
+                class="landing-hero__description"
+              >
+                รวบรวมข้อมูลจากหน่วยงานทางการและรายงานชุมชน พร้อมแยกหลักฐานจาก AI เพื่อให้คุณเข้าถึงข้อมูลสถานการณ์น้ำได้อย่างเข้าใจง่าย สำหรับอำเภอองครักษ์ จังหวัดนครนายก
+              </p>
+              <div
+                class="landing-hero__actions"
+              >
+                <a
+                  class="landing-button landing-button--primary"
+                  data-discover="true"
+                  href="/overview"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="none"
+                    height="24"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="1.8"
+                    viewBox="0 0 24 24"
+                    width="24"
+                  >
+                    <path
+                      d="m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2z"
+                    />
+                    <path
+                      d="M9 3v16M15 5v16"
+                    />
+                  </svg>
+                  เข้าสู่เมนู
+                   
+                  <span
+                    aria-hidden="true"
+                  >
+                    →
+                  </span>
+                </a>
+                <a
+                  class="landing-button landing-button--secondary"
+                  data-discover="true"
+                  href="/map"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="none"
+                    height="24"
+                    stroke="currentColor"
+                    stroke-linecap="round"...
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      class="landing-page"
+    >
+      <a
+        class="skip-link"
+        href="#main-content"
+      >
+        ข้ามไปยังเนื้อหาหลัก
+      </a>
+      <header
+        class="landing-header"
+      >
+        <div
+          class="landing-container landing-header__inner"
+        >
+          <a
+            aria-label="Flood Watch Ongkharak หน้าหลัก"
+            class="landing-brand"
+            data-discover="true"
+            href="/"
+          >
+            <img
+              alt=""
+              height="44"
+              src="/flood-watch-mark.svg"
+              width="44"
+            />
+            <span>
+              <strong>
+                Flood Watch
+              </strong>
+              <small>
+                ONGKHARAK
+              </small>
+            </span>
+          </a>
+          <nav
+            aria-label="การนำทางหน้าแรก"
+            class="landing-nav"
+          >
+            <div
+              aria-label="ภาษา"
+              class="landing-locale"
+              role="group"
+            >
+              <button
+                aria-pressed="true"
+                type="button"
+              >
+                TH
+              </button>
+              <button
+                aria-pressed="false"
+                type="button"
+              >
+                EN
+              </button>
+            </div>
+            <a
+              class="landing-button landing-button--primary landing-button--header"
+              data-discover="true"
+              href="/login?returnTo=%2Foverview"
+            >
+              เข้าสู่ระบบ
+            </a>
+          </nav>
+        </div>
+      </header>
+      <main
+        id="main-content"
+        tabindex="-1"
+      >
+        <section
+          aria-labelledby="landing-title"
+          class="landing-hero"
+        >
+          <svg
+            aria-hidden="true"
+            class="landing-waves"
+            preserveAspectRatio="none"
+            viewBox="0 0 1600 340"
+          >
+            <path
+              d="M0 40C200 90 260 320 590 260S730 150 940 230s370-30 660-140v250H0Z"
+            />
+            <path
+              d="M0 160c240 35 310 180 600 110s410-50 550 10 260-70 450-130v190H0Z"
+            />
+            <path
+              d="M0 230c280-55 400 160 690 80s450 15 640-60 170-40 270-70v160H0Z"
+            />
+          </svg>
+          <div
+            class="landing-container landing-hero__inner"
+          >
+            <div
+              class="landing-hero__copy"
+            >
+              <p
+                class="landing-eyebrow"
+              >
+                <span
+                  aria-hidden="true"
+                />
+                ศูนย์ติดตามสถานการณ์น้ำ อำเภอองครักษ์ จังหวัดนครนายก
+              </p>
+              <h1
+                id="landing-title"
+              >
+                ติดตามสถานการณ์น้ำ
+                 
+                <span>
+                  เพื่อความปลอดภัยของทุกคน
+                </span>
+              </h1>
+              <p
+                class="landing-hero__description"
+              >
+                รวบรวมข้อมูลจากหน่วยงานทางการและรายงานชุมชน พร้อมแยกหลักฐานจาก AI เพื่อให้คุณเข้าถึงข้อมูลสถานการณ์น้ำได้อย่างเข้าใจง่าย สำหรับอำเภอองครักษ์ จังหวัดนครนายก
+              </p>
+              <div
+                class="landing-hero__actions"
+              >
+                <a
+                  class="landing-button landing-button--primary"
+                  data-discover="true"
+                  href="/overview"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="none"
+                    height="24"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="1.8"
+                    viewBox="0 0 24 24"
+                    width="24"
+                  >
+                    <path
+                      d="m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2z"
+                    />
+                    <path
+                      d="M9 3v16M15 5v16"
+                    />
+                  </svg>
+                  เข้าสู่เมนู
+                   
+                  <span
+                    aria-hidden="true"
+                  >
+                    →
+                  </span>
+                </a>
+                <a
+                  class="landing-button landing-button--secondary"
+                  data-discover="true"
+                  href="/map"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="none"
+                    height="24"
+                    stroke="currentColor"
+                    stroke-linecap="round"...
+ ❯ waitForWrapper ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/app/LandingRoutes.test.tsx:85:25
+     83|   it("loads existing map APIs and never represents an empty map as saf…
+     84|     render(<MemoryRouter><AppRoutes /></MemoryRouter>);
+     85|     expect(await screen.findByText("ยังไม่มีข้อมูลสถานการณ์ในขอบเขตนี้…
+       |                         ^
+     86|     expect(vi.mocked(fetch).mock.calls.map(([url]) => String(url))).to…
+     87|     expect(screen.getByText("ไม่ทราบสถานะ")).toBeInTheDocument();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/13]⎯
+
+ FAIL  src/app/LandingRoutes.test.tsx > landing and overview navigation > discloses failed layers and recovers with retry without inventing observations
+Error: expect(element).toHaveTextContent()
+
+Expected element to have text content:
+  ไม่สามารถโหลดข้อมูลแผนที่ได้ · สถานะไม่ทราบ
+Received:
+  โหลดข้อมูลแผนที่ไม่ได้ · ยังไม่ทราบสถานการณ์ในพื้นที่ลองอีกครั้ง
+ ❯ src/app/LandingRoutes.test.tsx:95:46
+     93|     vi.stubGlobal("fetch", request);
+     94|     render(<MemoryRouter><AppRoutes /></MemoryRouter>);
+     95|     expect(await screen.findByRole("alert")).toHaveTextContent("ไม่สาม…
+       |                                              ^
+     96|     request.mockResolvedValue({ ok: true, status: 200, json: async () …
+     97|     fireEvent.click(screen.getByRole("button", { name: "ลองอีกครั้ง" }…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/13]⎯
+
+ FAIL  src/app/LandingRoutes.test.tsx > landing and overview navigation > discloses a partial failure even if the other collections are empty
+TestingLibraryElementError: Unable to find an element with the text: ข้อมูลบางชั้นไม่พร้อมใช้งาน · ไม่สามารถสรุปว่าปลอดภัย. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      class="landing-page"
+    >
+      <a
+        class="skip-link"
+        href="#main-content"
+      >
+        ข้ามไปยังเนื้อหาหลัก
+      </a>
+      <header
+        class="landing-header"
+      >
+        <div
+          class="landing-container landing-header__inner"
+        >
+          <a
+            aria-label="Flood Watch Ongkharak หน้าหลัก"
+            class="landing-brand"
+            data-discover="true"
+            href="/"
+          >
+            <img
+              alt=""
+              height="44"
+              src="/flood-watch-mark.svg"
+              width="44"
+            />
+            <span>
+              <strong>
+                Flood Watch
+              </strong>
+              <small>
+                ONGKHARAK
+              </small>
+            </span>
+          </a>
+          <nav
+            aria-label="การนำทางหน้าแรก"
+            class="landing-nav"
+          >
+            <div
+              aria-label="ภาษา"
+              class="landing-locale"
+              role="group"
+            >
+              <button
+                aria-pressed="true"
+                type="button"
+              >
+                TH
+              </button>
+              <button
+                aria-pressed="false"
+                type="button"
+              >
+                EN
+              </button>
+            </div>
+            <a
+              class="landing-button landing-button--primary landing-button--header"
+              data-discover="true"
+              href="/login?returnTo=%2Foverview"
+            >
+              เข้าสู่ระบบ
+            </a>
+          </nav>
+        </div>
+      </header>
+      <main
+        id="main-content"
+        tabindex="-1"
+      >
+        <section
+          aria-labelledby="landing-title"
+          class="landing-hero"
+        >
+          <svg
+            aria-hidden="true"
+            class="landing-waves"
+            preserveAspectRatio="none"
+            viewBox="0 0 1600 340"
+          >
+            <path
+              d="M0 40C200 90 260 320 590 260S730 150 940 230s370-30 660-140v250H0Z"
+            />
+            <path
+              d="M0 160c240 35 310 180 600 110s410-50 550 10 260-70 450-130v190H0Z"
+            />
+            <path
+              d="M0 230c280-55 400 160 690 80s450 15 640-60 170-40 270-70v160H0Z"
+            />
+          </svg>
+          <div
+            class="landing-container landing-hero__inner"
+          >
+            <div
+              class="landing-hero__copy"
+            >
+              <p
+                class="landing-eyebrow"
+              >
+                <span
+                  aria-hidden="true"
+                />
+                ศูนย์ติดตามสถานการณ์น้ำ อำเภอองครักษ์ จังหวัดนครนายก
+              </p>
+              <h1
+                id="landing-title"
+              >
+                ติดตามสถานการณ์น้ำ
+                 
+                <span>
+                  เพื่อความปลอดภัยของทุกคน
+                </span>
+              </h1>
+              <p
+                class="landing-hero__description"
+              >
+                รวบรวมข้อมูลจากหน่วยงานทางการและรายงานชุมชน พร้อมแยกหลักฐานจาก AI เพื่อให้คุณเข้าถึงข้อมูลสถานการณ์น้ำได้อย่างเข้าใจง่าย สำหรับอำเภอองครักษ์ จังหวัดนครนายก
+              </p>
+              <div
+                class="landing-hero__actions"
+              >
+                <a
+                  class="landing-button landing-button--primary"
+                  data-discover="true"
+                  href="/overview"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="none"
+                    height="24"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="1.8"
+                    viewBox="0 0 24 24"
+                    width="24"
+                  >
+                    <path
+                      d="m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2z"
+                    />
+                    <path
+                      d="M9 3v16M15 5v16"
+                    />
+                  </svg>
+                  เข้าสู่เมนู
+                   
+                  <span
+                    aria-hidden="true"
+                  >
+                    →
+                  </span>
+                </a>
+                <a
+                  class="landing-button landing-button--secondary"
+                  data-discover="true"
+                  href="/map"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="none"
+                    height="24"
+                    stroke="currentColor"
+                    stroke-linecap="round"...
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      class="landing-page"
+    >
+      <a
+        class="skip-link"
+        href="#main-content"
+      >
+        ข้ามไปยังเนื้อหาหลัก
+      </a>
+      <header
+        class="landing-header"
+      >
+        <div
+          class="landing-container landing-header__inner"
+        >
+          <a
+            aria-label="Flood Watch Ongkharak หน้าหลัก"
+            class="landing-brand"
+            data-discover="true"
+            href="/"
+          >
+            <img
+              alt=""
+              height="44"
+              src="/flood-watch-mark.svg"
+              width="44"
+            />
+            <span>
+              <strong>
+                Flood Watch
+              </strong>
+              <small>
+                ONGKHARAK
+              </small>
+            </span>
+          </a>
+          <nav
+            aria-label="การนำทางหน้าแรก"
+            class="landing-nav"
+          >
+            <div
+              aria-label="ภาษา"
+              class="landing-locale"
+              role="group"
+            >
+              <button
+                aria-pressed="true"
+                type="button"
+              >
+                TH
+              </button>
+              <button
+                aria-pressed="false"
+                type="button"
+              >
+                EN
+              </button>
+            </div>
+            <a
+              class="landing-button landing-button--primary landing-button--header"
+              data-discover="true"
+              href="/login?returnTo=%2Foverview"
+            >
+              เข้าสู่ระบบ
+            </a>
+          </nav>
+        </div>
+      </header>
+      <main
+        id="main-content"
+        tabindex="-1"
+      >
+        <section
+          aria-labelledby="landing-title"
+          class="landing-hero"
+        >
+          <svg
+            aria-hidden="true"
+            class="landing-waves"
+            preserveAspectRatio="none"
+            viewBox="0 0 1600 340"
+          >
+            <path
+              d="M0 40C200 90 260 320 590 260S730 150 940 230s370-30 660-140v250H0Z"
+            />
+            <path
+              d="M0 160c240 35 310 180 600 110s410-50 550 10 260-70 450-130v190H0Z"
+            />
+            <path
+              d="M0 230c280-55 400 160 690 80s450 15 640-60 170-40 270-70v160H0Z"
+            />
+          </svg>
+          <div
+            class="landing-container landing-hero__inner"
+          >
+            <div
+              class="landing-hero__copy"
+            >
+              <p
+                class="landing-eyebrow"
+              >
+                <span
+                  aria-hidden="true"
+                />
+                ศูนย์ติดตามสถานการณ์น้ำ อำเภอองครักษ์ จังหวัดนครนายก
+              </p>
+              <h1
+                id="landing-title"
+              >
+                ติดตามสถานการณ์น้ำ
+                 
+                <span>
+                  เพื่อความปลอดภัยของทุกคน
+                </span>
+              </h1>
+              <p
+                class="landing-hero__description"
+              >
+                รวบรวมข้อมูลจากหน่วยงานทางการและรายงานชุมชน พร้อมแยกหลักฐานจาก AI เพื่อให้คุณเข้าถึงข้อมูลสถานการณ์น้ำได้อย่างเข้าใจง่าย สำหรับอำเภอองครักษ์ จังหวัดนครนายก
+              </p>
+              <div
+                class="landing-hero__actions"
+              >
+                <a
+                  class="landing-button landing-button--primary"
+                  data-discover="true"
+                  href="/overview"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="none"
+                    height="24"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="1.8"
+                    viewBox="0 0 24 24"
+                    width="24"
+                  >
+                    <path
+                      d="m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2z"
+                    />
+                    <path
+                      d="M9 3v16M15 5v16"
+                    />
+                  </svg>
+                  เข้าสู่เมนู
+                   
+                  <span
+                    aria-hidden="true"
+                  >
+                    →
+                  </span>
+                </a>
+                <a
+                  class="landing-button landing-button--secondary"
+                  data-discover="true"
+                  href="/map"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="none"
+                    height="24"
+                    stroke="currentColor"
+                    stroke-linecap="round"...
+ ❯ waitForWrapper ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/app/LandingRoutes.test.tsx:105:25
+    103|     vi.stubGlobal("fetch", vi.fn((url: string) => url.includes("/risk-…
+    104|     render(<MemoryRouter><AppRoutes /></MemoryRouter>);
+    105|     expect(await screen.findByText("ข้อมูลบางชั้นไม่พร้อมใช้งาน · ไม่ส…
+       |                         ^
+    106|     expect(screen.queryByText("ยังไม่มีข้อมูลสถานการณ์ในขอบเขตนี้ · ไม…
+    107|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/13]⎯
+
+ FAIL  src/features/announcements/AnnouncementsPage.localization.test.tsx > announcements localization > switches UI chrome to English while preserving original announcement content and filter state
+TestingLibraryElementError: Found multiple elements with the role "heading" and name "ประกาศจากแหล่งข้อมูล"
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+<h2>
+  ประกาศจากแหล่งข้อมูล
+</h2>
+
+Ignored nodes: comments, script, style
+<h3>
+  ประกาศจากแหล่งข้อมูล
+</h3>
+
+(If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      aria-label="Language"
+      class="locale-toggle"
+      role="group"
+    >
+      <button
+        aria-pressed="false"
+        type="button"
+      >
+        TH
+      </button>
+      <button
+        aria-pressed="true"
+        type="button"
+      >
+        EN
+      </button>
+    </div>
+    <section
+      class="feature-page announcements-page"
+    >
+      <header
+        class="page-hero"
+      >
+        <div
+          class="page-hero__copy"
+        >
+          <p
+            class="eyebrow"
+          >
+            PUBLIC INFORMATION
+          </p>
+          <h1>
+            Announcements and alerts
+          </h1>
+          <p>
+            Follow published announcements with severity, source, and alert time
+          </p>
+        </div>
+        <div
+          aria-hidden="true"
+          class="page-hero__art"
+        >
+          <span
+            class="page-hero__tile page-hero__tile--small"
+          >
+            <svg
+              aria-hidden="true"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.8"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <path
+                d="M3 7c3-4 6 4 9 0s6 4 9 0M3 12c3-4 6 4 9 0s6 4 9 0M3 17c3-4 6 4 9 0s6 4 9 0"
+              />
+            </svg>
+          </span>
+          <span
+            class="page-hero__tile page-hero__tile--large"
+          >
+            <svg
+              aria-hidden="true"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.8"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <path
+                d="m4 10 14-5v14L4 14v-4ZM18 9l3-1v8l-3-1M7 15l2 5h3l-2-4"
+              />
+            </svg>
+          </span>
+          <span
+            class="page-hero__tile page-hero__tile--small"
+          >
+            <svg
+              aria-hidden="true"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.8"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <rect
+                height="18"
+                rx="2"
+                width="14"
+                x="5"
+                y="3"
+              />
+              <path
+                d="M9 8h6M9 12h6M9 16h4"
+              />
+            </svg>
+          </span>
+        </div>
+      </header>
+      <div
+        class="announcements-page__layout"
+      >
+        <div
+          class="announcements-page__main"
+        >
+          <div
+            aria-label="Filter announcements by severity"
+            class="announcement-filters"
+          >
+            <button
+              aria-pressed="false"
+              class="announcement-filter"
+              type="button"
+            >
+              All
+               (1)
+            </button>
+            <button
+              aria-pressed="false"
+              class="announcement-filter"
+              type="button"
+            >
+              Critical
+               (0)
+            </button>
+            <button
+              aria-pressed="true"
+              class="announcement-filter"
+              type="button"
+            >
+              Warning
+               (1)
+            </button>
+            <button
+              aria-pressed="false"
+              class="announcement-filter"
+              type="button"
+            >
+              Watch
+               (0)
+            </button>
+            <button
+              aria-pressed="false"
+              class="announcement-filter"
+              type="button"
+            >
+              Information
+               (0)
+            </button>
+          </div>
+          <article
+            class="announcement-feature announcement-feature--warning"
+          >
+            <div
+              class="announcement-feature__content"
+            >
+              <div
+                class="announcement-feature__heading"
+              >
+                <span
+                  class="badge badge--status-warning"
+                >
+                  Warning
+                </span>
+                <span
+                  class="announcement-feature__label"
+                >
+                  Latest announcement
+                </span>
+              </div>
+              <p
+                class="section-caption"
+              >
+                Original content · Not automatically translated
+              </p>
+              <h2>
+                ประกาศจากแหล่งข้อมูล
+              </h2>
+              <p>
+                ข้อความประกาศต้นฉบับ
+              </p>
+              <div
+                class="announcement-feature__metadata"
+              >
+                <span
+                  class="data-timestamp"
+                >
+                  Alert started
+                  : 
+                  <time
+                    datetime="2026-10-02T08:00:00Z"
+                  >
+                    2 Oct 2026, 15:00
+                  </time>
+                </span>
+                <span
+                  class="badge badge--source-official"
+                >
+                  Official source
+                </span>
+              </div>
+            </div>
+          </article>
+          <section
+            aria-labelledby="published-alerts-heading"
+            class="data-section announcements-list"
+          >
+            <div
+              class="overview-section-header announcements-list__heading"
+            >
+              <div>
+                <h2
+                  id="published-alerts-heading"
+                >
+                  All announcements
+                </h2>
+                <p
+                  class="section-caption"
+                >
+                  Displayed data comes from the public API
+                </p>
+              </div>
+              <span>
+                1 records
+              </span>
+            </div>
+            <ul
+              class="data-list"
+            >
+              <li>
+                <article
+                  class="data-card announcement-row"
+                >
+                  <div
+                    class="announcement-row__severity"
+                  >
+                    <span
+                      class="badge badge--status-warning"
+                    >
+                      Warning
+                    </span>
+                  </div>
+                  <div
+                    class="announcement-row__content"
+                  >
+                    <p
+                      class="section-caption"
+                    >
+                      Original content · Not automatically translated
+                    </p>
+                    <h3>
+                      ประกาศจากแหล่งข้อมูล
+                    </h3>
+                    <p
+                      class="section-caption"
+                    >
+                      ข้อความประกาศต้นฉบับ
+                    </p>
+                    <div
+                      class="badge-row"
+                    >
+                      <span
+                        class="badge badge--source-official"
+                      >
+                        Official source
+                      </span>
+                      <span
+                        class="badge badge--freshness-unknown"
+                      >
+                        Update time unknown
+                      </span>
+                      <span
+                        class="badge"
+                      >
+                        road
+                      </span>
+                    </div>
+                  </div>
+                  <div
+                    class="data-card__meta announcement-row__meta"
+                  >
+                    <span
+                      class="data-timestamp"
+                    >
+                      Alert started
+                      : 
+                      <time
+                        datetime="2026-10-02T08:00:00Z"
+                      >
+                        2 Oct 2026, 15:00
+                      </time>
+                    </span>
+                    <span>
+                      Current evidence: freshness unknown
+                    </span>
+                  </div>
+                </article>
+              </li>
+            </ul>
+          </section>
+        </div>
+        <aside
+          aria-label="Announcement summary"
+          class="announcements-page__sidebar"
+        >
+          <section
+            class="data-section announcement-summary"
+          >
+            <div
+              class="overview-section-header announcement-summary__heading"
+            >
+              <h2>
+                Announcement status
+              </h2>
+              <span>
+                Published data
+              </span>
+            </div>
+            <div
+              class="announcement-summary__grid"
+            >
+              <div>
+                <strong>
+                  1
+                </strong>
+                <span>
+                  All
+                </span>
+              </div>
+              <div>
+                <strong>
+                  1
+                </strong>
+                <span>
+                  Needs attention
+                </span>
+              </div>
+              <div>
+                <strong>
+                  0
+                </strong>
+                <span>
+                  Watch
+                </span>
+              </div>
+              <div>
+                <strong>
+                  0
+                </strong>
+                <span>
+                  Information
+                </span>
+              </div>
+            </div>
+          </section>
+          <section
+            class="data-section announcement-sidebar-card"
+          >
+            <h2>
+              Announcement sources
+            </h2>
+            <p
+              class="section-caption"
+            >
+              Sources are shown from each announcement
+            </p>
+            <ul
+              class="announcement-source-list"
+            >
+              <li>
+                <span
+                  class="badge badge--source-official"
+                >
+                  Official source
+                </span>
+                <strong>
+                  1 records
+                </strong>
+              </li>
+              <li>
+                <span
+                  class="badge badge--source-community"
+                >
+                  Community report
+                </span>
+                <strong>
+                  0 records
+                </strong>
+              </li>
+              <li>
+                <span
+                  class="badge badge--source-ai"
+                >
+                  AI evidence
+                </span>
+                <strong>
+                  0 records
+                </strong>
+              </li>
+            </ul>
+          </section>
+          <section
+            class="data-section announcement-sidebar-card"
+          >
+            <h2>
+              Please note
+            </h2>
+            <p
+              class="section-caption"
+            >
+              Alert evidence freshness is not available, so do not use an older item to confirm that an area is safe
+            </p>
+          </section>
+        </aside>
+      </div>
+    </section>
+  </div>
+</body>
+ ❯ Object.getElementError ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ getElementError ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:20:35
+ ❯ getMultipleElementsFoundError ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:23:10
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:55:13
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/features/announcements/AnnouncementsPage.localization.test.tsx:25:19
+     23|
+     24|     expect(await screen.findByRole("heading", { name: "Announcements a…
+     25|     expect(screen.getByRole("heading", { name: "ประกาศจากแหล่งข้อมูล" …
+       |                   ^
+     26|     expect(screen.getByText("ข้อความประกาศต้นฉบับ")).toBeInTheDocument…
+     27|     expect(screen.getByRole("button", { name: "Warning (1)" })).toHave…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/13]⎯
+
+ FAIL  src/features/overview/OverviewPage.test.tsx > OverviewPage > loads guest public endpoints and displays empty data
+TestingLibraryElementError: Unable to find an element with the text: ยังไม่มีข้อมูลสถานการณ์ที่เผยแพร่. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      class="overview-page"
+    >
+      <header
+        class="page-hero"
+      >
+        <div
+          class="page-hero__copy"
+        >
+          <p
+            class="eyebrow"
+          >
+            FLOOD WATCH · ONGKHARAK
+          </p>
+          <h1>
+            ภาพรวมสถานการณ์น้ำ
+          </h1>
+          <p>
+            อำเภอองครักษ์ จังหวัดนครนายก
+          </p>
+        </div>
+        <div
+          aria-hidden="true"
+          class="page-hero__art"
+        >
+          <span
+            class="page-hero__tile page-hero__tile--small"
+          >
+            <svg
+              aria-hidden="true"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.8"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <path
+                d="m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2V5Z"
+              />
+              <path
+                d="M9 3v16M15 5v16"
+              />
+            </svg>
+          </span>
+          <span
+            class="page-hero__tile page-hero__tile--large"
+          >
+            <svg
+              aria-hidden="true"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.8"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <path
+                d="M3 7c3-4 6 4 9 0s6 4 9 0M3 12c3-4 6 4 9 0s6 4 9 0M3 17c3-4 6 4 9 0s6 4 9 0"
+              />
+            </svg>
+          </span>
+          <span
+            class="page-hero__tile page-hero__tile--small"
+          >
+            <svg
+              aria-hidden="true"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.8"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <rect
+                height="18"
+                rx="2"
+                width="14"
+                x="5"
+                y="3"
+              />
+              <path
+                d="M9 8h6M9 12h6M9 16h4"
+              />
+            </svg>
+          </span>
+        </div>
+      </header>
+      <div
+        aria-label="สรุปข้อมูลที่โหลดได้"
+        class="summary-metrics"
+      >
+        <a
+          class="summary-metric"
+          data-discover="true"
+          href="/risk"
+        >
+          <span
+            aria-hidden="true"
+            class="summary-metric__icon summary-metric__icon--danger"
+          >
+            <svg
+              aria-hidden="true"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.8"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <path
+                d="m12 3 10 18H2L12 3Z"
+              />
+              <path
+                d="M12 9v5M12 17h.01"
+              />
+            </svg>
+          </span>
+          <span>
+            พื้นที่เสี่ยงในรายการ
+            <strong>
+              0
+            </strong>
+            <small>
+              พื้นที่ประเมินที่โหลดได้
+            </small>
+          </span>
+          <span
+            aria-hidden="true"
+            class="summary-metric__arrow"
+          >
+            ›
+          </span>
+        </a>
+        <a
+          class="summary-metric"
+          data-discover="true"
+          href="/map"
+        >
+          <span
+            aria-hidden="true"
+            class="summary-metric__icon"
+          >
+            <svg
+              aria-hidden="true"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.8"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <path
+                d="M3 7c3-4 6 4 9 0s6 4 9 0M3 12c3-4 6 4 9 0s6 4 9 0M3 17c3-4 6 4 9 0s6 4 9 0"
+              />
+            </svg>
+          </span>
+          <span>
+            สถานีวัดน้ำในรายการ
+            <strong>
+              0
+            </strong>
+            <small>
+              ค่าล่าสุดพร้อมแหล่งข้อมูล
+           ...
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      class="overview-page"
+    >
+      <header
+        class="page-hero"
+      >
+        <div
+          class="page-hero__copy"
+        >
+          <p
+            class="eyebrow"
+          >
+            FLOOD WATCH · ONGKHARAK
+          </p>
+          <h1>
+            ภาพรวมสถานการณ์น้ำ
+          </h1>
+          <p>
+            อำเภอองครักษ์ จังหวัดนครนายก
+          </p>
+        </div>
+        <div
+          aria-hidden="true"
+          class="page-hero__art"
+        >
+          <span
+            class="page-hero__tile page-hero__tile--small"
+          >
+            <svg
+              aria-hidden="true"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.8"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <path
+                d="m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2V5Z"
+              />
+              <path
+                d="M9 3v16M15 5v16"
+              />
+            </svg>
+          </span>
+          <span
+            class="page-hero__tile page-hero__tile--large"
+          >
+            <svg
+              aria-hidden="true"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.8"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <path
+                d="M3 7c3-4 6 4 9 0s6 4 9 0M3 12c3-4 6 4 9 0s6 4 9 0M3 17c3-4 6 4 9 0s6 4 9 0"
+              />
+            </svg>
+          </span>
+          <span
+            class="page-hero__tile page-hero__tile--small"
+          >
+            <svg
+              aria-hidden="true"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.8"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <rect
+                height="18"
+                rx="2"
+                width="14"
+                x="5"
+                y="3"
+              />
+              <path
+                d="M9 8h6M9 12h6M9 16h4"
+              />
+            </svg>
+          </span>
+        </div>
+      </header>
+      <div
+        aria-label="สรุปข้อมูลที่โหลดได้"
+        class="summary-metrics"
+      >
+        <a
+          class="summary-metric"
+          data-discover="true"
+          href="/risk"
+        >
+          <span
+            aria-hidden="true"
+            class="summary-metric__icon summary-metric__icon--danger"
+          >
+            <svg
+              aria-hidden="true"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.8"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <path
+                d="m12 3 10 18H2L12 3Z"
+              />
+              <path
+                d="M12 9v5M12 17h.01"
+              />
+            </svg>
+          </span>
+          <span>
+            พื้นที่เสี่ยงในรายการ
+            <strong>
+              0
+            </strong>
+            <small>
+              พื้นที่ประเมินที่โหลดได้
+            </small>
+          </span>
+          <span
+            aria-hidden="true"
+            class="summary-metric__arrow"
+          >
+            ›
+          </span>
+        </a>
+        <a
+          class="summary-metric"
+          data-discover="true"
+          href="/map"
+        >
+          <span
+            aria-hidden="true"
+            class="summary-metric__icon"
+          >
+            <svg
+              aria-hidden="true"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.8"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <path
+                d="M3 7c3-4 6 4 9 0s6 4 9 0M3 12c3-4 6 4 9 0s6 4 9 0M3 17c3-4 6 4 9 0s6 4 9 0"
+              />
+            </svg>
+          </span>
+          <span>
+            สถานีวัดน้ำในรายการ
+            <strong>
+              0
+            </strong>
+            <small>
+              ค่าล่าสุดพร้อมแหล่งข้อมูล
+           ...
+ ❯ waitForWrapper ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/features/overview/OverviewPage.test.tsx:82:25
+     80|     render(<OverviewPage />);
+     81|     expect(screen.getByRole("status", { name: "กำลังโหลดข้อมูล" })).to…
+     82|     expect(await screen.findByText("ยังไม่มีข้อมูลสถานการณ์ที่เผยแพร่"…
+       |                         ^
+     83|     expect(request.mock.calls.map(([url]) => url)).toEqual([
+     84|       "/api/v1/flood-events?limit=20", "/api/v1/risk-areas?limit=20", …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/13]⎯
+
+ FAIL  src/features/map/MapPage.test.tsx > MapPage > searches only loaded stations and areas without claiming global place search
+Error: expect(element).not.toBeInTheDocument()
+
+expected document not to contain element, found <section
+  aria-label="ข้อมูลตำแหน่งที่เลือก"
+  class="map-selection"
+>
+  <div
+    class="map-selection__heading"
+  >
+    <h3>
+      สถานีคลองทดสอบ
+    </h3>
+    <button
+      aria-label="ปิดข้อมูลตำแหน่ง"
+      type="button"
+    >
+      ×
+    </button>
+  </div>
+  <div
+    class="badge-row"
+  >
+    <span
+      class="badge badge--status-unknown"
+    >
+      ไม่ทราบสถานะ
+    </span>
+    <span
+      class="badge badge--freshness-unknown"
+    >
+      ไม่ทราบว่าข้อมูลนี้อัปเดตเมื่อใด
+    </span>
+    <span
+      class="badge badge--source-community"
+    >
+      รายงานชุมชน
+    </span>
+  </div>
+  <p>
+    แหล่งข้อมูล: หน่วยงานทดสอบ
+  </p>
+  <p
+    role="status"
+  >
+    กำลังโหลดค่าที่สังเกตล่าสุด
+  </p>
+  <p
+    class="uncertainty"
+  >
+    ไม่ทราบสถานะ ไม่สามารถสรุปว่าปลอดภัยหรือผ่านได้
+  </p>
+</section> instead
+ ❯ src/features/map/MapPage.test.tsx:175:81
+    173|     fireEvent.click(result);
+    174|     expect(input).toHaveValue("");
+    175|     expect(screen.queryByRole("region", { name: "ข้อมูลตำแหน่งที่เลือก…
+       |                                                                                 ^
+    176|     fireEvent.change(input, { target: { value: "ไม่พบสถานี" } });
+    177|     expect(screen.getByText("ไม่พบสถานีหรือพื้นที่ในข้อมูลที่โหลด")).t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/13]⎯
+
+ FAIL  src/features/realtime/RealtimeProvider.test.tsx > public realtime subscription > refetches the canonical overview after a relevant public event
+TestingLibraryElementError: Unable to find an element with the text: ยังไม่มีข้อมูลสถานการณ์ที่เผยแพร่. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      class="overview-page"
+    >
+      <header
+        class="page-hero"
+      >
+        <div
+          class="page-hero__copy"
+        >
+          <p
+            class="eyebrow"
+          >
+            FLOOD WATCH · ONGKHARAK
+          </p>
+          <h1>
+            ภาพรวมสถานการณ์น้ำ
+          </h1>
+          <p>
+            อำเภอองครักษ์ จังหวัดนครนายก
+          </p>
+        </div>
+        <div
+          aria-hidden="true"
+          class="page-hero__art"
+        >
+          <span
+            class="page-hero__tile page-hero__tile--small"
+          >
+            <svg
+              aria-hidden="true"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.8"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <path
+                d="m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2V5Z"
+              />
+              <path
+                d="M9 3v16M15 5v16"
+              />
+            </svg>
+          </span>
+          <span
+            class="page-hero__tile page-hero__tile--large"
+          >
+            <svg
+              aria-hidden="true"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.8"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <path
+                d="M3 7c3-4 6 4 9 0s6 4 9 0M3 12c3-4 6 4 9 0s6 4 9 0M3 17c3-4 6 4 9 0s6 4 9 0"
+              />
+            </svg>
+          </span>
+          <span
+            class="page-hero__tile page-hero__tile--small"
+          >
+            <svg
+              aria-hidden="true"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.8"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <rect
+                height="18"
+                rx="2"
+                width="14"
+                x="5"
+                y="3"
+              />
+              <path
+                d="M9 8h6M9 12h6M9 16h4"
+              />
+            </svg>
+          </span>
+        </div>
+      </header>
+      <div
+        aria-label="สรุปข้อมูลที่โหลดได้"
+        class="summary-metrics"
+      >
+        <a
+          class="summary-metric"
+          data-discover="true"
+          href="/risk"
+        >
+          <span
+            aria-hidden="true"
+            class="summary-metric__icon summary-metric__icon--danger"
+          >
+            <svg
+              aria-hidden="true"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.8"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <path
+                d="m12 3 10 18H2L12 3Z"
+              />
+              <path
+                d="M12 9v5M12 17h.01"
+              />
+            </svg>
+          </span>
+          <span>
+            พื้นที่เสี่ยงในรายการ
+            <strong>
+              0
+            </strong>
+            <small>
+              พื้นที่ประเมินที่โหลดได้
+            </small>
+          </span>
+          <span
+            aria-hidden="true"
+            class="summary-metric__arrow"
+          >
+            ›
+          </span>
+        </a>
+        <a
+          class="summary-metric"
+          data-discover="true"
+          href="/map"
+        >
+          <span
+            aria-hidden="true"
+            class="summary-metric__icon"
+          >
+            <svg
+              aria-hidden="true"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.8"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <path
+                d="M3 7c3-4 6 4 9 0s6 4 9 0M3 12c3-4 6 4 9 0s6 4 9 0M3 17c3-4 6 4 9 0s6 4 9 0"
+              />
+            </svg>
+          </span>
+          <span>
+            สถานีวัดน้ำในรายการ
+            <strong>
+              0
+            </strong>
+            <small>
+              ค่าล่าสุดพร้อมแหล่งข้อมูล
+           ...
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      class="overview-page"
+    >
+      <header
+        class="page-hero"
+      >
+        <div
+          class="page-hero__copy"
+        >
+          <p
+            class="eyebrow"
+          >
+            FLOOD WATCH · ONGKHARAK
+          </p>
+          <h1>
+            ภาพรวมสถานการณ์น้ำ
+          </h1>
+          <p>
+            อำเภอองครักษ์ จังหวัดนครนายก
+          </p>
+        </div>
+        <div
+          aria-hidden="true"
+          class="page-hero__art"
+        >
+          <span
+            class="page-hero__tile page-hero__tile--small"
+          >
+            <svg
+              aria-hidden="true"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.8"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <path
+                d="m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2V5Z"
+              />
+              <path
+                d="M9 3v16M15 5v16"
+              />
+            </svg>
+          </span>
+          <span
+            class="page-hero__tile page-hero__tile--large"
+          >
+            <svg
+              aria-hidden="true"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.8"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <path
+                d="M3 7c3-4 6 4 9 0s6 4 9 0M3 12c3-4 6 4 9 0s6 4 9 0M3 17c3-4 6 4 9 0s6 4 9 0"
+              />
+            </svg>
+          </span>
+          <span
+            class="page-hero__tile page-hero__tile--small"
+          >
+            <svg
+              aria-hidden="true"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.8"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <rect
+                height="18"
+                rx="2"
+                width="14"
+                x="5"
+                y="3"
+              />
+              <path
+                d="M9 8h6M9 12h6M9 16h4"
+              />
+            </svg>
+          </span>
+        </div>
+      </header>
+      <div
+        aria-label="สรุปข้อมูลที่โหลดได้"
+        class="summary-metrics"
+      >
+        <a
+          class="summary-metric"
+          data-discover="true"
+          href="/risk"
+        >
+          <span
+            aria-hidden="true"
+            class="summary-metric__icon summary-metric__icon--danger"
+          >
+            <svg
+              aria-hidden="true"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.8"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <path
+                d="m12 3 10 18H2L12 3Z"
+              />
+              <path
+                d="M12 9v5M12 17h.01"
+              />
+            </svg>
+          </span>
+          <span>
+            พื้นที่เสี่ยงในรายการ
+            <strong>
+              0
+            </strong>
+            <small>
+              พื้นที่ประเมินที่โหลดได้
+            </small>
+          </span>
+          <span
+            aria-hidden="true"
+            class="summary-metric__arrow"
+          >
+            ›
+          </span>
+        </a>
+        <a
+          class="summary-metric"
+          data-discover="true"
+          href="/map"
+        >
+          <span
+            aria-hidden="true"
+            class="summary-metric__icon"
+          >
+            <svg
+              aria-hidden="true"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.8"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <path
+                d="M3 7c3-4 6 4 9 0s6 4 9 0M3 12c3-4 6 4 9 0s6 4 9 0M3 17c3-4 6 4 9 0s6 4 9 0"
+              />
+            </svg>
+          </span>
+          <span>
+            สถานีวัดน้ำในรายการ
+            <strong>
+              0
+            </strong>
+            <small>
+              ค่าล่าสุดพร้อมแหล่งข้อมูล
+           ...
+ ❯ waitForWrapper ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/features/realtime/RealtimeProvider.test.tsx:136:25
+    134|     vi.stubGlobal("fetch", request);
+    135|     const view = render(<MemoryRouter><RealtimeProvider><OverviewPage …
+    136|     expect(await screen.findByText("ยังไม่มีข้อมูลสถานการณ์ที่เผยแพร่"…
+       |                         ^
+    137|     expect(request).toHaveBeenCalledTimes(6);
+    138|     act(() => FakeEventSource.connections[0].onopen?.());
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/13]⎯
+
+ FAIL  src/features/reports/ReportsLocalization.test.tsx > report form localization > keeps the report draft when switching the form UI to English
+TypeError: [AsyncFunction create] is not a spy or a call to a spy!
+ ❯ src/features/reports/ReportsLocalization.test.tsx:31:35
+     29|     expect(screen.getByRole("heading", { name: "Submit community repor…
+     30|     expect(screen.getByLabelText("Description")).toHaveValue("ข้อความจ…
+     31|     expect(reportsApi.create).not.toHaveBeenCalled();
+       |                                   ^
+     32|   });
+     33| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/13]⎯
+
+
+ Test Files  7 failed | 41 passed (48)
+      Tests  13 failed | 262 passed (275)
+   Start at  09:35:21
+   Duration  11.47s (environment 62%, setup 16%, tests 14%, import 6%, transform 2%, worker 1%)
+
+Environment  jsdom was created 48 times · 171.16s total, 62% of tracked time
+             create it once per worker with pool: 'vmThreads' (keeps per-file isolation) or isolate: false (shares it across files)
+             learn more: https://vitest.dev/guide/improving-performance#test-environments
+
+undefined
+ ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL  Command "vitest" not found

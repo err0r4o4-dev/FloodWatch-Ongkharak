@@ -14,6 +14,9 @@ import { geometryBounds, mapSelections, selectionGeometry, validBounds } from ".
 import { parseRoutePoint } from "../utils";
 import type { Picking, RoutePoints } from "./RoutePanel";
 import type { MapMode } from "../types";
+import { useTranslation } from "../../../i18n";
+import th from "../../../i18n/locales/th/map";
+import en from "../../../i18n/locales/en/map";
 import "./MapPopup.css";
 
 const initialCenter: [number, number] = [14.1, 101.0];
@@ -46,6 +49,7 @@ function ViewportEvents({ onBoundsChange, onMapPoint, initialBounds }: {
 }
 
 function MapControls({ items, compact = false }: { items: LayerItems; compact?: boolean }) {
+  const { t } = useTranslation({ th, en });
   const map = useMap();
   const controls = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -65,11 +69,11 @@ function MapControls({ items, compact = false }: { items: LayerItems; compact?: 
     if (bounds.isValid()) map.fitBounds(bounds, { padding: [24, 24], maxZoom: 14 });
   };
   const hasFeatures = Object.values(items).some((collection) => collection.length > 0);
-  return <div ref={controls} className="map-zoom-controls" role="group" aria-label="ควบคุมแผนที่">
-    <button type="button" aria-label="ขยายแผนที่" onClick={() => map.zoomIn()}>+</button>
-    <button type="button" aria-label="ย่อแผนที่" onClick={() => map.zoomOut()}>−</button>
-    <button type="button" aria-label="กลับมุมมองเริ่มต้น" title="กลับมุมมองเริ่มต้น" onClick={() => map.setView(initialCenter, initialZoom)}>{compact ? "⌖" : "กลับมุมมองเริ่มต้น"}</button>
-    <button type="button" aria-label="ปรับให้พอดีกับข้อมูล" title="ปรับให้พอดีกับข้อมูล" disabled={!hasFeatures} onClick={fitFeatures}>{compact ? "⤢" : "ปรับให้พอดีกับข้อมูล"}</button>
+  return <div ref={controls} className="map-zoom-controls" role="group" aria-label={t("map.controls")}>
+    <button type="button" aria-label={t("map.zoomIn")} onClick={() => map.zoomIn()}>+</button>
+    <button type="button" aria-label={t("map.zoomOut")} onClick={() => map.zoomOut()}>−</button>
+    <button type="button" aria-label={t("map.reset")} title={t("map.reset")} onClick={() => map.setView(initialCenter, initialZoom)}>{compact ? "⌖" : t("map.reset")}</button>
+    <button type="button" aria-label={t("map.fit")} title={t("map.fit")} disabled={!hasFeatures} onClick={fitFeatures}>{compact ? "⤢" : t("map.fit")}</button>
   </div>;
 }
 
@@ -147,7 +151,7 @@ function InteractiveLayers({ items, visible, mode, enablePopups, focusSelection,
   </>;
 }
 
-export function SituationMap({ items, visible, mode, points, picking, onBoundsChange, onMapPoint, onSelect, onPreview, enablePopups = false, focusSelection, initialBounds, initialRiskId }: {
+export function SituationMap({ items, visible, mode, points, picking, onBoundsChange, onMapPoint, onSelect, onPreview, enablePopups = false, compactControls = enablePopups, focusSelection, initialBounds, initialRiskId }: {
   items: LayerItems;
   visible: LayerVisibility;
   mode: MapMode;
@@ -158,20 +162,22 @@ export function SituationMap({ items, visible, mode, points, picking, onBoundsCh
   onSelect: (selection: MapSelection) => void;
   onPreview?: (selection: MapSelection | null) => void;
   enablePopups?: boolean;
+  compactControls?: boolean;
   focusSelection?: MapSelection | null;
   initialBounds?: MapBounds;
   initialRiskId?: string | null;
 }) {
-  return <div className={`situation-map${picking ? " is-picking" : ""}`} aria-label="แผนที่สถานการณ์แบบโต้ตอบ">
+  const { t } = useTranslation({ th, en });
+  return <div className={`situation-map${picking ? " is-picking" : ""}`} aria-label={t("map.label")}>
     <MapContainer center={initialCenter} zoom={initialZoom} minZoom={8} maxZoom={16} zoomControl={false} scrollWheelZoom={false} className="leaflet-map">
       <TileLayer url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' />
       <ViewportEvents onBoundsChange={onBoundsChange} onMapPoint={onMapPoint} initialBounds={initialBounds} />
       <InteractiveLayers items={items} visible={visible} mode={mode} enablePopups={enablePopups} focusSelection={focusSelection} initialRiskId={initialRiskId} onSelect={onSelect} onPreview={onPreview} />
       {mode === "ROUTE" && (["origin", "destination"] as const).map((key) => {
         const position = parseRoutePoint(points[key]);
-        return position ? <CircleMarker key={key} center={[position[1], position[0]]} radius={9} pathOptions={{ color: "var(--color-primary-strong)", fillColor: "var(--color-surface)", fillOpacity: 1, weight: 3 }}><Tooltip permanent direction="top">{key === "origin" ? "จุดเริ่มต้น" : "จุดหมาย"}</Tooltip></CircleMarker> : null;
+        return position ? <CircleMarker key={key} center={[position[1], position[0]]} radius={9} pathOptions={{ color: "var(--color-primary-strong)", fillColor: "var(--color-surface)", fillOpacity: 1, weight: 3 }}><Tooltip permanent direction="top">{t(key === "origin" ? "map.origin" : "map.destination")}</Tooltip></CircleMarker> : null;
       })}
-      <MapControls items={items} compact={enablePopups} />
+      <MapControls items={items} compact={compactControls} />
     </MapContainer>
   </div>;
 }

@@ -11,9 +11,10 @@ self.addEventListener("push", (event) => {
 
   try {
     const data = event.data.json();
-    const title = data.title || "Flood Watch Alert";
+    const english = data.locale === "en";
+    const title = data.title || (english ? "Flood Watch notification" : "การแจ้งเตือน Flood Watch");
     const options = {
-      body: data.message || "A new alert was generated.",
+      body: data.message || (english ? "New announcement. Open to read the details." : "มีประกาศใหม่ เปิดดูรายละเอียด"),
       icon: "/icon-192.png",
       badge: "/icon-192.png",
       data: {

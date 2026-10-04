@@ -1,17 +1,23 @@
 import { useEffect, useRef, useState } from "react";
 import { NavLink, useParams } from "react-router";
+import { formatDate, formatNumber, useTranslation } from "../../i18n";
+import th from "../../i18n/locales/th/admin";
+import en from "../../i18n/locales/en/admin";
 import { adminApi } from "./api";
 import type { UserManagement, UserStats } from "./types";
 import { confirmAction } from "../../shared/alerts";
+import { adminErrorMessage, adminErrorState, formatAdminDate, formatAdminNumber } from "./localization";
+import type { AdminErrorState } from "./localization";
 
 export function UserDetailPage() {
+  const { locale, t } = useTranslation({ th, en });
   const { id } = useParams<{ id: string }>();
   const [user, setUser] = useState<UserManagement | null>(null);
   const [stats, setStats] = useState<UserStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<AdminErrorState | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
-  const [actionError, setActionError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<AdminErrorState | null>(null);
   const actionPending = useRef(false);
 
   const loadUser = async () => {
@@ -24,7 +30,7 @@ export function UserDetailPage() {
       setUser(response.user);
       setStats(response.stats);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load user");
+      setError(adminErrorState(err, "errors.loadUser"));
     } finally {
       setLoading(false);
     }
@@ -41,8 +47,8 @@ export function UserDetailPage() {
     setActionError(null);
     try {
       await confirmAction({ ...options, errorText: (cause) => {
-        const message = cause instanceof Error ? cause.message : "ไม่สามารถดำเนินการได้ กรุณาลองใหม่อีกครั้ง";
-        setActionError(message);
+        const message = adminErrorMessage(cause, t, "errors.actionFailed");
+        setActionError(adminErrorState(cause, "errors.actionFailed"));
         return message;
       } });
     } finally {
@@ -54,46 +60,35 @@ export function UserDetailPage() {
   const handleUpdateRole = async (newRole: string) => {
     if (!id || !user) return;
     await manageUser({
-      title: "เปลี่ยนบทบาทผู้ใช้งานหรือไม่?",
-      text: `เปลี่ยนบทบาทของ ${user.email} เป็น ${newRole === "ADMIN" ? "ผู้ดูแลระบบ" : "ผู้ใช้งาน"} การเปลี่ยนแปลงนี้มีผลต่อสิทธิ์เข้าถึงระบบ`,
-      confirmText: "เปลี่ยนบทบาท",
+      title: t("userDetail.confirm.role.title"),
+      text: t("userDetail.confirm.role.text", { email: user.email, role: newRole === "ADMIN" ? t("common.admin") : t("common.user") }),
+      confirmText: t("userDetail.confirm.role.confirm"),
       danger: true,
       action: async () => { await adminApi.updateUserRole(id, newRole); await loadUser(); },
-      successTitle: "เปลี่ยนบทบาทแล้ว"
+      successTitle: t("userDetail.confirm.role.success")
     });
   };
 
   const handleDisable = async () => {
     if (!id || !user) return;
     await manageUser({
-      title: "ปิดการใช้งานบัญชีหรือไม่?",
-      text: `บัญชี ${user.email} จะไม่สามารถใช้งานฟีเจอร์สมาชิกได้`,
-      confirmText: "ปิดการใช้งาน",
+      title: t("userDetail.confirm.disable.title"),
+      text: t("userDetail.confirm.disable.text", { email: user.email }),
+      confirmText: t("userDetail.confirm.disable.confirm"),
       danger: true,
       action: async () => { await adminApi.disableUser(id); await loadUser(); },
-      successTitle: "ปิดการใช้งานบัญชีแล้ว"
+      successTitle: t("userDetail.confirm.disable.success")
     });
   };
 
   const handleEnable = async () => {
     if (!id || !user) return;
     await manageUser({
-      title: "เปิดการใช้งานบัญชีหรือไม่?",
-      text: `เปิดให้บัญชี ${user.email} กลับมาใช้งานฟีเจอร์สมาชิกอีกครั้ง`,
-      confirmText: "เปิดการใช้งาน",
+      title: t("userDetail.confirm.enable.title"),
+      text: t("userDetail.confirm.enable.text", { email: user.email }),
+      confirmText: t("userDetail.confirm.enable.confirm"),
       action: async () => { await adminApi.enableUser(id); await loadUser(); },
-      successTitle: "เปิดการใช้งานบัญชีแล้ว"
-    });
-  };
-
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return "-";
-    return new Date(dateString).toLocaleDateString("th-TH", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
+      successTitle: t("userDetail.confirm.enable.success")
     });
   };
 
@@ -101,7 +96,7 @@ export function UserDetailPage() {
     return (
       <div className="page-container admin-page">
         <div className="panel loading-state">
-          <p>กำลังโหลดข้อมูลผู้ใช้งาน...</p>
+          <p>{t("userDetail.loading")}</p>
         </div>
       </div>
     );
@@ -111,137 +106,137 @@ export function UserDetailPage() {
     return (
       <div className="page-container admin-page">
         <div className="panel error-state">
-          <h1>เกิดข้อผิดพลาด</h1>
-          <p>{error || "ไม่พบผู้ใช้งาน"}</p>
-          <NavLink to="/admin/users" className="button">กลับไปรายชื่อผู้ใช้งาน</NavLink>
+          <h1>{t("common.error")}</h1>
+          <p>{error ? t(error.key, error.params) : t("userDetail.notFound")}</p>
+          <NavLink to="/admin/users" className="button">{t("common.back")}</NavLink>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="page-container admin-page">
+    <div className="page-container admin-page admin-user-detail">
       <header className="page-header">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div>
-            <h1>รายละเอียดผู้ใช้งาน</h1>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "var(--space-3)" }}>
+          <div style={{ minWidth: 0, flex: "1 1 15rem" }}>
+            <h1>{t("userDetail.title")}</h1>
             <p className="muted">{user.email}</p>
           </div>
-          <NavLink to="/admin/users" className="button">← กลับ</NavLink>
+          <NavLink to="/admin/users" className="button">{t("common.back")}</NavLink>
         </div>
       </header>
 
       {actionError && (
         <div className="panel error-state" style={{ marginBottom: "var(--space-6)" }}>
-          <p>เกิดข้อผิดพลาด: {actionError}</p>
+          <p>{t("common.errorPrefix")} {t(actionError.key, actionError.params)}</p>
         </div>
       )}
 
-      <div style={{ display: "grid", gap: "var(--space-6)", gridTemplateColumns: "repeat(auto-fit, minmax(20rem, 1fr))" }}>
+      <div style={{ display: "grid", gap: "var(--space-6)", gridTemplateColumns: "repeat(auto-fit, minmax(min(20rem, 100%), 1fr))" }}>
         <section className="panel">
-          <h2>ข้อมูลบัญชี</h2>
+          <h2>{t("userDetail.account.title")}</h2>
           <dl style={{ display: "grid", gap: "var(--space-3)", marginTop: "var(--space-4)" }}>
             <div>
               <dt className="muted small">ID</dt>
               <dd style={{ fontFamily: "monospace", fontSize: "0.875rem" }}>{user.id}</dd>
             </div>
             <div>
-              <dt className="muted small">อีเมล</dt>
+              <dt className="muted small">{t("common.email")}</dt>
               <dd><strong>{user.email}</strong></dd>
             </div>
             <div>
-              <dt className="muted small">บทบาท</dt>
+              <dt className="muted small">{t("common.role")}</dt>
               <dd>
                 <span className={`admin-badge admin-badge--${user.role.toLowerCase()}`}>
-                  {user.role === "ADMIN" ? "ผู้ดูแลระบบ" : "ผู้ใช้งาน"}
+                  {user.role === "ADMIN" ? t("common.admin") : t("common.user")}
                 </span>
               </dd>
             </div>
             <div>
-              <dt className="muted small">สถานะ</dt>
+              <dt className="muted small">{t("common.status")}</dt>
               <dd>
                 {user.disabledAt ? (
-                  <span className="admin-badge admin-badge--disabled">ปิดใช้งาน</span>
+                  <span className="admin-badge admin-badge--disabled">{t("common.disabled")}</span>
                 ) : (
-                  <span className="admin-badge admin-badge--active">ใช้งานอยู่</span>
+                  <span className="admin-badge admin-badge--active">{t("common.active")}</span>
                 )}
               </dd>
             </div>
             <div>
-              <dt className="muted small">สร้างเมื่อ</dt>
-              <dd>{formatDate(user.createdAt)}</dd>
+              <dt className="muted small">{t("common.createdAt")}</dt>
+              <dd>{formatAdminDate(user.createdAt, locale, formatDate, { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" })}</dd>
             </div>
             <div>
-              <dt className="muted small">อัปเดตล่าสุด</dt>
-              <dd>{formatDate(user.updatedAt)}</dd>
+              <dt className="muted small">{t("common.updatedAt")}</dt>
+              <dd>{formatAdminDate(user.updatedAt, locale, formatDate, { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" })}</dd>
             </div>
             {user.disabledAt && (
               <div>
-                <dt className="muted small">ปิดการใช้งานเมื่อ</dt>
-                <dd>{formatDate(user.disabledAt)}</dd>
+                <dt className="muted small">{t("userDetail.disabledAt")}</dt>
+                <dd>{formatAdminDate(user.disabledAt, locale, formatDate, { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" })}</dd>
               </div>
             )}
           </dl>
         </section>
 
         <section className="panel">
-          <h2>สถิติกิจกรรม</h2>
+          <h2>{t("userDetail.activity.title")}</h2>
           <dl style={{ display: "grid", gap: "var(--space-3)", marginTop: "var(--space-4)" }}>
             <div>
-              <dt className="muted small">รายงานทั้งหมด</dt>
-              <dd><strong>{stats.reportCount}</strong> รายงาน</dd>
+              <dt className="muted small">{t("userDetail.activity.totalReports")}</dt>
+              <dd><strong>{formatAdminNumber(stats.reportCount, locale, formatNumber)}</strong> {t("common.reports")}</dd>
             </div>
             <div>
-              <dt className="muted small">รายงานที่ได้รับการอนุมัติ</dt>
-              <dd><strong>{stats.verifiedReports}</strong> รายงาน</dd>
+              <dt className="muted small">{t("userDetail.activity.verifiedReports")}</dt>
+              <dd><strong>{formatAdminNumber(stats.verifiedReports, locale, formatNumber)}</strong> {t("common.reports")}</dd>
             </div>
             <div>
-              <dt className="muted small">รายงานที่ถูกปฏิเสธ</dt>
-              <dd><strong>{stats.rejectedReports}</strong> รายงาน</dd>
+              <dt className="muted small">{t("userDetail.activity.rejectedReports")}</dt>
+              <dd><strong>{formatAdminNumber(stats.rejectedReports, locale, formatNumber)}</strong> {t("common.reports")}</dd>
             </div>
             <div>
-              <dt className="muted small">บันทึกการดำเนินการ</dt>
-              <dd><strong>{stats.auditLogCount}</strong> รายการ</dd>
+              <dt className="muted small">{t("userDetail.activity.auditLogs")}</dt>
+              <dd><strong>{formatAdminNumber(stats.auditLogCount, locale, formatNumber)}</strong> {t("common.records")}</dd>
             </div>
             <div>
-              <dt className="muted small">เซสชันที่ใช้งาน</dt>
-              <dd><strong>{stats.refreshSessionCount}</strong> เซสชัน</dd>
+              <dt className="muted small">{t("userDetail.activity.sessions")}</dt>
+              <dd><strong>{formatAdminNumber(stats.refreshSessionCount, locale, formatNumber)}</strong> {t("common.sessions")}</dd>
             </div>
             <div>
-              <dt className="muted small">กิจกรรมล่าสุด</dt>
-              <dd>{formatDate(stats.lastActivity)}</dd>
+              <dt className="muted small">{t("common.latestActivity")}</dt>
+              <dd>{formatAdminDate(stats.lastActivity, locale, formatDate, { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" })}</dd>
             </div>
           </dl>
         </section>
       </div>
 
       <section className="panel" style={{ marginTop: "var(--space-6)" }}>
-        <h2>การกระทำของผู้ดูแลระบบ</h2>
-        <p className="muted">การกระทำเหล่านี้จะถูกบันทึกลงในบันทึกการดำเนินการ</p>
+        <h2>{t("userDetail.actions.title")}</h2>
+        <p className="muted">{t("userDetail.actions.note")}</p>
 
         <div style={{ display: "flex", gap: "var(--space-4)", marginTop: "var(--space-4)", flexWrap: "wrap" }}>
           <div>
-            <h3 style={{ fontSize: "1rem", marginBottom: "var(--space-2)" }}>เปลี่ยนบทบาท</h3>
+            <h3 style={{ fontSize: "1rem", marginBottom: "var(--space-2)" }}>{t("userDetail.actions.role.title")}</h3>
             <div className="admin-actions">
               <button
                 onClick={() => void handleUpdateRole("USER")}
                 disabled={actionLoading || user.role === "USER"}
                 className="button"
               >
-                ตั้งเป็นผู้ใช้งาน
+                {t("userDetail.actions.role.user")}
               </button>
               <button
                 onClick={() => void handleUpdateRole("ADMIN")}
                 disabled={actionLoading || user.role === "ADMIN"}
                 className="button"
               >
-                ตั้งเป็นผู้ดูแลระบบ
+                {t("userDetail.actions.role.admin")}
               </button>
             </div>
           </div>
 
           <div>
-            <h3 style={{ fontSize: "1rem", marginBottom: "var(--space-2)" }}>จัดการสถานะบัญชี</h3>
+            <h3 style={{ fontSize: "1rem", marginBottom: "var(--space-2)" }}>{t("userDetail.actions.account.title")}</h3>
             <div className="admin-actions">
               {user.disabledAt ? (
                 <button
@@ -249,7 +244,7 @@ export function UserDetailPage() {
                   disabled={actionLoading}
                   className="button button--primary"
                 >
-                  เปิดการใช้งานบัญชี
+                  {t("userDetail.actions.account.enable")}
                 </button>
               ) : (
                 <button
@@ -258,7 +253,7 @@ export function UserDetailPage() {
                   className="button"
                   style={{ background: "var(--color-danger-soft)", color: "var(--color-danger-ink)" }}
                 >
-                  ปิดการใช้งานบัญชี
+                  {t("userDetail.actions.account.disable")}
                 </button>
               )}
             </div>
@@ -266,18 +261,18 @@ export function UserDetailPage() {
         </div>
 
         {actionLoading && (
-          <p className="muted" style={{ marginTop: "var(--space-4)" }}>กำลังดำเนินการ...</p>
+          <p className="muted" style={{ marginTop: "var(--space-4)" }}>{t("userDetail.actions.inProgress")}</p>
         )}
       </section>
 
       <section className="panel" style={{ marginTop: "var(--space-6)", background: "var(--color-canvas-soft)" }}>
-        <h3>ดูเพิ่มเติม</h3>
+        <h3>{t("userDetail.more.title")}</h3>
         <div className="admin-actions" style={{ marginTop: "var(--space-3)" }}>
           <NavLink
             to={`/admin/audit-logs?actorId=${user.id}`}
             className="button"
           >
-            ดูบันทึกการดำเนินการของผู้ใช้นี้
+            {t("userDetail.more.audit")}
           </NavLink>
         </div>
       </section>

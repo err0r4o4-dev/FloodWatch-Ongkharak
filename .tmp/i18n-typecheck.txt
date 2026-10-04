@@ -1,0 +1,14 @@
+
+> floodwatch-ongkharak@ typecheck D:\!Project\FloodWatch-Ongkharak(Web_Application)
+> corepack pnpm --filter @floodwatch/web typecheck
+
+No projects matched the filters "D:\!Project\FloodWatch-Ongkharak(Web_Application)" in "D:\!Project\FloodWatch-Ongkharak(Web_Application)"
+
+> @floodwatch/web@0.0.0 typecheck D:\!Project\FloodWatch-Ongkharak(Web_Application)\apps\web
+> tsc -b --pretty false
+
+src/features/notifications/NotificationsPage.tsx(223,107): error TS2304: Cannot find name 'copy'.
+D:\!Project\FloodWatch-Ongkharak(Web_Application)\apps\web:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @floodwatch/web@0.0.0 typecheck: `tsc -b --pretty false`
+Exit status 1
+ ELIFECYCLE  Command failed with exit code 1.
