@@ -14,9 +14,10 @@ export function useReportAreaUpdatedRevision(areaId?: string | null): number {
     if (typeof EventSource === "undefined") return;
     const source = new EventSource(`${apiConfig.baseUrl}/events/stream`);
     const onUpdate = (message: Event) => {
-      if (!(message instanceof MessageEvent)) return;
+      const eventData = message && typeof message === "object" ? (message as MessageEvent).data : undefined;
+      if (typeof eventData !== "string") return;
       try {
-        const value: unknown = JSON.parse(message.data);
+        const value: unknown = JSON.parse(eventData);
         if (!validAreaEvent(value)) return;
         if (areaId && (value as { resourceId: string }).resourceId !== areaId) return;
         setRevision((current) => current + 1);

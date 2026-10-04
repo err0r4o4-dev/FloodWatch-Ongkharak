@@ -55,14 +55,17 @@ CREATE TABLE report_area_refresh_state (
     processed_revision BIGINT NOT NULL DEFAULT 0 CHECK (processed_revision >= 0),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
-INSERT INTO report_area_refresh_state (id) VALUES (TRUE);
+INSERT INTO report_area_refresh_state (id, dirty_revision) VALUES (TRUE, 1);
 
 CREATE FUNCTION mark_report_areas_dirty() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
     UPDATE report_area_refresh_state
     SET dirty_revision = dirty_revision + 1, updated_at = clock_timestamp()
     WHERE id = TRUE;
-    RETURN COALESCE(NEW, OLD);
+    IF TG_OP = 'DELETE' THEN
+        RETURN OLD;
+    END IF;
+    RETURN NEW;
 END;
 $$;
 

@@ -16,8 +16,10 @@ export function ReportAreaSummary({ area, compact = false }: { area: ReportArea;
       <div><dt>{t("area.reportedTrend")}</dt><dd>{t(`area.trend.${area.reportedTrend}`)}</dd></div>
       <div><dt>{t("area.reason")}</dt><dd>{t(`area.reason.${area.summaryReason}`)}</dd></div>
       <div><dt>{t("area.reports")}</dt><dd>{formatNumber(area.reportCount, locale)} · {formatNumber(area.sampleCount, locale)} {t("area.samples")}</dd></div>
+      <div><dt>{t("area.totalReports")}</dt><dd>{formatNumber(area.totalReportCount, locale)}</dd></div>
     </dl>
     <p className="report-area-summary__window"><DataTimestamp label={t("area.latestObserved")} value={area.latestObservedAt} /> · {t("area.computedAt")} <DataTimestamp value={area.computedAt} /></p>
     {depthBand === "UNKNOWN" && <p className="uncertainty">{t("area.unknownWarning")}</p>}
+    <p className="section-caption">{t("legend.areaTrend")}</p>
   </div>;
 }

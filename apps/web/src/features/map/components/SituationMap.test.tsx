@@ -111,6 +111,18 @@ describe("SituationMap popup flow", () => {
     expect(screen.queryByRole("region", { name: "ข้อมูลสรุปบนแผนที่" })).not.toBeInTheDocument();
   });
 
+  it("opens an aggregated community area with the keyboard and preserves the single area selection", () => {
+    const area = { id: "area-1", name: "พื้นที่ชุมชนทดสอบ", location: { type: "Point" as const, coordinates: [101.02, 14.1] as [number, number] }, radiusM: 150, sourceType: "COMMUNITY" as const, depthBand: "MODERATE" as const, previousDepthBand: "LOW" as const, trend: "FALLING" as const, reportedTrend: "RISING" as const, freshness: "FRESH" as const, summaryReason: "SUMMARIZED" as const, latestObservedAt: "2026-10-02T01:00:00Z", computedAt: "2026-10-02T02:00:00Z", windowStart: "2026-10-01T02:00:00Z", windowEnd: "2026-10-02T02:00:00Z", reportCount: 3, sampleCount: 2, totalReportCount: 4, reportIds: ["report-1"] };
+    const { props, onSelect } = prepare();
+    render(<SituationMap {...props} items={{ ...items, reports: [area] }} />);
+    const marker = screen.getByRole("button", { name: /พื้นที่ชุมชนทดสอบ/ });
+    fireEvent.keyDown(marker, { key: "Enter" });
+    expect(screen.getByRole("region", { name: "ข้อมูลสรุปบนแผนที่" })).toHaveTextContent("พื้นที่ชุมชนทดสอบ");
+    expect(screen.getByText("แนวโน้มคำนวณ")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "ดูรายละเอียด" }));
+    expect(onSelect).toHaveBeenCalledWith({ layer: "reports", feature: area });
+  });
+
   it("dismisses the popup when moving or hiding its layer", async () => {
     const { props } = prepare();
     const view = render(<SituationMap {...props} />);

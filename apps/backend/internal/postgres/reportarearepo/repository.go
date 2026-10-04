@@ -65,6 +65,13 @@ func (repository *Repository) Get(ctx context.Context, id string) (reportarea.De
 }
 
 func (repository *Repository) ListReportIDs(ctx context.Context, areaID string, page report.Page) ([]string, error) {
+	var exists bool
+	if err := repository.pool.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM report_areas WHERE id=$1 AND total_report_count > 0)`, areaID).Scan(&exists); err != nil {
+		return nil, fmt.Errorf("check report area: %w", err)
+	}
+	if !exists {
+		return nil, reportarea.ErrNotFound
+	}
 	var dirty bool
 	if err := repository.pool.QueryRow(ctx, `SELECT dirty_revision <> processed_revision FROM report_area_refresh_state WHERE id=TRUE`).Scan(&dirty); err != nil {
 		return nil, fmt.Errorf("read report area refresh state: %w", err)

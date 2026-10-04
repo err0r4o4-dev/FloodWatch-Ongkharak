@@ -49,6 +49,20 @@ func TestAggregateWindowExcludesLegacyAndFutureObservationsFromCurrentEvidence(t
 	}
 }
 
+func TestAggregateWindowReducesGuestReportsSharingMediaHash(t *testing.T) {
+	now := time.Date(2026, 10, 5, 12, 0, 0, 0, time.UTC)
+	depth := 0.4
+	reports := []SourceReport{
+		{ID: "guest-image-old", Type: "FLOOD", Description: "first wording", DepthM: &depth, MediaHashes: []string{"ABC"}, ObservedAt: timePtr(now.Add(-20 * time.Minute)), Published: true},
+		{ID: "guest-image-new", Type: "FLOOD", Description: "corrected wording", DepthM: &depth, MediaHashes: []string{"abc"}, ObservedAt: timePtr(now.Add(-10 * time.Minute)), Published: true},
+	}
+
+	got := aggregateWindow(reports, now.Add(-time.Hour), now)
+	if got.SampleCount != 1 || len(got.EvidenceIDs) != 1 || got.EvidenceIDs[0] != "guest-image-new" {
+		t.Fatalf("summary = %+v, want one latest shared-image guest sample", got)
+	}
+}
+
 func TestAggregateWindowRequiresStrictPluralityAndUsesBoundaryDepthBands(t *testing.T) {
 	now := time.Date(2026, 10, 5, 12, 0, 0, 0, time.UTC)
 	depthLow := 0.0
@@ -86,6 +100,24 @@ func TestCalculatedTrendDoesNotTreatReportedFallingWithoutDepthAsSafe(t *testing
 	current := aggregateWindow([]SourceReport{{ID: "reported-only", Type: "FLOOD", WaterTrend: falling, ObservedAt: timePtr(now.Add(-10 * time.Minute)), Published: true}}, now.Add(-time.Hour), now)
 	if current.DepthBand != DepthBandUnknown || current.Trend != TrendUnknown || current.ReportedTrend != TrendFalling {
 		t.Fatalf("reported-only summary = %+v, want unknown calculated status and FALLING reported trend", current)
+	}
+}
+
+func TestBuildRefreshDoesNotUseTransitiveAnchorMembership(t *testing.T) {
+	now := time.Date(2026, 10, 5, 12, 0, 0, 0, time.UTC)
+	depth := 0.2
+	reports := []SourceReport{
+		{ID: "first", Type: "FLOOD", Longitude: 101, Latitude: 14, DepthM: &depth, CreatedAt: now.Add(-3 * time.Hour), Published: true},
+		{ID: "middle", Type: "FLOOD", Longitude: 101.001, Latitude: 14, DepthM: &depth, CreatedAt: now.Add(-2 * time.Hour), Published: true},
+		{ID: "chain-end", Type: "FLOOD", Longitude: 101.002, Latitude: 14, DepthM: &depth, CreatedAt: now.Add(-time.Hour), Published: true},
+	}
+
+	plan := BuildRefresh(nil, reports, now)
+	if len(plan.Areas) != 2 {
+		t.Fatalf("areas = %d, want two non-transitive anchors", len(plan.Areas))
+	}
+	if len(plan.Areas[0].MemberIDs) != 2 || len(plan.Areas[1].MemberIDs) != 1 || plan.Areas[1].MemberIDs[0] != "chain-end" {
+		t.Fatalf("memberships = %#v, want first/middle and separate chain-end", plan.Areas)
 	}
 }
 

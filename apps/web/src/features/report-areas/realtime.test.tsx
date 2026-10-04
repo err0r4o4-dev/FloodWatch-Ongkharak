@@ -8,6 +8,7 @@ class FakeEventSource {
   close = vi.fn();
   constructor(public url: string) { FakeEventSource.connections.push(this); }
   addEventListener(type: string, listener: EventListenerOrEventListenerObject) { this.listeners.set(type, listener as (event: MessageEvent) => void); }
+  removeEventListener(type: string) { this.listeners.delete(type); }
   send(type: string, data: unknown) { this.listeners.get(type)?.({ data: JSON.stringify(data) } as MessageEvent); }
 }
 

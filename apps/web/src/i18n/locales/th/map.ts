@@ -1,7 +1,7 @@
 const th = {
   "hero.eyebrow": "SITUATION MAP · ONGKHARAK",
   "hero.title": "แผนที่สถานการณ์น้ำ",
-  "hero.description": "สำรวจสถานีวัดน้ำ พื้นที่เสี่ยง และรายงานจากชุมชนในแผนที่เดียว",
+  "hero.description": "สำรวจสถานีวัดน้ำ พื้นที่เสี่ยง และพื้นที่สรุปรายงานชุมชนในแผนที่เดียว",
   "mode.label": "โหมดแผนที่",
   "mode.situation": "สถานการณ์",
   "mode.route": "เส้นทาง",
@@ -139,6 +139,7 @@ const th = {
   "area.reason.UPDATING": "กำลังปรับปรุง",
   "area.reports": "รายงาน/ตัวอย่าง",
   "area.samples": "ตัวอย่าง",
+  "area.totalReports": "รายงานที่เผยแพร่ในพื้นที่",
   "area.reportsUnit": "รายงาน",
   "area.latestObserved": "สังเกตล่าสุด",
   "area.computedAt": "คำนวณเมื่อ",

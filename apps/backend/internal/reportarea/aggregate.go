@@ -14,16 +14,16 @@ import (
 )
 
 type windowSummary struct {
-	DepthBand      DepthBand
+	DepthBand         DepthBand
 	PreviousDepthBand DepthBand
-	ReportedTrend  Trend
-	Freshness      Freshness
-	SummaryReason  SummaryReason
-	LatestObserved *time.Time
-	ReportCount    int
-	SampleCount    int
-	EvidenceIDs    []string
-	Trend          Trend
+	ReportedTrend     Trend
+	Freshness         Freshness
+	SummaryReason     SummaryReason
+	LatestObserved    *time.Time
+	ReportCount       int
+	SampleCount       int
+	EvidenceIDs       []string
+	Trend             Trend
 }
 
 func aggregateWindow(reports []SourceReport, start, end time.Time) windowSummary {

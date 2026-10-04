@@ -177,6 +177,9 @@ func TestUploadGuestMediaUsesCapabilityAndDoesNotReadPendingMediaAnonymously(t *
 	if media.ReportID != created.Report.ID || repository.guestMediaTokenHash == nil {
 		t.Fatalf("UploadGuestMedia() = %+v, token hash = %x", media, repository.guestMediaTokenHash)
 	}
+	if media.ContentSHA256 != imageSHA256(pngFixture()) || len(media.ContentSHA256) != 64 {
+		t.Fatalf("media hash does not identify original bytes: %q", media.ContentSHA256)
+	}
 	if _, err := service.OpenMedia(context.Background(), created.Report.ID, media.ID, Access{}); !errors.Is(err, ErrNotFound) {
 		t.Fatalf("OpenMedia() anonymous pending guest error = %v, want ErrNotFound", err)
 	}

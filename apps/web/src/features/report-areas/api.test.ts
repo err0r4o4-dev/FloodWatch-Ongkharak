@@ -30,7 +30,7 @@ const timeline = [
 
 const report = {
   id: "report-1", type: "FLOOD", description: "น้ำท่วมหน้าบ้าน", locationName: "คลองทดสอบ",
-  location: { type: "Point", coordinates: [101.02, 14.1] }, estimatedWaterDepthM: 0.25,
+  location: { type: "Point", coordinates: [101.02, 14.1] }, estimatedWaterDepthM: 0.25, observedAt: null, waterTrend: "RISING",
   status: "VERIFIED", verificationStatus: "VERIFIED", publicationStatus: "PUBLISHED", sourceType: "COMMUNITY",
   createdAt: "2026-10-02T00:00:00Z", updatedAt: "2026-10-02T00:30:00Z", verifiedAt: "2026-10-02T01:00:00Z", media: []
 };

@@ -10,7 +10,7 @@ import { ReportAreaDetailsContent } from "../../../features/report-areas/ReportA
 import { displayDepthBand } from "../../../features/report-areas/presentation";
 
 function Verification({ value, confidence }: { value?: string; confidence?: number | null }) {
-  const { t } = useTranslation({ th, en });
+  const { t, locale } = useTranslation({ th, en });
   const status = value ? t(value === "VERIFIED" ? "details.verified" : value === "UNVERIFIED" ? "details.unverified" : value === "REJECTED" ? "details.rejected" : "details.unknown") : t("details.apiUnspecified");
   const certainty = confidence == null ? t("details.unspecified") : `${formatNumber(Math.round(confidence * 100), locale)}%`;
   return <p className="map-evidence">{t("details.verification", { status, confidence: certainty })}</p>;
@@ -48,7 +48,7 @@ export function WaterDetails({ stationId, compact = false }: { stationId: string
 }
 
 export function FeatureDetails({ selection, onClose }: { selection: MapSelection; onClose: () => void }) {
-  const { t, locale } = useTranslation({ th, en });
+  const { t } = useTranslation({ th, en });
   const closeButton = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;

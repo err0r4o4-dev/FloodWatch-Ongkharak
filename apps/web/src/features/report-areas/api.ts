@@ -90,7 +90,10 @@ export async function fetchReportAreas(bounds: MapBounds, signal: AbortSignal): 
   const query = new URLSearchParams({ bbox: formatReportAreaBbox(bounds), limit: String(pageLimit), offset: "0" });
   const value = await json(`${apiConfig.baseUrl}/report-areas?${query}`, signal);
   if (!record(value) || !pageMeta(value) || !Array.isArray(value.items) || !value.items.every(isValidReportArea)) throw new Error("Invalid report area response");
-  return { items: value.items, limit: value.limit, offset: value.offset, hasMore: value.items.length >= value.limit };
+  const limit = value.limit;
+  const offset = value.offset;
+  if (!count(limit) || !count(offset)) throw new Error("Invalid report area response");
+  return { items: value.items, limit, offset, hasMore: value.items.length >= limit };
 }
 
 export async function fetchReportAreaDetail(id: string, signal: AbortSignal): Promise<ReportAreaDetail> {
@@ -104,5 +107,8 @@ export async function fetchReportAreaReports(id: string, limit = 20, offset = 0,
   const query = new URLSearchParams({ limit: String(limit), offset: String(offset) });
   const value = await json(`${apiConfig.baseUrl}/report-areas/${encodeURIComponent(id)}/reports?${query}`, signal ?? new AbortController().signal);
   if (!record(value) || !pageMeta(value) || !Array.isArray(value.items) || !value.items.every(validReport)) throw new Error("Invalid original report response");
-  return { items: value.items, limit: value.limit, offset: value.offset, hasMore: value.items.length >= value.limit };
+  const responseLimit = value.limit;
+  const responseOffset = value.offset;
+  if (!count(responseLimit) || !count(responseOffset)) throw new Error("Invalid original report response");
+  return { items: value.items, limit: responseLimit, offset: responseOffset, hasMore: value.items.length >= responseLimit };
 }

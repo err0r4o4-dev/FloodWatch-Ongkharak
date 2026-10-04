@@ -67,6 +67,8 @@ function ReportDetails({ report }: { report: CommunityReport }) {
       <div><dt>{t("detail.location")}</dt><dd>{report.locationName || t("detail.locationUnknown")}</dd></div>
       {report.locationNote && <div><dt>{t("detail.locationNote")}</dt><dd>{report.locationNote}</dd></div>}
       <div><dt>{t("detail.submitted")}</dt><dd><DataTimestamp value={report.createdAt} label={t("detail.submittedLabel")} /></dd></div>
+      <div><dt>{t("detail.observed")}</dt><dd>{report.observedAt ? <DataTimestamp value={report.observedAt} label={t("detail.observed")} /> : t("detail.observedUnknown")}</dd></div>
+      {report.waterTrend && <div><dt>{t("detail.waterTrend")}</dt><dd>{t(`trend.${report.waterTrend}`)}</dd></div>}
       {report.verifiedAt && <div><dt>{t("detail.reviewed")}</dt><dd><DataTimestamp value={report.verifiedAt} label={t("detail.reviewedLabel")} /></dd></div>}
       {report.estimatedWaterDepthM !== null && <div><dt>{t("detail.depth")}</dt><dd>{formatNumber(report.estimatedWaterDepthM, locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {t("detail.meters")}</dd></div>}
     </dl>

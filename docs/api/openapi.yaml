@@ -814,6 +814,49 @@ paths:
           description: Road condition with source type derived from the referenced source.
           content: { application/json: { schema: { type: object, required: [roadCondition], properties: { roadCondition: { $ref: '#/components/schemas/RoadCondition' } } } } }
         default: { $ref: '#/components/responses/DomainError' }
+  /api/v1/report-areas:
+    get:
+      tags: [Reports]
+      summary: List community report areas with recent depth and trend summaries
+      operationId: listReportAreas
+      security: []
+      parameters:
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Offset' }
+        - { $ref: '#/components/parameters/BBox' }
+      responses:
+        '200':
+          description: Server-wide area summaries independent of viewport report pagination. Unknown or stale evidence never implies safety.
+          content: { application/json: { schema: { $ref: '#/components/schemas/ReportAreaList' } } }
+        default: { $ref: '#/components/responses/DomainError' }
+  /api/v1/report-areas/{id}:
+    get:
+      tags: [Reports]
+      summary: Get a community area summary and hourly evidence timeline
+      operationId: getReportArea
+      security: []
+      parameters:
+        - { $ref: '#/components/parameters/ResourceID' }
+      responses:
+        '200':
+          description: Community-derived summary and timeline; gaps and conflicting evidence remain UNKNOWN.
+          content: { application/json: { schema: { $ref: '#/components/schemas/ReportAreaDetail' } } }
+        default: { $ref: '#/components/responses/DomainError' }
+  /api/v1/report-areas/{id}/reports:
+    get:
+      tags: [Reports]
+      summary: List published original reports associated with an area
+      operationId: listReportAreaReports
+      security: []
+      parameters:
+        - { $ref: '#/components/parameters/ResourceID' }
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Offset' }
+      responses:
+        '200':
+          description: Bounded original public evidence, excluding removed reports and private ownership or moderation fields.
+          content: { application/json: { schema: { $ref: '#/components/schemas/ReportList' } } }
+        default: { $ref: '#/components/responses/DomainError' }
   /api/v1/reports:
     get:
       tags: [Reports]
@@ -2661,6 +2704,7 @@ components:
           - road.status.changed
           - report.verified
           - report.updated
+          - report-area.updated
           - alert.created
           - external_data.updated
         occurredAt:
@@ -2683,6 +2727,7 @@ components:
           - FLOOD_EVENT
           - ROAD
           - COMMUNITY_REPORT
+          - REPORT_AREA
           - ALERT
           - EXTERNAL_DATA
         resourceId:
@@ -2836,6 +2881,8 @@ components:
         locationName: { type: string, maxLength: 200, description: 'Optional user-supplied COMMUNITY location label; no geocoding.' }
         locationNote: { type: string, maxLength: 500, description: 'Optional user-supplied COMMUNITY location note; no geocoding.' }
         estimatedWaterDepthM: { type: [number, 'null'], minimum: 0, maximum: 100 }
+        observedAt: { type: [string, 'null'], format: date-time, description: 'Optional user-supplied observation time, year 2000 or later and at most 30 seconds ahead of server time. Omitted legacy values remain unknown; omitted updates retain the existing value.' }
+        waterTrend: { $ref: '#/components/schemas/ReportWaterTrend' }
     GuestReportInput:
       type: object
       additionalProperties: false
@@ -2848,6 +2895,8 @@ components:
         locationName: { type: string, maxLength: 200, description: 'Optional user-supplied COMMUNITY location label; no geocoding.' }
         locationNote: { type: string, maxLength: 500, description: 'Optional user-supplied COMMUNITY location note; no geocoding.' }
         estimatedWaterDepthM: { type: [number, 'null'], minimum: 0, maximum: 100 }
+        observedAt: { type: [string, 'null'], format: date-time, description: 'Optional user-supplied observation time, distinct from submission time. Unknown times are excluded from current depth summaries.' }
+        waterTrend: { $ref: '#/components/schemas/ReportWaterTrend' }
     GuestReportResponse:
       type: object
       additionalProperties: false
@@ -2890,6 +2939,8 @@ components:
         locationName: { type: string, maxLength: 200, description: 'Optional user-supplied COMMUNITY location label; empty for historical records.' }
         locationNote: { type: string, maxLength: 500, description: 'Optional user-supplied COMMUNITY location note; empty for historical records.' }
         estimatedWaterDepthM: { type: [number, 'null'], minimum: 0, maximum: 100 }
+        observedAt: { type: [string, 'null'], format: date-time, description: 'User-reported time of observation. Null for legacy or unknown observation times; never inferred from creation or edit time.' }
+        waterTrend: { $ref: '#/components/schemas/ReportWaterTrend' }
         status: { $ref: '#/components/schemas/ReportStatus' }
         publicationStatus: { type: string, enum: [PUBLISHED, REMOVED], description: 'Derived from status: PENDING/VERIFIED are PUBLISHED; REJECTED is REMOVED.' }
         verificationStatus: { $ref: '#/components/schemas/ReportStatus' }
@@ -2903,6 +2954,56 @@ components:
         rejectionReason: { type: [string, 'null'], maxLength: 500, description: 'Only shown in ADMIN detail/action responses; omitted in public, owner and mine responses.' }
         media: { type: array, maxItems: 3, items: { $ref: '#/components/schemas/ReportMedia' } }
         reviewHistory: { type: array, description: 'ADMIN detail/actions only; append-only review history.', items: { $ref: '#/components/schemas/ReportReviewEvent' } }
+    ReportWaterTrend:
+      type: string
+      enum: [UNKNOWN, RISING, STABLE, FALLING]
+      description: Reporter-observed change, separate from calculated depth-band trend. Falling alone does not imply shallow or safe water.
+    ReportDepthBand:
+      type: string
+      enum: [UNKNOWN, LOW, MODERATE, HIGH, VERY_HIGH]
+      description: 'Community depth bands in metres: LOW [0,0.1), MODERATE [0.1,0.3), HIGH [0.3,0.5], VERY_HIGH greater than 0.5. Not a road-safety classification.'
+    ReportAreaWindow:
+      type: object
+      required: [depthBand, previousDepthBand, trend, reportedTrend, freshness, summaryReason, latestObservedAt, computedAt, windowStart, windowEnd, reportCount, sampleCount, reportIds]
+      properties:
+        depthBand: { $ref: '#/components/schemas/ReportDepthBand' }
+        previousDepthBand: { $ref: '#/components/schemas/ReportDepthBand' }
+        trend: { $ref: '#/components/schemas/ReportWaterTrend' }
+        reportedTrend: { $ref: '#/components/schemas/ReportWaterTrend' }
+        freshness: { type: string, enum: [FRESH, STALE, UNKNOWN] }
+        summaryReason: { type: string, enum: [SUMMARIZED, PROVISIONAL, NO_RECENT_REPORTS, INSUFFICIENT_MEASUREMENTS, CONFLICTING_REPORTS, UPDATING] }
+        latestObservedAt: { type: [string, 'null'], format: date-time }
+        computedAt: { type: string, format: date-time }
+        windowStart: { type: string, format: date-time }
+        windowEnd: { type: string, format: date-time }
+        reportCount: { type: integer, minimum: 0, description: Recent reports with known observation time before deduplication. }
+        sampleCount: { type: integer, minimum: 0, description: Deduplicated depth measurements, not verified independent people. }
+        reportIds: { type: array, uniqueItems: true, items: { type: string, format: uuid }, description: Public evidence lineage; excludes removed reports. }
+    ReportArea:
+      allOf:
+        - { $ref: '#/components/schemas/ReportAreaWindow' }
+        - type: object
+          required: [id, name, location, radiusM, sourceType, totalReportCount]
+          properties:
+            id: { type: string, format: uuid }
+            name: { type: string, maxLength: 200, description: User-supplied area label, not a geocoded or official locality. }
+            location: { $ref: '#/components/schemas/PointGeometry' }
+            radiusM: { type: number, const: 150, description: Initial bounded grouping radius in metres; not a GPS accuracy or hydrological boundary. }
+            sourceType: { type: string, const: COMMUNITY }
+            totalReportCount: { type: integer, minimum: 0 }
+    ReportAreaList:
+      type: object
+      required: [items, limit, offset]
+      properties:
+        items: { type: array, items: { $ref: '#/components/schemas/ReportArea' } }
+        limit: { type: integer, minimum: 1, maximum: 100 }
+        offset: { type: integer, minimum: 0, maximum: 100000 }
+    ReportAreaDetail:
+      type: object
+      required: [area, timeline]
+      properties:
+        area: { $ref: '#/components/schemas/ReportArea' }
+        timeline: { type: array, items: { $ref: '#/components/schemas/ReportAreaWindow' } }
     ReportReviewEvent:
       type: object
       additionalProperties: false

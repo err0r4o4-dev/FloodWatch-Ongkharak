@@ -159,6 +159,24 @@ describe("useMapData", () => {
     expect(snapshot().failed).not.toContain("water");
   });
 
+  it("polls the visible viewport so stale area summaries can expire without a new event", async () => {
+    fetchMapLayerMock.mockResolvedValue({ items: [], hasMore: false });
+    render(<Probe bounds={boundsOne} />);
+    await startRequests();
+    await settle();
+    const initialRequests = fetchMapLayerMock.mock.calls.length;
+    await act(async () => {
+      vi.advanceTimersByTime(60_000);
+      await Promise.resolve();
+    });
+    await act(async () => {
+      vi.advanceTimersByTime(250);
+      await Promise.resolve();
+    });
+    await settle();
+    expect(fetchMapLayerMock.mock.calls.length).toBeGreaterThan(initialRequests);
+  });
+
   it("labels retained items as previous results while updating", () => {
     const items = { flood: [], water: [], risk: [], roads: [], reports: [] } as LayerItems;
     render(<MapDataStatus items={items} visible={allVisible} loading failed={false} failedLayers={[]} previousLayers={["flood"]} truncated={[]} onRetry={vi.fn()} />);

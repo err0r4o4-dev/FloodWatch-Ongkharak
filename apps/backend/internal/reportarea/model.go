@@ -54,7 +54,7 @@ const (
 	SummaryNoRecentReports     SummaryReason = "NO_RECENT_REPORTS"
 	SummaryInsufficientSamples SummaryReason = "INSUFFICIENT_MEASUREMENTS"
 	SummaryConflicting         SummaryReason = "CONFLICTING_REPORTS"
-	SummaryUpdating             SummaryReason = "UPDATING"
+	SummaryUpdating            SummaryReason = "UPDATING"
 )
 
 type Location struct {
@@ -63,25 +63,25 @@ type Location struct {
 }
 
 type Area struct {
-	ID                 string        `json:"id"`
-	Name               string        `json:"name"`
-	Location           Location      `json:"location"`
-	RadiusM            int           `json:"radiusM"`
-	SourceType         string        `json:"sourceType"`
-	DepthBand          DepthBand     `json:"depthBand"`
-	PreviousDepthBand  DepthBand     `json:"previousDepthBand"`
-	Trend              Trend         `json:"trend"`
-	ReportedTrend      Trend         `json:"reportedTrend"`
-	Freshness          Freshness     `json:"freshness"`
-	SummaryReason      SummaryReason `json:"summaryReason"`
-	LatestObservedAt   *time.Time    `json:"latestObservedAt"`
-	ComputedAt         time.Time     `json:"computedAt"`
-	WindowStart        time.Time     `json:"windowStart"`
-	WindowEnd          time.Time     `json:"windowEnd"`
-	ReportCount        int           `json:"reportCount"`
-	SampleCount        int           `json:"sampleCount"`
-	TotalReportCount   int           `json:"totalReportCount"`
-	ReportIDs          []string      `json:"reportIds"`
+	ID                string        `json:"id"`
+	Name              string        `json:"name"`
+	Location          Location      `json:"location"`
+	RadiusM           int           `json:"radiusM"`
+	SourceType        string        `json:"sourceType"`
+	DepthBand         DepthBand     `json:"depthBand"`
+	PreviousDepthBand DepthBand     `json:"previousDepthBand"`
+	Trend             Trend         `json:"trend"`
+	ReportedTrend     Trend         `json:"reportedTrend"`
+	Freshness         Freshness     `json:"freshness"`
+	SummaryReason     SummaryReason `json:"summaryReason"`
+	LatestObservedAt  *time.Time    `json:"latestObservedAt"`
+	ComputedAt        time.Time     `json:"computedAt"`
+	WindowStart       time.Time     `json:"windowStart"`
+	WindowEnd         time.Time     `json:"windowEnd"`
+	ReportCount       int           `json:"reportCount"`
+	SampleCount       int           `json:"sampleCount"`
+	TotalReportCount  int           `json:"totalReportCount"`
+	ReportIDs         []string      `json:"reportIds"`
 }
 
 type TimelineWindow struct {

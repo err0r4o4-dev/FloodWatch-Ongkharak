@@ -31,6 +31,7 @@ const (
 	EventRoadStatusChanged   EventType = "road.status.changed"
 	EventReportVerified      EventType = "report.verified"
 	EventReportUpdated       EventType = "report.updated"
+	EventReportAreaUpdated EventType = "report-area.updated"
 	EventAlertCreated        EventType = "alert.created"
 	EventExternalDataUpdated EventType = "external_data.updated"
 )
@@ -51,6 +52,7 @@ const (
 	ResourceFloodEvent      ResourceType = "FLOOD_EVENT"
 	ResourceRoad            ResourceType = "ROAD"
 	ResourceCommunityReport ResourceType = "COMMUNITY_REPORT"
+	ResourceReportArea ResourceType = "REPORT_AREA"
 	ResourceAlert           ResourceType = "ALERT"
 	ResourceExternalData    ResourceType = "EXTERNAL_DATA"
 )
@@ -78,7 +80,7 @@ func (event Event) Validate() error {
 	if event.EventType == EventExternalDataUpdated && event.SourceType != SourceOfficial && event.SourceType != SourceModel {
 		return ErrInvalidEvent
 	}
-	if (event.EventType == EventReportVerified || event.EventType == EventReportUpdated) && event.SourceType != SourceCommunity {
+	if (event.EventType == EventReportVerified || event.EventType == EventReportUpdated || event.EventType == EventReportAreaUpdated) && event.SourceType != SourceCommunity {
 		return ErrInvalidEvent
 	}
 	if _, err := uuid.Parse(event.ResourceID); err != nil || event.PayloadVersion != PayloadVersion1 || len(event.Payload) > MaxPayloadBytes {
@@ -86,6 +88,9 @@ func (event Event) Validate() error {
 	}
 	var payload map[string]json.RawMessage
 	if len(event.Payload) == 0 || json.Unmarshal(event.Payload, &payload) != nil || payload == nil {
+		return ErrInvalidEvent
+	}
+	if event.EventType == EventReportAreaUpdated && len(payload) != 0 {
 		return ErrInvalidEvent
 	}
 	return nil
@@ -243,6 +248,8 @@ func validPublicPair(eventType EventType, resourceType ResourceType) bool {
 		return resourceType == ResourceRoad
 	case EventReportVerified, EventReportUpdated:
 		return resourceType == ResourceCommunityReport
+	case EventReportAreaUpdated:
+		return resourceType == ResourceReportArea
 	case EventAlertCreated:
 		return resourceType == ResourceAlert
 	case EventExternalDataUpdated:

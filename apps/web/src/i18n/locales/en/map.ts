@@ -3,7 +3,7 @@ import type th from "../th/map";
 const en: Record<keyof typeof th, string> = {
   "hero.eyebrow": "SITUATION MAP · ONGKHARAK",
   "hero.title": "Flood situation map",
-  "hero.description": "Explore water stations, risk areas, and community reports in one map.",
+  "hero.description": "Explore water stations, risk areas, and aggregated community report areas in one map.",
   "mode.label": "Map mode",
   "mode.situation": "Situation",
   "mode.route": "Route",
@@ -141,6 +141,7 @@ const en: Record<keyof typeof th, string> = {
   "area.reason.UPDATING": "Updating",
   "area.reports": "Reports/samples",
   "area.samples": "samples",
+  "area.totalReports": "Published reports in area",
   "area.reportsUnit": "reports",
   "area.latestObserved": "Latest observed",
   "area.computedAt": "Computed",

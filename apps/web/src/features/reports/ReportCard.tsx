@@ -40,6 +40,8 @@ export function ReportCard({ report, showOwnerControls = false, onEdit, showDeta
     {report.locationNote && <p className="data-card__meta">{t("detail.locationNote")}: {report.locationNote}</p>}
     {report.estimatedWaterDepthM !== null && <p className="reading-values">{t("detail.depth")} {formatNumber(report.estimatedWaterDepthM, locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {t("detail.meters")}</p>}
     <p className="data-card__meta"><DataTimestamp value={report.createdAt} label={t("detail.submittedLabel")} /></p>
+    <p className="data-card__meta">{report.observedAt ? <DataTimestamp value={report.observedAt} label={t("detail.observed")} /> : t("detail.observedUnknown")}</p>
+    {report.waterTrend && report.waterTrend !== "UNKNOWN" && <p className="data-card__meta">{t("detail.waterTrend")}: {t(`trend.${report.waterTrend}`)}</p>}
     {report.media.length > 0 && <ul className="report-media" aria-label={t("detail.mediaLabel")}>{(showDetailsControl ? report.media.slice(0, 1) : report.media).map((media) => <li key={media.id}><ReportMediaImage media={media} /></li>)}</ul>}
     {showDetailsControl && onShowDetails && <button type="button" className="report-card__detail-button" aria-pressed={isSelected} aria-label={t("reportDetails", { type: typeLabel, description: report.description })} onClick={() => onShowDetails(report.id)}>{t("detail.view")}<span aria-hidden="true"> →</span></button>}
     {showOwnerControls && report.status === "PENDING" && onEdit && <button type="button" className="action-button" onClick={() => onEdit(report)}>{t("editPending")}</button>}

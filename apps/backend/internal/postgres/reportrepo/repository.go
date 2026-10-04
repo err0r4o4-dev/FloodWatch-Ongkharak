@@ -308,7 +308,7 @@ func (repository *Repository) CreateGuestMedia(ctx context.Context, item report.
 
 func (repository *Repository) GetMedia(ctx context.Context, reportID, mediaID string) (report.Media, error) {
 	var item report.Media
-	err := repository.pool.QueryRow(ctx, `SELECT id, report_id, object_key, content_type, size_bytes, created_at FROM community_report_media WHERE report_id=$1 AND id=$2`, reportID, mediaID).Scan(&item.ID, &item.ReportID, &item.ObjectKey, &item.ContentType, &item.SizeBytes, &item.CreatedAt)
+	err := repository.pool.QueryRow(ctx, `SELECT id, report_id, object_key, content_type, size_bytes, created_at, COALESCE(content_sha256,'') FROM community_report_media WHERE report_id=$1 AND id=$2`, reportID, mediaID).Scan(&item.ID, &item.ReportID, &item.ObjectKey, &item.ContentType, &item.SizeBytes, &item.CreatedAt, &item.ContentSHA256)
 	if err != nil {
 		return report.Media{}, fmt.Errorf("get report media: %w", mapped(err))
 	}

@@ -5,6 +5,12 @@ import type { MapSelection } from "../types";
 
 const source = { id: "source", code: "test", name: "แหล่งทดสอบ", sourceType: "OFFICIAL" as const };
 const station: MapSelection = { layer: "water", feature: { id: "station", name: "สถานีทดสอบ", source, active: true, location: { type: "Point", coordinates: [101, 14.1] } } };
+const area: MapSelection = { layer: "reports", feature: {
+  id: "area-1", name: "พื้นที่ชุมชนทดสอบ", location: { type: "Point", coordinates: [101.02, 14.1] }, radiusM: 150,
+  sourceType: "COMMUNITY", depthBand: "MODERATE", previousDepthBand: "LOW", trend: "FALLING", reportedTrend: "RISING",
+  freshness: "FRESH", summaryReason: "SUMMARIZED", latestObservedAt: "2026-10-02T01:00:00Z", computedAt: "2026-10-02T02:00:00Z",
+  windowStart: "2026-10-01T02:00:00Z", windowEnd: "2026-10-02T02:00:00Z", reportCount: 3, sampleCount: 2, totalReportCount: 4, reportIds: ["report-1"]
+} };
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -29,5 +35,18 @@ describe("FeaturePopup", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("สถานะไม่ทราบ");
     fireEvent.keyDown(screen.getByRole("region", { name: "ข้อมูลสรุปบนแผนที่" }), { key: "Escape" });
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it("groups one stable area pin without marking the calculated summary as original content", () => {
+    const onClose = vi.fn();
+    const onDetails = vi.fn();
+    render(<FeaturePopup selection={area} onDetails={onDetails} onClose={onClose} />);
+    expect(screen.getByRole("region", { name: "ข้อมูลสรุปบนแผนที่" })).toHaveTextContent("พื้นที่ชุมชนทดสอบ");
+    expect(screen.getByText("แนวโน้มคำนวณ")).toBeInTheDocument();
+    expect(screen.queryByText("เนื้อหาต้นฉบับ")).not.toBeInTheDocument();
+    fireEvent.keyDown(screen.getByRole("region", { name: "ข้อมูลสรุปบนแผนที่" }), { key: "Escape" });
+    expect(onClose).toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "ดูรายละเอียด" }));
+    expect(onDetails).toHaveBeenCalledWith(area);
   });
 });
