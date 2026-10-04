@@ -1,0 +1,13 @@
+
+> @floodwatch/web@0.0.0 test D:\!Project\FloodWatch-Ongkharak(Web_Application)\apps\web
+> vitest run "vite.config.test.ts" "src/features/reports/ReportsPage.test.tsx" "src/features/reports/ReportForm.test.tsx"
+
+
+ RUN  v5.0.3 D:/!Project/FloodWatch-Ongkharak(Web_Application)/apps/web
+
+
+ Test Files  3 passed (3)
+      Tests  24 passed (24)
+   Start at  15:55:03
+   Duration  2.48s (environment 50%, tests 25%, setup 16%, transform 4%, import 4%, worker 1%)
+

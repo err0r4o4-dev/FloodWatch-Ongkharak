@@ -1,0 +1,65 @@
+
+> @floodwatch/web@0.0.0 test D:\!Project\FloodWatch-Ongkharak(Web_Application)\apps\web
+> vitest run "vite.config.test.ts"
+
+
+ RUN  v5.0.3 D:/!Project/FloodWatch-Ongkharak(Web_Application)/apps/web
+
+ ❯ vite.config.test.ts (2 tests | 2 failed) 255ms
+   ❯ development API proxy (2)
+     × forwards same-origin API requests to the host backend without stripping the path 253ms
+     × uses the configured backend service inside Docker 1ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  vite.config.test.ts > development API proxy > forwards same-origin API requests to the host backend without stripping the path
+AssertionError: expected undefined to deeply equal { …(2) }
+
+- Expected:
+{
+  "changeOrigin": false,
+  "target": "http://127.0.0.1:8080",
+}
+
++ Received:
+undefined
+
+ ❯ vite.config.test.ts:13:44
+     11|     vi.resetModules();
+     12|     const { default: config } = await import("./vite.config");
+     13|     expect(config.server?.proxy?.["/api"]).toEqual({ target: "http://1…
+       |                                            ^
+     14|   });
+     15|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  vite.config.test.ts > development API proxy > uses the configured backend service inside Docker
+AssertionError: expected undefined to deeply equal { target: 'http://api:8080', …(1) }
+
+- Expected:
+{
+  "changeOrigin": false,
+  "target": "http://api:8080",
+}
+
++ Received:
+undefined
+
+ ❯ vite.config.test.ts:20:44
+     18|     vi.resetModules();
+     19|     const { default: config } = await import("./vite.config");
+     20|     expect(config.server?.proxy?.["/api"]).toEqual({ target: "http://a…
+       |                                            ^
+     21|   });
+     22| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed (2)
+   Start at  15:51:21
+   Duration  1.69s (environment 62%, setup 19%, tests 16%, transform 2%, worker 1%)
+
+ ELIFECYCLE  Test failed. See above for more details.
