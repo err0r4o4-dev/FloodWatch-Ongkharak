@@ -6,6 +6,8 @@ package adminrepo_test
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"os"
 	"testing"
 	"time"
 
@@ -22,15 +24,15 @@ func TestAuditLogCreationAndRetrieval(t *testing.T) {
 	repo := adminrepo.New(pool)
 	ctx := context.Background()
 
-	userID := uuid.NewString()
+	actor := createTestUser(t, pool, "audit", auth.RoleAdmin)
 	log := admin.AuditLog{
 		ID:         uuid.NewString(),
 		Action:     admin.ActionUserCreated,
-		ActorID:    &userID,
-		ActorEmail: "admin@example.com",
+		ActorID:    &actor.ID,
+		ActorEmail: actor.Email,
 		ActorRole:  admin.ActorRoleAdmin,
 		TargetType: admin.TargetUser,
-		TargetID:   userID,
+		TargetID:   actor.ID,
 		Metadata: map[string]interface{}{
 			"test_key": "test_value",
 		},
@@ -42,6 +44,7 @@ func TestAuditLogCreationAndRetrieval(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CreateAuditLog failed: %v", err)
 	}
+	registerAuditCleanup(t, pool, log.ID)
 
 	retrieved, err := repo.GetAuditLog(ctx, log.ID)
 	if err != nil {
@@ -51,8 +54,8 @@ func TestAuditLogCreationAndRetrieval(t *testing.T) {
 	if retrieved.Action != admin.ActionUserCreated {
 		t.Errorf("Expected action %s, got %s", admin.ActionUserCreated, retrieved.Action)
 	}
-	if retrieved.ActorEmail != "admin@example.com" {
-		t.Errorf("Expected actorEmail admin@example.com, got %s", retrieved.ActorEmail)
+	if retrieved.ActorEmail != actor.Email {
+		t.Errorf("Expected actorEmail %s, got %s", actor.Email, retrieved.ActorEmail)
 	}
 	if retrieved.Metadata["test_key"] != "test_value" {
 		t.Errorf("Expected metadata test_value, got %v", retrieved.Metadata["test_key"])
@@ -64,36 +67,36 @@ func TestListAuditLogsWithFiltering(t *testing.T) {
 	repo := adminrepo.New(pool)
 	ctx := context.Background()
 
-	user1 := uuid.NewString()
-	user2 := uuid.NewString()
+	user1 := createTestUser(t, pool, "audit-filter-one", auth.RoleAdmin)
+	user2 := createTestUser(t, pool, "audit-filter-two", auth.RoleAdmin)
 
 	// Create multiple audit logs
 	logs := []admin.AuditLog{
 		{
 			ID:         uuid.NewString(),
 			Action:     admin.ActionUserCreated,
-			ActorID:    &user1,
-			ActorEmail: "admin1@example.com",
+			ActorID:    &user1.ID,
+			ActorEmail: user1.Email,
 			ActorRole:  admin.ActorRoleAdmin,
 			TargetType: admin.TargetUser,
-			TargetID:   user1,
+			TargetID:   user1.ID,
 			Metadata:   make(map[string]interface{}),
 		},
 		{
 			ID:         uuid.NewString(),
 			Action:     admin.ActionUserDisabled,
-			ActorID:    &user1,
-			ActorEmail: "admin1@example.com",
+			ActorID:    &user1.ID,
+			ActorEmail: user1.Email,
 			ActorRole:  admin.ActorRoleAdmin,
 			TargetType: admin.TargetUser,
-			TargetID:   user2,
+			TargetID:   user2.ID,
 			Metadata:   make(map[string]interface{}),
 		},
 		{
 			ID:         uuid.NewString(),
 			Action:     admin.ActionSettingUpdated,
-			ActorID:    &user2,
-			ActorEmail: "admin2@example.com",
+			ActorID:    &user2.ID,
+			ActorEmail: user2.Email,
 			ActorRole:  admin.ActorRoleAdmin,
 			TargetType: admin.TargetSystemSetting,
 			TargetID:   "test.setting",
@@ -105,11 +108,12 @@ func TestListAuditLogsWithFiltering(t *testing.T) {
 		if err := repo.CreateAuditLog(ctx, log); err != nil {
 			t.Fatalf("CreateAuditLog failed: %v", err)
 		}
+		registerAuditCleanup(t, pool, log.ID)
 	}
 
 	// Filter by actor
 	filter := admin.ListAuditLogsFilter{
-		ActorID: &user1,
+		ActorID: &user1.ID,
 		Limit:   10,
 		Offset:  0,
 	}
@@ -142,40 +146,20 @@ func TestListAuditLogsWithFiltering(t *testing.T) {
 
 func TestUserManagement(t *testing.T) {
 	pool := getTestPool(t)
-	authRepo := authrepo.New(pool)
 	adminRepo := adminrepo.New(pool)
 	ctx := context.Background()
 
 	// Create test users
-	user1 := auth.User{
-		ID:           uuid.NewString(),
-		Email:        "user1@test.com",
-		PasswordHash: "hash1",
-		Role:         auth.RoleUser,
-	}
-	user2 := auth.User{
-		ID:           uuid.NewString(),
-		Email:        "admin1@test.com",
-		PasswordHash: "hash2",
-		Role:         auth.RoleAdmin,
-	}
-
-	_, err := authRepo.CreateUser(ctx, user1)
-	if err != nil {
-		t.Fatalf("CreateUser failed: %v", err)
-	}
-	_, err = authRepo.CreateUser(ctx, user2)
-	if err != nil {
-		t.Fatalf("CreateUser failed: %v", err)
-	}
+	user1 := createTestUser(t, pool, "user", auth.RoleUser)
+	createTestUser(t, pool, "admin", auth.RoleAdmin)
 
 	// Test GetUser
 	retrieved, err := adminRepo.GetUser(ctx, user1.ID)
 	if err != nil {
 		t.Fatalf("GetUser failed: %v", err)
 	}
-	if retrieved.Email != "user1@test.com" {
-		t.Errorf("Expected email user1@test.com, got %s", retrieved.Email)
+	if retrieved.Email != user1.Email {
+		t.Errorf("Expected email %s, got %s", user1.Email, retrieved.Email)
 	}
 
 	// Test ListUsers
@@ -216,25 +200,14 @@ func TestUserManagement(t *testing.T) {
 
 func TestUpdateUserRole(t *testing.T) {
 	pool := getTestPool(t)
-	authRepo := authrepo.New(pool)
 	adminRepo := adminrepo.New(pool)
 	ctx := context.Background()
 
-	user := auth.User{
-		ID:           uuid.NewString(),
-		Email:        "roletest@test.com",
-		PasswordHash: "hash",
-		Role:         auth.RoleUser,
-	}
-
-	_, err := authRepo.CreateUser(ctx, user)
-	if err != nil {
-		t.Fatalf("CreateUser failed: %v", err)
-	}
+	user := createTestUser(t, pool, "role", auth.RoleUser)
 
 	// Update role to ADMIN
-	actorID := uuid.NewString()
-	err = adminRepo.UpdateUserRole(ctx, user.ID, "ADMIN", actorID)
+	actorID := user.ID
+	err := adminRepo.UpdateUserRole(ctx, user.ID, "ADMIN", actorID)
 	if err != nil {
 		t.Fatalf("UpdateUserRole failed: %v", err)
 	}
@@ -257,34 +230,14 @@ func TestUpdateUserRole(t *testing.T) {
 
 func TestDisableAndEnableUser(t *testing.T) {
 	pool := getTestPool(t)
-	authRepo := authrepo.New(pool)
 	adminRepo := adminrepo.New(pool)
 	ctx := context.Background()
 
-	user := auth.User{
-		ID:           uuid.NewString(),
-		Email:        "disabletest@test.com",
-		PasswordHash: "hash",
-		Role:         auth.RoleUser,
-	}
-	adminUser := auth.User{
-		ID:           uuid.NewString(),
-		Email:        "adminactor@test.com",
-		PasswordHash: "hash",
-		Role:         auth.RoleAdmin,
-	}
-
-	_, err := authRepo.CreateUser(ctx, user)
-	if err != nil {
-		t.Fatalf("CreateUser failed: %v", err)
-	}
-	_, err = authRepo.CreateUser(ctx, adminUser)
-	if err != nil {
-		t.Fatalf("CreateUser admin failed: %v", err)
-	}
+	user := createTestUser(t, pool, "disable", auth.RoleUser)
+	adminUser := createTestUser(t, pool, "disable-admin", auth.RoleAdmin)
 
 	// Test cannot disable self
-	err = adminRepo.DisableUser(ctx, adminUser.ID, adminUser.ID)
+	err := adminRepo.DisableUser(ctx, adminUser.ID, adminUser.ID)
 	if err != admin.ErrUserCannotDisable {
 		t.Errorf("Expected ErrUserCannotDisable, got %v", err)
 	}
@@ -324,6 +277,7 @@ func TestSystemSettings(t *testing.T) {
 	pool := getTestPool(t)
 	repo := adminrepo.New(pool)
 	ctx := context.Background()
+	actor := createTestUser(t, pool, "settings", auth.RoleAdmin)
 
 	// List all settings
 	filter := admin.ListSettingsFilter{}
@@ -349,11 +303,27 @@ func TestSystemSettings(t *testing.T) {
 	if !setting.Editable {
 		t.Error("Expected setting to be editable")
 	}
+	originalValue := append(json.RawMessage(nil), setting.Value...)
+	var originalUpdatedBy *string
+	if setting.UpdatedBy != nil {
+		updatedBy := *setting.UpdatedBy
+		originalUpdatedBy = &updatedBy
+	}
+	t.Cleanup(func() {
+		cleanupCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if _, err := pool.Exec(cleanupCtx, `
+			UPDATE system_settings
+			SET value = $1, updated_by = $2
+			WHERE key = $3
+		`, originalValue, originalUpdatedBy, setting.Key); err != nil {
+			t.Errorf("restore setting %s: %v", setting.Key, err)
+		}
+	})
 
 	// Update setting
 	newValue := json.RawMessage(`10`)
-	actorID := uuid.NewString()
-	err = repo.UpdateSetting(ctx, "rate_limit.auth.register_per_ip_per_hour", newValue, actorID)
+	err = repo.UpdateSetting(ctx, "rate_limit.auth.register_per_ip_per_hour", newValue, actor.ID)
 	if err != nil {
 		t.Fatalf("UpdateSetting failed: %v", err)
 	}
@@ -366,12 +336,12 @@ func TestSystemSettings(t *testing.T) {
 	if string(updated.Value) != "10" {
 		t.Errorf("Expected value 10, got %s", string(updated.Value))
 	}
-	if updated.UpdatedBy == nil || *updated.UpdatedBy != actorID {
+	if updated.UpdatedBy == nil || *updated.UpdatedBy != actor.ID {
 		t.Error("Expected updatedBy to be set")
 	}
 
 	// Test read-only setting
-	err = repo.UpdateSetting(ctx, "security.require_email_verification", json.RawMessage(`true`), actorID)
+	err = repo.UpdateSetting(ctx, "security.require_email_verification", json.RawMessage(`true`), actor.ID)
 	if err != admin.ErrSettingReadOnly {
 		t.Errorf("Expected ErrSettingReadOnly, got %v", err)
 	}
@@ -392,21 +362,10 @@ func TestSystemSettings(t *testing.T) {
 
 func TestGetUserStats(t *testing.T) {
 	pool := getTestPool(t)
-	authRepo := authrepo.New(pool)
 	adminRepo := adminrepo.New(pool)
 	ctx := context.Background()
 
-	user := auth.User{
-		ID:           uuid.NewString(),
-		Email:        "statstest@test.com",
-		PasswordHash: "hash",
-		Role:         auth.RoleUser,
-	}
-
-	_, err := authRepo.CreateUser(ctx, user)
-	if err != nil {
-		t.Fatalf("CreateUser failed: %v", err)
-	}
+	user := createTestUser(t, pool, "stats", auth.RoleUser)
 
 	// Create some audit logs for this user
 	for i := 0; i < 3; i++ {
@@ -423,6 +382,7 @@ func TestGetUserStats(t *testing.T) {
 		if err := adminRepo.CreateAuditLog(ctx, log); err != nil {
 			t.Fatalf("CreateAuditLog failed: %v", err)
 		}
+		registerAuditCleanup(t, pool, log.ID)
 		time.Sleep(10 * time.Millisecond)
 	}
 
@@ -442,7 +402,6 @@ func TestGetUserStats(t *testing.T) {
 
 func TestGetDashboardStats(t *testing.T) {
 	pool := getTestPool(t)
-	authRepo := authrepo.New(pool)
 	repo := adminrepo.New(pool)
 	ctx := context.Background()
 
@@ -451,23 +410,29 @@ func TestGetDashboardStats(t *testing.T) {
 		t.Fatalf("GetDashboardStats before fixtures failed: %v", err)
 	}
 
-	activeUser := auth.User{ID: uuid.NewString(), Email: "dashboard-active@test.com", PasswordHash: "hash", Role: auth.RoleUser}
-	disabledUser := auth.User{ID: uuid.NewString(), Email: "dashboard-disabled@test.com", PasswordHash: "hash", Role: auth.RoleUser}
-	for _, user := range []auth.User{activeUser, disabledUser} {
-		if _, err := authRepo.CreateUser(ctx, user); err != nil {
-			t.Fatalf("CreateUser failed: %v", err)
-		}
-	}
+	activeUser := createTestUser(t, pool, "dashboard-active", auth.RoleUser)
+	disabledUser := createTestUser(t, pool, "dashboard-disabled", auth.RoleUser)
 	reportIDs := []string{uuid.NewString(), uuid.NewString()}
 	for i, status := range []string{"PENDING", "VERIFIED"} {
-		if _, err := pool.Exec(ctx, `
-			INSERT INTO community_reports (id, user_id, type, location, status)
-			VALUES ($1, $2, 'FLOOD', ST_SetSRID(ST_MakePoint(101, 14), 4326), $3)
-		`, reportIDs[i], activeUser.ID, status); err != nil {
+		registerReportCleanup(t, pool, reportIDs[i])
+		var err error
+		if status == "VERIFIED" {
+			verifiedAt := time.Now().UTC()
+			_, err = pool.Exec(ctx, `
+				INSERT INTO community_reports (id, user_id, type, location, status, verified_at, verified_by, reviewed_at, reviewed_by)
+				VALUES ($1, $2, 'FLOOD', ST_SetSRID(ST_MakePoint(101, 14), 4326), $3, $4, $5, $4, $5)
+			`, reportIDs[i], activeUser.ID, status, verifiedAt, activeUser.ID)
+		} else {
+			_, err = pool.Exec(ctx, `
+				INSERT INTO community_reports (id, user_id, type, location, status)
+				VALUES ($1, $2, 'FLOOD', ST_SetSRID(ST_MakePoint(101, 14), 4326), $3)
+			`, reportIDs[i], activeUser.ID, status)
+		}
+		if err != nil {
 			t.Fatalf("insert dashboard report failed: %v", err)
 		}
 	}
-	if err := repo.CreateAuditLog(ctx, admin.AuditLog{
+	auditLog := admin.AuditLog{
 		ID:         uuid.NewString(),
 		Action:     admin.ActionLoginSuccess,
 		ActorID:    &activeUser.ID,
@@ -476,18 +441,14 @@ func TestGetDashboardStats(t *testing.T) {
 		TargetType: admin.TargetAuthSession,
 		TargetID:   activeUser.ID,
 		Metadata:   map[string]interface{}{},
-	}); err != nil {
+	}
+	if err := repo.CreateAuditLog(ctx, auditLog); err != nil {
 		t.Fatalf("create dashboard activity failed: %v", err)
 	}
+	registerAuditCleanup(t, pool, auditLog.ID)
 	if err := repo.DisableUser(ctx, disabledUser.ID, activeUser.ID); err != nil {
 		t.Fatalf("disable dashboard user failed: %v", err)
 	}
-	t.Cleanup(func() {
-		_, _ = pool.Exec(ctx, `DELETE FROM community_reports WHERE id = ANY($1)`, reportIDs)
-		_, _ = pool.Exec(ctx, `DELETE FROM audit_logs WHERE actor_id = $1`, activeUser.ID)
-		_, _ = pool.Exec(ctx, `DELETE FROM users WHERE id = ANY($1)`, []string{activeUser.ID, disabledUser.ID})
-	})
-
 	after, err := repo.GetDashboardStats(ctx)
 	if err != nil {
 		t.Fatalf("GetDashboardStats after fixtures failed: %v", err)
@@ -505,7 +466,11 @@ func TestGetDashboardStats(t *testing.T) {
 
 func getTestPool(t *testing.T) *pgxpool.Pool {
 	t.Helper()
-	pool, err := pgxpool.New(context.Background(), "postgres://floodwatch:floodwatch@localhost:15432/floodwatch?sslmode=disable")
+	databaseURL := os.Getenv("TEST_DATABASE_URL")
+	if databaseURL == "" {
+		t.Skip("set TEST_DATABASE_URL to run PostgreSQL Admin integration")
+	}
+	pool, err := pgxpool.New(context.Background(), databaseURL)
 	if err != nil {
 		t.Fatalf("Failed to create test pool: %v", err)
 	}
@@ -515,4 +480,62 @@ func getTestPool(t *testing.T) *pgxpool.Pool {
 
 func stringPtr(s string) *string {
 	return &s
+}
+
+func createTestUser(t *testing.T, pool *pgxpool.Pool, label string, role auth.Role) auth.User {
+	t.Helper()
+	user := auth.User{
+		ID:           uuid.NewString(),
+		Email:        fmt.Sprintf("%s-%s@test.com", label, uuid.NewString()),
+		PasswordHash: "hash",
+		Role:         role,
+	}
+	created, err := authrepo.New(pool).CreateUser(context.Background(), user)
+	if err != nil {
+		t.Fatalf("CreateUser failed: %v", err)
+	}
+	registerUserCleanup(t, pool, created.ID)
+	return created
+}
+
+func registerUserCleanup(t *testing.T, pool *pgxpool.Pool, userID string) {
+	t.Helper()
+	t.Cleanup(func() {
+		cleanupCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if _, err := pool.Exec(cleanupCtx, `DELETE FROM refresh_sessions WHERE user_id = $1`, userID); err != nil {
+			t.Errorf("cleanup refresh sessions for %s: %v", userID, err)
+		}
+		if _, err := pool.Exec(cleanupCtx, `DELETE FROM users WHERE id = $1`, userID); err != nil {
+			t.Errorf("cleanup user %s: %v", userID, err)
+		}
+	})
+}
+
+func registerAuditCleanup(t *testing.T, pool *pgxpool.Pool, auditID string) {
+	t.Helper()
+	t.Cleanup(func() {
+		cleanupCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if _, err := pool.Exec(cleanupCtx, `DELETE FROM audit_logs WHERE id = $1`, auditID); err != nil {
+			t.Errorf("cleanup audit log %s: %v", auditID, err)
+		}
+	})
+}
+
+func registerReportCleanup(t *testing.T, pool *pgxpool.Pool, reportID string) {
+	t.Helper()
+	t.Cleanup(func() {
+		cleanupCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if _, err := pool.Exec(cleanupCtx, `
+			DELETE FROM event_outbox
+			WHERE resource_id = $1
+		`, reportID); err != nil {
+			t.Errorf("cleanup report events for %s: %v", reportID, err)
+		}
+		if _, err := pool.Exec(cleanupCtx, `DELETE FROM community_reports WHERE id = $1`, reportID); err != nil {
+			t.Errorf("cleanup report %s: %v", reportID, err)
+		}
+	})
 }

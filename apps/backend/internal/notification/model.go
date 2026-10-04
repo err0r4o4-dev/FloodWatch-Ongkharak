@@ -21,6 +21,7 @@ type Subscription struct {
 	Endpoint  string    `json:"endpoint"`
 	P256dh    string    `json:"p256dh"`
 	Auth      string    `json:"auth"`
+	Version   int64     `json:"-"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 }
@@ -53,22 +54,23 @@ type PageResult struct {
 }
 
 type DeliveryJob struct {
-	ID             string
-	SubscriptionID string
-	UserID         string
-	AlertID        string
-	Endpoint       string
-	P256dh         string
-	Auth           string
-	Payload        Payload
-	Attempts       int
-	LeaseToken     string
+	ID                  string
+	SubscriptionID      string
+	UserID              string
+	AlertID             string
+	Endpoint            string
+	P256dh              string
+	Auth                string
+	SubscriptionVersion int64
+	Payload             Payload
+	Attempts            int
+	LeaseToken          string
 }
 
 type Repository interface {
 	UpsertSubscription(ctx context.Context, sub Subscription) error
 	DeleteSubscription(ctx context.Context, endpoint string, userID string) error
-	DeleteSubscriptionByEndpoint(ctx context.Context, endpoint string) error
+	DeleteSubscriptionAfterDeliveryFailure(ctx context.Context, jobID, leaseToken, subscriptionID, userID, endpoint string, subscriptionVersion int64) (bool, error)
 	ListAllSubscriptions(ctx context.Context) ([]Subscription, error)
 	List(ctx context.Context, userID string, page Page) (PageResult, error)
 	UnreadCount(ctx context.Context, userID string) (int, error)

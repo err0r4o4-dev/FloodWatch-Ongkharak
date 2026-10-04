@@ -1,0 +1,71 @@
+{
+  "checks": [
+    {
+      "mode": "inbox",
+      "width": 1440,
+      "pathname": "/notifications",
+      "overflow": false
+    },
+    {
+      "mode": "inbox",
+      "width": 390,
+      "pathname": "/notifications",
+      "overflow": false
+    },
+    {
+      "mode": "inbox",
+      "width": 320,
+      "pathname": "/notifications",
+      "overflow": false
+    },
+    {
+      "mode": "guest",
+      "width": 390,
+      "pathname": "/notifications",
+      "overflow": false
+    },
+    {
+      "mode": "empty",
+      "width": 390,
+      "pathname": "/notifications",
+      "overflow": false
+    },
+    {
+      "mode": "error",
+      "width": 390,
+      "pathname": "/notifications",
+      "overflow": false
+    },
+    {
+      "mode": "loading",
+      "width": 390,
+      "pathname": "/notifications",
+      "overflow": false
+    },
+    {
+      "mode": "stats",
+      "width": 1440,
+      "pathname": "/admin",
+      "overflow": false
+    },
+    {
+      "mode": "stats-error",
+      "width": 390,
+      "pathname": "/admin",
+      "overflow": false
+    },
+    {
+      "mode": "ai",
+      "width": 1440,
+      "pathname": "/admin/ai-evidence",
+      "overflow": false
+    },
+    {
+      "mode": "ai",
+      "width": 390,
+      "pathname": "/admin/ai-evidence",
+      "overflow": false
+    }
+  ],
+  "exceptions": []
+}

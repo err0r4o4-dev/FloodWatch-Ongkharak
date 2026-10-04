@@ -93,14 +93,13 @@ describe("public routes", () => {
     expect(screen.getByRole("link", { name: "การแจ้งเตือน" })).not.toHaveTextContent(/\d/);
   });
 
-  it("opens the notifications bookmark and distinguishes unavailable history from an empty inbox", () => {
+  it("opens the notifications bookmark without treating a guest as an empty inbox", () => {
     render(<MemoryRouter initialEntries={["/notifications"]}><AppRoutes /></MemoryRouter>);
     expect(screen.getByRole("heading", { level: 1, name: "การแจ้งเตือน" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "ประวัติการแจ้งเตือนยังไม่พร้อมใช้งาน" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "ลงชื่อเข้าใช้เพื่อดูการแจ้งเตือน" })).toBeInTheDocument();
     expect(screen.queryByText("ไม่มีการแจ้งเตือน")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "อ่านทั้งหมดแล้ว" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "อ่านทั้งหมดแล้ว" })).toHaveAccessibleDescription("ยังไม่สามารถบันทึกสถานะอ่านแล้วได้");
-    expect(screen.getByRole("link", { name: "ดูประกาศล่าสุด" })).toHaveAttribute("href", "/announcements");
+    expect(within(screen.getByRole("region", { name: "การแจ้งเตือนของคุณ" })).getByRole("link", { name: "เข้าสู่ระบบ" })).toHaveAttribute("href", "/login");
     expect(screen.getByText("ไม่มีการแจ้งเตือนไม่ได้หมายความว่าพื้นที่ปลอดภัย")).toBeInTheDocument();
     expect(screen.getByRole("main")).toBeInTheDocument();
   });

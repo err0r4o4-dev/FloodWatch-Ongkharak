@@ -24,3 +24,15 @@ func TestCORSAllowsPutPreflightForConfiguredOrigin(t *testing.T) {
 		t.Fatalf("allowed methods = %q, want PUT", methods)
 	}
 }
+
+func TestCORSAllowsNotificationUnsubscribePreflight(t *testing.T) {
+	const origin = "https://floodwatch.example.test"
+	request := httptest.NewRequest(http.MethodOptions, "/api/v1/notifications/unsubscribe", nil)
+	request.Header.Set("Origin", origin)
+	request.Header.Set("Access-Control-Request-Method", http.MethodDelete)
+	response := httptest.NewRecorder()
+	New(Dependencies{Logger: slog.Default(), CORSAllowedOrigins: []string{origin}}).ServeHTTP(response, request)
+	if response.Code != http.StatusNoContent || !strings.Contains(response.Header().Get("Access-Control-Allow-Methods"), http.MethodDelete) {
+		t.Fatalf("unsubscribe preflight = %d: %v", response.Code, response.Header())
+	}
+}

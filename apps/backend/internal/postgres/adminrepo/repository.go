@@ -117,7 +117,7 @@ func (r *Repository) ListAuditLogs(ctx context.Context, filter admin.ListAuditLo
 
 	// Fetch logs
 	listQuery := fmt.Sprintf(`
-		SELECT id, action, actor_id, actor_email, actor_role, target_type, target_id, metadata, ip_address, user_agent, created_at
+		SELECT id, action, actor_id, actor_email, actor_role, target_type, target_id, metadata, ip_address::text, user_agent, created_at
 		FROM audit_logs
 		%s
 		ORDER BY created_at DESC, id DESC
@@ -168,7 +168,7 @@ func (r *Repository) GetAuditLog(ctx context.Context, id string) (admin.AuditLog
 	var log admin.AuditLog
 	var metadataJSON []byte
 	err := r.pool.QueryRow(ctx, `
-		SELECT id, action, actor_id, actor_email, actor_role, target_type, target_id, metadata, ip_address, user_agent, created_at
+		SELECT id, action, actor_id, actor_email, actor_role, target_type, target_id, metadata, ip_address::text, user_agent, created_at
 		FROM audit_logs
 		WHERE id = $1
 	`, id).Scan(
@@ -304,7 +304,7 @@ func (r *Repository) GetUserStats(ctx context.Context, userID string) (admin.Use
 			COALESCE(COUNT(DISTINCT al.id), 0) AS audit_log_count,
 			COALESCE(COUNT(DISTINCT rs.id), 0) AS refresh_session_count
 		FROM users AS u
-		LEFT JOIN community_reports AS cr ON cr.submitted_by = u.id
+		LEFT JOIN community_reports AS cr ON cr.user_id = u.id
 		LEFT JOIN audit_logs AS al ON al.actor_id = u.id
 		LEFT JOIN refresh_sessions AS rs ON rs.user_id = u.id AND rs.revoked_at IS NULL AND rs.rotated_at IS NULL
 		WHERE u.id = $1

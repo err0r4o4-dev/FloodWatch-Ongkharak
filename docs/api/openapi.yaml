@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Flood Watch Ongkharak API
-  version: 0.4.0
+  version: 0.5.0
   description: |
     # Introduction
     Public REST API for Flood Watch Ongkharak. The Go API is the public backend.
@@ -37,6 +37,8 @@ servers:
   - url: /
     description: Public API through Caddy or Go directly; resource paths include /api where required
 tags:
+  - name: Notifications
+    description: Account-scoped inbox and independent browser Push subscriptions.
   - name: System
     description: Service liveness and dependency readiness.
   - name: Auth
@@ -850,6 +852,37 @@ paths:
           content: { application/json: { schema: { $ref: '#/components/schemas/AlertList' } } }
         default: { $ref: '#/components/responses/DomainError' }
   /api/v1/admin/alert-rules:
+    get:
+      tags:
+      - Admin
+      operationId: listAlertRules
+      summary: List enabled and disabled alert rules (ADMIN only)
+      responses:
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlertRuleList'
+        default:
+          $ref: '#/components/responses/DomainError'
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 50
+          default: 20
+      - name: offset
+        in: query
+        schema:
+          type: integer
+          minimum: 0
+          maximum: 1000
+          default: 0
     post:
       tags: [Admin, Alerts]
       summary: Create a structured alert rule (ADMIN only)
@@ -864,6 +897,24 @@ paths:
           content: { application/json: { schema: { $ref: '#/components/schemas/AlertRuleResponse' } } }
         default: { $ref: '#/components/responses/DomainError' }
   /api/v1/admin/alert-rules/{id}:
+    get:
+      tags:
+      - Admin
+      operationId: getAlertRule
+      summary: Get an alert rule (ADMIN only)
+      responses:
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlertRuleResponse'
+        default:
+          $ref: '#/components/responses/DomainError'
+      security:
+      - bearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/ResourceID'
     put:
       tags: [Admin, Alerts]
       summary: Replace a structured alert rule (ADMIN only)
@@ -878,6 +929,567 @@ paths:
           description: Updated rule. Past alerts retain their recorded decision and provenance.
           content: { application/json: { schema: { $ref: '#/components/schemas/AlertRuleResponse' } } }
         default: { $ref: '#/components/responses/DomainError' }
+  /metrics:
+    get:
+      tags:
+      - System
+      operationId: getMetrics
+      summary: Prometheus process metrics
+      description: Operational endpoint; restrict access at the deployment ingress.
+      responses:
+        '200':
+          description: Prometheus exposition format.
+          content:
+            text/plain:
+              schema:
+                type: string
+  /api/v1/admin/dashboard/stats:
+    get:
+      tags:
+      - Admin
+      operationId: getAdminDashboardStats
+      summary: Database-backed dashboard statistics (ADMIN only)
+      responses:
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminDashboardStats'
+        default:
+          $ref: '#/components/responses/DomainError'
+      security:
+      - bearerAuth: []
+      description: Active users are enabled accounts, not online sessions. Recent activity
+        counts audit records in the last 24 hours. Errors never become placeholder zeroes.
+  /api/v1/admin/users:
+    get:
+      tags:
+      - Admin
+      operationId: listManagedUsers
+      summary: List user accounts (ADMIN only)
+      responses:
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ManagedUserList'
+        default:
+          $ref: '#/components/responses/DomainError'
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 50
+      - name: offset
+        in: query
+        schema:
+          type: integer
+          minimum: 0
+          maximum: 100000
+          default: 0
+      - name: role
+        in: query
+        schema:
+          type: string
+          enum:
+          - USER
+          - ADMIN
+      - name: includeDisabled
+        in: query
+        schema:
+          type: boolean
+          default: false
+      - name: search
+        in: query
+        schema:
+          type: string
+  /api/v1/admin/users/{id}:
+    get:
+      tags:
+      - Admin
+      operationId: getManagedUser
+      summary: Get account and activity statistics (ADMIN only)
+      responses:
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ManagedUserDetail'
+        default:
+          $ref: '#/components/responses/DomainError'
+      security:
+      - bearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/ResourceID'
+  /api/v1/admin/users/{id}/role:
+    patch:
+      tags:
+      - Admin
+      operationId: updateManagedUserRole
+      summary: Change account role (ADMIN only)
+      responses:
+        '204':
+          description: Successful response.
+        default:
+          $ref: '#/components/responses/DomainError'
+      security:
+      - bearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/ResourceID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminRoleInput'
+  /api/v1/admin/users/{id}/disable:
+    post:
+      tags:
+      - Admin
+      operationId: disableManagedUser
+      summary: Disable account (ADMIN only)
+      responses:
+        '204':
+          description: Successful response.
+        default:
+          $ref: '#/components/responses/DomainError'
+      security:
+      - bearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/ResourceID'
+  /api/v1/admin/users/{id}/enable:
+    post:
+      tags:
+      - Admin
+      operationId: enableManagedUser
+      summary: Enable account (ADMIN only)
+      responses:
+        '204':
+          description: Successful response.
+        default:
+          $ref: '#/components/responses/DomainError'
+      security:
+      - bearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/ResourceID'
+  /api/v1/admin/settings:
+    get:
+      tags:
+      - Admin
+      operationId: listSystemSettings
+      summary: List stored system settings (ADMIN only)
+      responses:
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemSettingsList'
+        default:
+          $ref: '#/components/responses/DomainError'
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: category
+        in: query
+        schema:
+          type: string
+          enum:
+          - rate_limit
+          - alert
+          - ingestion
+          - feature
+          - security
+      - name: editable
+        in: query
+        schema:
+          type: boolean
+      description: Stored settings do not imply every running component dynamically
+        consumes them; runtime environment remains authoritative where documented.
+  /api/v1/admin/settings/{key}:
+    get:
+      tags:
+      - Admin
+      operationId: getSystemSetting
+      summary: Get a stored setting (ADMIN only)
+      responses:
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemSettingResponse'
+        default:
+          $ref: '#/components/responses/DomainError'
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: key
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 1
+    put:
+      tags:
+      - Admin
+      operationId: updateSystemSetting
+      summary: Update an editable stored setting (ADMIN only)
+      responses:
+        '204':
+          description: Successful response.
+        default:
+          $ref: '#/components/responses/DomainError'
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: key
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SystemSettingInput'
+  /api/v1/admin/audit-logs:
+    get:
+      tags:
+      - Admin
+      operationId: listAuditLogs
+      summary: List audit records (ADMIN only)
+      responses:
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditLogList'
+        default:
+          $ref: '#/components/responses/DomainError'
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 50
+      - name: offset
+        in: query
+        schema:
+          type: integer
+          minimum: 0
+          maximum: 100000
+          default: 0
+      - name: actorId
+        in: query
+        schema:
+          type: string
+          format: uuid
+      - name: targetType
+        in: query
+        schema:
+          type: string
+      - name: targetId
+        in: query
+        schema:
+          type: string
+      - name: action
+        in: query
+        schema:
+          type: string
+      - name: startTime
+        in: query
+        schema:
+          type: string
+          format: date-time
+      - name: endTime
+        in: query
+        schema:
+          type: string
+          format: date-time
+  /api/v1/admin/audit-logs/{id}:
+    get:
+      tags:
+      - Admin
+      operationId: getAuditLog
+      summary: Get an audit record (ADMIN only)
+      responses:
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditLogResponse'
+        default:
+          $ref: '#/components/responses/DomainError'
+      security:
+      - bearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/ResourceID'
+  /api/v1/notifications:
+    get:
+      tags:
+      - Notifications
+      operationId: listNotifications
+      summary: List the current account inbox
+      responses:
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationList'
+        default:
+          $ref: '#/components/responses/DomainError'
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+      - name: offset
+        in: query
+        schema:
+          type: integer
+          minimum: 0
+          maximum: 100000
+          default: 0
+      description: Only current account entries are returned. History is independent
+        of Push permissions and VAPID configuration. No historical alert backfill is
+        performed.
+  /api/v1/notifications/unread-count:
+    get:
+      tags:
+      - Notifications
+      operationId: getUnreadNotificationCount
+      summary: Count unread entries for the current account
+      responses:
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnreadNotificationCount'
+        default:
+          $ref: '#/components/responses/DomainError'
+      security:
+      - bearerAuth: []
+  /api/v1/notifications/{id}/read:
+    patch:
+      tags:
+      - Notifications
+      operationId: markNotificationRead
+      summary: Mark an owned notification read
+      responses:
+        '204':
+          description: Successful response.
+        default:
+          $ref: '#/components/responses/DomainError'
+      security:
+      - bearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/ResourceID'
+      description: Idempotent for an already-read owned item. An unknown or another
+        account item returns 404 without exposing its existence.
+  /api/v1/notifications/read-all:
+    post:
+      tags:
+      - Notifications
+      operationId: markAllNotificationsRead
+      summary: Mark the current account inbox read
+      responses:
+        '204':
+          description: Successful response.
+        default:
+          $ref: '#/components/responses/DomainError'
+      security:
+      - bearerAuth: []
+  /api/v1/notifications/public-key:
+    get:
+      tags:
+      - Notifications
+      operationId: getPushPublicKey
+      summary: Read the public VAPID key
+      responses:
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PushPublicKey'
+        default:
+          $ref: '#/components/responses/DomainError'
+      description: Push may be unavailable when VAPID is not configured; this does not
+        disable the account inbox.
+  /api/v1/notifications/subscribe:
+    post:
+      tags:
+      - Notifications
+      operationId: subscribePush
+      summary: Register a browser Push subscription
+      responses:
+        '204':
+          description: Successful response.
+        default:
+          $ref: '#/components/responses/DomainError'
+      security:
+      - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PushSubscriptionInput'
+  /api/v1/notifications/unsubscribe:
+    delete:
+      tags:
+      - Notifications
+      operationId: unsubscribePush
+      summary: Remove an owned browser Push subscription
+      responses:
+        '204':
+          description: Successful response.
+        default:
+          $ref: '#/components/responses/DomainError'
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: endpoint
+        in: query
+        required: true
+        schema:
+          type: string
+          format: uri
+  /api/v1/admin/ai-evidence:
+    get:
+      tags:
+      - Admin
+      operationId: listAIEvidence
+      summary: List private AI evidence (ADMIN only)
+      responses:
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIEvidenceList'
+        default:
+          $ref: '#/components/responses/DomainError'
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 50
+      - name: offset
+        in: query
+        schema:
+          type: integer
+          minimum: 0
+          maximum: 100000
+          default: 0
+      - name: status
+        in: query
+        schema:
+          type: string
+          enum:
+          - UNVERIFIED
+          - VERIFIED
+          - REJECTED
+          default: UNVERIFIED
+      description: No real inference model is bundled. Unavailable analysis creates
+        retryable jobs, not fabricated observations. Unverified and rejected evidence
+        is private.
+  /api/v1/admin/ai-evidence/{id}:
+    get:
+      tags:
+      - Admin
+      operationId: getAIEvidence
+      summary: Get private AI evidence (ADMIN only)
+      responses:
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIEvidenceResponse'
+        default:
+          $ref: '#/components/responses/DomainError'
+      security:
+      - bearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/ResourceID'
+  /api/v1/admin/ai-evidence/{id}/verify:
+    post:
+      tags:
+      - Admin
+      operationId: verifyAIEvidence
+      summary: Approve AI evidence (ADMIN only)
+      responses:
+        '204':
+          description: Successful response.
+        default:
+          $ref: '#/components/responses/DomainError'
+      security:
+      - bearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/ResourceID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AIEvidenceVerifyInput'
+      description: Disallows self-review, stale report snapshots, and repeated/conflicting
+        reviews. roadId is required when a road estimate exists. Approval preserves
+        AI provenance and creates canonical observations transactionally; it is not
+        an official observation or safety guarantee.
+  /api/v1/admin/ai-evidence/{id}/reject:
+    post:
+      tags:
+      - Admin
+      operationId: rejectAIEvidence
+      summary: Reject AI evidence with a reason (ADMIN only)
+      responses:
+        '204':
+          description: Successful response.
+        default:
+          $ref: '#/components/responses/DomainError'
+      security:
+      - bearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/ResourceID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AIEvidenceRejectInput'
+      description: Records a private reviewed result and audit trail. Does not delete
+        the original community report or publish rejected evidence.
 components:
   responses:
     DomainError:
@@ -956,6 +1568,536 @@ components:
       schema:
         type: string
   schemas:
+    AIEvidenceRejectInput:
+      type: object
+      required:
+      - reason
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 500
+      additionalProperties: false
+    AIEvidenceVerifyInput:
+      type: object
+      required: []
+      properties:
+        roadId:
+          type: string
+          format: uuid
+      additionalProperties: false
+    AIEvidenceResponse:
+      type: object
+      required:
+      - evidence
+      properties:
+        evidence:
+          $ref: '#/components/schemas/AIEvidence'
+    AIEvidenceList:
+      type: object
+      required:
+      - items
+      - pagination
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AIEvidence'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    AIEvidence:
+      type: object
+      required:
+      - id
+      - reportId
+      - mediaId
+      - sourceType
+      - modelVersion
+      - flood
+      - road
+      - observedAt
+      - receivedAt
+      - limitations
+      - status
+      - reportUpdatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        reportId:
+          type: string
+          format: uuid
+        mediaId:
+          type: string
+          format: uuid
+        sourceType:
+          type: string
+          const: AI
+        modelVersion:
+          type: string
+          minLength: 1
+          maxLength: 100
+        flood:
+          oneOf:
+          - $ref: '#/components/schemas/AIFloodEstimate'
+          - type: 'null'
+        road:
+          oneOf:
+          - $ref: '#/components/schemas/AIRoadEstimate'
+          - type: 'null'
+        observedAt:
+          type: string
+          format: date-time
+        receivedAt:
+          type: string
+          format: date-time
+        limitations:
+          type: array
+          minItems: 1
+          maxItems: 10
+          items:
+            type: string
+        status:
+          type: string
+          enum:
+          - UNVERIFIED
+          - VERIFIED
+          - REJECTED
+        reportUpdatedAt:
+          type: string
+          format: date-time
+        reviewedAt:
+          type: string
+          format: date-time
+        reviewedBy:
+          type: string
+          format: uuid
+    AIRoadEstimate:
+      type: object
+      required:
+      - status
+      - confidence
+      - bounding_box
+      properties:
+        status:
+          $ref: '#/components/schemas/RoadStatus'
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+        bounding_box:
+          type:
+          - array
+          - 'null'
+          minItems: 4
+          maxItems: 4
+          items:
+            type: number
+            minimum: 0
+            maximum: 1
+          description: Normalized ymin,xmin,ymax,xmax when available.
+    AIFloodEstimate:
+      type: object
+      required:
+      - severity
+      - water_depth_m
+      - confidence
+      - bounding_box
+      properties:
+        severity:
+          $ref: '#/components/schemas/Severity'
+        water_depth_m:
+          type:
+          - number
+          - 'null'
+          minimum: 0
+          maximum: 50
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+        bounding_box:
+          type:
+          - array
+          - 'null'
+          minItems: 4
+          maxItems: 4
+          items:
+            type: number
+            minimum: 0
+            maximum: 1
+          description: Normalized ymin,xmin,ymax,xmax when available.
+    PushSubscriptionInput:
+      type: object
+      required:
+      - endpoint
+      - keys
+      properties:
+        endpoint:
+          type: string
+          format: uri
+        keys:
+          type: object
+          required:
+          - p256dh
+          - auth
+          properties:
+            p256dh:
+              type: string
+              minLength: 1
+            auth:
+              type: string
+              minLength: 1
+          additionalProperties: false
+      additionalProperties: false
+    PushPublicKey:
+      type: object
+      required:
+      - publicKey
+      properties:
+        publicKey:
+          type: string
+    UnreadNotificationCount:
+      type: object
+      required:
+      - count
+      properties:
+        count:
+          type: integer
+          minimum: 0
+    NotificationList:
+      type: object
+      required:
+      - items
+      - pagination
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/NotificationItem'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    NotificationItem:
+      type: object
+      required:
+      - id
+      - alertId
+      - title
+      - message
+      - severity
+      - sourceType
+      - createdAt
+      - readAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        alertId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        message:
+          type: string
+        severity:
+          type: string
+          enum:
+          - INFO
+          - WATCH
+          - WARNING
+          - CRITICAL
+        sourceType:
+          $ref: '#/components/schemas/SourceType'
+        createdAt:
+          type: string
+          format: date-time
+        readAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+    AlertRuleList:
+      type: object
+      required:
+      - items
+      - limit
+      - offset
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AlertRule'
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 50
+        offset:
+          type: integer
+          minimum: 0
+    AuditLogResponse:
+      type: object
+      required:
+      - log
+      properties:
+        log:
+          $ref: '#/components/schemas/AuditLog'
+    AuditLogList:
+      type: object
+      required:
+      - logs
+      - pagination
+      properties:
+        logs:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuditLog'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    AuditLog:
+      type: object
+      required:
+      - id
+      - action
+      - actorId
+      - actorEmail
+      - actorRole
+      - targetType
+      - targetId
+      - metadata
+      - ipAddress
+      - userAgent
+      - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        action:
+          type: string
+        actorId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        actorEmail:
+          type: string
+        actorRole:
+          type: string
+          enum:
+          - USER
+          - ADMIN
+          - SYSTEM
+        targetType:
+          type: string
+        targetId:
+          type: string
+        metadata:
+          type: object
+        ipAddress:
+          type:
+          - string
+          - 'null'
+        userAgent:
+          type:
+          - string
+          - 'null'
+        createdAt:
+          type: string
+          format: date-time
+    SystemSettingInput:
+      type: object
+      required:
+      - value
+      properties:
+        value: {}
+      additionalProperties: false
+    SystemSettingResponse:
+      type: object
+      required:
+      - setting
+      properties:
+        setting:
+          $ref: '#/components/schemas/SystemSetting'
+    SystemSettingsList:
+      type: object
+      required:
+      - settings
+      properties:
+        settings:
+          type: array
+          items:
+            $ref: '#/components/schemas/SystemSetting'
+    SystemSetting:
+      type: object
+      required:
+      - key
+      - value
+      - valueType
+      - description
+      - category
+      - editable
+      - createdAt
+      - updatedAt
+      - updatedBy
+      properties:
+        key:
+          type: string
+        value: {}
+        valueType:
+          type: string
+          enum:
+          - string
+          - number
+          - boolean
+          - json
+        description:
+          type: string
+        category:
+          type: string
+          enum:
+          - rate_limit
+          - alert
+          - ingestion
+          - feature
+          - security
+        editable:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        updatedBy:
+          type:
+          - string
+          - 'null'
+          format: uuid
+    AdminRoleInput:
+      type: object
+      required:
+      - role
+      properties:
+        role:
+          type: string
+          enum:
+          - USER
+          - ADMIN
+      additionalProperties: false
+    ManagedUserDetail:
+      type: object
+      required:
+      - user
+      - stats
+      properties:
+        user:
+          $ref: '#/components/schemas/ManagedUser'
+        stats:
+          $ref: '#/components/schemas/UserActivityStats'
+    ManagedUserList:
+      type: object
+      required:
+      - users
+      - pagination
+      properties:
+        users:
+          type: array
+          items:
+            $ref: '#/components/schemas/ManagedUser'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    UserActivityStats:
+      type: object
+      required:
+      - reportCount
+      - lastActivity
+      - verifiedReports
+      - rejectedReports
+      - auditLogCount
+      - refreshSessionCount
+      properties:
+        reportCount:
+          type: integer
+          minimum: 0
+        lastActivity:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        verifiedReports:
+          type: integer
+          minimum: 0
+        rejectedReports:
+          type: integer
+          minimum: 0
+        auditLogCount:
+          type: integer
+          minimum: 0
+        refreshSessionCount:
+          type: integer
+          minimum: 0
+    ManagedUser:
+      type: object
+      required:
+      - id
+      - email
+      - role
+      - createdAt
+      - updatedAt
+      - disabledAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum:
+          - USER
+          - ADMIN
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        disabledAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+    AdminDashboardStats:
+      type: object
+      required:
+      - totalUsers
+      - activeUsers
+      - totalReports
+      - pendingReports
+      - recentActivity
+      properties:
+        totalUsers:
+          type: integer
+          minimum: 0
+        activeUsers: {type: integer, minimum: 0}
+        totalReports: {type: integer, minimum: 0}
+        pendingReports: {type: integer, minimum: 0}
+        recentActivity: {type: integer, minimum: 0}
+    Pagination:
+      type: object
+      required:
+      - total
+      - limit
+      - offset
+      properties:
+        total:
+          type: integer
+          minimum: 0
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+        offset: {type: integer, minimum: 0}
     PublicEventEnvelope:
       type: object
       additionalProperties: false

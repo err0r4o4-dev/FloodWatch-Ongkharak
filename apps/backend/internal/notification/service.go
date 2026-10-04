@@ -2,9 +2,15 @@ package notification
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"log/slog"
+	"net"
+	"net/http"
+	"net/netip"
+	"net/url"
+	"strings"
 	"time"
 
 	"github.com/SherClockHolmes/webpush-go"
@@ -38,6 +44,11 @@ func NewService(logger *slog.Logger, repo Repository, vapidPublicKey, vapidPriva
 		vapidPublicKey:  vapidPublicKey,
 		vapidPrivateKey: vapidPrivateKey,
 		subscriber:      subscriber,
+		httpClient: newHardenedPushHTTPClient(
+			deliveryTimeout,
+			net.DefaultResolver.LookupNetIP,
+			(&net.Dialer{Timeout: deliveryTimeout}).DialContext,
+		),
 	}
 }
 
@@ -46,11 +57,11 @@ func (s *Service) GetVAPIDPublicKey() string {
 }
 
 func (s *Service) Subscribe(ctx context.Context, sub Subscription) error {
+	if !validPushSubscription(sub) {
+		return ErrInvalid
+	}
 	if !s.pushEnabled() {
 		return ErrUnavailable
-	}
-	if sub.UserID == "" || sub.Endpoint == "" || sub.P256dh == "" || sub.Auth == "" {
-		return ErrInvalid
 	}
 	return s.repo.UpsertSubscription(ctx, sub)
 }
@@ -137,8 +148,14 @@ func (s *Service) DeliverPending(ctx context.Context) (int, error) {
 
 		var pushErr *pushDeliveryError
 		if errors.As(err, &pushErr) && (pushErr.status == httpStatusGone || pushErr.status == httpStatusNotFound) {
-			if deleteErr := s.repo.DeleteSubscriptionByEndpoint(workContext, job.Endpoint); deleteErr != nil {
+			deleted, deleteErr := s.repo.DeleteSubscriptionAfterDeliveryFailure(workContext, job.ID, job.LeaseToken, job.SubscriptionID, job.UserID, job.Endpoint, job.SubscriptionVersion)
+			if deleteErr != nil {
 				return processed, deleteErr
+			}
+			if !deleted {
+				if retryErr := s.repo.RetryDelivery(workContext, job.ID, job.LeaseToken, now.Add(retryDelay(job.Attempts))); retryErr != nil {
+					return processed, retryErr
+				}
 			}
 			processed++
 			continue
@@ -152,29 +169,10 @@ func (s *Service) DeliverPending(ctx context.Context) (int, error) {
 	return processed, nil
 }
 
-func (s *Service) BroadcastAlert(ctx context.Context, payload Payload) error {
-	subs, err := s.repo.ListAllSubscriptions(ctx)
-	if err != nil {
-		return err
-	}
-
-	if len(subs) == 0 {
-		return nil
-	}
-
-	for _, sub := range subs {
-		deliveryContext, cancel := context.WithTimeout(ctx, deliveryTimeout)
-		err := s.sendPushNotification(deliveryContext, sub, payload)
-		cancel()
-		if err != nil {
-			continue
-		}
-	}
-
-	return nil
-}
-
 func (s *Service) sendPushNotification(ctx context.Context, sub Subscription, payload Payload) error {
+	if !validPushSubscription(sub) {
+		return &pushDeliveryError{err: ErrInvalid}
+	}
 	payloadBytes, err := json.Marshal(payload)
 	if err != nil {
 		return err
@@ -201,7 +199,7 @@ func (s *Service) sendPushNotification(ctx context.Context, sub Subscription, pa
 		return &pushDeliveryError{err: errors.New("push service returned no response")}
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode >= 400 {
+	if resp.StatusCode >= 300 {
 		return &pushDeliveryError{status: resp.StatusCode, err: errors.New("push service returned an error")}
 	}
 	return nil
@@ -242,4 +240,102 @@ func isUUID(value string) bool {
 
 func (s *Service) pushEnabled() bool {
 	return s.vapidPublicKey != "" && s.vapidPrivateKey != "" && s.subscriber != ""
+}
+
+func validPushSubscription(sub Subscription) bool {
+	if sub.UserID == "" || !validPushEndpoint(sub.Endpoint) {
+		return false
+	}
+	p256dh, ok := decodePushKey(sub.P256dh)
+	if !ok || len(p256dh) != 65 {
+		return false
+	}
+	auth, ok := decodePushKey(sub.Auth)
+	return ok && len(auth) == 16
+}
+
+func validPushEndpoint(raw string) bool {
+	if len(raw) > 2048 {
+		return false
+	}
+	parsed, err := url.Parse(raw)
+	if err != nil || !strings.EqualFold(parsed.Scheme, "https") || parsed.Hostname() == "" || parsed.User != nil || parsed.Fragment != "" || parsed.Opaque != "" {
+		return false
+	}
+	if port := parsed.Port(); port != "" && port != "443" {
+		return false
+	}
+	if address, err := netip.ParseAddr(parsed.Hostname()); err == nil && !publicAddress(address) {
+		return false
+	}
+	return true
+}
+
+func decodePushKey(value string) ([]byte, bool) {
+	if value == "" {
+		return nil, false
+	}
+	for _, encoding := range []*base64.Encoding{base64.RawURLEncoding, base64.URLEncoding, base64.RawStdEncoding, base64.StdEncoding} {
+		decoded, err := encoding.DecodeString(value)
+		if err == nil {
+			return decoded, true
+		}
+	}
+	return nil, false
+}
+
+type lookupNetIP func(context.Context, string, string) ([]netip.Addr, error)
+type dialContext func(context.Context, string, string) (net.Conn, error)
+
+func newHardenedPushHTTPClient(timeout time.Duration, lookup lookupNetIP, dial dialContext) *http.Client {
+	transport := &http.Transport{
+		Proxy: nil,
+		DialContext: func(ctx context.Context, network, address string) (net.Conn, error) {
+			host, port, err := net.SplitHostPort(address)
+			if err != nil {
+				return nil, err
+			}
+			addresses, err := lookup(ctx, "ip", host)
+			if err != nil || len(addresses) == 0 {
+				return nil, errors.New("push endpoint DNS resolution failed")
+			}
+			for _, candidate := range addresses {
+				if !publicAddress(candidate) {
+					return nil, errors.New("push endpoint resolved to a non-public address")
+				}
+			}
+			return dial(ctx, network, net.JoinHostPort(addresses[0].String(), port))
+		},
+	}
+	return &http.Client{
+		Timeout:   timeout,
+		Transport: transport,
+		CheckRedirect: func(*http.Request, []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+}
+
+func publicAddress(address netip.Addr) bool {
+	address = address.Unmap()
+	if !address.IsValid() || !address.IsGlobalUnicast() || address.IsPrivate() || address.IsLoopback() || address.IsLinkLocalUnicast() {
+		return false
+	}
+	if address.Is4() {
+		for _, prefix := range []string{"0.0.0.0/8", "100.64.0.0/10", "192.0.0.0/24", "192.0.2.0/24", "192.88.99.0/24", "198.18.0.0/15", "198.51.100.0/24", "203.0.113.0/24", "224.0.0.0/4", "240.0.0.0/4"} {
+			if netip.MustParsePrefix(prefix).Contains(address) {
+				return false
+			}
+		}
+		return true
+	}
+	if !netip.MustParsePrefix("2000::/3").Contains(address) {
+		return false
+	}
+	for _, prefix := range []string{"2001::/23", "2001:db8::/32", "2002::/16", "3fff::/20"} {
+		if netip.MustParsePrefix(prefix).Contains(address) {
+			return false
+		}
+	}
+	return true
 }

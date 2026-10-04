@@ -37,7 +37,7 @@ describe("aiApi", () => {
 
   it("loads a detail record and bounded actual-road options", async () => {
     const fetchMock = vi.fn()
-      .mockResolvedValueOnce(new Response(JSON.stringify(evidence), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ evidence }), { status: 200 }))
       .mockResolvedValueOnce(new Response(JSON.stringify({ items: [{ id: "road-1", name: "ถนนองครักษ์" }] }), { status: 200 }));
     vi.stubGlobal("fetch", fetchMock);
     apiClient.setAccessToken("admin-token");
@@ -64,7 +64,30 @@ describe("aiApi", () => {
   });
 
   it("rejects malformed evidence instead of rendering fabricated review data", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({ ...evidence, flood: { ...evidence.flood, confidence: 1.1 } }), { status: 200 })));
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({ evidence: { ...evidence, flood: { ...evidence.flood, confidence: 1.1 } } }), { status: 200 })));
+    await expect(aiApi.get("evidence-1")).rejects.toThrow("Invalid AI evidence response");
+  });
+
+  it("accepts nullable bounding boxes and known unknown result labels", async () => {
+    const payload = {
+      ...evidence,
+      flood: { ...evidence.flood, severity: "UNKNOWN", bounding_box: null },
+      road: { status: "UNKNOWN", confidence: 0, bounding_box: null }
+    };
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({ evidence: payload }), { status: 200 })));
+
+    await expect(aiApi.get("evidence-1")).resolves.toEqual(payload);
+  });
+
+  it.each([
+    ["an unknown flood severity", { ...evidence, flood: { ...evidence.flood, severity: "BOGUS" } }],
+    ["an unknown road status", { ...evidence, road: { status: "BOGUS", confidence: 0.5, bounding_box: null } }],
+    ["a bounding box with the wrong length", { ...evidence, flood: { ...evidence.flood, bounding_box: [0, 0, 1] } }],
+    ["a bounding box outside normalized coordinates", { ...evidence, flood: { ...evidence.flood, bounding_box: [0, 0, 2, 1] } }],
+    ["a reversed bounding box", { ...evidence, flood: { ...evidence.flood, bounding_box: [0.8, 0.2, 0.1, 0.9] } }]
+  ])("rejects %s", async (_description, payload) => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({ evidence: payload }), { status: 200 })));
+
     await expect(aiApi.get("evidence-1")).rejects.toThrow("Invalid AI evidence response");
   });
 });

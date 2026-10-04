@@ -36,9 +36,9 @@ If the stack is already running with the old configuration, apply the mounts onc
 
 ## Public web navigation
 
-`/` is the introductory Flood Watch landing page, using the existing blue theme and an explicitly illustrative map rather than fabricated live readings. Its "เข้าสู่เมนู" actions open the original situation overview at `/overview`. The overview retains the desktop sidebar and four-destination mobile navigation; announcements, map/risk, and reports remain at `/announcements`, `/map`, and `/reports`. The application logo returns to the landing page, while the "ภาพรวม" navigation item opens `/overview`.
+`/` is the Flood Watch landing page with a blue wave/grid hero, an interactive preview of the existing situation-map APIs, and four project goals. The preview uses the existing map geometry, evidence validation, and source-aware details; it never seeds demonstration markers. Empty, failed, partial, or stale evidence is not represented as safe. The original situation overview remains at `/overview`, with its desktop sidebar and four-destination mobile navigation. Announcements, map/risk, and reports remain at `/announcements`, `/map`, and `/reports`; the application logo returns to `/`.
 
-Public pages remain available without login. The landing sign-in action uses `/login?returnTo=%2Foverview`; existing authentication, permission checks, and other return destinations are unchanged. Authenticated visitors receive a reports or admin shortcut instead of another sign-in action.
+Public pages remain available without login. Guests can select "ดูภาพรวมโดยไม่เข้าสู่ระบบ" or open `/map` directly. Both landing sign-in actions use `/login?returnTo=%2Foverview`; authenticated visitors see "เข้าสู่เมนู" actions to `/overview`. Existing authentication, permission checks, and other return destinations are unchanged. There is no hero scroll-down arrow or introduction anchor. English and weather-provider integration are not implemented: EN is visibly disabled and the weather card states that data is unavailable instead of inventing a temperature or observation time. The footer uses real internal destinations rather than unconfigured social/contact links.
 
 ## Authentication
 
@@ -70,7 +70,17 @@ From the repository root, run `corepack pnpm typecheck`, `corepack pnpm test`, a
 
 ## Contract and future work
 
-The OpenAPI contract documents health, Phase 1 authentication, and Phase 2 public read/ADMIN write routes. Future tags do not imply other live endpoints. `PUBLIC READ` / `AUTHENTICATED WRITE` governs the implemented boundary; authoritative flood-domain writes require ADMIN. Do not expose this foundation as a production disaster-information service.
+The canonical `docs/api/openapi.yaml` and embedded Go specification document implemented authentication, flood-domain resources, reports, alerts/rules, realtime, notification history/Push, ADMIN management, AI evidence review, and operational metrics. A route-coverage test checks enabled feature routes against the contract; future tags do not imply live endpoints. `PUBLIC READ` / `AUTHENTICATED WRITE` governs the boundary, with ADMIN required for authoritative domain writes and evidence review. Do not treat application completeness as proof of production readiness or live disaster information.
+
+## Existing-feature API coverage
+
+- ADMIN dashboard: `GET /api/v1/admin/dashboard/stats` returns database-backed account/report counts and audit activity from the last 24 hours; active accounts are enabled accounts, not online sessions.
+- Rules: ADMIN can list/get configured rules as well as create/update them; no thresholds are automatically seeded.
+- Notifications: authenticated `GET /api/v1/notifications`, `GET /api/v1/notifications/unread-count`, `PATCH /api/v1/notifications/{id}/read`, and `POST /api/v1/notifications/read-all` are scoped to the account. Inbox history does not depend on browser Push permission or VAPID keys.
+- The Go worker materializes new alerts into eligible enabled accounts' inboxes and durable delivery jobs independently of Redis. Push is bounded, retryable, and unavailable when unconfigured; historical alerts are not backfilled.
+- ADMIN AI review uses `/api/v1/admin/ai-evidence`. The worker uses private media bytes, bounded leased jobs, and non-mock results. Python returns `503 MODEL_UNAVAILABLE` by default because no genuine model is bundled. Live providers, routing, and CCTV remain outside this feature.
+
+Apply migrations 15 and 16 to the intended environment before deploying the updated API and worker. Migration rollback deletes the new inbox/delivery/evidence/job state; back up required data and do not roll back production casually. See `docs/architecture/api-coverage.md` and `docs/architecture/ai-boundary.md` for the approved boundaries and verification record.
 
 
 ## Google Login

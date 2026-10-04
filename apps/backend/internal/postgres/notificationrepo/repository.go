@@ -15,6 +15,10 @@ type Repository struct {
 	pool *pgxpool.Pool
 }
 
+const deliveryCandidateLimit = 32
+
+var _ notification.Repository = (*Repository)(nil)
+
 func New(pool *pgxpool.Pool) *Repository {
 	return &Repository{pool: pool}
 }
@@ -26,13 +30,6 @@ func (r *Repository) UpsertSubscription(ctx context.Context, sub notification.Su
 	}
 	defer transaction.Rollback(ctx)
 
-	if _, err := transaction.Exec(ctx, `
-		DELETE FROM notification_delivery_jobs job
-		USING notification_subscriptions existing
-		WHERE existing.id = job.subscription_id AND existing.endpoint = $1 AND existing.user_id <> $2
-	`, sub.Endpoint, sub.UserID); err != nil {
-		return fmt.Errorf("remove reassigned subscription jobs: %w", err)
-	}
 	const query = `
 		INSERT INTO notification_subscriptions (user_id, endpoint, p256dh, auth)
 		VALUES ($1, $2, $3, $4)
@@ -40,10 +37,18 @@ func (r *Repository) UpsertSubscription(ctx context.Context, sub notification.Su
 		SET user_id = EXCLUDED.user_id,
 		    p256dh = EXCLUDED.p256dh,
 		    auth = EXCLUDED.auth,
+		    version = notification_subscriptions.version + 1,
 		    updated_at = CURRENT_TIMESTAMP
 	`
-	if _, err := transaction.Exec(ctx, query, sub.UserID, sub.Endpoint, sub.P256dh, sub.Auth); err != nil {
+	var subscriptionID string
+	if err := transaction.QueryRow(ctx, query+` RETURNING id`, sub.UserID, sub.Endpoint, sub.P256dh, sub.Auth).Scan(&subscriptionID); err != nil {
 		return fmt.Errorf("upsert subscription: %w", err)
+	}
+	if _, err := transaction.Exec(ctx, `
+		DELETE FROM notification_delivery_jobs
+		WHERE subscription_id = $1 AND user_id <> $2
+	`, subscriptionID, sub.UserID); err != nil {
+		return fmt.Errorf("remove reassigned subscription jobs: %w", err)
 	}
 	if err := transaction.Commit(ctx); err != nil {
 		return fmt.Errorf("commit subscription upsert: %w", err)
@@ -57,15 +62,63 @@ func (r *Repository) DeleteSubscription(ctx context.Context, endpoint string, us
 	return err
 }
 
-func (r *Repository) DeleteSubscriptionByEndpoint(ctx context.Context, endpoint string) error {
-	const query = `DELETE FROM notification_subscriptions WHERE endpoint = $1`
-	_, err := r.pool.Exec(ctx, query, endpoint)
-	return err
+func (r *Repository) DeleteSubscriptionAfterDeliveryFailure(ctx context.Context, jobID, leaseToken, subscriptionID, userID, endpoint string, subscriptionVersion int64) (bool, error) {
+	transaction, err := r.pool.Begin(ctx)
+	if err != nil {
+		return false, fmt.Errorf("begin failed notification cleanup: %w", err)
+	}
+	defer transaction.Rollback(ctx)
+
+	var currentUserID, currentEndpoint string
+	var currentVersion int64
+	err = transaction.QueryRow(ctx, `
+		SELECT user_id, endpoint, version
+		FROM notification_subscriptions
+		WHERE id = $1
+		FOR UPDATE
+	`, subscriptionID).Scan(&currentUserID, &currentEndpoint, &currentVersion)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return false, nil
+	}
+	if err != nil {
+		return false, fmt.Errorf("lock failed notification subscription: %w", err)
+	}
+	if currentUserID != userID || currentEndpoint != endpoint || currentVersion != subscriptionVersion {
+		return false, nil
+	}
+
+	var matchedJobID string
+	err = transaction.QueryRow(ctx, `
+		SELECT id
+		FROM notification_delivery_jobs
+		WHERE id = $1
+		  AND subscription_id = $2
+		  AND user_id = $3
+		  AND lease_token = $4
+		  AND locked_until > clock_timestamp()
+		  AND delivered_at IS NULL
+		FOR UPDATE
+	`, jobID, subscriptionID, userID, leaseToken).Scan(&matchedJobID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return false, nil
+	}
+	if err != nil {
+		return false, fmt.Errorf("lock failed notification delivery job: %w", err)
+	}
+
+	result, err := transaction.Exec(ctx, `DELETE FROM notification_subscriptions WHERE id = $1`, subscriptionID)
+	if err != nil {
+		return false, fmt.Errorf("delete failed notification subscription: %w", err)
+	}
+	if err := transaction.Commit(ctx); err != nil {
+		return false, fmt.Errorf("commit failed notification cleanup: %w", err)
+	}
+	return result.RowsAffected() == 1 && matchedJobID == jobID, nil
 }
 
 func (r *Repository) ListAllSubscriptions(ctx context.Context) ([]notification.Subscription, error) {
 	const query = `
-		SELECT id, user_id, endpoint, p256dh, auth, created_at, updated_at
+		SELECT id, user_id, endpoint, p256dh, auth, version, created_at, updated_at
 		FROM notification_subscriptions
 	`
 	rows, err := r.pool.Query(ctx, query)
@@ -77,7 +130,7 @@ func (r *Repository) ListAllSubscriptions(ctx context.Context) ([]notification.S
 	var subs []notification.Subscription
 	for rows.Next() {
 		var s notification.Subscription
-		if err := rows.Scan(&s.ID, &s.UserID, &s.Endpoint, &s.P256dh, &s.Auth, &s.CreatedAt, &s.UpdatedAt); err != nil {
+		if err := rows.Scan(&s.ID, &s.UserID, &s.Endpoint, &s.P256dh, &s.Auth, &s.Version, &s.CreatedAt, &s.UpdatedAt); err != nil {
 			return nil, err
 		}
 		subs = append(subs, s)
@@ -182,7 +235,7 @@ func (r *Repository) MaterializeAlert(ctx context.Context, alertID string, enque
 		INSERT INTO notification_inbox (user_id, alert_id, title, message, severity, source_type, alert_triggered_at, alert_created_at)
 		SELECT id, $1, $2, $3, $4, $5, $6, $7
 		FROM users
-		WHERE disabled_at IS NULL
+		WHERE disabled_at IS NULL AND created_at <= $7
 		ON CONFLICT (user_id, alert_id) DO NOTHING
 	`, alertID, title, message, severity, sourceType, triggeredAt, createdAt); err != nil {
 		return fmt.Errorf("materialize notification inbox: %w", err)
@@ -243,35 +296,78 @@ func (r *Repository) ClaimPendingDelivery(ctx context.Context, now time.Time) (n
 	defer transaction.Rollback(ctx)
 
 	var job notification.DeliveryJob
-	err = transaction.QueryRow(ctx, `
-		SELECT job.id, job.subscription_id, job.user_id, job.alert_id,
-		       subscription.endpoint, subscription.p256dh, subscription.auth,
-		       inbox.title, inbox.message, job.attempts
-		FROM notification_delivery_jobs job
-		JOIN notification_subscriptions subscription ON subscription.id = job.subscription_id AND subscription.user_id = job.user_id
-		JOIN notification_inbox inbox ON inbox.user_id = job.user_id AND inbox.alert_id = job.alert_id
-		WHERE job.delivered_at IS NULL
-		  AND job.attempts < 5
-		  AND job.next_attempt_at <= $1
-		  AND (job.locked_until IS NULL OR job.locked_until <= $1)
-		ORDER BY job.next_attempt_at, job.id
-		LIMIT 1
-		FOR UPDATE OF job SKIP LOCKED
-	`, now).Scan(&job.ID, &job.SubscriptionID, &job.UserID, &job.AlertID, &job.Endpoint, &job.P256dh, &job.Auth, &job.Payload.Title, &job.Payload.Message, &job.Attempts)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return notification.DeliveryJob{}, false, nil
+	excludedJobIDs := make([]string, 0, deliveryCandidateLimit)
+	for candidate := 0; candidate < deliveryCandidateLimit; candidate++ {
+		if _, err := transaction.Exec(ctx, `SAVEPOINT notification_delivery_candidate`); err != nil {
+			return notification.DeliveryJob{}, false, fmt.Errorf("save notification delivery candidate: %w", err)
+		}
+
+		var candidateSubscriptionID string
+		err = transaction.QueryRow(ctx, `
+			SELECT job.id, job.subscription_id
+			FROM notification_delivery_jobs job
+			JOIN notification_subscriptions subscription ON subscription.id = job.subscription_id AND subscription.user_id = job.user_id
+			WHERE job.delivered_at IS NULL
+			  AND job.attempts < 5
+			  AND job.next_attempt_at <= $1
+			  AND (job.locked_until IS NULL OR job.locked_until <= $1)
+			  AND job.id::text <> ALL($2::text[])
+			ORDER BY job.next_attempt_at, job.id
+			LIMIT 1
+			FOR UPDATE OF subscription SKIP LOCKED
+		`, now, excludedJobIDs).Scan(&job.ID, &candidateSubscriptionID)
+		if errors.Is(err, pgx.ErrNoRows) {
+			if _, rollbackErr := transaction.Exec(ctx, `ROLLBACK TO SAVEPOINT notification_delivery_candidate`); rollbackErr != nil {
+				return notification.DeliveryJob{}, false, fmt.Errorf("release empty notification candidate: %w", rollbackErr)
+			}
+			_, _ = transaction.Exec(ctx, `RELEASE SAVEPOINT notification_delivery_candidate`)
+			return notification.DeliveryJob{}, false, nil
+		}
+		if err != nil {
+			return notification.DeliveryJob{}, false, fmt.Errorf("select notification delivery candidate: %w", err)
+		}
+		if err := transaction.QueryRow(ctx, `
+			SELECT id, user_id, endpoint, p256dh, auth, version
+			FROM notification_subscriptions
+			WHERE id = $1
+		`, candidateSubscriptionID).Scan(&job.SubscriptionID, &job.UserID, &job.Endpoint, &job.P256dh, &job.Auth, &job.SubscriptionVersion); err != nil {
+			return notification.DeliveryJob{}, false, fmt.Errorf("read locked notification subscription: %w", err)
+		}
+		if err := transaction.QueryRow(ctx, `
+			SELECT job.alert_id, inbox.title, inbox.message, job.attempts
+			FROM notification_delivery_jobs job
+			JOIN notification_inbox inbox ON inbox.user_id = job.user_id AND inbox.alert_id = job.alert_id
+			WHERE job.id = $1
+			  AND job.subscription_id = $2
+			  AND job.user_id = $3
+			  AND job.delivered_at IS NULL
+			  AND job.attempts < 5
+			  AND job.next_attempt_at <= $4
+			  AND (job.locked_until IS NULL OR job.locked_until <= $4)
+			FOR UPDATE OF job SKIP LOCKED
+		`, job.ID, job.SubscriptionID, job.UserID, now).Scan(&job.AlertID, &job.Payload.Title, &job.Payload.Message, &job.Attempts); err != nil {
+			if !errors.Is(err, pgx.ErrNoRows) {
+				return notification.DeliveryJob{}, false, fmt.Errorf("lock notification delivery job: %w", err)
+			}
+			excludedJobIDs = append(excludedJobIDs, job.ID)
+			if _, rollbackErr := transaction.Exec(ctx, `ROLLBACK TO SAVEPOINT notification_delivery_candidate`); rollbackErr != nil {
+				return notification.DeliveryJob{}, false, fmt.Errorf("retry notification delivery candidate: %w", rollbackErr)
+			}
+			if _, releaseErr := transaction.Exec(ctx, `RELEASE SAVEPOINT notification_delivery_candidate`); releaseErr != nil {
+				return notification.DeliveryJob{}, false, fmt.Errorf("release notification delivery candidate: %w", releaseErr)
+			}
+			continue
+		}
+		if err := transaction.QueryRow(ctx, `UPDATE notification_delivery_jobs SET attempts=attempts+1, locked_until=$2::timestamptz + interval '2 minutes', lease_token=gen_random_uuid() WHERE id=$1 RETURNING lease_token`, job.ID, now).Scan(&job.LeaseToken); err != nil {
+			return notification.DeliveryJob{}, false, fmt.Errorf("lock notification delivery job: %w", err)
+		}
+		if err := transaction.Commit(ctx); err != nil {
+			return notification.DeliveryJob{}, false, fmt.Errorf("commit notification delivery claim: %w", err)
+		}
+		job.Attempts++
+		return job, true, nil
 	}
-	if err != nil {
-		return notification.DeliveryJob{}, false, fmt.Errorf("select notification delivery job: %w", err)
-	}
-	if err := transaction.QueryRow(ctx, `UPDATE notification_delivery_jobs SET attempts=attempts+1, locked_until=$2 + interval '2 minutes', lease_token=gen_random_uuid() WHERE id=$1 RETURNING lease_token`, job.ID, now).Scan(&job.LeaseToken); err != nil {
-		return notification.DeliveryJob{}, false, fmt.Errorf("lock notification delivery job: %w", err)
-	}
-	if err := transaction.Commit(ctx); err != nil {
-		return notification.DeliveryJob{}, false, fmt.Errorf("commit notification delivery claim: %w", err)
-	}
-	job.Attempts++
-	return job, true, nil
+	return notification.DeliveryJob{}, false, nil
 }
 
 func (r *Repository) CompleteDelivery(ctx context.Context, jobID, leaseToken string) error {

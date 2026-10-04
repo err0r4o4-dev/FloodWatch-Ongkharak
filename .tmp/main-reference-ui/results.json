@@ -1,0 +1,57 @@
+[
+  {
+    "width": 320,
+    "viewport": 320,
+    "document": 305,
+    "touchTargets": "pass"
+  },
+  {
+    "width": 390,
+    "viewport": 390,
+    "document": 375,
+    "touchTargets": "pass"
+  },
+  {
+    "width": 768,
+    "viewport": 768,
+    "document": 753,
+    "touchTargets": "pass"
+  },
+  {
+    "width": 1024,
+    "viewport": 1024,
+    "document": 1009,
+    "touchTargets": "pass"
+  },
+  {
+    "width": 1440,
+    "viewport": 1440,
+    "document": 1425,
+    "touchTargets": "pass"
+  },
+  {
+    "width": 1672,
+    "viewport": 1672,
+    "document": 1657,
+    "touchTargets": "pass"
+  },
+  {
+    "loadedOpenStreetMapTiles": 6
+  },
+  {
+    "states": [
+      "loading",
+      "empty",
+      "error",
+      "partial"
+    ],
+    "keyboard": "pass",
+    "recordDetails": "pass",
+    "routes": "pass",
+    "rootText200Percent": {
+      "viewport": 390,
+      "document": 375
+    },
+    "pageErrors": []
+  }
+]

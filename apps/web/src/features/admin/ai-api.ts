@@ -3,16 +3,19 @@ import { apiClient } from "../auth/api";
 export const AI_EVIDENCE_PAGE_SIZE = 20;
 
 export type AIEvidenceStatus = "UNVERIFIED" | "VERIFIED" | "REJECTED";
+export type AIFloodSeverity = "INFO" | "WATCH" | "WARNING" | "CRITICAL" | "UNKNOWN";
+export type AIRoadStatus = "PASSABLE" | "WATCH" | "SMALL_VEHICLE_NOT_RECOMMENDED" | "CLOSED" | "UNKNOWN";
+export type AIBoundingBox = [number, number, number, number] | null;
 export type AIFloodEvidence = {
-  severity: string;
+  severity: AIFloodSeverity;
   water_depth_m: number | null;
   confidence: number;
-  bounding_box: number[];
+  bounding_box: AIBoundingBox;
 };
 export type AIRoadEvidence = {
-  status: string;
+  status: AIRoadStatus;
   confidence: number;
-  bounding_box: number[];
+  bounding_box: AIBoundingBox;
 };
 export type AIEvidence = {
   id: string;
@@ -50,18 +53,18 @@ function confidence(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 1;
 }
 
-function boundingBox(value: unknown): value is number[] {
-  return Array.isArray(value) && value.every((coordinate) => typeof coordinate === "number" && Number.isFinite(coordinate));
+function boundingBox(value: unknown): value is AIBoundingBox {
+  return value === null || (Array.isArray(value) && value.length === 4 && value.every((coordinate) => typeof coordinate === "number" && Number.isFinite(coordinate) && coordinate >= 0 && coordinate <= 1) && value[0] <= value[2] && value[1] <= value[3]);
 }
 
 function flood(value: unknown): value is AIFloodEvidence {
-  return record(value) && typeof value.severity === "string" && value.severity.length > 0 &&
+  return record(value) && ["INFO", "WATCH", "WARNING", "CRITICAL", "UNKNOWN"].includes(String(value.severity)) &&
     (value.water_depth_m === null || (typeof value.water_depth_m === "number" && Number.isFinite(value.water_depth_m))) &&
     confidence(value.confidence) && boundingBox(value.bounding_box);
 }
 
 function road(value: unknown): value is AIRoadEvidence {
-  return record(value) && typeof value.status === "string" && value.status.length > 0 && confidence(value.confidence) && boundingBox(value.bounding_box);
+  return record(value) && ["PASSABLE", "WATCH", "SMALL_VEHICLE_NOT_RECOMMENDED", "CLOSED", "UNKNOWN"].includes(String(value.status)) && confidence(value.confidence) && boundingBox(value.bounding_box);
 }
 
 function parseEvidence(value: unknown): AIEvidence {
@@ -69,6 +72,13 @@ function parseEvidence(value: unknown): AIEvidence {
     throw new Error("Invalid AI evidence response");
   }
   return value as AIEvidence;
+}
+
+function parseEvidenceEnvelope(value: unknown): AIEvidence {
+  if (!record(value) || !("evidence" in value)) {
+    throw new Error("Invalid AI evidence response");
+  }
+  return parseEvidence(value.evidence);
 }
 
 function parsePage(value: unknown): AIEvidencePage {
@@ -106,7 +116,7 @@ export const aiApi = {
   },
 
   async get(id: string): Promise<AIEvidence> {
-    return parseEvidence(await apiClient.request<unknown>(`/admin/ai-evidence/${encodeURIComponent(id)}`));
+    return parseEvidenceEnvelope(await apiClient.request<unknown>(`/admin/ai-evidence/${encodeURIComponent(id)}`));
   },
 
   async listRoads({ limit, offset, signal }: AIEvidenceListOptions): Promise<RoadOption[]> {
@@ -122,4 +132,3 @@ export const aiApi = {
     await requestAction(`/admin/ai-evidence/${encodeURIComponent(id)}/reject`, input);
   }
 };
-

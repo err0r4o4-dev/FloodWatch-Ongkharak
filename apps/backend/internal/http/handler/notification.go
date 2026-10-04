@@ -40,13 +40,13 @@ type SubscribeRequest struct {
 func (h *NotificationHandler) Subscribe(w http.ResponseWriter, r *http.Request) {
 	principal, ok := middleware.PrincipalFromContext(r.Context())
 	if !ok {
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		writeAuthError(w, http.StatusUnauthorized, "UNAUTHENTICATED", "Authentication required")
 		return
 	}
 
 	var req SubscribeRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "invalid request", http.StatusBadRequest)
+		writeAuthError(w, http.StatusBadRequest, "INVALID_REQUEST", "Invalid subscription data")
 		return
 	}
 
@@ -58,11 +58,7 @@ func (h *NotificationHandler) Subscribe(w http.ResponseWriter, r *http.Request) 
 	}
 
 	if err := h.service.Subscribe(r.Context(), sub); err != nil {
-		if err == notification.ErrInvalid {
-			http.Error(w, "invalid subscription data", http.StatusBadRequest)
-			return
-		}
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeNotificationError(w, err)
 		return
 	}
 
@@ -72,18 +68,18 @@ func (h *NotificationHandler) Subscribe(w http.ResponseWriter, r *http.Request) 
 func (h *NotificationHandler) Unsubscribe(w http.ResponseWriter, r *http.Request) {
 	principal, ok := middleware.PrincipalFromContext(r.Context())
 	if !ok {
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		writeAuthError(w, http.StatusUnauthorized, "UNAUTHENTICATED", "Authentication required")
 		return
 	}
 
 	endpoint := r.URL.Query().Get("endpoint")
 	if endpoint == "" {
-		http.Error(w, "missing endpoint", http.StatusBadRequest)
+		writeAuthError(w, http.StatusBadRequest, "INVALID_REQUEST", "Missing endpoint")
 		return
 	}
 
 	if err := h.service.Unsubscribe(r.Context(), endpoint, principal.UserID); err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeNotificationError(w, err)
 		return
 	}
 
@@ -217,6 +213,8 @@ func writeNotificationError(response http.ResponseWriter, err error) {
 		writeAuthError(response, http.StatusBadRequest, "INVALID_REQUEST", "Invalid notification request")
 	case errors.Is(err, notification.ErrNotFound):
 		writeAuthError(response, http.StatusNotFound, "NOT_FOUND", "Notification not found")
+	case errors.Is(err, notification.ErrUnavailable):
+		writeAuthError(response, http.StatusServiceUnavailable, "PUSH_UNAVAILABLE", "Push notifications are unavailable")
 	default:
 		writeAuthError(response, http.StatusInternalServerError, "INTERNAL_ERROR", "Request could not be completed")
 	}

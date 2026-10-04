@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { BrowserRouter } from "react-router";
 import { AdminDashboardPage } from "./AdminDashboardPage";
 import { adminApi } from "./api";
@@ -76,5 +76,15 @@ describe("AdminDashboardPage dashboard stats", () => {
 
     expect(await screen.findByText("ไม่สามารถโหลดสถิติแดชบอร์ดได้")).toBeInTheDocument();
     expect(screen.getByText("database unavailable")).toBeInTheDocument();
+  });
+
+  it("retries failed stats without substituting mock zeroes", async () => {
+    vi.mocked(adminApi.getDashboardStats).mockRejectedValueOnce(new Error("database unavailable"))
+      .mockResolvedValueOnce({ totalUsers: 12, activeUsers: 9, totalReports: 7, pendingReports: 3, recentActivity: 5 });
+    renderPage();
+    expect(await screen.findByRole("alert")).toHaveTextContent("ไม่สามารถโหลดสถิติแดชบอร์ดได้");
+    expect(screen.queryByText("0")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "ลองโหลดสถิติอีกครั้ง" }));
+    expect(await screen.findByText("12")).toBeInTheDocument();
   });
 });

@@ -57,6 +57,7 @@ func TestCommunityReportHTTPVisibilityAndReviewBoundaries(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() {
+		_, _ = pool.Exec(context.Background(), `DELETE FROM event_outbox WHERE resource_type='COMMUNITY_REPORT' AND resource_id IN (SELECT id FROM community_reports WHERE user_id = ANY($1))`, []string{admin.ID, owner.ID})
 		_, _ = pool.Exec(context.Background(), `DELETE FROM community_reports WHERE user_id = ANY($1)`, []string{admin.ID, owner.ID})
 		_, _ = pool.Exec(context.Background(), `DELETE FROM users WHERE id = ANY($1)`, []string{admin.ID, owner.ID})
 	})

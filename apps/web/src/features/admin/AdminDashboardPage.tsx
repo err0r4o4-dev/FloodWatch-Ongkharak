@@ -9,6 +9,7 @@ export function AdminDashboardPage() {
   const [stats, setStats] = useState<AdminDashboardStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(false);
   const [statsError, setStatsError] = useState<string | null>(null);
+  const [retry, setRetry] = useState(0);
 
   useEffect(() => {
     if (account?.role !== "ADMIN") {
@@ -18,6 +19,7 @@ export function AdminDashboardPage() {
     let active = true;
     setStatsLoading(true);
     setStatsError(null);
+    setStats(null);
 
     void adminApi.getDashboardStats()
       .then((dashboardStats) => {
@@ -39,7 +41,7 @@ export function AdminDashboardPage() {
     return () => {
       active = false;
     };
-  }, [account?.role]);
+  }, [account?.id, account?.role, retry]);
 
   if (account?.role !== "ADMIN") {
     return (
@@ -67,6 +69,7 @@ export function AdminDashboardPage() {
           <div className="error-state" role="alert">
             <p>ไม่สามารถโหลดสถิติแดชบอร์ดได้</p>
             <p className="muted">{statsError}</p>
+            <button type="button" className="action-button" onClick={() => setRetry((current) => current + 1)}>ลองโหลดสถิติอีกครั้ง</button>
           </div>
         )}
         {stats && (

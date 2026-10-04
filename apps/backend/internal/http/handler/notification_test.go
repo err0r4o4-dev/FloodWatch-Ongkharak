@@ -33,8 +33,8 @@ func (m *mockNotificationRepo) UpsertSubscription(ctx context.Context, sub notif
 func (m *mockNotificationRepo) DeleteSubscription(ctx context.Context, endpoint string, userID string) error {
 	return nil
 }
-func (m *mockNotificationRepo) DeleteSubscriptionByEndpoint(ctx context.Context, endpoint string) error {
-	return nil
+func (m *mockNotificationRepo) DeleteSubscriptionAfterDeliveryFailure(context.Context, string, string, string, string, string, int64) (bool, error) {
+	return false, nil
 }
 func (m *mockNotificationRepo) ListAllSubscriptions(ctx context.Context) ([]notification.Subscription, error) {
 	return m.subs, nil
@@ -59,10 +59,10 @@ func (m *mockNotificationRepo) PendingAlertIDs(context.Context, int) ([]string, 
 func (m *mockNotificationRepo) ClaimPendingDelivery(context.Context, time.Time) (notification.DeliveryJob, bool, error) {
 	return notification.DeliveryJob{}, false, nil
 }
-	func (m *mockNotificationRepo) CompleteDelivery(context.Context, string, string) error { return nil }
-	func (m *mockNotificationRepo) RetryDelivery(context.Context, string, string, time.Time) error {
-		return nil
-	}
+func (m *mockNotificationRepo) CompleteDelivery(context.Context, string, string) error { return nil }
+func (m *mockNotificationRepo) RetryDelivery(context.Context, string, string, time.Time) error {
+	return nil
+}
 
 func TestNotificationHandler_Subscribe(t *testing.T) {
 	repo := &mockNotificationRepo{}
@@ -78,6 +78,18 @@ func TestNotificationHandler_Subscribe(t *testing.T) {
 	// Without auth middleware injecting the Principal, it should return 401
 	if w.Result().StatusCode != http.StatusUnauthorized {
 		t.Errorf("expected 401 Unauthorized, got %d", w.Result().StatusCode)
+	}
+}
+
+func TestNotificationHandler_SubscribeReturnsTypedUnavailableWithoutPushConfig(t *testing.T) {
+	repo := &mockNotificationRepo{}
+	h := handler.NewNotificationHandler(notification.NewService(nil, repo, "", "", ""))
+	request := httptest.NewRequest(http.MethodPost, "/api/v1/notifications/subscribe", strings.NewReader(`{"endpoint":"https://push.example.test/subscription","keys":{"p256dh":"BNNL5ZaTfK81qhXOx23-wewhigUeFb632jN6LvRWCFH1ubQr77FE_9qV1FuojuRmHP42zmf34rXgW80OvUVDgTk","auth":"zqbxT6JKstKSY9JKibZLSQ"}}`))
+	request.Header.Set("Authorization", "Bearer valid")
+	response := httptest.NewRecorder()
+	middleware.RequireAuthentication(notificationTestAuthenticator{})(http.HandlerFunc(h.Subscribe)).ServeHTTP(response, request)
+	if response.Code != http.StatusServiceUnavailable || !strings.Contains(response.Body.String(), `"PUSH_UNAVAILABLE"`) {
+		t.Fatalf("Subscribe() status = %d, body = %s", response.Code, response.Body)
 	}
 }
 

@@ -47,8 +47,12 @@ function notificationPageIsAtEnd(page: NotificationPage) {
 
 export function NotificationsPage() {
   const { account, status: authStatus } = useOptionalAuth();
+  const accountId = authStatus === "authenticated" ? account?.id ?? null : null;
+  const accountIdRef = useRef<string | null>(accountId);
+  accountIdRef.current = accountId;
   const headingRef = useRef<HTMLHeadingElement>(null);
   const [page, setPage] = useState<NotificationPage | null>(null);
+  const [pageAccountId, setPageAccountId] = useState<string | null>(null);
   const [unreadCount, setUnreadCount] = useState<number | null>(null);
   const [offset, setOffset] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -61,72 +65,90 @@ export function NotificationsPage() {
   useEffect(() => { headingRef.current?.focus(); }, []);
 
   useEffect(() => {
-    if (authStatus !== "authenticated" || !account) return;
+    setPage(null);
+    setPageAccountId(null);
+    setUnreadCount(null);
+    setOffset(0);
+    setError(false);
+    setActionError(false);
+    setMarkingId(null);
+    setMarkingAll(false);
+  }, [accountId]);
+
+  useEffect(() => {
+    if (authStatus !== "authenticated" || !accountId) return;
+    const requestAccountId = accountId;
     const controller = new AbortController();
     let active = true;
     setLoading(true);
     setError(false);
     setActionError(false);
+    setUnreadCount(null);
 
     Promise.all([
       notificationApi.list({ limit: NOTIFICATION_PAGE_SIZE, offset, signal: controller.signal }),
       notificationApi.getUnreadCount()
     ]).then(([nextPage, nextUnreadCount]) => {
-      if (!active) return;
+      if (!active || accountIdRef.current !== requestAccountId) return;
       setPage(nextPage);
+      setPageAccountId(requestAccountId);
       setUnreadCount(nextUnreadCount.count);
     }).catch(() => {
-      if (active) setError(true);
+      if (active && accountIdRef.current === requestAccountId) setError(true);
     }).finally(() => {
-      if (active) setLoading(false);
+      if (active && accountIdRef.current === requestAccountId) setLoading(false);
     });
 
     return () => {
       active = false;
       controller.abort();
     };
-  }, [account, authStatus, offset, retry]);
+  }, [accountId, authStatus, offset, retry]);
 
   const handleMarkRead = async (item: NotificationItem) => {
-    if (item.readAt || markingId || markingAll) return;
+    if (item.readAt || markingId || markingAll || !accountId) return;
+    const mutationAccountId = accountId;
     setMarkingId(item.id);
     setActionError(false);
     try {
       await notificationApi.markRead(item.id);
-      setPage((current) => current ? { ...current, items: current.items.map((candidate) => candidate.id === item.id ? { ...candidate, readAt: new Date().toISOString() } : candidate) } : current);
-      setUnreadCount((current) => current === null ? current : Math.max(0, current - 1));
+      if (accountIdRef.current !== mutationAccountId) return;
+      setRetry((current) => current + 1);
     } catch {
-      setActionError(true);
+      if (accountIdRef.current === mutationAccountId) setActionError(true);
     } finally {
-      setMarkingId(null);
+      if (accountIdRef.current === mutationAccountId) setMarkingId(null);
     }
   };
 
   const handleMarkAllRead = async () => {
-    if (unreadCount === null || markingAll || markingId) return;
+    if (unreadCount === null || markingAll || markingId || !accountId) return;
+    const mutationAccountId = accountId;
     setMarkingAll(true);
     setActionError(false);
     try {
       await notificationApi.markAllRead();
-      setPage((current) => current ? { ...current, items: current.items.map((item) => ({ ...item, readAt: item.readAt ?? new Date().toISOString() })) } : current);
-      setUnreadCount(0);
+      if (accountIdRef.current !== mutationAccountId) return;
+      setRetry((current) => current + 1);
     } catch {
-      setActionError(true);
+      if (accountIdRef.current === mutationAccountId) setActionError(true);
     } finally {
-      setMarkingAll(false);
+      if (accountIdRef.current === mutationAccountId) setMarkingAll(false);
     }
   };
+
+  const currentPage = accountId && pageAccountId === accountId ? page : null;
 
   const renderInbox = () => {
     if (authStatus === "loading") return <div className="notifications-history notifications-history--state"><span className="notifications-history__icon"><NotificationIcon name="clock" /></span><p role="status">กำลังตรวจสอบบัญชี…</p></div>;
     if (!account || authStatus === "anonymous") return <div className="notifications-history notifications-history--state"><span className="notifications-history__icon"><NotificationIcon name="bell" /></span><h2>ลงชื่อเข้าใช้เพื่อดูการแจ้งเตือน</h2><p>ประวัติการแจ้งเตือนและสถานะอ่านแล้วมีให้สำหรับบัญชีของคุณ</p><Link to="/login" className="notifications-inline-link">เข้าสู่ระบบ<NotificationIcon name="arrow" /></Link></div>;
-    if (loading && !page) return <div className="notifications-history notifications-history--state"><span className="notifications-history__icon"><NotificationIcon name="clock" /></span><p role="status">กำลังโหลดการแจ้งเตือน…</p></div>;
     if (error) return <div className="notifications-history notifications-history--state"><span className="notifications-history__icon"><NotificationIcon name="info" /></span><h2>ไม่สามารถโหลดการแจ้งเตือนได้</h2><p role="alert">โหลดการแจ้งเตือนไม่สำเร็จ กรุณาลองอีกครั้ง</p><button type="button" className="notifications-inline-button" onClick={() => setRetry((current) => current + 1)}>ลองอีกครั้ง</button></div>;
-    if (!page || page.items.length === 0) return <div className="notifications-history notifications-history--state"><span className="notifications-history__icon"><NotificationIcon name="bell" /></span><h2>ยังไม่มีการแจ้งเตือน</h2><p>เมื่อมีการแจ้งเตือนใหม่ รายการจะแสดงที่นี่</p></div>;
+    if (!currentPage) return <div className="notifications-history notifications-history--state"><span className="notifications-history__icon"><NotificationIcon name="clock" /></span><p role="status">กำลังโหลดการแจ้งเตือน…</p></div>;
+    if (currentPage.items.length === 0) return <div className="notifications-history notifications-history--state"><span className="notifications-history__icon"><NotificationIcon name="bell" /></span><h2>ยังไม่มีการแจ้งเตือน</h2><p>เมื่อมีการแจ้งเตือนใหม่ รายการจะแสดงที่นี่</p></div>;
 
     return <>
       <ul className="notifications-list" aria-label="รายการแจ้งเตือน" aria-busy={loading}>
-        {page.items.map((item) => <li key={item.id} className={`notification-item${item.readAt ? " notification-item--read" : " notification-item--unread"}`}>
+        {currentPage.items.map((item) => <li key={item.id} className={`notification-item${item.readAt ? " notification-item--read" : " notification-item--unread"}`}>
           <article aria-labelledby={`notification-title-${item.id}`}>
             <div className="notification-item__meta">
               <span className={`notification-badge notification-badge--${item.severity.toLowerCase()}`}>{severityLabels[item.severity]}</span>
@@ -143,10 +165,10 @@ export function NotificationsPage() {
         </li>)}
       </ul>
       <nav className="notifications-pagination" aria-label="การแบ่งหน้าการแจ้งเตือน">
-        <span>แสดง {page.pagination.offset + 1}–{Math.min(page.pagination.offset + page.items.length, page.pagination.total)} จาก {page.pagination.total}</span>
+        <span>แสดง {currentPage.pagination.offset + 1}–{Math.min(currentPage.pagination.offset + currentPage.items.length, currentPage.pagination.total)} จาก {currentPage.pagination.total}</span>
         <div className="notifications-pagination__actions">
-          <button type="button" className="notifications-page-button" aria-label="หน้าก่อนหน้า" disabled={page.pagination.offset === 0 || loading} onClick={() => setOffset(Math.max(0, page.pagination.offset - page.pagination.limit))}>หน้าก่อนหน้า</button>
-          <button type="button" className="notifications-page-button" aria-label="หน้าถัดไป" disabled={notificationPageIsAtEnd(page) || loading} onClick={() => setOffset(page.pagination.offset + page.pagination.limit)}>หน้าถัดไป</button>
+          <button type="button" className="notifications-page-button" aria-label="หน้าก่อนหน้า" disabled={currentPage.pagination.offset === 0 || loading} onClick={() => setOffset(Math.max(0, currentPage.pagination.offset - currentPage.pagination.limit))}>หน้าก่อนหน้า</button>
+          <button type="button" className="notifications-page-button" aria-label="หน้าถัดไป" disabled={notificationPageIsAtEnd(currentPage) || loading} onClick={() => setOffset(currentPage.pagination.offset + currentPage.pagination.limit)}>หน้าถัดไป</button>
         </div>
       </nav>
     </>;

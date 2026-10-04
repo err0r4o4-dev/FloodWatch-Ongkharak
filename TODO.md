@@ -223,18 +223,33 @@ Rendered checks: `node .tmp/auth-flow-ui-check.cjs` passes in headless Edge at 1
 The user approved filling current feature gaps after reviewing the API flow. This is an explicit feature extension, not authorization to begin a later roadmap phase or integrate live providers, routing engines, or CCTV.
 
 - [x] Inspect frontend calls, Go router, worker, OpenAPI, current changes, and baseline checks
-- [ ] Replace Admin dashboard mock with database-backed statistics and use the shared authenticated frontend client
-- [ ] Add ADMIN reads for alert rules
-- [ ] Add account-scoped notification history, unread counts, read state, and durable Push delivery
-- [ ] Complete private-media AI jobs, non-mock evidence persistence, ADMIN review, and worker wiring
-- [ ] Align frontend, canonical/embedded OpenAPI, and architecture documentation
-- [ ] Run focused and integration checks, inspect affected rendered states, and review the final diff
+- [x] Replace Admin dashboard mock with database-backed statistics and use the shared authenticated frontend client
+- [x] Add ADMIN reads for alert rules
+- [x] Add account-scoped notification history, unread counts, read state, and durable Push delivery
+- [x] Complete private-media AI jobs, non-mock evidence persistence, ADMIN review, and worker wiring
+- [x] Align frontend, canonical/embedded OpenAPI, and architecture documentation
+- [x] Run focused and integration checks, inspect affected rendered states, and review the final diff
 
-Baseline: Go tests cannot build the existing AI worker because it references nonexistent flood types; existing Admin and notification test imports also fail compilation. Frontend typecheck fails on the AI review's missing `FloodEvent` export. Full frontend Vitest reports 183 passing and 11 failing tests in five files before implementation; preserve unrelated failures rather than weakening coverage. Python previously returned synthetic predictions as default inference; this must not feed public flood evidence. See `docs/architecture/api-coverage.md` for the approved boundaries and final verification record.
+Verified 2026-10-04: fresh `go test -count=1 ./...`, `go vet ./...`, API/worker/bootstrap builds, and OpenAPI coverage/equality checks pass. PostgreSQL-backed API/Admin/AI/notification integration and subscription-lock regression tests pass on disposable PostGIS databases. Migration 1–16 up and 16/15 down/up pass; the committed migration 15 remains unchanged, with subscription versioning added by new migration 16. The full shared-database integration run still has one existing outbox-dispatch test failure due to earlier flood/ingestion fixtures; all five outbox tests pass on a separate clean database. Redis SSE and MinIO integration tests are skipped without their test configuration.
+
+Frontend focused tests: 75 pass; typecheck/build pass (existing bundle-size warning); full suite: 221 pass, seven unrelated failures. Headless Edge rendered checks: 11 scenarios at 1440/390/320px, no exceptions or horizontal overflow. Python: 13 pass, existing Starlette deprecation warning. Independent targeted security review's Medium findings were resolved; bounded claim retries can defer work under sustained contention. No genuine inference model, live providers, real Push device delivery, Google consent, SMTP mailbox, or production deployment was verified. This task applied migrations only to disposable test databases, not the application database.
+
+Initial snapshot: Go tests could not build the existing AI worker because it referenced nonexistent flood types; existing Admin and notification test imports also failed compilation. Frontend typecheck failed on the AI review's missing `FloodEvent` export. The early Vitest capture reported 183 passing and 11 failing tests, but overlapped implementation and included four intentionally red notification regression tests; it was not a clean pre-change baseline. The final full frontend run reports 221 passing and seven unrelated failures in App, Map, Overview, and Realtime tests; existing coverage is preserved. Python previously returned synthetic predictions by default; it now refuses unconfigured inference. See `docs/architecture/api-coverage.md` for approved boundaries and final verification.
 
 ## Small Tasks
 
 - [x] Remove the extra "เข้าสู่เมนู" button in the landing nav section.
+
+## Main reference redesign — approved UI follow-up
+
+- [x] Replace the three-step landing with the approved wave/grid hero, language control, map/weather composition, four project goals, and compact footer; omit the requested scroll-down arrow entirely.
+- [x] Preserve `/overview`, guest access, direct `/map` navigation, and login `returnTo=/overview`; authenticated users receive menu actions instead of another sign-in prompt.
+- [x] Reuse existing map APIs, layer validation, controls, and source/time/freshness details. Retain explicit loading, empty, failed, partial, stale/UNKNOWN, and truncation disclosures; leave weather and EN honestly unavailable rather than fabricate values or translations.
+- [x] Add route, evidence, retry, and repeated-bounds regressions; prevent the map from dropping selected details when unchanged bounds are republished or a scrollbar changes the page width. Review the scoped diff while preserving concurrent API/auth/admin/notification work.
+
+Verification: focused LandingRoutes, AppShell logout, and OverviewMapPreview suites pass 15/15 tests. Fresh `corepack pnpm typecheck` and `corepack pnpm build` pass; the existing large-chunk warning remains. Full frontend Vitest records 221/228 passing, with the same seven failures observed in this task's pre-change baseline: the development status link, three auth main landmarks, map search, overview empty banner, and realtime overview empty state. No valid coverage was removed to hide those failures.
+
+Rendered verification: `node .tmp/main-reference-ui-check.cjs` passes in isolated headless Edge at 320, 390, 768, 1024, 1440, and 1672px. Verified no horizontal overflow, 44px visible action targets, no hero scroll link, four goals, disabled EN, real OpenStreetMap base tiles, loading/empty/error/partial states, unobscured map controls, keyboard marker selection, persistent source/time details, list-based detail access and Escape dismissal, guest overview/map navigation, login return parameter, and 200% root text at 390px. Screenshots inspected include desktop, mobile, degraded data, and selected record details under `.tmp/main-reference-ui`; flood evidence in this verification is explicitly synthetic and intercepted, not seeded into application data. Real backend login, live provider data, Safari, and physical devices remain unverified. No dependencies, backend code/contracts, production systems, commits, or later roadmap phases were changed by this UI task.
 
 ## Future Skills
 

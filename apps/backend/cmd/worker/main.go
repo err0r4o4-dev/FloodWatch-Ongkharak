@@ -9,13 +9,18 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/floodwatch-ongkharak/backend/internal/ai"
 	"github.com/floodwatch-ongkharak/backend/internal/alert"
 	"github.com/floodwatch-ongkharak/backend/internal/config"
 	"github.com/floodwatch-ongkharak/backend/internal/flood"
 	"github.com/floodwatch-ongkharak/backend/internal/ingestion"
 	"github.com/floodwatch-ongkharak/backend/internal/ingestion/fixture"
+	"github.com/floodwatch-ongkharak/backend/internal/notification"
+	"github.com/floodwatch-ongkharak/backend/internal/objectstore"
+	"github.com/floodwatch-ongkharak/backend/internal/postgres/airepo"
 	"github.com/floodwatch-ongkharak/backend/internal/postgres/alertrepo"
 	"github.com/floodwatch-ongkharak/backend/internal/postgres/ingestionrepo"
+	"github.com/floodwatch-ongkharak/backend/internal/postgres/notificationrepo"
 	"github.com/floodwatch-ongkharak/backend/internal/postgres/outbox"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -110,6 +115,12 @@ func run() error {
 		return fmt.Errorf("configure alert service: %w", err)
 	}
 	evaluator := outbox.NewEvaluator(postgresPool, alertService)
+	mediaStorage, err := objectstore.NewMinIO(configuration.MinIOEndpoint, configuration.MinIOAccessKey, configuration.MinIOSecretKey, configuration.MinIOBucket)
+	if err != nil {
+		return fmt.Errorf("configure AI media storage: %w", err)
+	}
+	analysisWorker := ai.NewEvidenceWorker(ai.NewClient(configuration.AIServiceURL, 10*time.Second), airepo.New(postgresPool), mediaStorage, logger)
+	notificationService := notification.NewService(logger, notificationrepo.New(postgresPool), configuration.VAPIDPublicKey, configuration.VAPIDPrivateKey, configuration.VAPIDSubscriber)
 	scheduler := ingestion.NewScheduler(engine, workerConcurrency)
 	logger.Info("worker starting", slog.String("environment", configuration.Environment), slog.Int("registered_sources", len(providers)))
 
@@ -134,6 +145,44 @@ func run() error {
 			}
 		}
 	}()
+	analysisDone := make(chan struct{})
+	go func() {
+		defer close(analysisDone)
+		ticker := time.NewTicker(30 * time.Second)
+		defer ticker.Stop()
+		for {
+			attemptContext, cancel := context.WithTimeout(runContext, 4*time.Minute)
+			err := analysisWorker.ProcessPendingReports(attemptContext)
+			cancel()
+			if err != nil && runContext.Err() == nil {
+				logger.Warn("AI analysis deferred", "error", err)
+			}
+			select {
+			case <-runContext.Done():
+				return
+			case <-ticker.C:
+			}
+		}
+	}()
+	notificationDone := make(chan struct{})
+	go func() {
+		defer close(notificationDone)
+		ticker := time.NewTicker(5 * time.Second)
+		defer ticker.Stop()
+		for {
+			attemptContext, cancel := context.WithTimeout(runContext, 20*time.Second)
+			_, err := notificationService.DeliverPending(attemptContext)
+			cancel()
+			if err != nil && runContext.Err() == nil {
+				logger.Warn("notification delivery deferred", "error", err)
+			}
+			select {
+			case <-runContext.Done():
+				return
+			case <-ticker.C:
+			}
+		}
+	}()
 	ticker := time.NewTicker(workerPollInterval)
 	defer ticker.Stop()
 	for {
@@ -145,6 +194,8 @@ func run() error {
 			logger.Info("worker shutdown requested")
 			scheduler.Wait()
 			<-evaluationDone
+			<-analysisDone
+			<-notificationDone
 			return nil
 		case <-ticker.C:
 		}

@@ -65,11 +65,15 @@ func (h *AdminHandler) GetDashboardStats(w http.ResponseWriter, r *http.Request)
 // ListUsers handles GET /admin/users
 func (h *AdminHandler) ListUsers(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
+	limit, offset, ok := readAdminPage(w, r)
+	if !ok {
+		return
+	}
 
 	filter := admin.ListUsersFilter{
 		IncludeDisabled: query.Get("includeDisabled") == "true",
-		Limit:           parseIntParam(query.Get("limit"), 50),
-		Offset:          parseIntParam(query.Get("offset"), 0),
+		Limit:           limit,
+		Offset:          offset,
 	}
 
 	if role := query.Get("role"); role != "" {
@@ -85,6 +89,9 @@ func (h *AdminHandler) ListUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if users == nil {
+		users = make([]admin.UserManagement, 0)
+	}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"users": users,
 		"pagination": map[string]int{
@@ -231,6 +238,9 @@ func (h *AdminHandler) ListSettings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if settings == nil {
+		settings = make([]admin.SystemSetting, 0)
+	}
 	writeJSON(w, http.StatusOK, map[string]any{"settings": settings})
 }
 
@@ -297,10 +307,14 @@ func (h *AdminHandler) UpdateSetting(w http.ResponseWriter, r *http.Request) {
 // ListAuditLogs handles GET /admin/audit-logs
 func (h *AdminHandler) ListAuditLogs(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
+	limit, offset, ok := readAdminPage(w, r)
+	if !ok {
+		return
+	}
 
 	filter := admin.ListAuditLogsFilter{
-		Limit:  parseIntParam(query.Get("limit"), 50),
-		Offset: parseIntParam(query.Get("offset"), 0),
+		Limit:  limit,
+		Offset: offset,
 	}
 
 	if actorID := query.Get("actorId"); actorID != "" {
@@ -334,6 +348,9 @@ func (h *AdminHandler) ListAuditLogs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if logs == nil {
+		logs = make([]admin.AuditLog, 0)
+	}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"logs": logs,
 		"pagination": map[string]int{
@@ -403,14 +420,25 @@ func readJSONBody(w http.ResponseWriter, r *http.Request, target interface{}, ma
 	return true
 }
 
-func parseIntParam(value string, defaultValue int) int {
-	if value == "" {
-		return defaultValue
+func readAdminPage(w http.ResponseWriter, r *http.Request) (int, int, bool) {
+	limit, offset := 50, 0
+	if value := r.URL.Query().Get("limit"); value != "" {
+		parsed, err := strconv.Atoi(value)
+		if err != nil || parsed < 1 || parsed > 100 {
+			writeAdminError(w, http.StatusBadRequest, "INVALID_FILTER", "Limit must be between 1 and 100")
+			return 0, 0, false
+		}
+		limit = parsed
 	}
-	if parsed, err := strconv.Atoi(value); err == nil && parsed >= 0 {
-		return parsed
+	if value := r.URL.Query().Get("offset"); value != "" {
+		parsed, err := strconv.Atoi(value)
+		if err != nil || parsed < 0 || parsed > 100000 {
+			writeAdminError(w, http.StatusBadRequest, "INVALID_FILTER", "Offset must be between 0 and 100000")
+			return 0, 0, false
+		}
+		offset = parsed
 	}
-	return defaultValue
+	return limit, offset, true
 }
 
 func writeAdminError(w http.ResponseWriter, status int, code, message string) {

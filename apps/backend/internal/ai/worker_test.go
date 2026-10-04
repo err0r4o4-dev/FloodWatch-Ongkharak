@@ -18,7 +18,7 @@ type fakeEvidenceRepository struct {
 	enqueueFn  func(context.Context, int) error
 	claimFn    func(context.Context, int, time.Duration, int) ([]ai.AnalysisJob, error)
 	completeFn func(context.Context, ai.AnalysisJob, ai.AnalyzeMediaResponse, time.Time) error
-	failFn     func(context.Context, string, string, time.Time, int) error
+	failFn     func(context.Context, ai.AnalysisJob, string, time.Time, int) error
 }
 
 func (repository *fakeEvidenceRepository) EnqueuePendingMedia(ctx context.Context, limit int) error {
@@ -33,8 +33,8 @@ func (repository *fakeEvidenceRepository) CompleteAnalysis(ctx context.Context, 
 	return repository.completeFn(ctx, job, result, receivedAt)
 }
 
-func (repository *fakeEvidenceRepository) FailAnalysis(ctx context.Context, jobID, reason string, now time.Time, maxAttempts int) error {
-	return repository.failFn(ctx, jobID, reason, now, maxAttempts)
+func (repository *fakeEvidenceRepository) FailAnalysis(ctx context.Context, job ai.AnalysisJob, reason string, now time.Time, maxAttempts int) error {
+	return repository.failFn(ctx, job, reason, now, maxAttempts)
 }
 
 type fakeMediaStorage struct {
@@ -67,7 +67,7 @@ func TestWorkerProcessesEachClaimedMediaAndDoesNotMarkFailuresAnalyzed(t *testin
 			completed = got.ID == job.ID && result.Road != nil && !result.IsMock
 			return nil
 		},
-		failFn: func(context.Context, string, string, time.Time, int) error { t.Fatal("failure path called for successful analysis"); return nil },
+		failFn: func(context.Context, ai.AnalysisJob, string, time.Time, int) error { t.Fatal("failure path called for successful analysis"); return nil },
 	}
 	worker := ai.NewEvidenceWorker(ai.NewClient(server.URL, time.Second), repository, fakeMediaStorage{data: []byte("image")}, slog.New(slog.NewTextHandler(io.Discard, nil)))
 
@@ -86,12 +86,12 @@ func TestWorkerRetriesAnalysisFailureWithoutCompletingJob(t *testing.T) {
 		enqueueFn: func(context.Context, int) error { return nil },
 		claimFn: func(context.Context, int, time.Duration, int) ([]ai.AnalysisJob, error) { return []ai.AnalysisJob{job}, nil },
 		completeFn: func(context.Context, ai.AnalysisJob, ai.AnalyzeMediaResponse, time.Time) error { t.Fatal("complete path called after analysis failure"); return nil },
-		failFn: func(_ context.Context, id, reason string, _ time.Time, maxAttempts int) error { failed = id == job.ID && reason != "" && maxAttempts > 0; return nil },
+		failFn: func(_ context.Context, got ai.AnalysisJob, reason string, _ time.Time, maxAttempts int) error { failed = got.ID == job.ID && reason != "" && maxAttempts > 0; return nil },
 	}
 	worker := ai.NewEvidenceWorker(ai.NewClient("http://127.0.0.1:1", time.Second), repository, fakeMediaStorage{data: []byte("image")}, slog.New(slog.NewTextHandler(io.Discard, nil)))
 
-	if err := worker.ProcessPendingReports(context.Background()); err != nil {
-		t.Fatalf("ProcessPendingReports failed: %v", err)
+	if err := worker.ProcessPendingReports(context.Background()); err == nil {
+		t.Fatal("ProcessPendingReports reported success after analysis failure")
 	}
 	if !failed {
 		t.Fatal("worker did not lease failure for bounded retry")

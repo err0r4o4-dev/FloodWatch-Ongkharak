@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import { ApiError } from "../auth/api";
+import { ReportMediaImage } from "../reports/ReportMediaImage";
 import { confirmAction } from "../../shared/alerts";
 import { DataTimestamp, SourceBadge, StatusBadge } from "../../shared/components/DataStates";
 import { AI_EVIDENCE_PAGE_SIZE, aiApi } from "./ai-api";
@@ -164,8 +165,9 @@ export function AIEvidenceReview() {
         {evidenceStatus(detail.status)}
       </div>
       <div className="badge-row"><SourceBadge type="AI" /><span className="badge">รุ่นโมเดล: {detail.modelVersion}</span></div>
+      <div className="report-media"><ReportMediaImage media={{ id: detail.mediaId, url: `/api/v1/reports/${encodeURIComponent(detail.reportId)}/media/${encodeURIComponent(detail.mediaId)}` }} /></div>
       <dl className="grid gap-2 sm:grid-cols-2">
-        <div><dt>เวลาที่โมเดลสังเกต</dt><dd><DataTimestamp value={detail.observedAt} label="สังเกต" /></dd></div>
+        <div><dt>เวลาของรายงานต้นทาง</dt><dd><DataTimestamp value={detail.observedAt} label="รายงานต้นทาง" /></dd></div>
         <div><dt>เวลาที่ระบบรับหลักฐาน</dt><dd><DataTimestamp value={detail.receivedAt} label="รับข้อมูล" /></dd></div>
       </dl>
       <p><Link to={`/reports?report=${encodeURIComponent(detail.reportId)}`}>ดูรายงานที่เกี่ยวข้อง</Link></p>
@@ -173,11 +175,11 @@ export function AIEvidenceReview() {
       <div className="grid gap-4 md:grid-cols-2">
         <section aria-labelledby="ai-flood-result-heading" className="panel">
           <h3 id="ai-flood-result-heading">ผลการประเมินน้ำท่วม</h3>
-          {detail.flood ? <dl className="grid gap-2"><div><dt>ระดับ</dt><dd><StatusBadge status={detail.flood.severity} /></dd></div><div><dt>ระดับน้ำ</dt><dd>{depthLabel(detail.flood.water_depth_m)}</dd></div><div><dt>ความมั่นใจ</dt><dd>{confidenceLabel(detail.flood.confidence)}</dd></div><div><dt>กรอบพื้นที่</dt><dd>{detail.flood.bounding_box.length ? "มีกรอบพื้นที่จาก AI" : "ไม่มีกรอบพื้นที่"}</dd></div></dl> : <p>ไม่พบผลการประเมินน้ำท่วม</p>}
+          {detail.flood ? <dl className="grid gap-2"><div><dt>ระดับ</dt><dd><StatusBadge status={detail.flood.severity} /></dd></div><div><dt>ระดับน้ำ</dt><dd>{depthLabel(detail.flood.water_depth_m)}</dd></div><div><dt>ความมั่นใจ</dt><dd>{confidenceLabel(detail.flood.confidence)}</dd></div><div><dt>กรอบพื้นที่</dt><dd>{detail.flood.bounding_box ? "มีกรอบพื้นที่จาก AI" : "ไม่มีกรอบพื้นที่"}</dd></div></dl> : <p>ไม่พบผลการประเมินน้ำท่วม</p>}
         </section>
         <section aria-labelledby="ai-road-result-heading" className="panel">
           <h3 id="ai-road-result-heading">ผลการประเมินถนน</h3>
-          {detail.road ? <dl className="grid gap-2"><div><dt>สถานะ</dt><dd><StatusBadge status={detail.road.status} /></dd></div><div><dt>ความมั่นใจ</dt><dd>{confidenceLabel(detail.road.confidence)}</dd></div><div><dt>กรอบพื้นที่</dt><dd>{detail.road.bounding_box.length ? "มีกรอบพื้นที่จาก AI" : "ไม่มีกรอบพื้นที่"}</dd></div></dl> : <p>ไม่พบผลการประเมินถนน</p>}
+          {detail.road ? <dl className="grid gap-2"><div><dt>สถานะ</dt><dd><StatusBadge status={detail.road.status} /></dd></div><div><dt>ความมั่นใจ</dt><dd>{confidenceLabel(detail.road.confidence)}</dd></div><div><dt>กรอบพื้นที่</dt><dd>{detail.road.bounding_box ? "มีกรอบพื้นที่จาก AI" : "ไม่มีกรอบพื้นที่"}</dd></div></dl> : <p>ไม่พบผลการประเมินถนน</p>}
         </section>
       </div>
 
@@ -188,7 +190,7 @@ export function AIEvidenceReview() {
 
       {detail.road && canReview && <div className="grid gap-2"><label htmlFor="ai-road-match">จับคู่ถนนสำหรับอนุมัติ</label><select id="ai-road-match" value={roadId} disabled={roadState !== "ready" || reviewingId === detail.id} onChange={(event) => { setRoadId(event.target.value); setValidationError(null); }}><option value="">เลือกถนนจริงจากรายการ</option>{roadOptions.map((road) => <option key={road.id} value={road.id}>{road.name}</option>)}</select>{roadState === "loading" && <p role="status">กำลังโหลดรายการถนน…</p>}{roadState === "error" && <div role="alert"><p>ไม่สามารถโหลดรายการถนนจริงได้</p><button type="button" className="action-button" onClick={() => void loadRoadOptions()}>โหลดถนนอีกครั้ง</button></div>}<p className="muted">อนุมัติผลถนนได้เมื่อเลือกถนนจริงจากรายการเท่านั้น</p></div>}
 
-      {canReview && <div className="grid gap-3"><label htmlFor="ai-rejection-reason">เหตุผลการปฏิเสธ</label><textarea id="ai-rejection-reason" value={selectedReason} disabled={reviewingId === detail.id} onChange={(event) => { setRejectionReasons((current) => ({ ...current, [detail.id]: event.target.value })); setValidationError(null); }} rows={3} placeholder="ระบุเหตุผลที่ตรวจสอบได้" />{validationError && <p role="alert">{validationError}</p>}<div className="flex flex-wrap gap-2"><button type="button" className="button button--primary" disabled={!canReview || reviewingId === detail.id || Boolean(detail.road && (!roadId || roadState !== "ready"))} onClick={() => void review("verify")}>อนุมัติหลักฐาน AI</button><button type="button" className="action-button action-button--danger" disabled={!canReview || reviewingId === detail.id} onClick={() => void review("reject")}>ปฏิเสธหลักฐาน AI</button></div></div>}
+      {canReview && <div className="grid gap-3"><label htmlFor="ai-rejection-reason">เหตุผลการปฏิเสธ</label><textarea id="ai-rejection-reason" value={selectedReason} maxLength={500} disabled={reviewingId === detail.id} onChange={(event) => { setRejectionReasons((current) => ({ ...current, [detail.id]: event.target.value })); setValidationError(null); }} rows={3} placeholder="ระบุเหตุผลที่ตรวจสอบได้" />{validationError && <p role="alert">{validationError}</p>}<div className="flex flex-wrap gap-2"><button type="button" className="action-button" disabled={!canReview || reviewingId === detail.id || Boolean(detail.road && (!roadId || roadState !== "ready"))} onClick={() => void review("verify")}>อนุมัติหลักฐาน AI</button><button type="button" className="action-button action-button--danger" disabled={!canReview || reviewingId === detail.id} onClick={() => void review("reject")}>ปฏิเสธหลักฐาน AI</button></div></div>}
     </section>;
   };
 

@@ -127,6 +127,277 @@
       }
     },
     "schemas": {
+      "AIEvidence": {
+        "properties": {
+          "flood": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/AIFloodEstimate"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 10,
+            "minItems": 1,
+            "type": "array"
+          },
+          "mediaId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "modelVersion": {
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string"
+          },
+          "observedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "receivedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "reportId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "reportUpdatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "reviewedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "reviewedBy": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "road": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/AIRoadEstimate"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "sourceType": {
+            "const": "AI",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "UNVERIFIED",
+              "VERIFIED",
+              "REJECTED"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "reportId",
+          "mediaId",
+          "sourceType",
+          "modelVersion",
+          "flood",
+          "road",
+          "observedAt",
+          "receivedAt",
+          "limitations",
+          "status",
+          "reportUpdatedAt"
+        ],
+        "type": "object"
+      },
+      "AIEvidenceList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AIEvidence"
+            },
+            "type": "array"
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          }
+        },
+        "required": [
+          "items",
+          "pagination"
+        ],
+        "type": "object"
+      },
+      "AIEvidenceRejectInput": {
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "maxLength": 500,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "type": "object"
+      },
+      "AIEvidenceResponse": {
+        "properties": {
+          "evidence": {
+            "$ref": "#/components/schemas/AIEvidence"
+          }
+        },
+        "required": [
+          "evidence"
+        ],
+        "type": "object"
+      },
+      "AIEvidenceVerifyInput": {
+        "additionalProperties": false,
+        "properties": {
+          "roadId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "AIFloodEstimate": {
+        "properties": {
+          "bounding_box": {
+            "description": "Normalized ymin,xmin,ymax,xmax when available.",
+            "items": {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            "maxItems": 4,
+            "minItems": 4,
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "confidence": {
+            "maximum": 1,
+            "minimum": 0,
+            "type": "number"
+          },
+          "severity": {
+            "$ref": "#/components/schemas/Severity"
+          },
+          "water_depth_m": {
+            "maximum": 50,
+            "minimum": 0,
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "severity",
+          "water_depth_m",
+          "confidence",
+          "bounding_box"
+        ],
+        "type": "object"
+      },
+      "AIRoadEstimate": {
+        "properties": {
+          "bounding_box": {
+            "description": "Normalized ymin,xmin,ymax,xmax when available.",
+            "items": {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            "maxItems": 4,
+            "minItems": 4,
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "confidence": {
+            "maximum": 1,
+            "minimum": 0,
+            "type": "number"
+          },
+          "status": {
+            "$ref": "#/components/schemas/RoadStatus"
+          }
+        },
+        "required": [
+          "status",
+          "confidence",
+          "bounding_box"
+        ],
+        "type": "object"
+      },
+      "AdminDashboardStats": {
+        "properties": {
+          "activeUsers": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "pendingReports": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "recentActivity": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "totalReports": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "totalUsers": {
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "totalUsers",
+          "activeUsers",
+          "totalReports",
+          "pendingReports",
+          "recentActivity"
+        ],
+        "type": "object"
+      },
+      "AdminRoleInput": {
+        "additionalProperties": false,
+        "properties": {
+          "role": {
+            "enum": [
+              "USER",
+              "ADMIN"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "role"
+        ],
+        "type": "object"
+      },
       "Alert": {
         "additionalProperties": false,
         "properties": {
@@ -301,6 +572,31 @@
         ],
         "type": "object"
       },
+      "AlertRuleList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AlertRule"
+            },
+            "type": "array"
+          },
+          "limit": {
+            "maximum": 50,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "offset": {
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "limit",
+          "offset"
+        ],
+        "type": "object"
+      },
       "AlertRuleResponse": {
         "additionalProperties": false,
         "properties": {
@@ -310,6 +606,103 @@
         },
         "required": [
           "rule"
+        ],
+        "type": "object"
+      },
+      "AuditLog": {
+        "properties": {
+          "action": {
+            "type": "string"
+          },
+          "actorEmail": {
+            "type": "string"
+          },
+          "actorId": {
+            "format": "uuid",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "actorRole": {
+            "enum": [
+              "USER",
+              "ADMIN",
+              "SYSTEM"
+            ],
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "ipAddress": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "metadata": {
+            "type": "object"
+          },
+          "targetId": {
+            "type": "string"
+          },
+          "targetType": {
+            "type": "string"
+          },
+          "userAgent": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "action",
+          "actorId",
+          "actorEmail",
+          "actorRole",
+          "targetType",
+          "targetId",
+          "metadata",
+          "ipAddress",
+          "userAgent",
+          "createdAt"
+        ],
+        "type": "object"
+      },
+      "AuditLogList": {
+        "properties": {
+          "logs": {
+            "items": {
+              "$ref": "#/components/schemas/AuditLog"
+            },
+            "type": "array"
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          }
+        },
+        "required": [
+          "logs",
+          "pagination"
+        ],
+        "type": "object"
+      },
+      "AuditLogResponse": {
+        "properties": {
+          "log": {
+            "$ref": "#/components/schemas/AuditLog"
+          }
+        },
+        "required": [
+          "log"
         ],
         "type": "object"
       },
@@ -787,6 +1180,82 @@
         "minItems": 4,
         "type": "array"
       },
+      "ManagedUser": {
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "disabledAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "email": {
+            "format": "email",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "role": {
+            "enum": [
+              "USER",
+              "ADMIN"
+            ],
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "role",
+          "createdAt",
+          "updatedAt",
+          "disabledAt"
+        ],
+        "type": "object"
+      },
+      "ManagedUserDetail": {
+        "properties": {
+          "stats": {
+            "$ref": "#/components/schemas/UserActivityStats"
+          },
+          "user": {
+            "$ref": "#/components/schemas/ManagedUser"
+          }
+        },
+        "required": [
+          "user",
+          "stats"
+        ],
+        "type": "object"
+      },
+      "ManagedUserList": {
+        "properties": {
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          },
+          "users": {
+            "items": {
+              "$ref": "#/components/schemas/ManagedUser"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "users",
+          "pagination"
+        ],
+        "type": "object"
+      },
       "MultiLineCoordinates": {
         "items": {
           "items": {
@@ -836,6 +1305,99 @@
         "required": [
           "type",
           "coordinates"
+        ],
+        "type": "object"
+      },
+      "NotificationItem": {
+        "properties": {
+          "alertId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "readAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "severity": {
+            "enum": [
+              "INFO",
+              "WATCH",
+              "WARNING",
+              "CRITICAL"
+            ],
+            "type": "string"
+          },
+          "sourceType": {
+            "$ref": "#/components/schemas/SourceType"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "alertId",
+          "title",
+          "message",
+          "severity",
+          "sourceType",
+          "createdAt",
+          "readAt"
+        ],
+        "type": "object"
+      },
+      "NotificationList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/NotificationItem"
+            },
+            "type": "array"
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          }
+        },
+        "required": [
+          "items",
+          "pagination"
+        ],
+        "type": "object"
+      },
+      "Pagination": {
+        "properties": {
+          "limit": {
+            "maximum": 100,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "offset": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "total": {
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total",
+          "limit",
+          "offset"
         ],
         "type": "object"
       },
@@ -1004,6 +1566,49 @@
           "resourceId",
           "payloadVersion",
           "payload"
+        ],
+        "type": "object"
+      },
+      "PushPublicKey": {
+        "properties": {
+          "publicKey": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "publicKey"
+        ],
+        "type": "object"
+      },
+      "PushSubscriptionInput": {
+        "additionalProperties": false,
+        "properties": {
+          "endpoint": {
+            "format": "uri",
+            "type": "string"
+          },
+          "keys": {
+            "additionalProperties": false,
+            "properties": {
+              "auth": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "p256dh": {
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "required": [
+              "p256dh",
+              "auth"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "endpoint",
+          "keys"
         ],
         "type": "object"
       },
@@ -1751,6 +2356,113 @@
         ],
         "type": "object"
       },
+      "SystemSetting": {
+        "properties": {
+          "category": {
+            "enum": [
+              "rate_limit",
+              "alert",
+              "ingestion",
+              "feature",
+              "security"
+            ],
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "editable": {
+            "type": "boolean"
+          },
+          "key": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedBy": {
+            "format": "uuid",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "value": {},
+          "valueType": {
+            "enum": [
+              "string",
+              "number",
+              "boolean",
+              "json"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "value",
+          "valueType",
+          "description",
+          "category",
+          "editable",
+          "createdAt",
+          "updatedAt",
+          "updatedBy"
+        ],
+        "type": "object"
+      },
+      "SystemSettingInput": {
+        "additionalProperties": false,
+        "properties": {
+          "value": {}
+        },
+        "required": [
+          "value"
+        ],
+        "type": "object"
+      },
+      "SystemSettingResponse": {
+        "properties": {
+          "setting": {
+            "$ref": "#/components/schemas/SystemSetting"
+          }
+        },
+        "required": [
+          "setting"
+        ],
+        "type": "object"
+      },
+      "SystemSettingsList": {
+        "properties": {
+          "settings": {
+            "items": {
+              "$ref": "#/components/schemas/SystemSetting"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "settings"
+        ],
+        "type": "object"
+      },
+      "UnreadNotificationCount": {
+        "properties": {
+          "count": {
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "count"
+        ],
+        "type": "object"
+      },
       "User": {
         "additionalProperties": false,
         "properties": {
@@ -1784,6 +2496,46 @@
           "email",
           "role",
           "createdAt"
+        ],
+        "type": "object"
+      },
+      "UserActivityStats": {
+        "properties": {
+          "auditLogCount": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "lastActivity": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "refreshSessionCount": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "rejectedReports": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "reportCount": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "verifiedReports": {
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "reportCount",
+          "lastActivity",
+          "verifiedReports",
+          "rejectedReports",
+          "auditLogCount",
+          "refreshSessionCount"
         ],
         "type": "object"
       },
@@ -1970,11 +2722,235 @@
   "info": {
     "description": "# Introduction\nPublic REST API for Flood Watch Ongkharak. The Go API is the public backend.\n\n# Evidence and freshness\nKeep OFFICIAL, COMMUNITY, and AI provenance distinct.\nAvailability data that is stale or unavailable is UNKNOWN, never SAFE.\n\n# Authentication\nAccess tokens use JWT bearer authentication.\nRefresh tokens are sent only in an HttpOnly cookie. The cookie uses the configured\nSameSite Lax or Strict policy and Secure is enabled in production; refresh tokens\nare never returned in response bodies. Phase 2 flood-domain collections are empty\nuntil explicitly populated; no response implies current safe conditions. GUEST has\nno persisted role; only USER and ADMIN accounts exist. Authentication is required\nfor the Phase 1 demonstration routes.\n\n# Community reports\nPhase 6 community reports are always COMMUNITY evidence. Only VERIFIED reports\nand their images are public; an empty list never means SAFE. Submission time is\nnot a measured observation time. Pending reports are owner-editable, rejected\nand verified reports are immutable, and an ADMIN cannot verify their own report.\n\n# Alerts and realtime\nPhase 7 alerts are created only by explicit structured rules; no threshold is\npreconfigured. Public SSE transports versioned change notifications, not canonical\nresource state. Redis outages do not roll back committed PostgreSQL data.\n\n# Errors\nOther auth failures use the ErrorResponse envelope (including 403 origin rejection,\n415 unsupported media type, 429 rate limiting, and 500 infrastructure failure).\n",
     "title": "Flood Watch Ongkharak API",
-    "version": "0.4.0"
+    "version": "0.5.0"
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/admin/ai-evidence": {
+      "get": {
+        "description": "No real inference model is bundled. Unavailable analysis creates retryable jobs, not fabricated observations. Unverified and rejected evidence is private.",
+        "operationId": "listAIEvidence",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "schema": {
+              "default": 0,
+              "maximum": 100000,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "default": "UNVERIFIED",
+              "enum": [
+                "UNVERIFIED",
+                "VERIFIED",
+                "REJECTED"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AIEvidenceList"
+                }
+              }
+            },
+            "description": "Successful response."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "List private AI evidence (ADMIN only)",
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/admin/ai-evidence/{id}": {
+      "get": {
+        "operationId": "getAIEvidence",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AIEvidenceResponse"
+                }
+              }
+            },
+            "description": "Successful response."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get private AI evidence (ADMIN only)",
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/admin/ai-evidence/{id}/reject": {
+      "post": {
+        "description": "Records a private reviewed result and audit trail. Does not delete the original community report or publish rejected evidence.",
+        "operationId": "rejectAIEvidence",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceID"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AIEvidenceRejectInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful response."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Reject AI evidence with a reason (ADMIN only)",
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/admin/ai-evidence/{id}/verify": {
+      "post": {
+        "description": "Disallows self-review, stale report snapshots, and repeated/conflicting reviews. roadId is required when a road estimate exists. Approval preserves AI provenance and creates canonical observations transactionally; it is not an official observation or safety guarantee.",
+        "operationId": "verifyAIEvidence",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceID"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AIEvidenceVerifyInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful response."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Approve AI evidence (ADMIN only)",
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
     "/api/v1/admin/alert-rules": {
+      "get": {
+        "operationId": "listAlertRules",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "default": 20,
+              "maximum": 50,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "schema": {
+              "default": 0,
+              "maximum": 1000,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertRuleList"
+                }
+              }
+            },
+            "description": "Successful response."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "List enabled and disabled alert rules (ADMIN only)",
+        "tags": [
+          "Admin"
+        ]
+      },
       "post": {
         "operationId": "createAlertRule",
         "requestBody": {
@@ -2015,6 +2991,38 @@
       }
     },
     "/api/v1/admin/alert-rules/{id}": {
+      "get": {
+        "operationId": "getAlertRule",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertRuleResponse"
+                }
+              }
+            },
+            "description": "Successful response."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get an alert rule (ADMIN only)",
+        "tags": [
+          "Admin"
+        ]
+      },
       "put": {
         "operationId": "updateAlertRule",
         "parameters": [
@@ -2056,6 +3064,166 @@
         "tags": [
           "Admin",
           "Alerts"
+        ]
+      }
+    },
+    "/api/v1/admin/audit-logs": {
+      "get": {
+        "operationId": "listAuditLogs",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "schema": {
+              "default": 0,
+              "maximum": 100000,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "actorId",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "targetType",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "targetId",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "action",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "startTime",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "endTime",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditLogList"
+                }
+              }
+            },
+            "description": "Successful response."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "List audit records (ADMIN only)",
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/admin/audit-logs/{id}": {
+      "get": {
+        "operationId": "getAuditLog",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditLogResponse"
+                }
+              }
+            },
+            "description": "Successful response."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get an audit record (ADMIN only)",
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/admin/dashboard/stats": {
+      "get": {
+        "description": "Active users are enabled accounts, not online sessions. Recent activity counts audit records in the last 24 hours. Errors never become placeholder zeroes.",
+        "operationId": "getAdminDashboardStats",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminDashboardStats"
+                }
+              }
+            },
+            "description": "Successful response."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Database-backed dashboard statistics (ADMIN only)",
+        "tags": [
+          "Admin"
         ]
       }
     },
@@ -2267,6 +3435,342 @@
         "tags": [
           "Admin",
           "Reports"
+        ]
+      }
+    },
+    "/api/v1/admin/settings": {
+      "get": {
+        "description": "Stored settings do not imply every running component dynamically consumes them; runtime environment remains authoritative where documented.",
+        "operationId": "listSystemSettings",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "category",
+            "schema": {
+              "enum": [
+                "rate_limit",
+                "alert",
+                "ingestion",
+                "feature",
+                "security"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "editable",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemSettingsList"
+                }
+              }
+            },
+            "description": "Successful response."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "List stored system settings (ADMIN only)",
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/admin/settings/{key}": {
+      "get": {
+        "operationId": "getSystemSetting",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemSettingResponse"
+                }
+              }
+            },
+            "description": "Successful response."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get a stored setting (ADMIN only)",
+        "tags": [
+          "Admin"
+        ]
+      },
+      "put": {
+        "operationId": "updateSystemSetting",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SystemSettingInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful response."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Update an editable stored setting (ADMIN only)",
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/admin/users": {
+      "get": {
+        "operationId": "listManagedUsers",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "schema": {
+              "default": 0,
+              "maximum": 100000,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "role",
+            "schema": {
+              "enum": [
+                "USER",
+                "ADMIN"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "includeDisabled",
+            "schema": {
+              "default": false,
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManagedUserList"
+                }
+              }
+            },
+            "description": "Successful response."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "List user accounts (ADMIN only)",
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/admin/users/{id}": {
+      "get": {
+        "operationId": "getManagedUser",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManagedUserDetail"
+                }
+              }
+            },
+            "description": "Successful response."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get account and activity statistics (ADMIN only)",
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/admin/users/{id}/disable": {
+      "post": {
+        "operationId": "disableManagedUser",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceID"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful response."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Disable account (ADMIN only)",
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/admin/users/{id}/enable": {
+      "post": {
+        "operationId": "enableManagedUser",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceID"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful response."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Enable account (ADMIN only)",
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/admin/users/{id}/role": {
+      "patch": {
+        "operationId": "updateManagedUserRole",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceID"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminRoleInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful response."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Change account role (ADMIN only)",
+        "tags": [
+          "Admin"
         ]
       }
     },
@@ -3288,6 +4792,227 @@
         ]
       }
     },
+    "/api/v1/notifications": {
+      "get": {
+        "description": "Only current account entries are returned. History is independent of Push permissions and VAPID configuration. No historical alert backfill is performed.",
+        "operationId": "listNotifications",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "schema": {
+              "default": 0,
+              "maximum": 100000,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationList"
+                }
+              }
+            },
+            "description": "Successful response."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "List the current account inbox",
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/api/v1/notifications/public-key": {
+      "get": {
+        "description": "Push may be unavailable when VAPID is not configured; this does not disable the account inbox.",
+        "operationId": "getPushPublicKey",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PushPublicKey"
+                }
+              }
+            },
+            "description": "Successful response."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "summary": "Read the public VAPID key",
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/api/v1/notifications/read-all": {
+      "post": {
+        "operationId": "markAllNotificationsRead",
+        "responses": {
+          "204": {
+            "description": "Successful response."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Mark the current account inbox read",
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/api/v1/notifications/subscribe": {
+      "post": {
+        "operationId": "subscribePush",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PushSubscriptionInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful response."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Register a browser Push subscription",
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/api/v1/notifications/unread-count": {
+      "get": {
+        "operationId": "getUnreadNotificationCount",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnreadNotificationCount"
+                }
+              }
+            },
+            "description": "Successful response."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Count unread entries for the current account",
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/api/v1/notifications/unsubscribe": {
+      "delete": {
+        "operationId": "unsubscribePush",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "endpoint",
+            "required": true,
+            "schema": {
+              "format": "uri",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful response."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Remove an owned browser Push subscription",
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/api/v1/notifications/{id}/read": {
+      "patch": {
+        "description": "Idempotent for an already-read owned item. An unknown or another account item returns 404 without exposing its existence.",
+        "operationId": "markNotificationRead",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceID"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful response."
+          },
+          "default": {
+            "$ref": "#/components/responses/DomainError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Mark an owned notification read",
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
     "/api/v1/reports": {
       "get": {
         "operationId": "listPublicReports",
@@ -3941,6 +5666,28 @@
         ]
       }
     },
+    "/metrics": {
+      "get": {
+        "description": "Operational endpoint; restrict access at the deployment ingress.",
+        "operationId": "getMetrics",
+        "responses": {
+          "200": {
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Prometheus exposition format."
+          }
+        },
+        "summary": "Prometheus process metrics",
+        "tags": [
+          "System"
+        ]
+      }
+    },
     "/ready": {
       "get": {
         "operationId": "getReadiness",
@@ -3980,6 +5727,10 @@
     }
   ],
   "tags": [
+    {
+      "description": "Account-scoped inbox and independent browser Push subscriptions.",
+      "name": "Notifications"
+    },
     {
       "description": "Service liveness and dependency readiness.",
       "name": "System"

@@ -56,7 +56,6 @@
   --shadow-bottom-nav-icon: 0 4px 12px rgb(37 99 235 / 24%);
   --card-accent-height: .3125rem;
   --card-accent-gradient: linear-gradient(100deg, var(--color-primary-strong), #97b9eb 52%, #d4dafa);
-  --card-accent-gradient-warm: linear-gradient(100deg, var(--color-alert-danger), #c59aa9 52%, #cbd8ff);
 }
 
 body {
@@ -183,9 +182,6 @@ body {
   content: '';
 }
 
-.public-shell :is(.announcements-page .data-section, .overview-panel[aria-labelledby='alerts-title'])::before {
-  background-image: var(--card-accent-gradient-warm);
-}
 .badge { gap: .25rem; }
 .public-shell .site-footer { padding-block: 1rem; color: #6077a4; font-size: .77rem; }
 

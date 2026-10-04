@@ -38,6 +38,7 @@ type Dependencies struct {
 	ReportService       *report.Service
 	AlertService        *alert.Service
 	AdminService        handler.AdminService
+	AIService           handler.AIService
 	NotificationService *notification.Service
 	RedisClient         redis.UniversalClient
 	CookieOptions       handler.CookieOptions
@@ -173,6 +174,13 @@ func New(dependencies Dependencies) http.Handler {
 			// Audit logs
 			api.With(adminOnly...).Get("/admin/audit-logs", adminHandler.ListAuditLogs)
 			api.With(adminOnly...).Get("/admin/audit-logs/{id}", adminHandler.GetAuditLog)
+			if dependencies.AIService != nil {
+				aiHandler := handler.NewAIHandler(dependencies.AIService, dependencies.AdminService)
+				api.With(adminOnly...).Get("/admin/ai-evidence", aiHandler.ListEvidence)
+				api.With(adminOnly...).Get("/admin/ai-evidence/{id}", aiHandler.GetEvidence)
+				api.With(append(adminOnly, adminLimiter.LimitAuthenticated("ai-review", 30, time.Hour))...).Post("/admin/ai-evidence/{id}/verify", aiHandler.VerifyEvidence)
+				api.With(append(adminOnly, adminLimiter.LimitAuthenticated("ai-review", 30, time.Hour))...).Post("/admin/ai-evidence/{id}/reject", aiHandler.RejectEvidence)
+			}
 		}
 	})
 	if dependencies.SwaggerEnabled {
@@ -211,7 +219,7 @@ func cors(allowedOrigins []string) func(http.Handler) http.Handler {
 			if _, ok := allowed[origin]; ok {
 				response.Header().Set("Access-Control-Allow-Origin", origin)
 				response.Header().Set("Vary", "Origin")
-				response.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, OPTIONS")
+				response.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
 				response.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
 				response.Header().Set("Access-Control-Allow-Credentials", "true")
 			}

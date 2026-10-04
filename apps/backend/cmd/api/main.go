@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -13,6 +12,7 @@ import (
 	"time"
 
 	"github.com/floodwatch-ongkharak/backend/internal/admin"
+	"github.com/floodwatch-ongkharak/backend/internal/ai"
 	"github.com/floodwatch-ongkharak/backend/internal/alert"
 	"github.com/floodwatch-ongkharak/backend/internal/auth"
 	"github.com/floodwatch-ongkharak/backend/internal/config"
@@ -26,6 +26,7 @@ import (
 	"github.com/floodwatch-ongkharak/backend/internal/notification"
 	"github.com/floodwatch-ongkharak/backend/internal/objectstore"
 	"github.com/floodwatch-ongkharak/backend/internal/postgres/adminrepo"
+	"github.com/floodwatch-ongkharak/backend/internal/postgres/airepo"
 	"github.com/floodwatch-ongkharak/backend/internal/postgres/alertrepo"
 	"github.com/floodwatch-ongkharak/backend/internal/postgres/authrepo"
 	"github.com/floodwatch-ongkharak/backend/internal/postgres/floodrepo"
@@ -104,11 +105,9 @@ func run() error {
 	if err != nil {
 		return fmt.Errorf("configure alert service: %w", err)
 	}
-	var notificationService *notification.Service
-	if configuration.VAPIDPublicKey != "" {
-		notificationService = notification.NewService(logger, notificationrepo.New(postgresPool), configuration.VAPIDPublicKey, configuration.VAPIDPrivateKey, configuration.VAPIDSubscriber)
-	}
+	notificationService := notification.NewService(logger, notificationrepo.New(postgresPool), configuration.VAPIDPublicKey, configuration.VAPIDPrivateKey, configuration.VAPIDSubscriber)
 	adminService := admin.NewService(adminrepo.New(postgresPool))
+	aiService := ai.NewEvidenceService(airepo.New(postgresPool))
 	redisOptions, err := redis.ParseURL(configuration.RedisURL)
 	if err != nil {
 		return fmt.Errorf("configure Redis client: %w", err)
@@ -127,15 +126,6 @@ func run() error {
 			return err
 		}
 
-		if notificationService != nil && record.EventType == "alert.created" {
-			var payload notification.Payload
-			if err := json.Unmarshal(record.Payload, &payload); err == nil {
-				// Broadcast in the background to avoid blocking the outbox dispatcher
-				go notificationService.BroadcastAlert(context.Background(), payload)
-			} else {
-				logger.Error("failed to unmarshal alert payload", slog.String("error", err.Error()))
-			}
-		}
 		return nil
 	})
 
@@ -160,6 +150,7 @@ func run() error {
 			ReportService:       reportService,
 			AlertService:        alertService,
 			AdminService:        adminService,
+			AIService:           aiService,
 			NotificationService: notificationService,
 			RedisClient:         redisClient,
 			CookieOptions:       handler.CookieOptions{Name: configuration.CookieName, Secure: configuration.CookieSecure, SameSite: configuration.CookieSameSite, RefreshTTL: configuration.RefreshTokenTTL, AllowedOrigins: configuration.CORSAllowedOrigins},

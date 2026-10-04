@@ -3,86 +3,60 @@ package ai
 import (
 	"context"
 	"fmt"
+	"io"
 	"log/slog"
 	"time"
 
-	"github.com/floodwatch-ongkharak/backend/internal/flood"
-	"github.com/google/uuid"
+	"github.com/floodwatch-ongkharak/backend/internal/report"
 )
 
-type EvidenceRepository interface {
-	GetPendingReportsWithMedia(ctx context.Context, limit int) ([]ReportWithMedia, error)
-	MarkReportAnalyzed(ctx context.Context, reportID string) error
-	CreateFloodEvent(ctx context.Context, event flood.Event) error
-	CreateRoadCondition(ctx context.Context, condition flood.RoadCondition) error
-}
-
-type ReportWithMedia struct {
-	ID        string
-	MediaURLs []string
-	Location  [2]float64
-}
+const (
+	analysisBatchSize = 10
+	analysisLease     = 5 * time.Minute
+	analysisMaxTries  = 3
+)
 
 type EvidenceWorker struct {
-	client *Client
-	repo   EvidenceRepository
-	logger *slog.Logger
-	aiSourceID string
+	client       Analyzer
+	repo         JobRepository
+	mediaStorage report.MediaStorage
+	logger       *slog.Logger
 }
 
-func NewEvidenceWorker(client *Client, repo EvidenceRepository, logger *slog.Logger) *EvidenceWorker {
-	return &EvidenceWorker{
-		client:     client,
-		repo:       repo,
-		logger:     logger,
-		aiSourceID: "00000000-0000-4000-8000-000000000001", // seeded in migration 000012
-	}
+func NewEvidenceWorker(client Analyzer, repo JobRepository, mediaStorage report.MediaStorage, logger *slog.Logger) *EvidenceWorker {
+	if logger == nil { logger = slog.Default() }
+	return &EvidenceWorker{client: client, repo: repo, mediaStorage: mediaStorage, logger: logger}
 }
 
 func (w *EvidenceWorker) ProcessPendingReports(ctx context.Context) error {
-	reports, err := w.repo.GetPendingReportsWithMedia(ctx, 10)
-	if err != nil {
-		return fmt.Errorf("fetch pending reports: %w", err)
-	}
-
-	for _, r := range reports {
-		w.logger.Info("analyzing report media", slog.String("report_id", r.ID))
-		for _, mediaURL := range r.MediaURLs {
-			resp, err := w.client.AnalyzeMedia(ctx, mediaURL, r.ID)
-			if err != nil {
-				w.logger.Error("ai analysis failed", slog.String("report_id", r.ID), slog.String("error", err.Error()))
-				continue
-			}
-
-			if resp.Flood != nil && resp.Flood.Confidence > 0.5 {
-				event := flood.Event{
-					ID:                 uuid.NewString(),
-					Source:             flood.DataSource{ID: w.aiSourceID},
-					Title:              "AI Flood Detection",
-					Description:        fmt.Sprintf("Detected via model %s (Report %s)", resp.ModelVersion, r.ID),
-					Geometry:           []flood.Geometry{{Type: "Point", Coordinates: []float64{r.Location[0], r.Location[1]}}},
-					Severity:           resp.Flood.Severity,
-					Status:             "ACTIVE",
-					ObservedAt:         time.Now().UTC(),
-					VerificationStatus: flood.VerificationUnverified,
-					Confidence:         &resp.Flood.Confidence,
-				}
-				if err := w.repo.CreateFloodEvent(ctx, event); err != nil {
-					w.logger.Error("failed to create ai flood event", slog.String("error", err.Error()))
-				}
-			}
-
-			if resp.Road != nil && resp.Road.Confidence > 0.5 {
-				// Assuming we have a way to resolve road ID from location.
-				// For the sake of Phase 10 prototype, if we don't know the road ID, we skip or mock.
-				// The prompt implies we just need to produce structured evidence.
-				w.logger.Info("AI detected road condition", slog.Any("road", resp.Road))
-			}
-		}
-
-		if err := w.repo.MarkReportAnalyzed(ctx, r.ID); err != nil {
-			w.logger.Error("failed to mark report analyzed", slog.String("error", err.Error()))
+	if err := w.repo.EnqueuePendingMedia(ctx, analysisBatchSize); err != nil { return fmt.Errorf("enqueue AI media: %w", err) }
+	jobs, err := w.repo.ClaimAnalysisJobs(ctx, analysisBatchSize, analysisLease, analysisMaxTries)
+	if err != nil { return fmt.Errorf("claim AI jobs: %w", err) }
+	var firstJobError error
+	for _, job := range jobs {
+		jobCtx, cancel := context.WithTimeout(ctx, 20*time.Second)
+		err := w.processJob(jobCtx, job)
+		cancel()
+		if err != nil {
+			if firstJobError == nil { firstJobError = err }
+			w.logger.Error("AI media analysis failed", slog.String("job_id", job.ID), slog.String("error", err.Error()))
+			if failErr := w.repo.FailAnalysis(ctx, job, err.Error(), time.Now().UTC(), analysisMaxTries); failErr != nil { return fmt.Errorf("record AI job failure: %w", failErr) }
 		}
 	}
+	if firstJobError != nil { return fmt.Errorf("one or more AI analysis jobs failed: %w", firstJobError) }
 	return nil
+}
+
+func (w *EvidenceWorker) processJob(ctx context.Context, job AnalysisJob) error {
+	file, contentType, err := w.mediaStorage.Open(ctx, job.ObjectKey)
+	if err != nil { return fmt.Errorf("open private media: %w", err) }
+	defer file.Close()
+	if contentType != "" { job.ContentType = contentType }
+	data, err := io.ReadAll(io.LimitReader(file, maxMediaBytes+1))
+	if err != nil { return fmt.Errorf("read private media: %w", err) }
+	if len(data) == 0 || len(data) > maxMediaBytes { return ErrInvalid }
+	result, err := w.client.AnalyzeMedia(ctx, data, job.ContentType, job.ReportID, job.MediaID)
+	if err != nil { return err }
+	if result == nil || result.IsMock { return ErrInvalid }
+	return w.repo.CompleteAnalysis(ctx, job, *result, time.Now().UTC())
 }
