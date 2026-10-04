@@ -256,8 +256,8 @@ body {
   .shell-main { height: auto; overflow: visible; padding-bottom: var(--bottom-nav-clearance); }
   .public-shell .page-content { overflow-y: visible; }
   .public-shell .page-content__inner { height: auto; }
-  .institution-header { min-height: 3.2rem; border-bottom: 0; }
-  .mobile-header { display: flex; align-items: center; min-height: 3.2rem; border-color: var(--color-border); background: var(--shell-chrome-surface); }
+  .institution-header { display: none; }
+  .mobile-header { display: flex; align-items: center; min-height: 4rem; border-bottom: 1px solid var(--color-border); background: var(--shell-chrome-surface); }
   .bottom-navigation {
     position: fixed;
     z-index: var(--z-bottom-nav);

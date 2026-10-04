@@ -174,7 +174,7 @@
 }
 @media (max-width: 40rem) {
   .landing-container { width: calc(100% - var(--space-4) * 2); }
-  .landing-header__inner { min-height: 4.75rem; flex-wrap: wrap; gap: var(--space-2); }
+  .landing-header__inner { min-height: 4.75rem; flex-wrap: nowrap; gap: var(--space-2); }
   .landing-brand { gap: var(--space-2); }
   .landing-brand img { width: 34px; height: 34px; }
   .landing-brand strong { font-size: .875rem; }
@@ -195,7 +195,7 @@
   .landing-footer__inner { gap: var(--space-3); }
 }
 @media (max-width: 24rem) {
-  .landing-nav { width: 100%; justify-content: space-between; }
+  .landing-nav { justify-content: flex-end; }
   .landing-eyebrow { font-size: .65rem; }
   .landing-goals__list { grid-template-columns: minmax(0, 1fr); }
   .landing-goal + .landing-goal::before { display: none; }

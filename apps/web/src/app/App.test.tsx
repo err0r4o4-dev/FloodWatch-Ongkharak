@@ -49,8 +49,8 @@ describe("public routes", () => {
   it("shows the institutional header and enables language selection", () => {
     render(<MemoryRouter initialEntries={["/system-status"]}><AppRoutes /></MemoryRouter>);
     expect(screen.getByText("สถานการณ์น้ำ อำเภอองครักษ์ จังหวัดนครนายก")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "EN" })).toBeEnabled();
-    expect(screen.getByRole("link", { name: "การแจ้งเตือน" })).toHaveAttribute("href", "/notifications");
+    expect(screen.getAllByRole("button", { name: "EN" })[0]).toBeEnabled();
+    expect(screen.getAllByRole("link", { name: "การแจ้งเตือน" })[0]).toHaveAttribute("href", "/notifications");
   });
 
   it("combines map and risk navigation without CCTV", () => {
@@ -81,11 +81,11 @@ describe("public routes", () => {
 
   it("opens notifications from the header without inventing an unread count", async () => {
     render(<MemoryRouter initialEntries={["/system-status"]}><AppRoutes /></MemoryRouter>);
-    fireEvent.click(screen.getByRole("link", { name: "การแจ้งเตือน" }));
+    fireEvent.click(screen.getAllByRole("link", { name: "การแจ้งเตือน" })[0]);
     expect(await screen.findByRole("heading", { level: 1, name: "การแจ้งเตือน" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 1, name: "การแจ้งเตือน" })).toHaveFocus();
-    expect(screen.getByRole("link", { name: "การแจ้งเตือน" })).toHaveAttribute("aria-current", "page");
-    expect(screen.getByRole("link", { name: "การแจ้งเตือน" })).not.toHaveTextContent(/\d/);
+    expect(screen.getAllByRole("link", { name: "การแจ้งเตือน" })[0]).toHaveAttribute("aria-current", "page");
+    expect(screen.getAllByRole("link", { name: "การแจ้งเตือน" })[0]).not.toHaveTextContent(/\d/);
   });
 
   it("opens the public notifications bookmark without a login entry", () => {
