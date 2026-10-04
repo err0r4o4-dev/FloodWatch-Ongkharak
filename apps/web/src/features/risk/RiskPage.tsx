@@ -15,6 +15,8 @@ import "./RiskPage.css";
 type RiskFilter = "ALL" | "VERY_HIGH" | "HIGH" | "MODERATE" | "LOW" | "UNKNOWN";
 const riskMapVisibility: LayerVisibility = { flood: false, water: false, risk: true, roads: false, reports: false };
 const emptyPoint = { longitude: "", latitude: "" };
+const emptyRoutePoints = { origin: emptyPoint, destination: emptyPoint };
+const noopMapPoint = () => undefined;
 
 const filters: { key: RiskFilter; label: string }[] = [
   { key: "ALL", label: "ทั้งหมด" },
@@ -24,6 +26,45 @@ const filters: { key: RiskFilter; label: string }[] = [
   { key: "LOW", label: "ความเสี่ยงต่ำ" },
   { key: "UNKNOWN", label: "ไม่ทราบสถานะ" }
 ];
+
+// Risk level card configurations - defined outside component to prevent re-creation
+const RISK_CARDS = [
+  { 
+    level: "VERY_HIGH", 
+    label: "ความเสี่ยงสูงมาก", 
+    description: "ตรวจสอบประกาศและหลีกเลี่ยงพื้นที่ที่ได้รับผลกระทบ",
+    icon: "⚠",
+    className: "summary-metric--very-high"
+  },
+  { 
+    level: "HIGH", 
+    label: "ความเสี่ยงสูง", 
+    description: "ต้องตรวจสอบหลักฐานล่าสุดก่อนเดินทาง",
+    icon: "!",
+    className: "summary-metric--high"
+  },
+  { 
+    level: "MODERATE", 
+    label: "ความเสี่ยงปานกลาง", 
+    description: "ควรติดตามสถานการณ์และประกาศ",
+    icon: "⚡",
+    className: "summary-metric--moderate"
+  },
+  { 
+    level: "LOW", 
+    label: "ความเสี่ยงต่ำ", 
+    description: "ไม่ใช่การยืนยันว่าพื้นที่ปลอดภัย",
+    icon: "✓",
+    className: "summary-metric--low"
+  },
+  { 
+    level: "UNKNOWN", 
+    label: "ไม่ทราบสถานะ", 
+    description: "ข้อมูลเก่าหรือไม่พร้อมใช้งาน",
+    icon: "?",
+    className: "summary-metric--unknown"
+  }
+] as const;
 
 function effectiveLevel(item: Pick<RiskArea, "effectiveRiskLevel" | "freshness">): string {
   return item.freshness === "FRESH" ? item.effectiveRiskLevel : "UNKNOWN";
@@ -35,77 +76,20 @@ function levelCount(items: RiskArea[], level: string) {
 
 function RiskSummary({ items }: { items: RiskArea[] | null }) {
   const unavailable = !items?.length;
-  const cards = [
-    { 
-      level: "VERY_HIGH", 
-      label: "ความเสี่ยงสูงมาก", 
-      description: "ตรวจสอบประกาศและหลีกเลี่ยงพื้นที่ที่ได้รับผลกระทบ",
-      icon: "⚠",
-      gradient: "linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)",
-      iconBg: "linear-gradient(135deg, #fca5a5 0%, #f87171 100%)",
-      color: "#991b1b"
-    },
-    { 
-      level: "HIGH", 
-      label: "ความเสี่ยงสูง", 
-      description: "ต้องตรวจสอบหลักฐานล่าสุดก่อนเดินทาง",
-      icon: "!",
-      gradient: "linear-gradient(135deg, #ffedd5 0%, #fed7aa 100%)",
-      iconBg: "linear-gradient(135deg, #fdba74 0%, #fb923c 100%)",
-      color: "#9a3412"
-    },
-    { 
-      level: "MODERATE", 
-      label: "ความเสี่ยงปานกลาง", 
-      description: "ควรติดตามสถานการณ์และประกาศ",
-      icon: "⚡",
-      gradient: "linear-gradient(135deg, #fef9c3 0%, #fef08a 100%)",
-      iconBg: "linear-gradient(135deg, #fde047 0%, #facc15 100%)",
-      color: "#854d0e"
-    },
-    { 
-      level: "LOW", 
-      label: "ความเสี่ยงต่ำ", 
-      description: "ไม่ใช่การยืนยันว่าพื้นที่ปลอดภัย",
-      icon: "✓",
-      gradient: "linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)",
-      iconBg: "linear-gradient(135deg, #6ee7b7 0%, #34d399 100%)",
-      color: "#065f46"
-    },
-    { 
-      level: "UNKNOWN", 
-      label: "ไม่ทราบสถานะ", 
-      description: "ข้อมูลเก่าหรือไม่พร้อมใช้งาน",
-      icon: "?",
-      gradient: "linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)",
-      iconBg: "linear-gradient(135deg, #cbd5e1 0%, #94a3b8 100%)",
-      color: "#475569"
-    }
-  ];
 
   return <section className="summary-metrics" aria-label="สรุประดับความเสี่ยงจากรายการที่เรียกดู">
-    {cards.map((card) => {
+    {RISK_CARDS.map((card) => {
       const count = unavailable ? "—" : levelCount(items, card.level);
       return <article 
-        className={`summary-metric summary-metric--${card.level.toLowerCase()}`} 
+        className={`summary-metric ${card.className}`} 
         key={card.level}
-        style={{ 
-          background: card.gradient,
-          borderColor: card.color + "40"
-        }}
       >
-        <span 
-          className="summary-metric__icon"
-          style={{ 
-            background: card.iconBg,
-            color: "white"
-          }}
-        >
+        <span className="summary-metric__icon">
           {card.icon}
         </span>
         <div className="summary-metric__content">
           <span className="summary-metric__label">{card.label}</span>
-          <strong className="summary-metric__count" style={{ color: card.color }}>{count}</strong>
+          <strong className="summary-metric__count">{count}</strong>
           <small className="summary-metric__description">{card.description}</small>
         </div>
       </article>;
@@ -145,7 +129,7 @@ function RiskMapPanel() {
   return <section className="data-section risk-map-panel overview-map" aria-labelledby="risk-map-title">
     <div className="overview-section-header risk-map-panel__heading"><div><h2 id="risk-map-title">แผนที่พื้นที่เสี่ยง</h2><p className="section-caption">ขอบเขตพื้นที่เสี่ยงจาก API ตามบริเวณที่กำลังดู</p></div><a className="risk-map-panel__link" href="/map">เปิดแผนที่พื้นที่เสี่ยง <span aria-hidden="true">→</span></a></div>
     <div className="overview-map__canvas risk-map-panel__canvas">
-      <SituationMap items={data.items} visible={riskMapVisibility} mode="SITUATION" points={{ origin: emptyPoint, destination: emptyPoint }} picking={null} onBoundsChange={onBoundsChange} onMapPoint={() => undefined} onSelect={setSelection} />
+      <SituationMap items={data.items} visible={riskMapVisibility} mode="SITUATION" points={emptyRoutePoints} picking={null} onBoundsChange={onBoundsChange} onMapPoint={noopMapPoint} onSelect={setSelection} />
       {data.loading && <p className="overview-map__status risk-map-panel__status" role="status">กำลังโหลดขอบเขตพื้นที่เสี่ยง</p>}
       {!data.loading && data.failed.length > 0 && <div className="overview-map__status overview-map__status--error risk-map-panel__status risk-map-panel__status--error" role="status">ไม่สามารถโหลดพื้นที่เสี่ยงบนแผนที่ได้ · สถานะไม่ทราบ <button type="button" onClick={() => setRetry((previous) => previous + 1)}>ลองโหลดแผนที่อีกครั้ง</button></div>}
     </div>

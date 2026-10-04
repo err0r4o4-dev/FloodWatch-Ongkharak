@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { fetchMapLayer } from "../api";
 import { layerKeys } from "../types";
 import type { LayerItems, LayerKey, LayerVisibility, MapBounds } from "../types";
@@ -16,6 +16,17 @@ const emptyItems = (): LayerItems => ({ flood: [], water: [], risk: [], roads: [
 export function useMapData(bounds: MapBounds | null, visible: LayerVisibility, retry: number): MapData {
   const [data, setData] = useState<MapData>({ items: emptyItems(), failed: [], truncated: [], loading: true, previousLayers: [] });
   const requestVersion = useRef(0);
+
+  // Memoize bounds key to prevent unnecessary re-renders
+  const boundsKey = useMemo(() => {
+    if (!bounds) return null;
+    return `${bounds.west},${bounds.south},${bounds.east},${bounds.north}`;
+  }, [bounds?.west, bounds?.south, bounds?.east, bounds?.north]);
+
+  // Memoize visibility key to prevent unnecessary re-renders
+  const visibilityKey = useMemo(() => {
+    return layerKeys.filter((key) => visible[key]).join(',');
+  }, [visible.flood, visible.water, visible.risk, visible.roads, visible.reports]);
 
   useEffect(() => {
     const version = requestVersion.current + 1;
@@ -65,7 +76,7 @@ export function useMapData(bounds: MapBounds | null, visible: LayerVisibility, r
     }, 250);
 
     return () => { window.clearTimeout(timer); controller.abort(); };
-  }, [bounds?.west, bounds?.south, bounds?.east, bounds?.north, visible.flood, visible.water, visible.risk, visible.roads, visible.reports, retry]);
+  }, [boundsKey, visibilityKey, retry]);
 
   return data;
 }

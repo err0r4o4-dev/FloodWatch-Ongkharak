@@ -88,6 +88,7 @@
   border-radius: 0.75rem;
   font-size: 1.5rem;
   font-weight: 800;
+  color: white;
   box-shadow: 
     0 2px 8px rgb(0 0 0 / 0.15),
     inset 0 1px 0 rgb(255 255 255 / 0.3);
@@ -124,6 +125,72 @@
   font-size: 0.72rem;
   line-height: 1.4;
   opacity: 0.85;
+}
+
+/* Risk level specific styles */
+.summary-metric--very-high {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  border-color: #991b1b40;
+}
+
+.summary-metric--very-high .summary-metric__icon {
+  background: linear-gradient(135deg, #fca5a5 0%, #f87171 100%);
+}
+
+.summary-metric--very-high .summary-metric__count {
+  color: #991b1b;
+}
+
+.summary-metric--high {
+  background: linear-gradient(135deg, #ffedd5 0%, #fed7aa 100%);
+  border-color: #9a341240;
+}
+
+.summary-metric--high .summary-metric__icon {
+  background: linear-gradient(135deg, #fdba74 0%, #fb923c 100%);
+}
+
+.summary-metric--high .summary-metric__count {
+  color: #9a3412;
+}
+
+.summary-metric--moderate {
+  background: linear-gradient(135deg, #fef9c3 0%, #fef08a 100%);
+  border-color: #854d0e40;
+}
+
+.summary-metric--moderate .summary-metric__icon {
+  background: linear-gradient(135deg, #fde047 0%, #facc15 100%);
+}
+
+.summary-metric--moderate .summary-metric__count {
+  color: #854d0e;
+}
+
+.summary-metric--low {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  border-color: #065f4640;
+}
+
+.summary-metric--low .summary-metric__icon {
+  background: linear-gradient(135deg, #6ee7b7 0%, #34d399 100%);
+}
+
+.summary-metric--low .summary-metric__count {
+  color: #065f46;
+}
+
+.summary-metric--unknown {
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  border-color: #47556940;
+}
+
+.summary-metric--unknown .summary-metric__icon {
+  background: linear-gradient(135deg, #cbd5e1 0%, #94a3b8 100%);
+}
+
+.summary-metric--unknown .summary-metric__count {
+  color: #475569;
 }
 
 .risk-dashboard {
