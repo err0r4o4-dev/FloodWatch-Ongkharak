@@ -41,6 +41,11 @@ function ExternalConsumer() {
   return <div>external revision {revision}</div>;
 }
 
+function AreaConsumer() {
+  const revision = useRealtimeRevision(["report-area.updated"]);
+  return <div>area revision {revision}</div>;
+}
+
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.useRealTimers();
@@ -48,6 +53,18 @@ afterEach(() => {
 });
 
 describe("public realtime subscription", () => {
+  it("accepts only identifier-only COMMUNITY report-area updates", () => {
+    vi.stubGlobal("EventSource", FakeEventSource);
+    render(<RealtimeProvider><AreaConsumer /></RealtimeProvider>);
+    const connection = FakeEventSource.connections[0];
+    const event = { eventType: "report-area.updated", eventId: "area-event-1", resourceId: "area-1", resourceType: "REPORT_AREA", payloadVersion: 1, sourceType: "COMMUNITY", payload: {} };
+    act(() => connection.send("report-area.updated", event));
+    expect(screen.getByText("area revision 1")).toBeInTheDocument();
+    act(() => connection.send("report-area.updated", { ...event, eventId: "area-event-2", sourceType: "OFFICIAL" }));
+    act(() => connection.send("report-area.updated", { ...event, eventId: "area-event-3", resourceType: "COMMUNITY_REPORT" }));
+    act(() => connection.send("report-area.updated", { ...event, eventId: "area-event-4", payload: { userId: "private" } }));
+    expect(screen.getByText("area revision 1")).toBeInTheDocument();
+  });
   it("accepts model provenance only for an external-data invalidation", () => {
     vi.stubGlobal("EventSource", FakeEventSource);
     render(<RealtimeProvider><ExternalConsumer /><Consumer /></RealtimeProvider>);

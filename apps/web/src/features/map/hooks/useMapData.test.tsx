@@ -191,6 +191,15 @@ describe("useMapData", () => {
     expect(screen.getByText(/ข้อมูลก่อนหน้า/)).toBeInTheDocument();
   });
 
+  it("shows effective area depth and trend in the keyboard list", () => {
+    const area = { id: "area-list", name: "พื้นที่รายการ", location: { type: "Point" as const, coordinates: [101.02, 14.1] as [number, number] }, radiusM: 150, sourceType: "COMMUNITY" as const, depthBand: "HIGH" as const, previousDepthBand: "MODERATE" as const, trend: "FALLING" as const, reportedTrend: "RISING" as const, freshness: "FRESH" as const, summaryReason: "SUMMARIZED" as const, latestObservedAt: new Date().toISOString(), computedAt: new Date().toISOString(), windowStart: new Date(Date.now() - 3_600_000).toISOString(), windowEnd: new Date().toISOString(), reportCount: 2, sampleCount: 2, totalReportCount: 2, reportIds: ["report-list"] };
+    render(<MapSidePanel mode="SITUATION" items={{ flood: [], water: [], risk: [], roads: [], reports: [area] }} visible={allVisible} loading={false} failed={false} failedLayers={[]} previousLayers={[]} truncated={[]} onRetry={vi.fn()} selection={null} onSelect={vi.fn()} onClose={vi.fn()} points={{ origin: { longitude: "", latitude: "" }, destination: { longitude: "", latitude: "" } }} onPointChange={vi.fn()} picking={null} onPickingChange={vi.fn()} />);
+    const item = screen.getByRole("button", { name: /พื้นที่รายการ/ });
+    expect(item).toHaveTextContent("30–50 ซม.");
+    expect(item).toHaveTextContent("ลดลง");
+    expect(item.querySelector(".badge--status-info")).toBeNull();
+  });
+
   it("keeps risk filters usable when risk results are available during another layer update", () => {
     const risk = {
       id: "risk-progressive",

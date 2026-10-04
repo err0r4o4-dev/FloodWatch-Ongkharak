@@ -1,0 +1,190 @@
+
+ RUN  v5.0.3 D:/!Project/FloodWatch-Ongkharak(Web_Application)/apps/web
+
+ ❯ src/features/weather/WeatherPanel.test.tsx (7 tests | 2 failed) 173ms
+   ❯ WeatherPanel (7)
+     × renders model weather with interval precipitation, timestamps, caveats, and attribution 29ms
+     × shows a clearly stale reading and never presents it as reassuring 8ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/features/weather/WeatherPanel.test.tsx > WeatherPanel > renders model weather with interval precipitation, timestamps, caveats, and attribution
+TestingLibraryElementError: Unable to find an element with the text: /ไม่ใช่ข้อมูลยืนยันความปลอดภัยน้ำท่วม/. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <section
+      aria-labelledby="_r_2_"
+      class="weather-panel"
+    >
+      <div
+        class="weather-panel__header"
+      >
+        <div
+          class="weather-panel__heading"
+        >
+          <div>
+            <h2
+              id="_r_2_"
+            >
+              สภาพอากาศ มศว องครักษ์
+            </h2>
+            <p>
+              มหาวิทยาลัยศรีนครินทรวิโรฒ องครักษ์ จังหวัดนครนายก
+            </p>
+          </div>
+        </div>
+        <span
+          class="weather-panel__freshness weather-panel__freshness--fresh"
+        >
+          ข้อมูลล่าสุด
+        </span>
+      </div>
+      <div
+        class="weather-panel__summary"
+      >
+        <div
+          class="weather-panel__condition"
+        >
+          <svg
+            aria-hidden="true"
+            class="weather-panel__icon"
+            fill="none"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="1.7"
+            viewBox="0 0 24 24"
+          >
+            <path
+              d="M5 15a5 5 0 1 1 2-9 6 6 0 0 1 11 3 4 4 0 0 1-1 8H5"
+            />
+            <path
+              d="M8 19l-1 2M13 19l-1 2M18 19l-1 2"
+            />
+          </svg>
+          <strong>
+            ฝนตกเล็กน้อย
+          </strong>
+          <span
+            class="weather-panel__temperature"
+          >
+            30
+            °C
+          </span>
+          <span>
+            รู้สึกเหมือน 34°C
+          </span>
+        </div>
+        <dl
+          class="weather-panel__reading-list"
+        >
+          <div
+            class="weather-panel__reading"
+          >
+            <dt>
+              ความชื้น
+            </dt>
+            <dd>
+              72
+              %
+            </dd>
+          </div>
+          <div
+            class="weather-panel__reading"
+          >
+            <dt>
+              ปริมาณฝน
+            </dt>
+            <dd>
+              1.5 มม. / 15 นาที
+            </dd>
+          </div>
+          <div
+            class="weather-panel__reading"
+          >
+            <dt>
+              ลม
+            </dt>
+            <dd>
+              ลม 12 กม./ชม. · ทิศ 180°
+            </dd>
+          </div>
+          <div
+            class="weather-panel__reading"
+          >
+            <dt>
+              กลางวัน
+            </dt>
+            <dd>
+              ฝนตกเล็กน้อย
+            </dd>
+          </div>
+        </dl>
+      </div>
+      <div
+        class="weather-panel__meta"
+      >
+        <span>
+          เวลาแบบจำลอง: 4 ต.ค. 2569 11:00
+        </span>
+        <span>
+          เวลารับข้อมูล: 4 ต.ค. 2569 11:01
+        </span>
+      </div>
+      <div
+        class="weather-panel__provider"
+      >
+        <span>
+          ผู้ให้บริการ
+          : 
+          <a
+            href="https://open-meteo.com/"
+            rel="noreferrer"
+            target="_blank"
+          >
+            Open-Meteo
+          </a>
+        </span>
+      </div>
+    </section>
+  </div>
+</body>
+ ❯ Object.getElementError ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/features/weather/WeatherPanel.test.tsx:62:19
+     60|     expect(screen.getByText("1.5 มม. / 15 นาที")).toBeInTheDocument();
+     61|     expect(screen.queryByText("แบบจำลองสภาพอากาศ ไม่ใช่สถานีตรวจวัด"))…
+     62|     expect(screen.getByText(/ไม่ใช่ข้อมูลยืนยันความปลอดภัยน้ำท่วม/)).t…
+       |                   ^
+     63|     expect(screen.getByRole("link", { name: "Open-Meteo" })).toHaveAtt…
+     64|     expect(screen.getByText(/เวลาแบบจำลอง/)).toBeInTheDocument();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/features/weather/WeatherPanel.test.tsx > WeatherPanel > shows a clearly stale reading and never presents it as reassuring
+Error: expect(element).toHaveTextContent()
+
+Expected element to have text content:
+  ไม่ใช่ข้อมูลยืนยันความปลอดภัยน้ำท่วม
+Received:
+  สภาพอากาศ มศว องครักษ์มหาวิทยาลัยศรีนครินทรวิโรฒ องครักษ์ จังหวัดนครนายกข้อมูลเก่าฝนตกเล็กน้อย30°Cรู้สึกเหมือน 34°Cความชื้น72%ปริมาณฝน1.5 มม. / 15 นาทีลมลม 12 กม./ชม. · ทิศ 180°กลางวันฝนตกเล็กน้อยข้อมูลเก่าหรือการดึงข้อมูลครั้งล่าสุดล้มเหลว จึงแสดงเป็นข้อมูลเก่าและไม่ควรใช้ยืนยันความปลอดภัยเวลาแบบจำลอง: 4 ต.ค. 2569 09:05เวลารับข้อมูล: 5 ต.ค. 2569 01:11ผู้ให้บริการ: Open-Meteoเหตุผล: ข้อมูลจากแคชเก่า
+ ❯ src/features/weather/WeatherPanel.test.tsx:75:19
+     73|     expect(panel).toHaveTextContent("ข้อมูลเก่า");
+     74|     expect(panel).toHaveTextContent("ข้อมูลจากแคชเก่า");
+     75|     expect(panel).toHaveTextContent("ไม่ใช่ข้อมูลยืนยันความปลอดภัยน้ำท…
+       |                   ^
+     76|     expect(panel).not.toHaveTextContent("ยืนยันว่าปลอดภัย");
+     77|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed | 6 passed (7)
+      Tests  2 failed | 61 passed (63)
+   Start at  01:11:06
+   Duration  3.96s (environment 55%, setup 16%, tests 14%, transform 7%, import 6%, worker 1%)
+

@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { apiConfig } from "../../shared/config/api";
 
-export const publicEventTypes = ["water_level.updated", "flood_event.created", "flood_event.updated", "road.status.changed", "report.verified", "report.updated", "alert.created", "external_data.updated"] as const;
+export const publicEventTypes = ["water_level.updated", "flood_event.created", "flood_event.updated", "road.status.changed", "report.verified", "report.updated", "report-area.updated", "alert.created", "external_data.updated"] as const;
 export type PublicEventType = typeof publicEventTypes[number];
 export type RealtimeStatus = "CONNECTED" | "RECONNECTING" | "DISCONNECTED";
 const stableConnectionDelay = 15_000;
@@ -13,6 +13,7 @@ const RealtimeContext = createContext<RealtimeState>({ status: "DISCONNECTED", r
 function isPublicEvent(value: unknown, expectedType: PublicEventType): boolean {
   if (!value || typeof value !== "object") return false;
   const event = value as Record<string, unknown>;
+  if (expectedType === "report-area.updated" && (event.sourceType !== "COMMUNITY" || event.resourceType !== "REPORT_AREA" || !event.payload || typeof event.payload !== "object" || Array.isArray(event.payload) || Object.keys(event.payload).length !== 0)) return false;
   const validSource = expectedType === "external_data.updated"
     ? event.resourceType === "EXTERNAL_DATA" && ["OFFICIAL", "MODEL"].includes(String(event.sourceType))
     : ["OFFICIAL", "COMMUNITY", "AI"].includes(String(event.sourceType));

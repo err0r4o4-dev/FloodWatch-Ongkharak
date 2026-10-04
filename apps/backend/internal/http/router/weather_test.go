@@ -31,7 +31,7 @@ func TestPublicWeatherRoute(testContext *testing.T) {
 		if err := json.Unmarshal(response.Body.Bytes(), &snapshot); err != nil {
 			testContext.Fatal(err)
 		}
-		if snapshot.Source.Kind != "MODEL" || snapshot.Location.Latitude != 14.1 || snapshot.Current == nil {
+		if snapshot.Source.Kind != "MODEL" || snapshot.Location.Latitude != 14.106458 || snapshot.Location.Longitude != 100.983765 || snapshot.Current == nil {
 			testContext.Fatalf("snapshot=%+v", snapshot)
 		}
 	}

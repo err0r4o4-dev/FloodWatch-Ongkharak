@@ -44,7 +44,7 @@ func TestOpenMeteoProviderValidation(testContext *testing.T) {
 	for _, test := range tests {
 		testContext.Run(test.name, func(testContext *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
-				if request.URL.Path != "/v1/forecast" || request.URL.Query().Get("latitude") != "14.1" || request.URL.Query().Get("timezone") != "UTC" || request.URL.Query().Get("timeformat") != "unixtime" {
+				if request.URL.Path != "/v1/forecast" || request.URL.Query().Get("latitude") != "14.106458" || request.URL.Query().Get("longitude") != "100.983765" || request.URL.Query().Get("timezone") != "UTC" || request.URL.Query().Get("timeformat") != "unixtime" {
 					testContext.Errorf("unexpected request: %s", request.URL)
 				}
 				response.WriteHeader(test.status)
@@ -128,6 +128,9 @@ func TestServiceCacheFreshnessAndRecovery(testContext *testing.T) {
 func TestServiceUnavailableAndDisabled(testContext *testing.T) {
 	for _, service := range []*Service{NewService(nil), NewService(&fakeProvider{fail: true})} {
 		result := service.Get(context.Background())
+		if result.Location != (Location{Name: "Ongkharak", Latitude: 14.106458, Longitude: 100.983765}) {
+			testContext.Fatalf("expected SWU Ongkharak reference point: %+v", result.Location)
+		}
 		if result.Freshness != "UNKNOWN" || result.Current != nil || result.RetrievedAt != nil {
 			testContext.Fatalf("unavailable: %+v", result)
 		}

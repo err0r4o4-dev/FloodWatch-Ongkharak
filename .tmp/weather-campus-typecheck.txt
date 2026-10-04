@@ -1,0 +1,4 @@
+src/app/AppShell.tsx(55,10): error TS6133: 'signingOut' is declared but its value is never read.
+src/app/AppShell.tsx(57,9): error TS6133: 'handleLogout' is declared but its value is never read.
+src/features/report-areas/presentation.test.ts(2,28): error TS2305: Module '"./presentation"' has no exported member 'effectiveReportAreaFreshness'.
+src/features/report-areas/presentation.test.ts(9,46): error TS2554: Expected 2 arguments, but got 4.

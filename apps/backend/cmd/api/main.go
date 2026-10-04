@@ -36,9 +36,11 @@ import (
 	"github.com/floodwatch-ongkharak/backend/internal/postgres/floodrepo"
 	"github.com/floodwatch-ongkharak/backend/internal/postgres/notificationrepo"
 	"github.com/floodwatch-ongkharak/backend/internal/postgres/outbox"
+	"github.com/floodwatch-ongkharak/backend/internal/postgres/reportarearepo"
 	"github.com/floodwatch-ongkharak/backend/internal/postgres/reportrepo"
 	"github.com/floodwatch-ongkharak/backend/internal/realtime"
 	"github.com/floodwatch-ongkharak/backend/internal/report"
+	"github.com/floodwatch-ongkharak/backend/internal/reportarea"
 	"github.com/floodwatch-ongkharak/backend/internal/weather"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
@@ -105,6 +107,10 @@ func run() error {
 	reportService, err := report.NewService(reportrepo.New(postgresPool), mediaStorage)
 	if err != nil {
 		return fmt.Errorf("configure report service: %w", err)
+	}
+	reportAreaService, err := reportarea.NewService(reportarearepo.New(postgresPool))
+	if err != nil {
+		return fmt.Errorf("configure report area service: %w", err)
 	}
 	alertService, err := alert.NewService(alertrepo.New(postgresPool))
 	if err != nil {
@@ -174,6 +180,7 @@ func run() error {
 			ExternalDataService:       externalService,
 			AnnouncementService:       announcementService,
 			ReportService:             reportService,
+			ReportAreaService:         reportAreaService,
 			AlertService:              alertService,
 			AdminService:              adminService,
 			AIService:                 aiService,

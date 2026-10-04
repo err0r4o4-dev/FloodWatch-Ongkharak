@@ -12,7 +12,7 @@ import (
 	"github.com/floodwatch-ongkharak/backend/internal/ingestion"
 )
 
-const forecastPath = "/v1/forecast?latitude=14.1&longitude=101.0&current=temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,weather_code,wind_speed_10m,wind_direction_10m,is_day&timezone=UTC&timeformat=unixtime&temperature_unit=celsius&wind_speed_unit=kmh&precipitation_unit=mm&forecast_days=1"
+const forecastPath = "/v1/forecast?latitude=14.106458&longitude=100.983765&current=temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,weather_code,wind_speed_10m,wind_direction_10m,is_day&timezone=UTC&timeformat=unixtime&temperature_unit=celsius&wind_speed_unit=kmh&precipitation_unit=mm&forecast_days=1"
 
 var errInvalidWeather = errors.New("weather provider response is unavailable or invalid")
 

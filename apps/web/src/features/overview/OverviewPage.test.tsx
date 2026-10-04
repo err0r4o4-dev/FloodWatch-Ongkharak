@@ -86,7 +86,7 @@ describe("OverviewPage", () => {
     render(<AppShell><OverviewPage /></AppShell>);
 
     expect(await screen.findByText("1")).toBeInTheDocument();
-    expect(screen.getByRole("region", { name: "สภาพอากาศองครักษ์" })).toHaveTextContent("ไม่สามารถโหลดข้อมูลสภาพอากาศได้");
+    expect(screen.getByRole("region", { name: "สภาพอากาศ มศว องครักษ์" })).toHaveTextContent("ไม่สามารถโหลดข้อมูลสภาพอากาศได้");
     expect(request.mock.calls.filter(([url]) => url === "/api/v1/weather/ongkharak")).toHaveLength(1);
     expect(screen.queryByRole("region", { name: "เหตุการณ์น้ำที่รายงาน" })).not.toBeInTheDocument();
   });

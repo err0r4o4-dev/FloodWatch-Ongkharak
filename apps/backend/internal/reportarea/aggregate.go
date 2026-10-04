@@ -84,7 +84,12 @@ func BuildRefresh(anchors []Anchor, reports []SourceReport, now time.Time) Refre
 	now = now.UTC()
 	orderedAnchors := append([]Anchor(nil), anchors...)
 	sort.Slice(orderedAnchors, func(i, j int) bool { return orderedAnchors[i].ID < orderedAnchors[j].ID })
-	orderedReports := append([]SourceReport(nil), reports...)
+	orderedReports := make([]SourceReport, 0, len(reports))
+	for _, item := range reports {
+		if item.Published {
+			orderedReports = append(orderedReports, item)
+		}
+	}
 	sort.SliceStable(orderedReports, func(i, j int) bool {
 		if orderedReports[i].CreatedAt.Equal(orderedReports[j].CreatedAt) {
 			return orderedReports[i].ID < orderedReports[j].ID
@@ -116,11 +121,12 @@ func BuildRefresh(anchors []Anchor, reports []SourceReport, now time.Time) Refre
 		for _, id := range areas[index].MemberIDs {
 			members[id] = struct{}{}
 		}
-		for _, item := range reports {
+		for _, item := range orderedReports {
 			if _, ok := members[item.ID]; ok {
 				areaReports = append(areaReports, item)
 			}
 		}
+		areas[index].Anchor.Name = refreshAreaName(areaReports)
 		areas[index] = buildRefreshArea(areas[index], areaReports, now)
 	}
 	return RefreshPlan{Areas: areas}
@@ -136,10 +142,7 @@ func buildRefreshArea(area RefreshArea, reports []SourceReport, now time.Time) R
 		end := now.Add(-time.Duration(index) * WindowDuration)
 		summary := aggregateWindow(reports, start, end)
 		summary.Trend = compareDepth(previous.DepthBand, summary.DepthBand)
-		if summary.Trend == TrendUnknown {
-			summary.Trend = TrendUnknown
-		}
-		timeline = append(timeline, TimelineWindow{Start: start, End: end, DepthBand: summary.DepthBand, PreviousDepthBand: previous.DepthBand, Trend: summary.Trend, ReportedTrend: summary.ReportedTrend, Freshness: freshnessFor(summary.LatestObserved, now), SummaryReason: summary.SummaryReason, LatestObservedAt: summary.LatestObserved, ReportCount: summary.ReportCount, SampleCount: summary.SampleCount, EvidenceIDs: append([]string{}, summary.EvidenceIDs...)})
+		timeline = append(timeline, TimelineWindow{Start: start, End: end, ComputedAt: now, DepthBand: summary.DepthBand, PreviousDepthBand: previous.DepthBand, Trend: summary.Trend, ReportedTrend: summary.ReportedTrend, Freshness: freshnessFor(summary.LatestObserved, end), SummaryReason: summary.SummaryReason, LatestObservedAt: summary.LatestObserved, ReportCount: summary.ReportCount, SampleCount: summary.SampleCount, EvidenceIDs: append([]string{}, summary.EvidenceIDs...)})
 		previous = summary
 		if index == 0 {
 			current = summary
@@ -178,42 +181,75 @@ func geographyDistanceM(lon1, lat1, lon2, lat2 float64) float64 {
 }
 
 func deduplicate(reports []SourceReport) []SourceReport {
+	latestByUser := make(map[string]SourceReport)
+	guests := make([]SourceReport, 0, len(reports))
+	for _, item := range reports {
+		if item.UserID == "" {
+			guests = append(guests, item)
+			continue
+		}
+		current, ok := latestByUser[item.UserID]
+		if !ok || newer(item, current) {
+			latestByUser[item.UserID] = item
+		}
+	}
+	candidates := make([]SourceReport, 0, len(latestByUser)+len(guests))
+	for _, item := range latestByUser {
+		candidates = append(candidates, item)
+	}
+	candidates = append(candidates, guests...)
+	sort.SliceStable(candidates, func(i, j int) bool {
+		return newer(candidates[j], candidates[i])
+	})
+
 	type group struct {
-		item SourceReport
-		keys []string
+		parent int
+		item   SourceReport
 	}
 	groups := make([]group, 0, len(reports))
 	keyToGroup := make(map[string]int)
-	for _, item := range reports {
-		if item.UserID != "" {
-			key := "user:" + item.UserID
-			if index, ok := keyToGroup[key]; ok {
-				if newer(item, groups[index].item) {
-					groups[index].item = item
-				}
-				continue
-			}
-			keyToGroup[key] = len(groups)
-			groups = append(groups, group{item: item, keys: []string{key}})
-			continue
+	find := func(index int) int {
+		for groups[index].parent != index {
+			groups[index].parent = groups[groups[index].parent].parent
+			index = groups[index].parent
 		}
+		return index
+	}
+	union := func(left, right int) int {
+		left = find(left)
+		right = find(right)
+		if left == right {
+			return left
+		}
+		if right < left {
+			left, right = right, left
+		}
+		groups[right].parent = left
+		if newer(groups[right].item, groups[left].item) {
+			groups[left].item = groups[right].item
+		}
+		return left
+	}
+	for _, item := range candidates {
 		keys := []string{"content:" + canonicalContentKey(item)}
+		if item.UserID != "" {
+			keys = append(keys, "user:"+item.UserID)
+		}
 		for _, hash := range item.MediaHashes {
 			if strings.TrimSpace(hash) != "" {
 				keys = append(keys, "sha:"+strings.ToLower(strings.TrimSpace(hash)))
 			}
 		}
-		groupIndex := -1
+		groupIndex := len(groups)
+		groups = append(groups, group{parent: groupIndex, item: item})
 		for _, key := range keys {
 			if index, ok := keyToGroup[key]; ok {
-				groupIndex = index
-				break
+				groupIndex = union(groupIndex, index)
 			}
+			keyToGroup[key] = groupIndex
 		}
-		if groupIndex < 0 {
-			groupIndex = len(groups)
-			groups = append(groups, group{item: item, keys: keys})
-		} else if newer(item, groups[groupIndex].item) {
+		groupIndex = find(groupIndex)
+		if newer(item, groups[groupIndex].item) {
 			groups[groupIndex].item = item
 		}
 		for _, key := range keys {
@@ -221,8 +257,10 @@ func deduplicate(reports []SourceReport) []SourceReport {
 		}
 	}
 	result := make([]SourceReport, 0, len(groups))
-	for _, item := range groups {
-		result = append(result, item.item)
+	for index, item := range groups {
+		if find(index) == index {
+			result = append(result, item.item)
+		}
 	}
 	sort.Slice(result, func(i, j int) bool { return newer(result[i], result[j]) })
 	return result
@@ -233,11 +271,7 @@ func canonicalContentKey(item SourceReport) string {
 	if item.DepthM != nil {
 		depth = strconv.FormatFloat(*item.DepthM, 'f', -1, 64)
 	}
-	observed := ""
-	if item.ObservedAt != nil {
-		observed = item.ObservedAt.UTC().Format(time.RFC3339Nano)
-	}
-	raw := fmt.Sprintf("%s|%s|%.7f|%.7f|%s|%s|%s", item.Type, item.Description, item.Longitude, item.Latitude, depth, observed, item.WaterTrend)
+	raw := fmt.Sprintf("%s|%s|%.7f|%.7f|%s|%s", item.Type, item.Description, item.Longitude, item.Latitude, depth, item.WaterTrend)
 	hash := sha256.Sum256([]byte(raw))
 	return hex.EncodeToString(hash[:])
 }
@@ -283,6 +317,9 @@ func sumCounts[T comparable](counts map[T]int) int {
 }
 
 func depthBand(depth float64) DepthBand {
+	if math.IsNaN(depth) || math.IsInf(depth, 0) || depth < 0 {
+		return DepthBandUnknown
+	}
 	switch {
 	case depth > 0.5:
 		return DepthBandVeryHigh
@@ -337,7 +374,7 @@ func freshnessFor(latest *time.Time, now time.Time) Freshness {
 func latestObserved(reports []SourceReport) *time.Time {
 	var latest *time.Time
 	for _, item := range reports {
-		if !item.Published || item.ObservedAt == nil {
+		if !item.Published || !waterRelevant(item.Type) || item.ObservedAt == nil {
 			continue
 		}
 		if latest == nil || item.ObservedAt.After(*latest) {
@@ -379,3 +416,12 @@ func newer(left, right SourceReport) bool {
 }
 
 func waterRelevant(value string) bool { return value == "FLOOD" || value == "ROAD" }
+
+func refreshAreaName(reports []SourceReport) string {
+	for _, item := range reports {
+		if name := strings.TrimSpace(item.LocationName); name != "" {
+			return name
+		}
+	}
+	return "Community report area"
+}

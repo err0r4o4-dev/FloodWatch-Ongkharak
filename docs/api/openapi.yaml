@@ -148,12 +148,12 @@ paths:
     get:
       tags: [Weather]
       operationId: getOngkharakWeather
-      summary: Read model-based weather at the Ongkharak reference point
+      summary: Read model-based weather at the SWU Ongkharak campus reference point
       description: |
         Public, fixed-location Open-Meteo model weather, not a station observation,
         OFFICIAL flood evidence, or a flood-safety decision. No provider URL or location
-        override is accepted. Reference coordinates are 14.1 N, 101.0 E, matching the
-        map center; this is not a district-wide measurement. The API fetches on demand,
+        override is accepted. Reference coordinates are 14.106458 N, 100.983765 E at
+        SWU Ongkharak campus; this is not a district-wide measurement. The API fetches on demand,
         caches successful responses for 10 minutes per process, coalesces concurrent
         requests, and backs off for one minute after failure. Observations over one
         hour old or retained during an upstream outage are STALE; cached evidence over
@@ -1053,6 +1053,10 @@ paths:
         `report.updated` signals creation, edits, image changes, removal and restoration;
         refetch canonical REST. It carries only the report ID, never review reasons or
         removed content. `report.verified` remains the additional review signal.
+        `report-area.updated` invalidates a community area summary or membership;
+        its resource is REPORT_AREA with COMMUNITY provenance and an empty object
+        payload. Read the canonical area and timeline rather than treating the
+        notification as water evidence.
       parameters:
         - { name: Last-Event-ID, in: header, schema: { type: string, pattern: '^[0-9]+-[0-9]+$' } }
         - { name: cursor, in: query, schema: { type: string, pattern: '^[0-9]+-[0-9]+$' } }
@@ -2978,7 +2982,7 @@ components:
         windowEnd: { type: string, format: date-time }
         reportCount: { type: integer, minimum: 0, description: Recent reports with known observation time before deduplication. }
         sampleCount: { type: integer, minimum: 0, description: Deduplicated depth measurements, not verified independent people. }
-        reportIds: { type: array, uniqueItems: true, items: { type: string, format: uuid }, description: Public evidence lineage; excludes removed reports. }
+        reportIds: { type: array, uniqueItems: true, items: { type: string, format: uuid }, description: Published depth-sample lineage for this window; excludes removed reports and depthless reporter-stated trend contributions. }
     ReportArea:
       allOf:
         - { $ref: '#/components/schemas/ReportAreaWindow' }
@@ -3562,8 +3566,8 @@ components:
           required: [name, latitude, longitude]
           properties:
             name: {type: string, const: Ongkharak}
-            latitude: {type: number, const: 14.1}
-            longitude: {type: number, const: 101}
+            latitude: {type: number, const: 14.106458}
+            longitude: {type: number, const: 100.983765}
         source:
           type: object
           additionalProperties: false

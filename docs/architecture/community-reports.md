@@ -1,5 +1,7 @@
 # Community reports (Phase 6)
 
+Community map aggregation now has a separate area-summary boundary. See `report-areas.md` for observed-time input, recent water-depth bands, adjacent-window trends, retained originals, and migration 22/23 deployment order. The summary does not change publication, moderation, ownership, official provenance, or road safety.
+
 The approved October 4, 2026 Guest flow adds anonymous creation with a submitted display-name snapshot and a 15-minute report-scoped upload capability. The display name does not prove identity or ownership. The subsequently approved post-moderation flow publishes valid submissions automatically and lets ADMIN review or remove them afterward. Historical account-owned records and their protected interfaces below remain compatible. Migration 18 is documented in `guest-public-flow.md`; post-moderation requires migration 21.
 
 Community reports are user-submitted evidence, not official flood or road classifications. Their `sourceType` is always `COMMUNITY`, including after ADMIN verification. Publication and factual review are separate: `publicationStatus` is `PUBLISHED` for `PENDING` (unreviewed) and `VERIFIED` (reviewed), and `REMOVED` for `REJECTED`. Review never certifies roads as passable or areas as safe. An empty public list is not `SAFE`. `createdAt` is submission time, not an independently verified observation time. Older submissions remain visibly old rather than evidence of current safety.

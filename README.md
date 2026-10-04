@@ -2,7 +2,7 @@
 
 ระบบติดตามและแจ้งเตือนสถานการณ์น้ำ อำเภอองครักษ์ จังหวัดนครนายก
 
-Phase 3 adds a provider-neutral water ingestion worker, persistent run/source health tracking, and an opt-in synthetic fixture adapter to the canonical PostGIS flood domain. **No real external water provider is integrated and this is not a live flood-warning service.** A separate Open-Meteo model-weather panel for the Ongkharak reference point is available; it is not a local station reading or flood-safety evidence. Unavailable conditions must never be presented as safe. See `docs/architecture/weather.md` for configuration, attribution and non-commercial use limits.
+Phase 3 adds a provider-neutral water ingestion worker, persistent run/source health tracking, and an opt-in synthetic fixture adapter to the canonical PostGIS flood domain. **No real external water provider is integrated and this is not a live flood-warning service.** A separate Open-Meteo model-weather panel for the Srinakharinwirot University Ongkharak campus reference point is available; it is not a local station reading or flood-safety evidence. Unavailable conditions must never be presented as safe. See `docs/architecture/weather.md` for configuration, attribution and non-commercial use limits.
 
 ## Layout
 

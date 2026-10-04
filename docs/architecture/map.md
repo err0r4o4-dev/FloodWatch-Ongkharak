@@ -6,7 +6,7 @@ The map displays OpenStreetMap standard tiles as an external basemap with attrib
 
 `ROUTE` mode accepts manually entered WGS84 points or map clicks and labels those user-selected points, but draws no route line and calculates no path. Its panel lists road conditions and flood events in the current viewport only; it does not claim spatial intersection with a proposed route or recommend safe travel. A routing engine/API and intersection-aware route evaluation remain unimplemented. CCTV, safe areas, and administrative boundaries have no public map APIs and therefore no fabricated layer data. Separate layer components leave room for later clustering without an added dependency now.
 
-Phase 6 adds a separate verified `COMMUNITY` report feed and an optional map layer. It never inherits `OFFICIAL` styling or changes route evaluation. The public endpoint excludes pending and rejected reports. See `community-reports.md` for review and publication policy.
+Community evidence remains a separate optional map layer and never inherits `OFFICIAL` provenance or changes route evaluation. Under the post-moderation policy, public originals include published pending and verified reports and exclude rejected reports. The situation map now consumes server-derived report areas with depth and trend summaries, not viewport-local aggregation of paginated originals. See `community-reports.md` for publication policy and `report-areas.md` for observation freshness, aggregation, and deployment requirements.
 
 ## Shared location and report-map navigation (2026-10-04)
 

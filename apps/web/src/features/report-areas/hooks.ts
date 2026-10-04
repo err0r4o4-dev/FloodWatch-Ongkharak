@@ -7,6 +7,12 @@ export type ReportAreaReportsState = { state: "loading" | "ready" | "error"; ite
 
 export function useReportAreaDetail(areaId: string | null, revision: number): ReportAreaDetailState {
   const [result, setResult] = useState<ReportAreaDetailState>({ state: "loading", area: null, timeline: [] });
+  const [pollRevision, setPollRevision] = useState(0);
+  useEffect(() => {
+    if (!areaId) return;
+    const timer = window.setInterval(() => setPollRevision((current) => current + 1), 60_000);
+    return () => window.clearInterval(timer);
+  }, [areaId]);
   useEffect(() => {
     if (!areaId) return;
     const controller = new AbortController();
@@ -15,7 +21,7 @@ export function useReportAreaDetail(areaId: string | null, revision: number): Re
       if (!controller.signal.aborted) setResult({ state: "ready", area: detail.area, timeline: detail.timeline });
     }).catch(() => { if (!controller.signal.aborted) setResult({ state: "error", area: null, timeline: [] }); });
     return () => controller.abort();
-  }, [areaId, revision]);
+  }, [areaId, revision, pollRevision]);
   return result;
 }
 
@@ -23,6 +29,7 @@ const initialReports: ReportAreaReportsState = { state: "loading", items: [], ha
 
 export function useReportAreaReports(areaId: string | null, revision: number) {
   const [result, setResult] = useState<ReportAreaReportsState>(initialReports);
+  const [pollRevision, setPollRevision] = useState(0);
   const requestVersion = useRef(0);
   const controllerRef = useRef<AbortController | null>(null);
   const offsetRef = useRef(0);
@@ -42,11 +49,16 @@ export function useReportAreaReports(areaId: string | null, revision: number) {
     });
   }, [areaId]);
   useEffect(() => {
+    if (!areaId) return;
+    const timer = window.setInterval(() => setPollRevision((current) => current + 1), 60_000);
+    return () => window.clearInterval(timer);
+  }, [areaId]);
+  useEffect(() => {
     offsetRef.current = 0;
     setResult(initialReports);
     load(0, false);
     return () => { requestVersion.current += 1; controllerRef.current?.abort(); };
-  }, [load, revision]);
+  }, [load, revision, pollRevision]);
   const loadMore = useCallback(() => load(offsetRef.current, true), [load]);
   return { ...result, loadMore };
 }

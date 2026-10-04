@@ -96,5 +96,5 @@ func (service *Service) snapshot() Snapshot {
 }
 
 func unavailable(reason string) Snapshot {
-	return Snapshot{Location: Location{Name: "Ongkharak", Latitude: 14.1, Longitude: 101}, Source: Source{Name: "Open-Meteo", URL: "https://open-meteo.com/", Kind: "MODEL"}, Freshness: "UNKNOWN", Reason: &reason}
+	return Snapshot{Location: Location{Name: "Ongkharak", Latitude: 14.106458, Longitude: 100.983765}, Source: Source{Name: "Open-Meteo", URL: "https://open-meteo.com/", Kind: "MODEL"}, Freshness: "UNKNOWN", Reason: &reason}
 }

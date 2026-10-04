@@ -67,24 +67,53 @@ func (handler *ReportAreaHandler) Reports(response http.ResponseWriter, request 
 	if !ok {
 		return
 	}
-	ids, err := handler.areas.ListReportIDs(request.Context(), chi.URLParam(request, "id"), page)
+	areaID := chi.URLParam(request, "id")
+	items, err := handler.stablePublicReports(request.Context(), areaID, page)
 	if err != nil {
 		writeReportAreaError(response, err)
 		return
 	}
-	items := make([]any, 0, len(ids))
-	for _, id := range ids {
-		item, err := handler.reports.GetPublic(request.Context(), id)
-		if errors.Is(err, report.ErrNotFound) {
-			continue
-		}
-		if err != nil {
-			writeReportAreaError(response, err)
-			return
-		}
-		items = append(items, reportPayload(item, false))
-	}
 	writeJSON(response, http.StatusOK, map[string]any{"items": items, "limit": page.Limit, "offset": page.Offset})
+}
+
+func (handler *ReportAreaHandler) stablePublicReports(ctx context.Context, areaID string, page report.Page) ([]any, error) {
+	for attempt := 0; attempt < 2; attempt++ {
+		ids, err := handler.areas.ListReportIDs(ctx, areaID, page)
+		if err != nil {
+			return nil, err
+		}
+		items := make([]any, 0, len(ids))
+		for _, id := range ids {
+			item, err := handler.reports.GetPublic(ctx, id)
+			if errors.Is(err, report.ErrNotFound) {
+				continue
+			}
+			if err != nil {
+				return nil, err
+			}
+			items = append(items, reportPayload(item, false))
+		}
+		current, err := handler.areas.ListReportIDs(ctx, areaID, page)
+		if err != nil {
+			return nil, err
+		}
+		if sameReportIDs(ids, current) {
+			return items, nil
+		}
+	}
+	return []any{}, nil
+}
+
+func sameReportIDs(left, right []string) bool {
+	if len(left) != len(right) {
+		return false
+	}
+	for index := range left {
+		if left[index] != right[index] {
+			return false
+		}
+	}
+	return true
 }
 
 func parseReportAreaFilter(response http.ResponseWriter, request *http.Request) (reportarea.ListFilter, bool) {

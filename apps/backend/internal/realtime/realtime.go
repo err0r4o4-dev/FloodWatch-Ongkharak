@@ -31,7 +31,7 @@ const (
 	EventRoadStatusChanged   EventType = "road.status.changed"
 	EventReportVerified      EventType = "report.verified"
 	EventReportUpdated       EventType = "report.updated"
-	EventReportAreaUpdated EventType = "report-area.updated"
+	EventReportAreaUpdated   EventType = "report-area.updated"
 	EventAlertCreated        EventType = "alert.created"
 	EventExternalDataUpdated EventType = "external_data.updated"
 )
@@ -52,7 +52,7 @@ const (
 	ResourceFloodEvent      ResourceType = "FLOOD_EVENT"
 	ResourceRoad            ResourceType = "ROAD"
 	ResourceCommunityReport ResourceType = "COMMUNITY_REPORT"
-	ResourceReportArea ResourceType = "REPORT_AREA"
+	ResourceReportArea      ResourceType = "REPORT_AREA"
 	ResourceAlert           ResourceType = "ALERT"
 	ResourceExternalData    ResourceType = "EXTERNAL_DATA"
 )

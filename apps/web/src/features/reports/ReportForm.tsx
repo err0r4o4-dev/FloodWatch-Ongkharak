@@ -198,16 +198,16 @@ export function ReportForm({ editing, initialLocation = null, initialLocationNam
         <p id="report-place-hint" className="report-field-hint">{t("form.locationHint")}</p>
       </div>
       <div className="report-place-fields">
-        <label>{t("form.observedAt")}<select value={observedChoice} aria-describedby="report-observation-hint" onChange={(event) => setObservedChoice(event.target.value as ObservationChoice)}>
+        <div className="report-field"><label htmlFor="report-observed-choice">{t("form.observedAt")}</label><select id="report-observed-choice" value={observedChoice} aria-describedby="report-observation-hint" onChange={(event) => setObservedChoice(event.target.value as ObservationChoice)}>
           <option value="now">{t("form.observedNow")}</option>
           <option value="custom">{t("form.observedCustom")}</option>
           {!editing?.observedAt && <option value="unknown">{t("form.observedUnknown")}</option>}
-        </select></label>
+        </select></div>
         {observedChoice === "custom" && <label>{t("form.observedCustomLabel")}<input type="datetime-local" required value={observedTime} onChange={(event) => setObservedTime(event.target.value)} /></label>}
         <p id="report-observation-hint" className="report-field-hint">{t("form.observedHint")}</p>
-        <label>{t("form.waterTrend")}<select value={waterTrend} aria-describedby="report-trend-hint" onChange={(event) => setWaterTrend(event.target.value as WaterTrend)}>
+        <div className="report-field"><label htmlFor="report-water-trend">{t("form.waterTrend")}</label><select id="report-water-trend" value={waterTrend} aria-describedby="report-trend-hint" onChange={(event) => setWaterTrend(event.target.value as WaterTrend)}>
           {["UNKNOWN", "RISING", "STABLE", "FALLING"].map((trend) => <option key={trend} value={trend}>{t(`trend.${trend as WaterTrend}`)}</option>)}
-        </select></label>
+        </select></div>
         <p id="report-trend-hint" className="report-field-hint">{t("form.waterTrendHint")}</p>
       </div>
       <fieldset className="report-depth-picker" aria-describedby="report-depth-hint">

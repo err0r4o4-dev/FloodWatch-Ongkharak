@@ -1,6 +1,7 @@
 package reportarea
 
 import (
+	"math"
 	"testing"
 	"time"
 )
@@ -49,6 +50,46 @@ func TestAggregateWindowExcludesLegacyAndFutureObservationsFromCurrentEvidence(t
 	}
 }
 
+func TestBuildRefreshIgnoresOtherReportsForCurrentWaterFreshness(t *testing.T) {
+	now := time.Date(2026, 10, 5, 12, 0, 0, 0, time.UTC)
+	depth := 0.2
+	observed := now.Add(-2 * time.Hour)
+	plan := BuildRefresh(nil, []SourceReport{{ID: "other", Type: "OTHER", LocationName: "Other point", Longitude: 101, Latitude: 14, ObservedAt: timePtr(now.Add(-5 * time.Minute)), Published: true}, {ID: "water", Type: "FLOOD", Longitude: 101, Latitude: 14, DepthM: &depth, ObservedAt: &observed, Published: true}}, now)
+	if len(plan.Areas) != 1 {
+		t.Fatalf("areas = %d, want one area", len(plan.Areas))
+	}
+	area := plan.Areas[0].Area
+	if area.Freshness != FreshnessStale || area.LatestObservedAt == nil || !area.LatestObservedAt.Equal(observed) {
+		t.Fatalf("area freshness = %+v, want stale water observation only", area)
+	}
+}
+
+func TestAggregateWindowRejectsInvalidDepthAsUnknown(t *testing.T) {
+	now := time.Date(2026, 10, 5, 12, 0, 0, 0, time.UTC)
+	for _, value := range []float64{-0.1, math.NaN(), math.Inf(1)} {
+		got := aggregateWindow([]SourceReport{{ID: "invalid", Type: "FLOOD", DepthM: &value, ObservedAt: timePtr(now.Add(-5 * time.Minute)), Published: true}}, now.Add(-time.Hour), now)
+		if got.DepthBand != DepthBandUnknown || got.SummaryReason != SummaryProvisional {
+			t.Fatalf("depth %v summary = %+v, want UNKNOWN/PROVISIONAL", value, got)
+		}
+	}
+}
+
+func TestAggregateWindowDropsSupersededUserMediaBeforeCrossSourceDedup(t *testing.T) {
+	now := time.Date(2026, 10, 5, 12, 0, 0, 0, time.UTC)
+	oldDepth := 0.8
+	currentDepth := 0.2
+	reports := []SourceReport{
+		{ID: "user-a-old", UserID: "user-a", Type: "FLOOD", Description: "old", DepthM: &oldDepth, MediaHashes: []string{"shared"}, ObservedAt: timePtr(now.Add(-50 * time.Minute)), Published: true},
+		{ID: "user-a-current", UserID: "user-a", Type: "FLOOD", Description: "current", DepthM: &currentDepth, ObservedAt: timePtr(now.Add(-20 * time.Minute)), Published: true},
+		{ID: "user-b-current", UserID: "user-b", Type: "FLOOD", Description: "independent", DepthM: &oldDepth, MediaHashes: []string{"shared"}, ObservedAt: timePtr(now.Add(-10 * time.Minute)), Published: true},
+	}
+
+	got := aggregateWindow(reports, now.Add(-time.Hour), now)
+	if got.SampleCount != 2 || len(got.EvidenceIDs) != 2 {
+		t.Fatalf("summary = %+v, want current user-a and user-b samples", got)
+	}
+}
+
 func TestAggregateWindowReducesGuestReportsSharingMediaHash(t *testing.T) {
 	now := time.Date(2026, 10, 5, 12, 0, 0, 0, time.UTC)
 	depth := 0.4
@@ -60,6 +101,49 @@ func TestAggregateWindowReducesGuestReportsSharingMediaHash(t *testing.T) {
 	got := aggregateWindow(reports, now.Add(-time.Hour), now)
 	if got.SampleCount != 1 || len(got.EvidenceIDs) != 1 || got.EvidenceIDs[0] != "guest-image-new" {
 		t.Fatalf("summary = %+v, want one latest shared-image guest sample", got)
+	}
+}
+
+func TestAggregateWindowReducesRepeatedGuestContentAcrossObservedTimes(t *testing.T) {
+	now := time.Date(2026, 10, 5, 12, 0, 0, 0, time.UTC)
+	depth := 0.2
+	reports := []SourceReport{
+		{ID: "guest-content-old", Type: "FLOOD", Description: "same content", Longitude: 101, Latitude: 14, DepthM: &depth, ObservedAt: timePtr(now.Add(-30 * time.Minute)), UpdatedAt: now.Add(-25 * time.Minute), Published: true},
+		{ID: "guest-content-new", Type: "FLOOD", Description: "same content", Longitude: 101, Latitude: 14, DepthM: &depth, ObservedAt: timePtr(now.Add(-10 * time.Minute)), UpdatedAt: now.Add(-5 * time.Minute), Published: true},
+	}
+
+	got := aggregateWindow(reports, now.Add(-time.Hour), now)
+	if got.SampleCount != 1 || len(got.EvidenceIDs) != 1 || got.EvidenceIDs[0] != "guest-content-new" {
+		t.Fatalf("summary = %+v, want one latest repeated-content sample", got)
+	}
+}
+
+func TestAggregateWindowReducesSharedMediaAcrossAuthenticatedAndGuestReports(t *testing.T) {
+	now := time.Date(2026, 10, 5, 12, 0, 0, 0, time.UTC)
+	depth := 0.4
+	reports := []SourceReport{
+		{ID: "authenticated-image", UserID: "user-1", Type: "FLOOD", Description: "authenticated", DepthM: &depth, MediaHashes: []string{"shared"}, ObservedAt: timePtr(now.Add(-30 * time.Minute)), Published: true},
+		{ID: "guest-image", Type: "FLOOD", Description: "guest", DepthM: &depth, MediaHashes: []string{"SHARED"}, ObservedAt: timePtr(now.Add(-10 * time.Minute)), Published: true},
+	}
+
+	got := aggregateWindow(reports, now.Add(-time.Hour), now)
+	if got.SampleCount != 1 || len(got.EvidenceIDs) != 1 || got.EvidenceIDs[0] != "guest-image" {
+		t.Fatalf("summary = %+v, want one latest shared-media sample", got)
+	}
+}
+
+func TestAggregateWindowMergesOverlappingContentAndMediaKeys(t *testing.T) {
+	now := time.Date(2026, 10, 5, 12, 0, 0, 0, time.UTC)
+	depth := 0.2
+	reports := []SourceReport{
+		{ID: "chain-a", Type: "FLOOD", Description: "a", DepthM: &depth, MediaHashes: []string{"image-a"}, ObservedAt: timePtr(now.Add(-50 * time.Minute)), Published: true},
+		{ID: "chain-b", Type: "FLOOD", Description: "b", DepthM: &depth, MediaHashes: []string{"image-a", "image-b"}, ObservedAt: timePtr(now.Add(-40 * time.Minute)), Published: true},
+		{ID: "chain-c", Type: "FLOOD", Description: "c", DepthM: &depth, MediaHashes: []string{"image-b"}, ObservedAt: timePtr(now.Add(-30 * time.Minute)), Published: true},
+	}
+
+	got := aggregateWindow(reports, now.Add(-time.Hour), now)
+	if got.SampleCount != 1 || len(got.EvidenceIDs) != 1 || got.EvidenceIDs[0] != "chain-c" {
+		t.Fatalf("summary = %+v, want one latest transitive duplicate", got)
 	}
 }
 
@@ -118,6 +202,37 @@ func TestBuildRefreshDoesNotUseTransitiveAnchorMembership(t *testing.T) {
 	}
 	if len(plan.Areas[0].MemberIDs) != 2 || len(plan.Areas[1].MemberIDs) != 1 || plan.Areas[1].MemberIDs[0] != "chain-end" {
 		t.Fatalf("memberships = %#v, want first/middle and separate chain-end", plan.Areas)
+	}
+}
+
+func TestBuildRefreshKeepsHistoricalWindowDepthFresh(t *testing.T) {
+	now := time.Date(2026, 10, 5, 12, 0, 0, 0, time.UTC)
+	depth := 0.4
+	observed := now.Add(-2*time.Hour - 30*time.Minute)
+	plan := BuildRefresh(nil, []SourceReport{{ID: "historical", Type: "FLOOD", LocationName: "Historical point", Longitude: 101, Latitude: 14, DepthM: &depth, ObservedAt: &observed, CreatedAt: observed, Published: true}}, now)
+	if len(plan.Areas) != 1 {
+		t.Fatalf("areas = %d, want one area", len(plan.Areas))
+	}
+	for _, window := range plan.Areas[0].Timeline {
+		if window.LatestObservedAt != nil {
+			if window.DepthBand != DepthBandHigh || window.Freshness != FreshnessFresh {
+				t.Fatalf("historical window = %+v, want retained HIGH/FRESH snapshot", window)
+			}
+			return
+		}
+	}
+	t.Fatal("historical observation was not included in timeline")
+}
+
+func TestBuildRefreshDoesNotRetainUnpublishedAnchorNameOrCreateArea(t *testing.T) {
+	now := time.Date(2026, 10, 5, 12, 0, 0, 0, time.UTC)
+	plan := BuildRefresh([]Anchor{{ID: "existing", Name: "Removed location", Longitude: 101, Latitude: 14}}, []SourceReport{{ID: "rejected", Type: "FLOOD", LocationName: "Rejected location", Longitude: 101, Latitude: 14, CreatedAt: now, Published: false}}, now)
+	if len(plan.Areas) != 1 {
+		t.Fatalf("areas = %d, want existing empty area only", len(plan.Areas))
+	}
+	area := plan.Areas[0]
+	if area.Anchor.Name != "Community report area" || area.Area.Name != "Community report area" || len(area.MemberIDs) != 0 || area.Area.TotalReportCount != 0 {
+		t.Fatalf("area = %+v, want generic empty area without unpublished member", area)
 	}
 }
 

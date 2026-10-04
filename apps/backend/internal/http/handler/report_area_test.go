@@ -28,13 +28,16 @@ func TestReportAreaDetailReturnsAreaAndTimeline(t *testing.T) {
 		ID: "11111111-1111-4111-8111-111111111111", Name: "Community report area", Location: reportarea.Location{Type: "Point", Coordinates: []float64{101, 14}}, RadiusM: 150,
 		SourceType: reportarea.SourceCommunity, DepthBand: reportarea.DepthBandUnknown, PreviousDepthBand: reportarea.DepthBandUnknown, Trend: reportarea.TrendUnknown, ReportedTrend: reportarea.TrendFalling,
 		Freshness: reportarea.FreshnessFresh, SummaryReason: reportarea.SummaryProvisional, LatestObservedAt: timePointer(time.Date(2026, 10, 5, 11, 50, 0, 0, time.UTC)), ComputedAt: time.Date(2026, 10, 5, 12, 0, 0, 0, time.UTC), WindowStart: time.Date(2026, 10, 5, 11, 0, 0, 0, time.UTC), WindowEnd: time.Date(2026, 10, 5, 12, 0, 0, 0, time.UTC), ReportCount: 1, SampleCount: 1, TotalReportCount: 1, ReportIDs: []string{"22222222-2222-4222-8222-222222222222"},
-	}, Timeline: []reportarea.TimelineWindow{{Start: time.Date(2026, 10, 5, 11, 0, 0, 0, time.UTC), End: time.Date(2026, 10, 5, 12, 0, 0, 0, time.UTC), DepthBand: reportarea.DepthBandUnknown, PreviousDepthBand: reportarea.DepthBandUnknown, Trend: reportarea.TrendUnknown, ReportedTrend: reportarea.TrendFalling, Freshness: reportarea.FreshnessFresh, SummaryReason: reportarea.SummaryProvisional, ReportCount: 1, SampleCount: 1, EvidenceIDs: []string{"22222222-2222-4222-8222-222222222222"}}}}}
+	}, Timeline: []reportarea.TimelineWindow{{Start: time.Date(2026, 10, 5, 11, 0, 0, 0, time.UTC), End: time.Date(2026, 10, 5, 12, 0, 0, 0, time.UTC), ComputedAt: time.Date(2026, 10, 5, 12, 0, 0, 0, time.UTC), DepthBand: reportarea.DepthBandUnknown, PreviousDepthBand: reportarea.DepthBandUnknown, Trend: reportarea.TrendUnknown, ReportedTrend: reportarea.TrendFalling, Freshness: reportarea.FreshnessFresh, SummaryReason: reportarea.SummaryProvisional, ReportCount: 1, SampleCount: 1, EvidenceIDs: []string{"22222222-2222-4222-8222-222222222222"}}}}}
 	handler := NewReportAreaHandler(service, &fakePublicReportService{})
 	request := withRouteParam(httptest.NewRequest(http.MethodGet, "/api/v1/report-areas/11111111-1111-4111-8111-111111111111", nil), "id", service.detail.Area.ID)
 	response := httptest.NewRecorder()
 	handler.Get(response, request)
 	if response.Code != http.StatusOK {
 		t.Fatalf("Get() status = %d: %s", response.Code, response.Body)
+	}
+	if !strings.Contains(response.Body.String(), `"windowStart"`) || !strings.Contains(response.Body.String(), `"windowEnd"`) || !strings.Contains(response.Body.String(), `"computedAt"`) || !strings.Contains(response.Body.String(), `"reportIds"`) {
+		t.Fatalf("Get() timeline keys = %s", response.Body)
 	}
 	var body struct {
 		Area     reportarea.Area             `json:"area"`
@@ -43,7 +46,7 @@ func TestReportAreaDetailReturnsAreaAndTimeline(t *testing.T) {
 	if err := json.Unmarshal(response.Body.Bytes(), &body); err != nil {
 		t.Fatal(err)
 	}
-	if body.Area.RadiusM != 150 || len(body.Area.Location.Coordinates) != 2 || len(body.Timeline) != 1 || body.Timeline[0].ReportedTrend != reportarea.TrendFalling {
+	if body.Area.RadiusM != 150 || len(body.Area.Location.Coordinates) != 2 || len(body.Timeline) != 1 || body.Timeline[0].ComputedAt.IsZero() || body.Timeline[0].ReportedTrend != reportarea.TrendFalling {
 		t.Fatalf("detail = %+v, want stable area/timeline contract", body)
 	}
 }
@@ -68,9 +71,27 @@ func TestReportAreaReportsUsesCanonicalPublicPayloadAndSkipsRemovedEvidence(t *t
 	}
 }
 
+func TestReportAreaReportsRechecksMembershipBeforeReturningCanonicalPayload(t *testing.T) {
+	areaID := "11111111-1111-4111-8111-111111111111"
+	reportID := "22222222-2222-4222-8222-222222222222"
+	areas := &fakeReportAreaService{reportIDPages: [][]string{{reportID}, {}}}
+	reports := &fakePublicReportService{items: map[string]report.Report{reportID: {ID: reportID, DisplayName: "Guest", Type: report.TypeFlood, Description: "Water", Status: report.StatusPending, SourceType: report.SourceCommunity}}}
+	request := withRouteParam(httptest.NewRequest(http.MethodGet, "/api/v1/report-areas/"+areaID+"/reports?limit=10", nil), "id", areaID)
+	response := httptest.NewRecorder()
+	NewReportAreaHandler(areas, reports).Reports(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("Reports() status = %d: %s", response.Code, response.Body)
+	}
+	if strings.Contains(response.Body.String(), reportID) {
+		t.Fatalf("Reports() returned evidence removed during canonical read: %s", response.Body)
+	}
+}
+
 type fakeReportAreaService struct {
-	detail    reportarea.Detail
-	reportIDs []string
+	detail        reportarea.Detail
+	reportIDs     []string
+	reportIDPages [][]string
+	pageCalls     int
 }
 
 func (service *fakeReportAreaService) List(context.Context, reportarea.ListFilter) ([]reportarea.Area, error) {
@@ -83,6 +104,14 @@ func (service *fakeReportAreaService) Get(context.Context, string) (reportarea.D
 	return service.detail, nil
 }
 func (service *fakeReportAreaService) ListReportIDs(context.Context, string, report.Page) ([]string, error) {
+	if len(service.reportIDPages) > 0 {
+		index := service.pageCalls
+		if index >= len(service.reportIDPages) {
+			index = len(service.reportIDPages) - 1
+		}
+		service.pageCalls++
+		return service.reportIDPages[index], nil
+	}
 	return service.reportIDs, nil
 }
 

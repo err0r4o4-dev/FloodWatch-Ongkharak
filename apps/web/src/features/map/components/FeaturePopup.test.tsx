@@ -40,13 +40,20 @@ describe("FeaturePopup", () => {
   it("groups one stable area pin without marking the calculated summary as original content", () => {
     const onClose = vi.fn();
     const onDetails = vi.fn();
-    render(<FeaturePopup selection={area} onDetails={onDetails} onClose={onClose} />);
+    const currentArea = { ...area.feature, latestObservedAt: new Date().toISOString(), computedAt: new Date().toISOString() };
+    render(<FeaturePopup selection={{ layer: "reports", feature: currentArea }} onDetails={onDetails} onClose={onClose} />);
     expect(screen.getByRole("region", { name: "ข้อมูลสรุปบนแผนที่" })).toHaveTextContent("พื้นที่ชุมชนทดสอบ");
+    expect(screen.getByText("ช่วงระดับน้ำปัจจุบัน")).toBeInTheDocument();
+    expect(screen.getAllByText("10–น้อยกว่า 30 ซม.").length).toBeGreaterThan(0);
+    expect(screen.getByText("ช่วงระดับน้ำก่อนหน้า")).toBeInTheDocument();
+    expect(screen.getByText("น้อยกว่า 10 ซม.")).toBeInTheDocument();
+    expect(screen.getByText("สรุปจากรายงานชุมชน")).toBeInTheDocument();
+    expect(screen.queryByText("ปานกลาง")).not.toBeInTheDocument();
     expect(screen.getByText("แนวโน้มคำนวณ")).toBeInTheDocument();
     expect(screen.queryByText("เนื้อหาต้นฉบับ")).not.toBeInTheDocument();
     fireEvent.keyDown(screen.getByRole("region", { name: "ข้อมูลสรุปบนแผนที่" }), { key: "Escape" });
     expect(onClose).toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "ดูรายละเอียด" }));
-    expect(onDetails).toHaveBeenCalledWith(area);
+    expect(onDetails).toHaveBeenCalledWith({ layer: "reports", feature: currentArea });
   });
 });

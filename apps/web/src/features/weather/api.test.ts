@@ -15,7 +15,7 @@ const current = {
 };
 
 const response: WeatherResponse = {
-  location: { name: "Ongkharak", latitude: 14.1, longitude: 101 },
+  location: { name: "Ongkharak", latitude: 14.106458, longitude: 100.983765 },
   source: { name: "Open-Meteo", url: "https://open-meteo.com/", kind: "MODEL" },
   freshness: "FRESH",
   retrievedAt: "2026-10-04T04:01:00Z",
@@ -26,6 +26,10 @@ const response: WeatherResponse = {
 describe("weather API boundary", () => {
   it("accepts the complete weather envelope and finite readings", () => {
     expect(validateWeatherResponse(response)).toEqual(response);
+  });
+
+  it("rejects the previous district reference point instead of presenting it as campus weather", () => {
+    expect(validateWeatherResponse({ ...response, location: { name: "Ongkharak", latitude: 14.1, longitude: 101 } })).toBeNull();
   });
 
   it("rejects missing nullable fields and non-finite numeric readings", () => {

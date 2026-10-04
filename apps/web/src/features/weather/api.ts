@@ -102,7 +102,7 @@ export function validateWeatherResponse(value: unknown): WeatherResponse | null 
   if (!body.location || typeof body.location !== "object" || !body.source || typeof body.source !== "object") return null;
   const location = body.location as Record<string, unknown>;
   const source = body.source as Record<string, unknown>;
-  if (location.name !== "Ongkharak" || location.latitude !== 14.1 || location.longitude !== 101 ||
+  if (location.name !== "Ongkharak" || location.latitude !== 14.106458 || location.longitude !== 100.983765 ||
     source.name !== "Open-Meteo" || source.kind !== "MODEL" || !isSafeProviderUrl(source.url) ||
     !["FRESH", "STALE", "UNKNOWN"].includes(String(body.freshness)) || !isNullableTimestamp(body.retrievedAt) ||
     !(body.reason === null || (typeof body.reason === "string" && body.reason.length > 0))) return null;

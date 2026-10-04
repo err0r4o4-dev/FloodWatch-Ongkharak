@@ -124,6 +124,14 @@ const th = {
   "popup.reportDepth": "ระดับน้ำโดยประมาณ {value} ม.",
   "popup.unknownWarning": "ข้อมูลไม่เพียงพอ ไม่สามารถสรุปว่าปลอดภัยหรือผ่านได้",
   "popup.details": "ดูรายละเอียด",
+  "area.communityDerived": "สรุปจากรายงานชุมชน",
+  "area.currentDepthRange": "ช่วงระดับน้ำปัจจุบัน",
+  "area.previousDepthRange": "ช่วงระดับน้ำก่อนหน้า",
+  "area.depthRange.UNKNOWN": "ไม่ทราบ/ข้อมูลเก่า",
+  "area.depthRange.LOW": "น้อยกว่า 10 ซม.",
+  "area.depthRange.MODERATE": "10–น้อยกว่า 30 ซม.",
+  "area.depthRange.HIGH": "30–50 ซม.",
+  "area.depthRange.VERY_HIGH": "มากกว่า 50 ซม.",
   "area.trend": "แนวโน้มคำนวณ",
   "area.reportedTrend": "แนวโน้มที่ผู้ใช้ระบุ",
   "area.trend.UNKNOWN": "ไม่ทราบ",
@@ -142,6 +150,7 @@ const th = {
   "area.totalReports": "รายงานที่เผยแพร่ในพื้นที่",
   "area.reportsUnit": "รายงาน",
   "area.latestObserved": "สังเกตล่าสุด",
+  "area.window": "ช่วงเวลาสรุป",
   "area.computedAt": "คำนวณเมื่อ",
   "area.unknownWarning": "สถานะนี้ไม่ใช่การยืนยันว่าปลอดภัย น้ำไม่สูง หรือเดินทางได้",
   "area.update": "แจ้งข้อมูลล่าสุดของพื้นที่นี้",
@@ -174,7 +183,9 @@ const th = {
   "map.origin": "จุดเริ่มต้น",
   "map.destination": "จุดหมาย",
   "map.location": "ตำแหน่งปัจจุบัน",
-  "map.locationError": "ไม่สามารถดึงตำแหน่งปัจจุบันได้"
+  "map.locationError": "ไม่สามารถดึงตำแหน่งปัจจุบันได้",
+  "details.communityArea": "พื้นที่รายงานชุมชน",
+  "legend.compact": "คำอธิบายสีพื้นที่"
 } as const;
 
 export default th;

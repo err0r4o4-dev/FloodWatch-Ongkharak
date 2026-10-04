@@ -36,6 +36,7 @@ type Dependencies struct {
 	AuthFrontendOrigin        string
 	FloodService              *flood.Service
 	ReportService             *report.Service
+	ReportAreaService         handler.ReportAreaService
 	AlertService              *alert.Service
 	AdminService              handler.AdminService
 	AIService                 handler.AIService
@@ -133,6 +134,14 @@ func New(dependencies Dependencies) http.Handler {
 				api.With(admin...).Post("/data-sources", floodHandler.CreateSource)
 				api.With(admin...).Post("/risk-areas", floodHandler.CreateRiskArea)
 				api.With(admin...).Post("/road-conditions", floodHandler.CreateRoadCondition)
+			}
+		}
+		if dependencies.ReportAreaService != nil {
+			areaHandler := handler.NewReportAreaHandler(dependencies.ReportAreaService, dependencies.ReportService)
+			api.Get("/report-areas", areaHandler.List)
+			api.Get("/report-areas/{id}", areaHandler.Get)
+			if dependencies.ReportService != nil {
+				api.Get("/report-areas/{id}/reports", areaHandler.Reports)
 			}
 		}
 		if dependencies.ReportService != nil && dependencies.AuthService != nil {

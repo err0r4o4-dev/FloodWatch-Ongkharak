@@ -3165,11 +3165,11 @@
             "additionalProperties": false,
             "properties": {
               "latitude": {
-                "const": 14.1,
+                "const": 14.106458,
                 "type": "number"
               },
               "longitude": {
-                "const": 101,
+                "const": 100.983765,
                 "type": "number"
               },
               "name": {
@@ -3940,7 +3940,7 @@
               "type": "string",
               "format": "uuid"
             },
-            "description": "Public evidence lineage; excludes removed reports."
+          "description": "Published depth-sample lineage for this window; excludes removed reports and depthless reporter-stated trend contributions."
           }
         }
       },
@@ -6072,7 +6072,7 @@
     },
     "/api/v1/events/stream": {
       "get": {
-        "description": "Guest-accessible. `id` is a Redis stream cursor distinct from envelope `eventId`.\nReconnect with Last-Event-ID (or cursor query in browsers that cannot set headers).\n`replay.reset` requires a full canonical REST refetch after an expired cursor or\nbounded replay; initial subscription begins at the current stream tail.\nHeartbeats are SSE comments. Delivery can be duplicated and has bounded retention.\n`report.updated` signals creation, edits, image changes, removal and restoration;\nrefetch canonical REST. It carries only the report ID, never review reasons or\nremoved content. `report.verified` remains the additional review signal.\n",
+        "description": "Guest-accessible. `id` is a Redis stream cursor distinct from envelope `eventId`.\nReconnect with Last-Event-ID (or cursor query in browsers that cannot set headers).\n`replay.reset` requires a full canonical REST refetch after an expired cursor or\nbounded replay; initial subscription begins at the current stream tail.\nHeartbeats are SSE comments. Delivery can be duplicated and has bounded retention.\n`report.updated` signals creation, edits, image changes, removal and restoration;\nrefetch canonical REST. It carries only the report ID, never review reasons or\nremoved content. `report.verified` remains the additional review signal.\n`report-area.updated` invalidates a community area summary or membership;\nits resource is REPORT_AREA with COMMUNITY provenance and an empty object\npayload. Read the canonical area and timeline rather than treating the\nnotification as water evidence.\n",
         "operationId": "streamPublicEvents",
         "parameters": [
           {
@@ -7128,7 +7128,7 @@
     },
     "/api/v1/weather/ongkharak": {
       "get": {
-        "description": "Public, fixed-location Open-Meteo model weather, not a station observation,\nOFFICIAL flood evidence, or a flood-safety decision. No provider URL or location\noverride is accepted. Reference coordinates are 14.1 N, 101.0 E, matching the\nmap center; this is not a district-wide measurement. The API fetches on demand,\ncaches successful responses for 10 minutes per process, coalesces concurrent\nrequests, and backs off for one minute after failure. Observations over one\nhour old or retained during an upstream outage are STALE; cached evidence over\nsix hours old is omitted. No cached data or disabled configuration returns 503\nwith UNKNOWN and null current. Precipitation is over intervalSeconds, not 24h.\n",
+        "description": "Public, fixed-location Open-Meteo model weather, not a station observation,\nOFFICIAL flood evidence, or a flood-safety decision. No provider URL or location\noverride is accepted. Reference coordinates are 14.106458 N, 100.983765 E at\nSWU Ongkharak campus; this is not a district-wide measurement. The API fetches on demand,\ncaches successful responses for 10 minutes per process, coalesces concurrent\nrequests, and backs off for one minute after failure. Observations over one\nhour old or retained during an upstream outage are STALE; cached evidence over\nsix hours old is omitted. No cached data or disabled configuration returns 503\nwith UNKNOWN and null current. Precipitation is over intervalSeconds, not 24h.\n",
         "operationId": "getOngkharakWeather",
         "responses": {
           "200": {
@@ -7163,7 +7163,7 @@
           }
         },
         "security": [],
-        "summary": "Read model-based weather at the Ongkharak reference point",
+        "summary": "Read model-based weather at the SWU Ongkharak campus reference point",
         "tags": [
           "Weather"
         ]

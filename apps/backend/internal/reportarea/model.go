@@ -85,8 +85,9 @@ type Area struct {
 }
 
 type TimelineWindow struct {
-	Start             time.Time     `json:"start"`
-	End               time.Time     `json:"end"`
+	Start             time.Time     `json:"windowStart"`
+	End               time.Time     `json:"windowEnd"`
+	ComputedAt        time.Time     `json:"computedAt"`
 	DepthBand         DepthBand     `json:"depthBand"`
 	PreviousDepthBand DepthBand     `json:"previousDepthBand"`
 	Trend             Trend         `json:"trend"`
@@ -96,7 +97,7 @@ type TimelineWindow struct {
 	LatestObservedAt  *time.Time    `json:"latestObservedAt"`
 	ReportCount       int           `json:"reportCount"`
 	SampleCount       int           `json:"sampleCount"`
-	EvidenceIDs       []string      `json:"evidenceIds"`
+	EvidenceIDs       []string      `json:"reportIds"`
 }
 
 type Detail struct {
@@ -109,8 +110,6 @@ type ListFilter struct {
 	BBox *report.BoundingBox
 }
 
-// SourceReport is the non-public evidence shape used by the area computation.
-// It deliberately contains no display name or moderation identity fields.
 type SourceReport struct {
 	ID           string
 	UserID       string

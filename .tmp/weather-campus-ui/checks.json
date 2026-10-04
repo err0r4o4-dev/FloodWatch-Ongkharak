@@ -1,0 +1,9 @@
+{
+  "checks": [
+    "1440x900: floating left, stable scroll, centered details, Escape/close, cloud-only persisted minimize, 44px controls",
+    "390x844: floating left, stable scroll, centered details, Escape/close, cloud-only persisted minimize, 44px controls",
+    "English campus title and location in mobile details"
+  ],
+  "errors": [],
+  "evidence": "Synthetic intercepted weather; not live local conditions or physical device verification"
+}

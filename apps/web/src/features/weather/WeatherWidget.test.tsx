@@ -5,7 +5,7 @@ import { WeatherProvider } from "./WeatherProvider";
 import { WeatherWidget } from "./WeatherWidget";
 
 function weather(freshness = "FRESH", ageHours = 0) {
-  return { location: { name: "Ongkharak", latitude: 14.1, longitude: 101 }, source: { name: "Open-Meteo", url: "https://open-meteo.com/", kind: "MODEL" }, freshness, retrievedAt: new Date().toISOString(), reason: null, current: { observedAt: new Date(Date.now() - ageHours * 60 * 60 * 1000).toISOString(), intervalSeconds: 900, temperatureC: 28.4, apparentTemperatureC: 30, humidityPercent: 85, precipitationMm: 0.2, weatherCode: 61, windSpeedKmh: 4, windDirectionDegrees: 180, isDay: true } };
+  return { location: { name: "Ongkharak", latitude: 14.106458, longitude: 100.983765 }, source: { name: "Open-Meteo", url: "https://open-meteo.com/", kind: "MODEL" }, freshness, retrievedAt: new Date().toISOString(), reason: null, current: { observedAt: new Date(Date.now() - ageHours * 60 * 60 * 1000).toISOString(), intervalSeconds: 900, temperatureC: 28.4, apparentTemperatureC: 30, humidityPercent: 85, precipitationMm: 0.2, weatherCode: 61, windSpeedKmh: 4, windDirectionDegrees: 180, isDay: true } };
 }
 
 function mount() {
@@ -25,7 +25,7 @@ it("shares data between cards and details and supports minimize/reopen", async (
   mount();
   expect(await screen.findAllByText("28.4°C")).toHaveLength(2);
   fireEvent.click(screen.getAllByRole("button", { name: "แสดงทั้งหมด" })[0]);
-  expect(screen.getByRole("dialog", { name: "รายละเอียดสภาพอากาศองครักษ์" })).toHaveTextContent("Open-Meteo");
+  expect(screen.getByRole("dialog", { name: "รายละเอียดสภาพอากาศ มศว องครักษ์" })).toHaveTextContent("Open-Meteo");
   expect(screen.getByRole("dialog")).not.toHaveTextContent("แบบจำลองสภาพอากาศ ไม่ใช่สถานีตรวจวัด");
   expect(request).toHaveBeenCalledTimes(1);
   fireEvent.click(screen.getByRole("button", { name: "ปิดรายละเอียดสภาพอากาศ" }));

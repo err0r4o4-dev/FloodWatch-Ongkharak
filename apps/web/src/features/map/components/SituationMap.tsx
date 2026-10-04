@@ -80,6 +80,9 @@ function MapFeaturePopup({ selection, position, onClose, onDetails }: {
 }) {
   const popup = useRef<LeafletPopup>(null);
   const map = useMap();
+  const narrow = typeof window !== "undefined" && window.innerWidth <= 880;
+  const legendHeight = narrow && typeof document !== "undefined" ? document.querySelector<HTMLElement>(".map-page__legend")?.getBoundingClientRect().height ?? 0 : 0;
+  const autoPanPadding = narrow ? { topLeft: [16, 80] as [number, number], bottomRight: [112, Math.max(120, Math.ceil(legendHeight) + 16)] as [number, number] } : { topLeft: [16, 80] as [number, number], bottomRight: [16, 80] as [number, number] };
   useEffect(() => {
     const content = popup.current?.getElement()?.querySelector(".leaflet-popup-content");
     if (!content || typeof ResizeObserver === "undefined") return;
@@ -87,7 +90,7 @@ function MapFeaturePopup({ selection, position, onClose, onDetails }: {
     observer.observe(content);
     return () => observer.disconnect();
   }, []);
-  return <Popup ref={popup} position={[position[1], position[0]]} className="feature-map-popup" closeButton={false} closeOnClick={false} autoPanPaddingTopLeft={[16, 80]} autoPanPaddingBottomRight={[16, 80]} minWidth={240} maxWidth={300}>
+  return <Popup ref={popup} position={[position[1], position[0]]} className="feature-map-popup" closeButton={false} closeOnClick={false} autoPanPaddingTopLeft={autoPanPadding.topLeft} autoPanPaddingBottomRight={autoPanPadding.bottomRight} minWidth={240} maxWidth={300}>
     <FeaturePopup selection={selection} onClose={onClose} onDetails={onDetails} restoreFocus={() => map.getContainer().focus({ preventScroll: true })} />
   </Popup>;
 }

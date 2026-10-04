@@ -95,12 +95,18 @@ func TestReportUpdatedIsCommunityOnlyCanonicalRefetchSignal(t *testing.T) {
 
 func TestReportAreaUpdatedIsAnIdentifierOnlyCommunitySignal(t *testing.T) {
 	event := Event{EventID: uuid.NewString(), EventType: "report-area.updated", OccurredAt: time.Now().UTC(), PublishedAt: time.Now().UTC(), SourceType: SourceCommunity, ResourceType: "REPORT_AREA", ResourceID: uuid.NewString(), PayloadVersion: PayloadVersion1, Payload: json.RawMessage(`{}`)}
-	if err := event.Validate(); err != nil { t.Fatalf("area update rejected: %v", err) }
+	if err := event.Validate(); err != nil {
+		t.Fatalf("area update rejected: %v", err)
+	}
 	event.Payload = json.RawMessage(`{"userId":"private"}`)
-	if !errors.Is(event.Validate(), ErrInvalidEvent) { t.Fatal("area event accepted non-identifier payload") }
+	if !errors.Is(event.Validate(), ErrInvalidEvent) {
+		t.Fatal("area event accepted non-identifier payload")
+	}
 	event.Payload = json.RawMessage(`{}`)
 	event.SourceType = SourceOfficial
-	if !errors.Is(event.Validate(), ErrInvalidEvent) { t.Fatal("area update accepted official provenance") }
+	if !errors.Is(event.Validate(), ErrInvalidEvent) {
+		t.Fatal("area update accepted official provenance")
+	}
 }
 
 func TestIsMissingStreamErrorRecognizesRedisMissingKeyReply(t *testing.T) {

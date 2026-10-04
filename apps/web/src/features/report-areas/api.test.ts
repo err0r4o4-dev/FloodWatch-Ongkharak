@@ -58,6 +58,14 @@ describe("report areas API boundary", () => {
 
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ items: [{ ...area, location: { type: "Point", coordinates: [181, 14] } }], limit: 100, offset: 0 }) }));
     await expect(fetchReportAreas({ west: 100, south: 14, east: 102, north: 15 }, new AbortController().signal)).rejects.toThrow("report area");
+
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ items: [{ ...area, radiusM: 151 }], limit: 100, offset: 0 }) }));
+    await expect(fetchReportAreas({ west: 100, south: 14, east: 102, north: 15 }, new AbortController().signal)).rejects.toThrow("report area");
+  });
+
+  it("rejects invalid pagination metadata", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ items: [], limit: 0, offset: 0 }) }));
+    await expect(fetchReportAreas({ west: 100, south: 14, east: 102, north: 15 }, new AbortController().signal)).rejects.toThrow("report area");
   });
 
   it("validates detail timeline windows and retains original report fields", async () => {

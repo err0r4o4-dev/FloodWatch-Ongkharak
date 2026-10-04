@@ -26,7 +26,7 @@ describe("public routes", () => {
     const request = vi.fn(() => new Promise(() => undefined));
     vi.stubGlobal("fetch", request);
     render(<MemoryRouter initialEntries={["/"]}><AppRoutes /></MemoryRouter>);
-    expect(screen.queryByRole("region", { name: "สภาพอากาศองครักษ์" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "สภาพอากาศ มศว องครักษ์" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "เปิดการ์ดสภาพอากาศ" })).not.toBeInTheDocument();
     expect(request).not.toHaveBeenCalled();
   });
@@ -34,8 +34,8 @@ describe("public routes", () => {
   it.each(["/overview", "/announcements"])("keeps one floating weather popup outside navigation and page content at %s", (route) => {
     vi.stubGlobal("fetch", vi.fn(() => new Promise(() => undefined)));
     render(<MemoryRouter initialEntries={[route]}><AppRoutes /></MemoryRouter>);
-    const popup = screen.getByRole("region", { name: "สภาพอากาศองครักษ์" });
-    expect(screen.getAllByRole("region", { name: "สภาพอากาศองครักษ์" })).toHaveLength(1);
+    const popup = screen.getByRole("region", { name: "สภาพอากาศ มศว องครักษ์" });
+    expect(screen.getAllByRole("region", { name: "สภาพอากาศ มศว องครักษ์" })).toHaveLength(1);
     expect(popup.closest(".desktop-sidebar, main, .overview-page")).toBeNull();
     expect(popup.closest(".weather-floating")).not.toBeNull();
     expect(within(popup).getByRole("button", { name: "แสดงทั้งหมด" })).toBeInTheDocument();

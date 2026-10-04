@@ -2,6 +2,7 @@ package reportarea
 
 import (
 	"context"
+	"math"
 	"time"
 
 	"github.com/floodwatch-ongkharak/backend/internal/report"
@@ -60,7 +61,11 @@ func validFilter(filter ListFilter) bool {
 		return true
 	}
 	box := filter.BBox
-	return box.MinLng >= -180 && box.MaxLng <= 180 && box.MinLat >= -90 && box.MaxLat <= 90 && box.MinLng < box.MaxLng && box.MinLat < box.MaxLat
+	return finite(box.MinLng) && finite(box.MinLat) && finite(box.MaxLng) && finite(box.MaxLat) && box.MinLng >= -180 && box.MaxLng <= 180 && box.MinLat >= -90 && box.MaxLat <= 90 && box.MinLng < box.MaxLng && box.MinLat < box.MaxLat
+}
+
+func finite(value float64) bool {
+	return !math.IsNaN(value) && !math.IsInf(value, 0)
 }
 
 func validPage(page report.Page) bool {

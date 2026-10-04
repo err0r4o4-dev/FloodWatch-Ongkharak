@@ -1,6 +1,6 @@
-# Ongkharak model weather
+# SWU Ongkharak model weather
 
-The public application shell reads `GET /api/v1/weather/ongkharak` from Go. The API fetches Open-Meteo current model weather for the reference point 14.1 N, 101.0 E, matching the existing map center. Open-Meteo may select a nearby model grid cell. This is neither a district-wide measurement nor an observation from a local station. `source.kind=MODEL` deliberately does not claim OFFICIAL, COMMUNITY, or AI flood provenance.
+The public application shell reads `GET /api/v1/weather/ongkharak` from Go. The API fetches Open-Meteo current model weather for the Srinakharinwirot University Ongkharak campus reference point 14.106458 N, 100.983765 E. These coordinates are rounded from the OpenStreetMap campus area reference point (way 260777754, 14.1064581 N, 100.9837650 E), checked on 2026-10-05. The existing map center is unchanged. The route and `location.name=Ongkharak` remain stable; Thai/English weather labels identify the campus. Open-Meteo may select a nearby model grid cell. This is neither a district-wide measurement nor an observation from a local station. `source.kind=MODEL` deliberately does not claim OFFICIAL, COMMUNITY, or AI flood provenance.
 
 ## Flow and bounds
 

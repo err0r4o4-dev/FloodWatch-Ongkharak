@@ -25,6 +25,8 @@ import (
 	"github.com/floodwatch-ongkharak/backend/internal/postgres/ingestionrepo"
 	"github.com/floodwatch-ongkharak/backend/internal/postgres/notificationrepo"
 	"github.com/floodwatch-ongkharak/backend/internal/postgres/outbox"
+	"github.com/floodwatch-ongkharak/backend/internal/postgres/reportarearepo"
+	"github.com/floodwatch-ongkharak/backend/internal/reportarea"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -121,6 +123,10 @@ func run() error {
 		return fmt.Errorf("configure alert service: %w", err)
 	}
 	evaluator := outbox.NewEvaluator(postgresPool, alertService)
+	reportAreaService, err := reportarea.NewService(reportarearepo.New(postgresPool))
+	if err != nil {
+		return fmt.Errorf("configure report area aggregation: %w", err)
+	}
 	mediaStorage, err := objectstore.NewMinIO(configuration.MinIOEndpoint, configuration.MinIOAccessKey, configuration.MinIOSecretKey, configuration.MinIOBucket)
 	if err != nil {
 		return fmt.Errorf("configure AI media storage: %w", err)
@@ -170,6 +176,25 @@ func run() error {
 		}
 	}()
 	analysisDone := make(chan struct{})
+	reportAreaDone := make(chan struct{})
+	go func() {
+		defer close(reportAreaDone)
+		ticker := time.NewTicker(5 * time.Second)
+		defer ticker.Stop()
+		for {
+			attemptContext, cancel := context.WithTimeout(runContext, 30*time.Second)
+			_, err := reportAreaService.ProcessPending(attemptContext, time.Now().UTC())
+			cancel()
+			if err != nil && runContext.Err() == nil {
+				logger.Warn("report area aggregation deferred", "error", err)
+			}
+			select {
+			case <-runContext.Done():
+				return
+			case <-ticker.C:
+			}
+		}
+	}()
 	go func() {
 		defer close(analysisDone)
 		ticker := time.NewTicker(30 * time.Second)
@@ -219,6 +244,7 @@ func run() error {
 			scheduler.Wait()
 			<-evaluationDone
 			<-analysisDone
+			<-reportAreaDone
 			<-notificationDone
 			<-externalDone
 			return nil

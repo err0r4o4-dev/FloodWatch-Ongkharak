@@ -1,5 +1,12 @@
 .report-area-summary { display: grid; gap: var(--space-3); }
 .report-area-summary--compact { gap: var(--space-2); }
+.report-area-summary__heading { margin: 0; color: var(--color-ink); font-size: .9rem; }
+.report-area-depth-badge { display: inline-flex; min-height: 1.75rem; align-items: center; padding: var(--space-1) var(--space-2); border: var(--border-width) solid transparent; border-radius: 999px; color: var(--color-ink); font-size: .72rem; font-weight: 750; }
+.report-area-depth-badge--very_high { background: var(--color-area-very-high); }
+.report-area-depth-badge--high { background: var(--color-area-high); }
+.report-area-depth-badge--moderate { background: var(--color-area-moderate); }
+.report-area-depth-badge--low { background: var(--color-area-low); }
+.report-area-depth-badge--unknown { border-color: var(--color-border); background: var(--color-area-unknown); color: var(--color-ink-muted); }
 .report-area-summary__metrics { display: grid; gap: var(--space-2); margin: 0; }
 .report-area-summary__metrics > div { display: flex; justify-content: space-between; gap: var(--space-3); border-bottom: var(--border-width) solid var(--color-border); padding-bottom: var(--space-2); }
 .report-area-summary__metrics dt { color: var(--color-ink-muted); }
@@ -10,6 +17,7 @@
 .report-area-trend--falling { color: var(--color-status-success); background: var(--color-source-community); }
 .report-area-trend--stable, .report-area-trend--unknown { color: var(--color-ink-muted); background: var(--color-status-unknown); }
 .report-area-detail { display: grid; gap: var(--space-4); }
+.report-area-detail__name { margin: 0; color: var(--color-ink); font-size: 1.05rem; }
 .report-area-detail__update { display: inline-flex; min-height: var(--touch-target); align-items: center; justify-content: center; padding: var(--space-2) var(--space-3); border-radius: var(--radius-sm); color: var(--color-surface); background: var(--color-primary-strong); font-weight: 750; text-decoration: none; }
 .report-area-detail__section { display: grid; gap: var(--space-3); margin: 0; padding-top: var(--space-4); border-top: var(--border-width) solid var(--color-border); }
 .report-area-detail__section h4 { margin: 0; color: var(--color-ink); font-size: .95rem; }

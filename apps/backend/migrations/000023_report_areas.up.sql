@@ -35,6 +35,7 @@ CREATE TABLE report_area_timeline (
     area_id UUID NOT NULL REFERENCES report_areas (id) ON DELETE CASCADE,
     window_start TIMESTAMPTZ NOT NULL,
     window_end TIMESTAMPTZ NOT NULL,
+    computed_at TIMESTAMPTZ NOT NULL,
     depth_band TEXT NOT NULL CHECK (depth_band IN ('UNKNOWN', 'LOW', 'MODERATE', 'HIGH', 'VERY_HIGH')),
     previous_depth_band TEXT NOT NULL CHECK (previous_depth_band IN ('UNKNOWN', 'LOW', 'MODERATE', 'HIGH', 'VERY_HIGH')),
     trend TEXT NOT NULL CHECK (trend IN ('UNKNOWN', 'RISING', 'STABLE', 'FALLING')),
@@ -70,7 +71,7 @@ END;
 $$;
 
 CREATE TRIGGER community_reports_report_area_dirty
-AFTER INSERT OR UPDATE ON community_reports
+AFTER INSERT OR UPDATE OR DELETE ON community_reports
 FOR EACH ROW EXECUTE FUNCTION mark_report_areas_dirty();
 
 CREATE TRIGGER community_report_media_report_area_dirty

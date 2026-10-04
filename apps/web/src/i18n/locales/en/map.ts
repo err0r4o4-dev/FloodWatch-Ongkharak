@@ -126,6 +126,14 @@ const en: Record<keyof typeof th, string> = {
   "popup.reportDepth": "Estimated water depth {value} m",
   "popup.unknownWarning": "There is not enough evidence to conclude that this is safe or passable.",
   "popup.details": "View details",
+  "area.communityDerived": "Community-derived summary",
+  "area.currentDepthRange": "Current depth range",
+  "area.previousDepthRange": "Previous depth range",
+  "area.depthRange.UNKNOWN": "Unknown / stale",
+  "area.depthRange.LOW": "<10 cm",
+  "area.depthRange.MODERATE": "10–<30 cm",
+  "area.depthRange.HIGH": "30–50 cm",
+  "area.depthRange.VERY_HIGH": ">50 cm",
   "area.trend": "Calculated trend",
   "area.reportedTrend": "User-stated trend",
   "area.trend.UNKNOWN": "Unknown",
@@ -144,6 +152,7 @@ const en: Record<keyof typeof th, string> = {
   "area.totalReports": "Published reports in area",
   "area.reportsUnit": "reports",
   "area.latestObserved": "Latest observed",
+  "area.window": "Summary window",
   "area.computedAt": "Computed",
   "area.unknownWarning": "This status does not confirm safety, low water, or passability",
   "area.update": "Report a current update for this area",
@@ -176,7 +185,9 @@ const en: Record<keyof typeof th, string> = {
   "map.origin": "Starting point",
   "map.destination": "Destination",
   "map.location": "My location",
-  "map.locationError": "Could not retrieve current location"
+  "map.locationError": "Could not retrieve current location",
+  "details.communityArea": "Community report area",
+  "legend.compact": "Area color legend"
 };
 
 export default en;

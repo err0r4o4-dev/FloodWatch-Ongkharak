@@ -48,7 +48,7 @@ function summaryFields(value: unknown): boolean {
 
 export function isValidReportArea(value: unknown): value is ReportArea {
   return summaryFields(value) && record(value) && typeof value.id === "string" && value.id.length > 0 &&
-    typeof value.name === "string" && value.name.length > 0 && point(value.location) && finiteNonNegative(value.radiusM) &&
+    typeof value.name === "string" && value.name.length > 0 && point(value.location) && value.radiusM === 150 &&
     value.sourceType === "COMMUNITY" && count(value.totalReportCount);
 }
 
@@ -72,7 +72,7 @@ function validReport(value: unknown): value is CommunityReport {
 }
 
 function pageMeta(value: unknown): boolean {
-  return record(value) && count(value.limit) && count(value.offset) && value.limit <= pageLimit;
+  return record(value) && count(value.limit) && value.limit >= 1 && count(value.offset) && value.limit <= pageLimit;
 }
 
 async function json(url: string, signal: AbortSignal): Promise<unknown> {

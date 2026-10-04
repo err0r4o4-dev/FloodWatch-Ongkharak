@@ -19,7 +19,7 @@ const current = {
 
 function weather(overrides: Record<string, unknown> = {}) {
   return {
-    location: { name: "Ongkharak", latitude: 14.1, longitude: 101 },
+    location: { name: "Ongkharak", latitude: 14.106458, longitude: 100.983765 },
     source: { name: "Open-Meteo", url: "https://open-meteo.com/", kind: "MODEL" },
     freshness: "FRESH",
     retrievedAt: "2026-10-04T04:01:00Z",
@@ -40,12 +40,23 @@ beforeEach(() => {
 afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); localStorage.removeItem(LANGUAGE_STORAGE_KEY); });
 
 describe("WeatherPanel", () => {
+  it.each([
+    ["th", "สภาพอากาศ มศว องครักษ์", "มหาวิทยาลัยศรีนครินทรวิโรฒ องครักษ์ จังหวัดนครนายก"],
+    ["en", "SWU Ongkharak weather", "Srinakharinwirot University, Ongkharak Campus, Nakhon Nayok"]
+  ])("identifies the campus reference point in %s even when weather is unavailable", async (locale, title, location) => {
+    localStorage.setItem(LANGUAGE_STORAGE_KEY, locale);
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 503, json: async () => weather({ freshness: "UNKNOWN", current: null, retrievedAt: null, reason: "UPSTREAM_UNAVAILABLE" }) }));
+    renderPanel();
+
+    expect(await screen.findByRole("region", { name: title })).toHaveTextContent(location);
+  });
+
   it("renders model weather with interval precipitation, timestamps, caveats, and attribution", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => weather() }));
     renderPanel();
 
     expect(screen.getByRole("status", { name: "กำลังโหลดข้อมูลสภาพอากาศ" })).toBeInTheDocument();
-    expect(await screen.findByRole("region", { name: "สภาพอากาศองครักษ์" })).toHaveTextContent("ฝนตกเล็กน้อย");
+    expect(await screen.findByRole("region", { name: "สภาพอากาศ มศว องครักษ์" })).toHaveTextContent("ฝนตกเล็กน้อย");
     expect(screen.getByText("1.5 มม. / 15 นาที")).toBeInTheDocument();
     expect(screen.queryByText("แบบจำลองสภาพอากาศ ไม่ใช่สถานีตรวจวัด")).not.toBeInTheDocument();
     expect(screen.getByText(/ไม่ใช่ข้อมูลยืนยันความปลอดภัยน้ำท่วม/)).toBeInTheDocument();
@@ -58,7 +69,7 @@ describe("WeatherPanel", () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => weather({ freshness: "STALE", reason: "ข้อมูลจากแคชเก่า", current: { ...current, observedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString() }, retrievedAt: new Date().toISOString() }) }));
     renderPanel();
 
-    const panel = await screen.findByRole("region", { name: "สภาพอากาศองครักษ์" });
+    const panel = await screen.findByRole("region", { name: "สภาพอากาศ มศว องครักษ์" });
     expect(panel).toHaveTextContent("ข้อมูลเก่า");
     expect(panel).toHaveTextContent("ข้อมูลจากแคชเก่า");
     expect(panel).toHaveTextContent("ไม่ใช่ข้อมูลยืนยันความปลอดภัยน้ำท่วม");
@@ -69,7 +80,7 @@ describe("WeatherPanel", () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => weather({ freshness: "STALE", reason: "UPSTREAM_UNAVAILABLE", current: { ...current, observedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString() }, retrievedAt: new Date().toISOString() }) }));
     renderPanel();
 
-    const panel = await screen.findByRole("region", { name: "สภาพอากาศองครักษ์" });
+    const panel = await screen.findByRole("region", { name: "สภาพอากาศ มศว องครักษ์" });
     expect(panel).toHaveTextContent("แหล่งข้อมูลต้นทางไม่พร้อมใช้งาน");
     expect(panel).not.toHaveTextContent("UPSTREAM_UNAVAILABLE");
   });
@@ -83,7 +94,7 @@ describe("WeatherPanel", () => {
 
     expect(await screen.findByRole("status", { name: "ไม่สามารถโหลดข้อมูลสภาพอากาศได้" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "ลองโหลดสภาพอากาศอีกครั้ง" }));
-    await waitFor(() => expect(screen.getByRole("region", { name: "สภาพอากาศองครักษ์" })).toHaveTextContent("ยังไม่มีข้อมูลสภาพอากาศ"));
+    await waitFor(() => expect(screen.getByRole("region", { name: "สภาพอากาศ มศว องครักษ์" })).toHaveTextContent("ยังไม่มีข้อมูลสภาพอากาศ"));
     expect(request).toHaveBeenCalledTimes(2);
   });
 
