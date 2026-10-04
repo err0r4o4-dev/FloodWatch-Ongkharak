@@ -7,7 +7,7 @@ export function MapLegend({ visible }: { visible: LayerVisibility }) {
   const { t } = useTranslation({ th, en });
   return <div className="map-legend" aria-label={t("legend.label")}><span className="sr-only">{t("legend.prefix")}</span>
     {visible.water && <span><i className="map-layer-symbol map-layer-symbol--water" aria-hidden="true">≋</i> {t("layer.water")}</span>}
-    {visible.risk && <span><i className="map-layer-symbol map-layer-symbol--risk" aria-hidden="true">▧</i> {t("layer.risk")}</span>}
+    {visible.risk && <span><i className="map-layer-symbol map-layer-symbol--risk" aria-hidden="true">⚠</i> {t("layer.risk")}</span>}
     {visible.flood && <span><i className="map-layer-symbol map-layer-symbol--flood" aria-hidden="true">△</i> {t("layer.flood")}</span>}
     {visible.reports && <span><i className="map-layer-symbol map-layer-symbol--reports" aria-hidden="true">●</i> {t("layer.reports")}</span>}
     {visible.roads && <span><i className="map-layer-symbol map-layer-symbol--roads" aria-hidden="true">━</i> {t("legend.roads")}</span>}
