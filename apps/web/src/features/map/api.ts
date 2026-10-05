@@ -48,7 +48,11 @@ export function formatBbox(bounds: MapBounds): string {
 
 async function readPage<T>(url: string, signal: AbortSignal): Promise<{ items: T[]; hasMore: boolean }> {
   const response = await fetch(url, { signal });
-  if (!response.ok) throw new Error(`Map API HTTP ${response.status}`);
+  if (!response.ok) {
+    const error = new Error(`Map API HTTP ${response.status}`);
+    (error as Error & { status: number }).status = response.status;
+    throw error;
+  }
   const payload: unknown = await response.json();
   if (!payload || typeof payload !== "object" || !("items" in payload) || !Array.isArray(payload.items)) {
     throw new Error("Invalid map API response");

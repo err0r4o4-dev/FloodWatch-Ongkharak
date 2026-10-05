@@ -19,7 +19,7 @@ export function useMapData(bounds: MapBounds | null, visible: LayerVisibility, r
   const requestVersion = useRef(0);
 
   useEffect(() => {
-    const timer = window.setInterval(() => setPollRevision((current) => current + 1), 60_000);
+    const timer = window.setInterval(() => setPollRevision((current) => current + 1), 120_000);
     return () => window.clearInterval(timer);
   }, []);
 
@@ -77,9 +77,15 @@ export function useMapData(bounds: MapBounds | null, visible: LayerVisibility, r
       enabled.forEach((key) => {
         void fetchMapLayer(key, bounds, controller.signal)
           .then((result) => settleLayer(key, result))
-          .catch(() => settleLayer(key, null));
+          .catch((error) => {
+            // Check if it's a rate limit error (429)
+            if (error && typeof error === 'object' && 'status' in error && error.status === 429) {
+              console.warn(`Rate limited on ${key}, will retry on next refresh`);
+            }
+            settleLayer(key, null);
+          });
       });
-    }, 250);
+    }, 500);
 
     return () => { window.clearTimeout(timer); controller.abort(); };
   }, [boundsKey, visibilityKey, retry + pollRevision]);

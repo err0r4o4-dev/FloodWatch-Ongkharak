@@ -22,7 +22,6 @@ import "./MapPage.css";
 const defaultVisibility: LayerVisibility = { flood: true, water: true, risk: true, roads: true, reports: true };
 const emptyPoint: RoutePoint = { longitude: "", latitude: "" };
 const mapEvents = ["water_level.updated", "flood_event.created", "flood_event.updated", "road.status.changed", "report.verified", "report.updated"] as const;
-type MapSearchSelection = Extract<MapSelection, { layer: "water" | "risk" }>;
 
 function sameBounds(first: MapBounds | null, second: MapBounds) {
   return first?.west === second.west && first.south === second.south && first.east === second.east && first.north === second.north;
@@ -47,7 +46,6 @@ export function MapPage() {
   const [bounds, setBounds] = useState<MapBounds | null>(null);
   const [selection, setSelection] = useState<MapSelection | null>(null);
   const [focusSelection, setFocusSelection] = useState<MapSelection | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
   const [riskOpen, setRiskOpen] = useState(params.get("panel") === "risk");
   const [selectedRiskId, setSelectedRiskId] = useState<string | null>(initialRiskId);
   const [expanded, setExpanded] = useState(false);
@@ -61,14 +59,6 @@ export function MapPage() {
   const [points, setPoints] = useState<RoutePoints>({ origin: emptyPoint, destination: emptyPoint });
   const [picking, setPicking] = useState<Picking>(null);
   const data = useMapData(bounds, visible, retry + realtimeRevision + reportAreaRevision);
-  const searchResults = useMemo<MapSearchSelection[]>(() => {
-    const query = searchQuery.trim().toLocaleLowerCase();
-    if (!query) return [];
-    return [
-      ...data.items.water.filter((feature) => feature.name.toLocaleLowerCase().includes(query)).map((feature) => ({ layer: "water" as const, feature })),
-      ...data.items.risk.filter((feature) => feature.name.toLocaleLowerCase().includes(query)).map((feature) => ({ layer: "risk" as const, feature }))
-    ];
-  }, [data.items.risk, data.items.water, searchQuery]);
   const enabled = layerKeys.filter((key) => visible[key]);
   const allFailed = !data.loading && enabled.length > 0 && data.failed.length === enabled.length;
   const panelOpen = riskOpen || selection !== null || mode === "ROUTE";
@@ -95,11 +85,6 @@ export function MapPage() {
     setPicking(null);
     setMode("SITUATION");
     if (riskOpen) riskButton.current?.focus(); else workspace.current?.querySelector<HTMLElement>(".leaflet-map")?.focus({ preventScroll: true });
-  };
-  const selectSearchResult = (item: MapSelection) => {
-    setSearchQuery("");
-    setFocusSelection(item);
-    setSelection(item);
   };
   useEffect(() => {
     if (params.get("panel") !== "risk") return;
@@ -132,27 +117,6 @@ export function MapPage() {
         <p className="eyebrow">{t("hero.eyebrow")}</p>
         <h1 id="situation-map-title">{t("hero.title")}</h1>
         <p>{t("hero.description")}</p>
-        <div className="map-page__search" role="search">
-          <form onSubmit={(event) => event.preventDefault()}>
-            <label htmlFor="map-page-search">{t("search.label")}</label>
-            <input
-              id="map-page-search"
-              type="search"
-              value={searchQuery}
-              placeholder={t("search.placeholder")}
-              onChange={(event) => setSearchQuery(event.target.value)}
-              onKeyDown={(event) => { if (event.key === "Escape") setSearchQuery(""); }}
-            />
-          </form>
-          <p>{t("search.scope")}</p>
-          {searchQuery.trim() && data.loading && <p role="status">{t("search.loading")}</p>}
-          {searchQuery.trim() && !data.loading && searchResults.length === 0 && <p role="status">{t("search.empty")}</p>}
-          {searchResults.length > 0 && <ul>
-            {searchResults.map((item) => {
-              return <li key={`${item.layer}-${item.feature.id}`}><button type="button" onClick={() => selectSearchResult(item)}>{item.feature.name} · {t(`layer.${item.layer}`)}</button></li>;
-            })}
-          </ul>}
-        </div>
       </div>
       <PageHeroArt kind="map" />
     </header>

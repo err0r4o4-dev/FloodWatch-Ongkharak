@@ -138,7 +138,7 @@ func New(dependencies Dependencies) http.Handler {
 		}
 		if dependencies.FloodService != nil {
 			floodHandler := handler.NewFloodHandler(dependencies.FloodService)
-			publicRead := middleware.NewRateLimiter().Limit("flood-read", 120, time.Minute)
+			publicRead := middleware.NewRateLimiter().Limit("flood-read", 300, time.Minute)
 			api.With(publicRead).Get("/data-sources", floodHandler.Sources)
 			api.With(publicRead).Get("/water-stations", floodHandler.Stations)
 			api.With(publicRead).Get("/water-stations/{id}", floodHandler.Station)
