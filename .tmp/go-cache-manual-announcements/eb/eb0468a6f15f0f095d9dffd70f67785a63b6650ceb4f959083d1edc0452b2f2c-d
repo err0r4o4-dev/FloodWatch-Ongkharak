@@ -1,0 +1,6 @@
+./announcements.go
+./repository.go
+./announcements_integration_test.go
+./repository_integration_test.go
+./scope_integration_test.go
+./tmd_dedup_integration_test.go

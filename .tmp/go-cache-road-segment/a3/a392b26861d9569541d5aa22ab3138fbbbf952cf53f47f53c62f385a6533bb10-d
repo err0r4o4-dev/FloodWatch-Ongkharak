@@ -1,0 +1,6 @@
+./manifest.go
+./model.go
+./normalize.go
+./parse.go
+./postgres.go
+./import_test.go

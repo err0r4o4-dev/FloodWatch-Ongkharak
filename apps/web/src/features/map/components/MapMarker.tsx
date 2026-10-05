@@ -18,12 +18,13 @@ export function MapMarker({ selection, position, status = "UNKNOWN", onSelect }:
   const tone = status === "WARNING" || status === "CRITICAL" ? "danger" : status === "WATCH" ? "warning" : "unknown";
   const areaClass = area ? ` map-marker--depth-${depthBand.toLowerCase()}` : "";
   const title = area ? areaMarkerLabel(area) : selectionName(selection);
+  const markerSize = area ? 28 : 36;
   const icon = divIcon({
     className: `map-marker map-marker--${selection.layer} map-marker--${tone}${areaClass}`,
     html: area
-      ? `<span class="map-marker__depth" aria-hidden="true">${markerSymbols.reports}</span><span class="map-marker__trend map-marker__trend--${areaTrendTone(trend)}" aria-hidden="true">${areaTrendSymbol(trend)}</span>`
+      ? `<span class="map-marker__pin" aria-hidden="true"><span class="map-marker__dot"></span></span><span class="map-marker__trend map-marker__trend--${areaTrendTone(trend)}" aria-hidden="true">${areaTrendSymbol(trend)}</span>`
       : `<span aria-hidden="true">${markerSymbols[selection.layer]}</span>`,
-    iconSize: [36, 36], iconAnchor: [18, 18], popupAnchor: [0, -18]
+    iconSize: [markerSize, area ? 36 : markerSize], iconAnchor: [markerSize / 2, area ? 34 : markerSize / 2], popupAnchor: [0, area ? -34 : -markerSize / 2]
   });
   return <Marker position={[position[1], position[0]]} icon={icon} title={title} alt={title} eventHandlers={{
     click: () => onSelect(selection, position),

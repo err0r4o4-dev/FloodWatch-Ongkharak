@@ -23,19 +23,41 @@ type Repository struct{ pool *pgxpool.Pool }
 func New(pool *pgxpool.Pool) *Repository { return &Repository{pool: pool} }
 
 func (repository *Repository) Create(ctx context.Context, item report.Report) (report.Report, error) {
-	_, err := repository.pool.Exec(ctx, `INSERT INTO community_reports (id, user_id, display_name, type, description, location_name, location_note, location, estimated_water_depth_m, status, source_type, created_at, updated_at, observed_at, water_trend)
-		VALUES ($1,$2,COALESCE(NULLIF($3,''),'Guest'),$4,$5,$6,$7,ST_SetSRID(ST_MakePoint($8,$9),4326),$10,$11,'COMMUNITY',$12,$13,$14,COALESCE(NULLIF($15,''),'UNKNOWN'))`, item.ID, nullableUserID(item.UserID), item.DisplayName, item.Type, item.Description, item.LocationName, item.LocationNote, item.Location.Coordinates[0], item.Location.Coordinates[1], item.EstimatedWaterDepthM, item.Status, item.CreatedAt, item.UpdatedAt, item.ObservedAt, item.WaterTrend)
+	transaction, err := repository.pool.Begin(ctx)
+	if err != nil {
+		return report.Report{}, fmt.Errorf("begin report creation: %w", err)
+	}
+	defer transaction.Rollback(ctx)
+	if err := validateRoadSegmentAssignment(ctx, transaction, item); err != nil {
+		return report.Report{}, err
+	}
+	_, err = transaction.Exec(ctx, `INSERT INTO community_reports (id, user_id, display_name, type, description, location_name, location_note, location, estimated_water_depth_m, status, source_type, created_at, updated_at, observed_at, water_trend, road_segment_id, road_segment_assignment_method, road_segment_assignment_pending)
+		VALUES ($1,$2,COALESCE(NULLIF($3,''),'Guest'),$4,$5,$6,$7,ST_SetSRID(ST_MakePoint($8,$9),4326),$10,$11,'COMMUNITY',$12,$13,$14,COALESCE(NULLIF($15,''),'UNKNOWN'),$16,$17,$18)`, item.ID, nullableUserID(item.UserID), item.DisplayName, item.Type, item.Description, item.LocationName, item.LocationNote, item.Location.Coordinates[0], item.Location.Coordinates[1], item.EstimatedWaterDepthM, item.Status, item.CreatedAt, item.UpdatedAt, item.ObservedAt, item.WaterTrend, nullableRoadSegmentID(item.RoadSegmentID), assignmentMethod(item.RoadSegmentAssignmentMethod), item.RoadSegmentAssignmentPending)
 	if err != nil {
 		return report.Report{}, fmt.Errorf("create report: %w", mapped(err))
+	}
+	if err := transaction.Commit(ctx); err != nil {
+		return report.Report{}, fmt.Errorf("commit report creation: %w", err)
 	}
 	return repository.Get(ctx, item.ID)
 }
 
 func (repository *Repository) CreateGuest(ctx context.Context, item report.Report, tokenHash []byte, expiresAt time.Time) (report.Report, error) {
-	_, err := repository.pool.Exec(ctx, `INSERT INTO community_reports (id, user_id, display_name, type, description, location_name, location_note, location, estimated_water_depth_m, status, source_type, guest_upload_token_hash, guest_upload_token_expires_at, created_at, updated_at, observed_at, water_trend)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,ST_SetSRID(ST_MakePoint($8,$9),4326),$10,$11,'COMMUNITY',$12,$13,$14,$15,$16,COALESCE(NULLIF($17,''),'UNKNOWN'))`, item.ID, nullableUserID(item.UserID), item.DisplayName, item.Type, item.Description, item.LocationName, item.LocationNote, item.Location.Coordinates[0], item.Location.Coordinates[1], item.EstimatedWaterDepthM, item.Status, tokenHash, expiresAt, item.CreatedAt, item.UpdatedAt, item.ObservedAt, item.WaterTrend)
+	transaction, err := repository.pool.Begin(ctx)
+	if err != nil {
+		return report.Report{}, fmt.Errorf("begin guest report creation: %w", err)
+	}
+	defer transaction.Rollback(ctx)
+	if err := validateRoadSegmentAssignment(ctx, transaction, item); err != nil {
+		return report.Report{}, err
+	}
+	_, err = transaction.Exec(ctx, `INSERT INTO community_reports (id, user_id, display_name, type, description, location_name, location_note, location, estimated_water_depth_m, status, source_type, guest_upload_token_hash, guest_upload_token_expires_at, created_at, updated_at, observed_at, water_trend, road_segment_id, road_segment_assignment_method, road_segment_assignment_pending)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,ST_SetSRID(ST_MakePoint($8,$9),4326),$10,$11,'COMMUNITY',$12,$13,$14,$15,$16,COALESCE(NULLIF($17,''),'UNKNOWN'),$18,$19,$20)`, item.ID, nullableUserID(item.UserID), item.DisplayName, item.Type, item.Description, item.LocationName, item.LocationNote, item.Location.Coordinates[0], item.Location.Coordinates[1], item.EstimatedWaterDepthM, item.Status, tokenHash, expiresAt, item.CreatedAt, item.UpdatedAt, item.ObservedAt, item.WaterTrend, nullableRoadSegmentID(item.RoadSegmentID), assignmentMethod(item.RoadSegmentAssignmentMethod), item.RoadSegmentAssignmentPending)
 	if err != nil {
 		return report.Report{}, fmt.Errorf("create guest report: %w", mapped(err))
+	}
+	if err := transaction.Commit(ctx); err != nil {
+		return report.Report{}, fmt.Errorf("commit guest report creation: %w", err)
 	}
 	return repository.Get(ctx, item.ID)
 }
@@ -134,6 +156,58 @@ func (repository *Repository) UpdatePending(ctx context.Context, id string, inpu
 		return report.Report{}, report.ErrConflict
 	}
 	return repository.Get(ctx, id)
+}
+
+func (repository *Repository) UpdatePendingWithAssignment(ctx context.Context, id string, input report.Input, assignment report.RoadSegmentAssignment) (report.Report, error) {
+	transaction, err := repository.pool.Begin(ctx)
+	if err != nil {
+		return report.Report{}, fmt.Errorf("begin report assignment update: %w", err)
+	}
+	defer transaction.Rollback(ctx)
+
+	var status report.Status
+	var previousSegmentID *string
+	var longitude, latitude float64
+	if err := transaction.QueryRow(ctx, `SELECT status,road_segment_id::text,ST_X(location),ST_Y(location) FROM community_reports WHERE id=$1 FOR UPDATE`, id).Scan(&status, &previousSegmentID, &longitude, &latitude); err != nil {
+		return report.Report{}, fmt.Errorf("lock report assignment update: %w", mapped(err))
+	}
+	if status != report.StatusPending {
+		return report.Report{}, report.ErrConflict
+	}
+	preserving := input.RoadSegmentID == nil && assignment.ID != nil && previousSegmentID != nil && *assignment.ID == *previousSegmentID && longitude == input.Location.Coordinates[0] && latitude == input.Location.Coordinates[1]
+	if assignment.ID != nil && !preserving {
+		if err := validateRoadSegmentAssignment(ctx, transaction, report.Report{RoadSegmentID: assignment.ID, Location: input.Location}); err != nil {
+			return report.Report{}, err
+		}
+	}
+	command, err := transaction.Exec(ctx, `UPDATE community_reports SET type=$2, description=$3, location_name=COALESCE($4, location_name), location_note=COALESCE($5, location_note), location=ST_SetSRID(ST_MakePoint($6,$7),4326), estimated_water_depth_m=$8, observed_at=COALESCE($9,observed_at), water_trend=COALESCE(NULLIF($10,''),water_trend), road_segment_id=$11, road_segment_assignment_method=$12, road_segment_assignment_pending=$13, updated_at=GREATEST(clock_timestamp(), updated_at + interval '1 microsecond') WHERE id=$1 AND status='PENDING'`, id, input.Type, input.Description, input.LocationName, input.LocationNote, input.Location.Coordinates[0], input.Location.Coordinates[1], input.EstimatedWaterDepthM, input.ObservedAt, input.WaterTrend, nullableRoadSegmentID(assignment.ID), assignmentMethod(assignment.Method), assignment.Pending)
+	if err != nil {
+		return report.Report{}, fmt.Errorf("update report assignment: %w", mapped(err))
+	}
+	if command.RowsAffected() != 1 {
+		return report.Report{}, report.ErrConflict
+	}
+	if err := transaction.Commit(ctx); err != nil {
+		return report.Report{}, fmt.Errorf("commit report assignment update: %w", err)
+	}
+	return repository.Get(ctx, id)
+}
+
+func validateRoadSegmentAssignment(ctx context.Context, transaction pgx.Tx, item report.Report) error {
+	if item.RoadSegmentID == nil {
+		return nil
+	}
+	var segmentID string
+	if err := transaction.QueryRow(ctx, `SELECT id::text FROM road_segments
+		WHERE id=$1 AND active=true
+		AND ST_DWithin(geometry::geography, ST_SetSRID(ST_MakePoint($2,$3),4326)::geography, 30)
+		FOR SHARE`, *item.RoadSegmentID, item.Location.Coordinates[0], item.Location.Coordinates[1]).Scan(&segmentID); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return report.ErrInvalid
+		}
+		return fmt.Errorf("validate report road segment assignment: %w", mapped(err))
+	}
+	return nil
 }
 
 func (repository *Repository) Review(ctx context.Context, id string, status report.Status, reviewerID, reason string, expectedUpdatedAt time.Time) (report.Report, error) {
@@ -368,15 +442,16 @@ func listReportMedia(ctx context.Context, querier reportQuerier, reportID string
 }
 
 const reportSelect = `SELECT r.id, r.user_id, r.display_name, r.type, r.description, r.location_name, r.location_note, ST_AsGeoJSON(r.location), r.estimated_water_depth_m::double precision,
-    r.status, r.source_type, r.created_at, r.updated_at, r.verified_at, r.verified_by, r.reviewed_at, r.reviewed_by, r.rejection_reason, r.observed_at, r.water_trend FROM community_reports r`
+    r.status, r.source_type, r.created_at, r.updated_at, r.verified_at, r.verified_by, r.reviewed_at, r.reviewed_by, r.rejection_reason, r.observed_at, r.water_trend, r.road_segment_id, r.road_segment_assignment_method, r.road_segment_assignment_pending FROM community_reports r`
 
 type rowScanner interface{ Scan(...any) error }
 
 func scanReport(row rowScanner) (report.Report, error) {
 	var item report.Report
 	var userID, displayName, locationName, locationNote sql.NullString
+	var roadSegmentID, assignmentMethodValue sql.NullString
 	var locationJSON []byte
-	err := row.Scan(&item.ID, &userID, &displayName, &item.Type, &item.Description, &locationName, &locationNote, &locationJSON, &item.EstimatedWaterDepthM, &item.Status, &item.SourceType, &item.CreatedAt, &item.UpdatedAt, &item.VerifiedAt, &item.VerifiedBy, &item.ReviewedAt, &item.ReviewedBy, &item.RejectionReason, &item.ObservedAt, &item.WaterTrend)
+	err := row.Scan(&item.ID, &userID, &displayName, &item.Type, &item.Description, &locationName, &locationNote, &locationJSON, &item.EstimatedWaterDepthM, &item.Status, &item.SourceType, &item.CreatedAt, &item.UpdatedAt, &item.VerifiedAt, &item.VerifiedBy, &item.ReviewedAt, &item.ReviewedBy, &item.RejectionReason, &item.ObservedAt, &item.WaterTrend, &roadSegmentID, &assignmentMethodValue, &item.RoadSegmentAssignmentPending)
 	if err != nil {
 		return report.Report{}, err
 	}
@@ -386,6 +461,14 @@ func scanReport(row rowScanner) (report.Report, error) {
 	item.DisplayName = displayName.String
 	item.LocationName = locationName.String
 	item.LocationNote = locationNote.String
+	if roadSegmentID.Valid {
+		item.RoadSegmentID = &roadSegmentID.String
+	}
+	if assignmentMethodValue.Valid {
+		item.RoadSegmentAssignmentMethod = report.RoadSegmentAssignmentMethod(assignmentMethodValue.String)
+	} else {
+		item.RoadSegmentAssignmentMethod = report.AssignmentUnassigned
+	}
 	if item.DisplayName == "" {
 		item.DisplayName = "Guest"
 	}
@@ -401,6 +484,20 @@ func nullableUserID(userID string) any {
 		return nil
 	}
 	return userID
+}
+
+func nullableRoadSegmentID(segmentID *string) any {
+	if segmentID == nil || *segmentID == "" {
+		return nil
+	}
+	return *segmentID
+}
+
+func assignmentMethod(method report.RoadSegmentAssignmentMethod) string {
+	if method == "" {
+		return string(report.AssignmentUnassigned)
+	}
+	return string(method)
 }
 
 func mapped(err error) error {

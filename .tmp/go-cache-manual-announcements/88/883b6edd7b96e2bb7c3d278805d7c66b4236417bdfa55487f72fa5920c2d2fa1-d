@@ -1,0 +1,12 @@
+./config.go
+./externaldata.go
+./google.go
+./mail.go
+./proxy.go
+./weather.go
+./config_test.go
+./externaldata_test.go
+./google_test.go
+./mail_test.go
+./proxy_test.go
+./weather_test.go

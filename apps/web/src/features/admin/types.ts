@@ -44,12 +44,16 @@ export type AuditAction =
   | "alert_rule.deleted"
   | "setting.updated"
   | "report.reviewed"
+  | "manual_announcement.created"
+  | "manual_announcement.updated"
+  | "manual_announcement.published"
+  | "manual_announcement.withdrawn"
   | "auth.login_success"
   | "auth.login_failed"
   | "auth.logout";
 
 export type ActorRole = "USER" | "ADMIN" | "SYSTEM";
-export type TargetType = "USER" | "ALERT_RULE" | "DATA_SOURCE" | "COMMUNITY_REPORT" | "SYSTEM_SETTING" | "AUTH_SESSION";
+export type TargetType = "USER" | "ALERT_RULE" | "DATA_SOURCE" | "COMMUNITY_REPORT" | "SYSTEM_SETTING" | "AUTH_SESSION" | "MANUAL_ANNOUNCEMENT";
 
 export type AuditLog = {
   id: string;

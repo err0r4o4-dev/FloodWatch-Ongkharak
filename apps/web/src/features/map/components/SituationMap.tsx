@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { geoJSON, latLngBounds } from "leaflet";
 import type { Popup as LeafletPopup } from "leaflet";
 import { CircleMarker, MapContainer, Popup, TileLayer, Tooltip, useMap, useMapEvents } from "react-leaflet";
@@ -58,7 +58,7 @@ function MapControls({ items, compact = false, location }: { items: LayerItems; 
   const fitFeatures = () => {
     const bounds = latLngBounds([]);
     items.water.forEach((station) => bounds.extend([station.location.coordinates[1], station.location.coordinates[0]]));
-    items.reports.forEach((report) => bounds.extend([report.location.coordinates[1], report.location.coordinates[0]]));
+    items.reports.forEach((report) => bounds.extend(geoJSON(selectionGeometry({ layer: "reports", feature: report }) as Parameters<typeof geoJSON>[0]).getBounds()));
     [...items.flood, ...items.risk, ...items.roads].forEach((item) => {
       const layer = geoJSON(item.geometry as Parameters<typeof geoJSON>[0]);
       bounds.extend(layer.getBounds());
@@ -80,6 +80,7 @@ function MapFeaturePopup({ selection, position, onClose, onDetails }: {
 }) {
   const popup = useRef<LeafletPopup>(null);
   const map = useMap();
+  const anchor = useMemo<[number, number]>(() => [position[1], position[0]], [position[0], position[1]]);
   const narrow = typeof window !== "undefined" && window.innerWidth <= 880;
   const legendHeight = narrow && typeof document !== "undefined" ? document.querySelector<HTMLElement>(".map-page__legend")?.getBoundingClientRect().height ?? 0 : 0;
   const autoPanPadding = narrow ? { topLeft: [16, 80] as [number, number], bottomRight: [112, Math.max(120, Math.ceil(legendHeight) + 16)] as [number, number] } : { topLeft: [16, 80] as [number, number], bottomRight: [16, 80] as [number, number] };
@@ -90,16 +91,17 @@ function MapFeaturePopup({ selection, position, onClose, onDetails }: {
     observer.observe(content);
     return () => observer.disconnect();
   }, []);
-  return <Popup ref={popup} position={[position[1], position[0]]} className="feature-map-popup" closeButton={false} closeOnClick={false} autoPanPaddingTopLeft={autoPanPadding.topLeft} autoPanPaddingBottomRight={autoPanPadding.bottomRight} minWidth={240} maxWidth={300}>
+  return <Popup ref={popup} position={anchor} className="feature-map-popup" closeButton={false} closeOnClick={false} autoPanPaddingTopLeft={autoPanPadding.topLeft} autoPanPaddingBottomRight={autoPanPadding.bottomRight} minWidth={240} maxWidth={300}>
     <FeaturePopup selection={selection} onClose={onClose} onDetails={onDetails} restoreFocus={() => map.getContainer().focus({ preventScroll: true })} />
   </Popup>;
 }
 
-function InteractiveLayers({ items, visible, mode, enablePopups, focusSelection, initialRiskId, onSelect, onPreview }: {
+function InteractiveLayers({ items, visible, mode, enablePopups, openDetailsOnSelect, focusSelection, initialRiskId, onSelect, onPreview }: {
   items: LayerItems;
   visible: LayerVisibility;
   mode: MapMode;
   enablePopups: boolean;
+  openDetailsOnSelect: boolean;
   focusSelection?: MapSelection | null;
   initialRiskId?: string | null;
   onSelect: (selection: MapSelection) => void;
@@ -115,7 +117,7 @@ function InteractiveLayers({ items, visible, mode, enablePopups, focusSelection,
     moveend: () => { autoPanning.current = false; }
   });
   const preview = (selection: MapSelection, position?: Position) => {
-    if (!enablePopups) { onSelect(selection); return; }
+    if (!enablePopups || openDetailsOnSelect) { onSelect(selection); return; }
     if (typeof window.matchMedia === "function" && window.matchMedia("(max-width: 55rem)").matches) map.getContainer().scrollIntoView({ block: "center", behavior: "instant" });
     const bounds = geometryBounds(selectionGeometry(selection));
     setPopup({ selection, position: position ?? [(bounds.west + bounds.east) / 2, (bounds.south + bounds.north) / 2] });
@@ -149,7 +151,7 @@ function InteractiveLayers({ items, visible, mode, enablePopups, focusSelection,
   </>;
 }
 
-export function SituationMap({ items, visible, mode, points, picking, onBoundsChange, onMapPoint, onSelect, onPreview, enablePopups = false, compactControls = enablePopups, focusSelection, initialBounds, initialRiskId }: {
+export function SituationMap({ items, visible, mode, points, picking, onBoundsChange, onMapPoint, onSelect, onPreview, enablePopups = false, openDetailsOnSelect = false, compactControls = enablePopups, focusSelection, initialBounds, initialRiskId }: {
   items: LayerItems;
   visible: LayerVisibility;
   mode: MapMode;
@@ -160,6 +162,7 @@ export function SituationMap({ items, visible, mode, points, picking, onBoundsCh
   onSelect: (selection: MapSelection) => void;
   onPreview?: (selection: MapSelection | null) => void;
   enablePopups?: boolean;
+  openDetailsOnSelect?: boolean;
   compactControls?: boolean;
   focusSelection?: MapSelection | null;
   initialBounds?: MapBounds;
@@ -174,7 +177,7 @@ export function SituationMap({ items, visible, mode, points, picking, onBoundsCh
       <SharedMapViewport enabled={enablePopups} observeResize={false} />
       <TileLayer url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' maxZoom={mapSettings.maxZoom} />
       <ViewportEvents onBoundsChange={onBoundsChange} onMapPoint={onMapPoint} initialBounds={initialBounds} />
-      <InteractiveLayers items={items} visible={visible} mode={mode} enablePopups={enablePopups} focusSelection={focusSelection} initialRiskId={initialRiskId} onSelect={onSelect} onPreview={onPreview} />
+      <InteractiveLayers items={items} visible={visible} mode={mode} enablePopups={enablePopups} openDetailsOnSelect={openDetailsOnSelect} focusSelection={focusSelection} initialRiskId={initialRiskId} onSelect={onSelect} onPreview={onPreview} />
       <UserLocationMarker position={location.position} />
       {mode === "ROUTE" && (["origin", "destination"] as const).map((key) => {
         const position = parseRoutePoint(points[key]);

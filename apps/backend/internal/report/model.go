@@ -41,6 +41,14 @@ const (
 	TrendFalling WaterTrend = "FALLING"
 )
 
+type RoadSegmentAssignmentMethod string
+
+const (
+	AssignmentUnassigned    RoadSegmentAssignmentMethod = "UNASSIGNED"
+	AssignmentUserConfirmed RoadSegmentAssignmentMethod = "USER_CONFIRMED"
+	AssignmentLegacyMatch   RoadSegmentAssignmentMethod = "LEGACY_MATCH"
+)
+
 type PublicationStatus string
 
 const (
@@ -96,6 +104,7 @@ type Input struct {
 	EstimatedWaterDepthM *float64   `json:"estimatedWaterDepthM"`
 	ObservedAt           *time.Time `json:"observedAt"`
 	WaterTrend           WaterTrend `json:"waterTrend"`
+	RoadSegmentID        *string    `json:"roadSegmentId"`
 }
 
 type GuestInput struct {
@@ -147,6 +156,9 @@ type Report struct {
 	ReviewedAt           *time.Time
 	ReviewedBy           *string
 	RejectionReason      *string
+	RoadSegmentID        *string
+	RoadSegmentAssignmentMethod RoadSegmentAssignmentMethod
+	RoadSegmentAssignmentPending bool
 	Media                []Media
 	ReviewHistory        []ReviewEvent
 }
@@ -187,6 +199,21 @@ type Repository interface {
 	Review(context.Context, string, Status, string, string, time.Time) (Report, error)
 	CreateMedia(context.Context, Media, string) (Media, error)
 	GetMedia(context.Context, string, string) (Media, error)
+}
+
+type RoadSegmentValidator interface {
+	ValidateRoadSegmentAssignment(context.Context, string, float64, float64) error
+}
+
+type RoadSegmentAssignment struct {
+	ID      *string
+	Method  RoadSegmentAssignmentMethod
+	Pending bool
+}
+
+// AssignmentRepository is optional so existing report repositories and tests can keep their established update contract.
+type AssignmentRepository interface {
+	UpdatePendingWithAssignment(context.Context, string, Input, RoadSegmentAssignment) (Report, error)
 }
 
 type GuestRepository interface {

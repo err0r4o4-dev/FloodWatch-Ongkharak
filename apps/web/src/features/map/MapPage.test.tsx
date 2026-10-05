@@ -1,8 +1,9 @@
-import { fireEvent, render as renderView, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render as renderView, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import type { ReactElement } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { MapPage } from "./MapPage";
+import type { LayerItems, MapSelection } from "./types";
 
 function render(view: ReactElement) {
   return renderView(<MemoryRouter>{view}</MemoryRouter>);
@@ -10,10 +11,10 @@ function render(view: ReactElement) {
 
 vi.mock("./components/SituationMap", async () => {
   const React = await import("react");
-  return { SituationMap: ({ onBoundsChange }: { onBoundsChange: (bounds: { west: number; south: number; east: number; north: number }) => void }) => {
+  return { SituationMap: ({ onBoundsChange, onSelect, items, openDetailsOnSelect }: { onBoundsChange: (bounds: { west: number; south: number; east: number; north: number }) => void; onSelect: (selection: MapSelection) => void; items: LayerItems; openDetailsOnSelect?: boolean }) => {
     const bounds = { west: 100.9, south: 14, east: 101.2, north: 14.3 };
     React.useEffect(() => { onBoundsChange(bounds); }, [onBoundsChange]);
-    return <div aria-label="แผนที่สถานการณ์แบบโต้ตอบ"><button type="button" aria-label="เผยแพร่ขอบเขตเดิมอีกครั้ง" onClick={() => onBoundsChange(bounds)}>เผยแพร่ขอบเขตเดิมอีกครั้ง</button></div>;
+    return <div data-direct-details={openDetailsOnSelect} aria-label="แผนที่สถานการณ์แบบโต้ตอบ"><button type="button" aria-label="เผยแพร่ขอบเขตเดิมอีกครั้ง" onClick={() => onBoundsChange(bounds)}>เผยแพร่ขอบเขตเดิมอีกครั้ง</button>{items.roads.map((feature) => <button key={feature.id} onClick={() => onSelect({ layer: "roads", feature })}>{feature.name}</button>)}{items.water.map((feature) => <button key={feature.id} onClick={() => onSelect({ layer: "water", feature })}>{feature.name}</button>)}{items.flood.map((feature) => <button key={feature.id} onClick={() => onSelect({ layer: "flood", feature })}>{feature.title}</button>)}</div>;
   } };
 });
 
@@ -91,10 +92,9 @@ describe("MapPage", () => {
     expect(screen.getByLabelText("คำอธิบายสัญลักษณ์")).not.toHaveTextContent("สถานีวัดน้ำ");
   });
 
-  it("selects a stale road via the keyboard alternative and keeps UNKNOWN distinct from passable", async () => {
+  it("selects a stale road from the map and keeps UNKNOWN distinct from passable", async () => {
     mockApi({ "/api/v1/roads": [road] });
     render(<MapPage />);
-    fireEvent.click(screen.getByRole("button", { name: /รายการในขอบเขต/ }));
     fireEvent.click(await screen.findByRole("button", { name: /ถนนทดสอบ/ }));
     expect(screen.getByRole("region", { name: "ข้อมูลตำแหน่งที่เลือก" })).toHaveTextContent("หน่วยงานทดสอบ");
     expect(screen.getAllByText("ไม่ทราบสถานะ").length).toBeGreaterThan(0);
@@ -121,7 +121,6 @@ describe("MapPage", () => {
     const station = { id: "station-repeat", name: "สถานีขอบเขตเดิม", source, active: true, location: { type: "Point", coordinates: [101, 14.1] } };
     mockApi({ "/api/v1/water-stations": [station] });
     render(<MapPage />);
-    fireEvent.click(screen.getByRole("button", { name: /รายการในขอบเขต/ }));
     fireEvent.click(await screen.findByRole("button", { name: /สถานีขอบเขตเดิม/ }));
     expect(screen.getByRole("region", { name: "ข้อมูลตำแหน่งที่เลือก" })).toHaveTextContent("สถานีขอบเขตเดิม");
     fireEvent.click(screen.getByRole("button", { name: "เผยแพร่ขอบเขตเดิมอีกครั้ง" }));
@@ -137,7 +136,6 @@ describe("MapPage", () => {
     };
     mockApi({ "/api/v1/flood-events": [flood] });
     render(<MapPage />);
-    fireEvent.click(screen.getByRole("button", { name: /รายการในขอบเขต/ }));
     fireEvent.click(await screen.findByRole("button", { name: /เหตุการณ์ทดสอบ/ }));
     const details = screen.getByRole("region", { name: "ข้อมูลตำแหน่งที่เลือก" });
     expect(details).toHaveTextContent("หลักฐาน AI");
@@ -151,7 +149,6 @@ describe("MapPage", () => {
     const reading = { source, observedAt: "2026-10-02T00:00:00Z", freshness: "STALE", verificationStatus: "UNVERIFIED", confidence: null, waterLevelM: 1.2, flowRateM3s: null, rainfallMm: null };
     mockApi({ "/api/v1/water-stations": [station], "/api/v1/water-stations/station-1/readings": [reading] });
     render(<MapPage />);
-    fireEvent.click(screen.getByRole("button", { name: /รายการในขอบเขต/ }));
     fireEvent.click(await screen.findByRole("button", { name: /สถานีทดสอบ/ }));
     const details = screen.getByRole("region", { name: "ข้อมูลตำแหน่งที่เลือก" });
     expect(details).toHaveTextContent("แหล่งทางการ");
@@ -161,17 +158,15 @@ describe("MapPage", () => {
     expect(details).toHaveTextContent("ไม่ทราบสถานะ");
   });
 
-  it("keeps the map primary and lets the keyboard list open and close", () => {
-    mockApi();
+  it("opens map details directly and removes the bounds list button", async () => {
+    mockApi({ "/api/v1/roads": [road] });
     render(<MapPage />);
     expect(screen.queryByRole("complementary", { name: "ข้อมูลแผนที่และเส้นทาง" })).not.toBeInTheDocument();
-    const listButton = screen.getByRole("button", { name: /รายการในขอบเขต/ });
-    fireEvent.click(listButton);
-    expect(listButton).toHaveAttribute("aria-expanded", "true");
+    expect(screen.queryByRole("button", { name: /รายการในขอบเขต/ })).not.toBeInTheDocument();
+    expect(screen.getByLabelText("แผนที่สถานการณ์แบบโต้ตอบ")).toHaveAttribute("data-direct-details", "true");
+    fireEvent.click(await screen.findByRole("button", { name: "ถนนทดสอบ" }));
     expect(screen.getByRole("complementary", { name: "ข้อมูลแผนที่และเส้นทาง" })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "ปิดแผงข้อมูล" }));
-    expect(listButton).toHaveFocus();
-    expect(screen.queryByRole("complementary")).not.toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "ข้อมูลตำแหน่งที่เลือก" })).toHaveTextContent("ถนนทดสอบ");
   });
 
   it("searches only loaded stations and areas without claiming global place search", async () => {
@@ -180,7 +175,7 @@ describe("MapPage", () => {
     render(<MapPage />);
     const input = screen.getByRole("searchbox", { name: "ค้นหาสถานีหรือพื้นที่ในขอบเขตที่โหลด" });
     fireEvent.change(input, { target: { value: "คลองทดสอบ" } });
-    const result = await screen.findByRole("button", { name: /สถานีคลองทดสอบ/ });
+    const result = await within(screen.getByRole("search")).findByRole("button", { name: /สถานีคลองทดสอบ/ });
     expect(screen.getAllByText("ค้นหาเฉพาะสถานีและพื้นที่ในขอบเขตที่โหลด").length).toBeGreaterThan(0);
     fireEvent.click(result);
     expect(input).toHaveValue("");

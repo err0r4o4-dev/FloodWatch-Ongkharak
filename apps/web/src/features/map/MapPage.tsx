@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router";
 import { PageHeroArt } from "../../shared/components/PageHeroArt";
 import { LayerControl } from "./components/LayerControl";
@@ -22,6 +22,7 @@ import "./MapPage.css";
 const defaultVisibility: LayerVisibility = { flood: true, water: true, risk: true, roads: true, reports: true };
 const emptyPoint: RoutePoint = { longitude: "", latitude: "" };
 const mapEvents = ["water_level.updated", "flood_event.created", "flood_event.updated", "road.status.changed", "report.verified", "report.updated"] as const;
+type MapSearchSelection = Extract<MapSelection, { layer: "water" | "risk" }>;
 
 function sameBounds(first: MapBounds | null, second: MapBounds) {
   return first?.west === second.west && first.south === second.south && first.east === second.east && first.north === second.north;
@@ -46,11 +47,10 @@ export function MapPage() {
   const [bounds, setBounds] = useState<MapBounds | null>(null);
   const [selection, setSelection] = useState<MapSelection | null>(null);
   const [focusSelection, setFocusSelection] = useState<MapSelection | null>(null);
-  const [listOpen, setListOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [riskOpen, setRiskOpen] = useState(params.get("panel") === "risk");
   const [selectedRiskId, setSelectedRiskId] = useState<string | null>(initialRiskId);
   const [expanded, setExpanded] = useState(false);
-  const listButton = useRef<HTMLButtonElement>(null);
   const riskButton = useRef<HTMLButtonElement>(null);
   const expandButton = useRef<HTMLButtonElement>(null);
   const workspace = useRef<HTMLElement>(null);
@@ -61,10 +61,17 @@ export function MapPage() {
   const [points, setPoints] = useState<RoutePoints>({ origin: emptyPoint, destination: emptyPoint });
   const [picking, setPicking] = useState<Picking>(null);
   const data = useMapData(bounds, visible, retry + realtimeRevision + reportAreaRevision);
+  const searchResults = useMemo<MapSearchSelection[]>(() => {
+    const query = searchQuery.trim().toLocaleLowerCase();
+    if (!query) return [];
+    return [
+      ...data.items.water.filter((feature) => feature.name.toLocaleLowerCase().includes(query)).map((feature) => ({ layer: "water" as const, feature })),
+      ...data.items.risk.filter((feature) => feature.name.toLocaleLowerCase().includes(query)).map((feature) => ({ layer: "risk" as const, feature }))
+    ];
+  }, [data.items.risk, data.items.water, searchQuery]);
   const enabled = layerKeys.filter((key) => visible[key]);
-  const count = Object.values(data.items).reduce((total, collection) => total + collection.length, 0);
   const allFailed = !data.loading && enabled.length > 0 && data.failed.length === enabled.length;
-  const panelOpen = listOpen || riskOpen || selection !== null || mode === "ROUTE";
+  const panelOpen = riskOpen || selection !== null || mode === "ROUTE";
   const onBoundsChange = useCallback((next: MapBounds) => {
     if (sameBounds(boundsRef.current, next)) return;
     boundsRef.current = next;
@@ -84,16 +91,19 @@ export function MapPage() {
   };
   const dismissPanel = () => {
     setSelection(null);
-    setListOpen(false);
     setRiskOpen(false);
     setPicking(null);
     setMode("SITUATION");
-    (riskOpen ? riskButton : listButton).current?.focus();
+    if (riskOpen) riskButton.current?.focus(); else workspace.current?.querySelector<HTMLElement>(".leaflet-map")?.focus({ preventScroll: true });
+  };
+  const selectSearchResult = (item: MapSelection) => {
+    setSearchQuery("");
+    setFocusSelection(item);
+    setSelection(item);
   };
   useEffect(() => {
     if (params.get("panel") !== "risk") return;
     setRiskOpen(true);
-    setListOpen(false);
     setMode("SITUATION");
     setVisible((previous) => ({ ...previous, risk: true }));
     setSelectedRiskId(params.get("risk"));
@@ -122,16 +132,37 @@ export function MapPage() {
         <p className="eyebrow">{t("hero.eyebrow")}</p>
         <h1 id="situation-map-title">{t("hero.title")}</h1>
         <p>{t("hero.description")}</p>
+        <div className="map-page__search" role="search">
+          <form onSubmit={(event) => event.preventDefault()}>
+            <label htmlFor="map-page-search">{t("search.label")}</label>
+            <input
+              id="map-page-search"
+              type="search"
+              value={searchQuery}
+              placeholder={t("search.placeholder")}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              onKeyDown={(event) => { if (event.key === "Escape") setSearchQuery(""); }}
+            />
+          </form>
+          <p>{t("search.scope")}</p>
+          {searchQuery.trim() && data.loading && <p role="status">{t("search.loading")}</p>}
+          {searchQuery.trim() && !data.loading && searchResults.length === 0 && <p role="status">{t("search.empty")}</p>}
+          {searchResults.length > 0 && <ul>
+            {searchResults.map((item) => {
+              return <li key={`${item.layer}-${item.feature.id}`}><button type="button" onClick={() => selectSearchResult(item)}>{item.feature.name} · {t(`layer.${item.layer}`)}</button></li>;
+            })}
+          </ul>}
+        </div>
       </div>
       <PageHeroArt kind="map" />
     </header>
     <div className={`map-page__workspace${panelOpen ? " has-panel" : ""}`}>
-      <SituationMap key={`${initialRiskId ?? ""}:${params.get("bbox") ?? ""}`} items={data.items} visible={visible} mode={mode} points={points} picking={picking} onBoundsChange={onBoundsChange} onMapPoint={onMapPoint} onSelect={setSelection} onPreview={(item) => { setSelectedRiskId(item?.layer === "risk" ? item.feature.id : null); }} enablePopups focusSelection={focusSelection} initialBounds={initialBounds} initialRiskId={initialRiskId} />
+      <SituationMap key={`${initialRiskId ?? ""}:${params.get("bbox") ?? ""}`} items={data.items} visible={visible} mode={mode} points={points} picking={picking} onBoundsChange={onBoundsChange} onMapPoint={onMapPoint} onSelect={setSelection} onPreview={(item) => { setSelectedRiskId(item?.layer === "risk" ? item.feature.id : null); }} enablePopups openDetailsOnSelect focusSelection={focusSelection} initialBounds={initialBounds} initialRiskId={initialRiskId} />
       <div className="map-page__layers"><LayerControl visible={visible} onToggle={toggle} /></div>
-      <div className="map-page__tools"><MapToolbar mode={mode} onModeChange={(next) => { setMode(next); setPicking(null); setSelection(null); setRiskOpen(false); }} /><button ref={riskButton} type="button" className="map-tool-button" aria-label={t("button.risk")} aria-expanded={riskOpen} aria-controls="map-information-panel" onClick={() => { setRiskOpen((previous) => !previous); setListOpen(false); setMode("SITUATION"); setPicking(null); setSelection(null); setVisible((previous) => ({ ...previous, risk: true })); }}><span aria-hidden="true">⚠</span><span>{t("button.risk")}</span></button><button ref={listButton} type="button" className="map-tool-button map-tool-button--list" aria-label={t("button.list")} aria-expanded={listOpen} aria-controls="map-information-panel" onClick={() => { setListOpen((previous) => !previous); setRiskOpen(false); }}><span aria-hidden="true">☷</span><span>{t("button.list")}</span><span className="map-tool-button__count">{data.loading && count === 0 ? "…" : count}</span></button><button ref={expandButton} type="button" className="map-tool-button map-tool-button--square" aria-label={t(expanded ? "button.fullscreen.exit" : "button.fullscreen.enter")} title={t(expanded ? "button.fullscreen.exit" : "button.fullscreen.enter")} aria-pressed={expanded} onClick={() => setExpanded((previous) => !previous)}><span aria-hidden="true">⛶</span></button></div>
-      {panelOpen && <MapSidePanel mode={mode} items={data.items} visible={visible} loading={data.loading} failed={allFailed} failedLayers={data.failed} previousLayers={data.previousLayers} truncated={data.truncated} onRetry={() => setRetry((previous) => previous + 1)} selection={selection} onSelect={setSelection} onClose={() => { setSelection(null); if (!listOpen && !riskOpen && mode === "SITUATION") workspace.current?.querySelector<HTMLElement>(".leaflet-map")?.focus({ preventScroll: true }); }} onDismiss={dismissPanel} showList={listOpen} showRisk={riskOpen} selectedRiskId={selectedRiskId} onRiskSelect={(item) => { setSelectedRiskId(item.feature.id); setFocusSelection({ ...item }); }} points={points} onPointChange={(key, point) => setPoints((previous) => ({ ...previous, [key]: point }))} picking={picking} onPickingChange={setPicking} />}
-      <div className="map-page__legend"><MapLegend visible={visible} /></div>
+      <div className="map-page__tools"><MapToolbar mode={mode} onModeChange={(next) => { setMode(next); setPicking(null); setSelection(null); setRiskOpen(false); }} /><button ref={riskButton} type="button" className="map-tool-button" aria-label={t("button.risk")} aria-expanded={riskOpen} aria-controls="map-information-panel" onClick={() => { setRiskOpen((previous) => !previous); setMode("SITUATION"); setPicking(null); setSelection(null); setVisible((previous) => ({ ...previous, risk: true })); }}><span aria-hidden="true">⚠</span><span>{t("button.risk")}</span></button><button ref={expandButton} type="button" className="map-tool-button map-tool-button--square" aria-label={t(expanded ? "button.fullscreen.exit" : "button.fullscreen.enter")} title={t(expanded ? "button.fullscreen.exit" : "button.fullscreen.enter")} aria-pressed={expanded} onClick={() => setExpanded((previous) => !previous)}><span aria-hidden="true">⛶</span></button></div>
+      {panelOpen && <MapSidePanel mode={mode} items={data.items} visible={visible} loading={data.loading} failed={allFailed} failedLayers={data.failed} previousLayers={data.previousLayers} truncated={data.truncated} onRetry={() => setRetry((previous) => previous + 1)} selection={selection} onSelect={setSelection} onClose={() => { setSelection(null); if (!riskOpen && mode === "SITUATION") workspace.current?.querySelector<HTMLElement>(".leaflet-map")?.focus({ preventScroll: true }); }} onDismiss={dismissPanel} showList={false} showRisk={riskOpen} selectedRiskId={selectedRiskId} onRiskSelect={(item) => { setSelectedRiskId(item.feature.id); setFocusSelection({ ...item }); }} points={points} onPointChange={(key, point) => setPoints((previous) => ({ ...previous, [key]: point }))} picking={picking} onPickingChange={setPicking} />}
     </div>
+    <div className="map-page__legend"><MapLegend visible={visible} /></div>
     <MapDataStatus items={data.items} visible={visible} loading={data.loading} failed={allFailed} failedLayers={data.failed} previousLayers={data.previousLayers} truncated={data.truncated} onRetry={() => setRetry((previous) => previous + 1)} />
     {initialRiskId && !data.loading && !data.items.risk.some((item) => item.id === initialRiskId) && <p className="map-page__caution" role="status">{t("caution.selectionMissing")}</p>}
     <p className="map-page__caution">{t("caution.evidence")}</p>

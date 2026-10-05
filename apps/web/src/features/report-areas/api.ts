@@ -36,6 +36,11 @@ function point(value: unknown): value is ReportArea["location"] {
     typeof latitude === "number" && Number.isFinite(latitude) && latitude >= -90 && latitude <= 90;
 }
 
+function lineString(value: unknown): value is NonNullable<ReportArea["geometry"]> {
+  if (!record(value) || value.type !== "LineString" || !Array.isArray(value.coordinates) || value.coordinates.length < 2) return false;
+  return value.coordinates.every((coordinate) => point({ type: "Point", coordinates: coordinate }));
+}
+
 function summaryFields(value: unknown): boolean {
   return record(value) && typeof value.windowStart === "string" && iso(value.windowStart) &&
     typeof value.windowEnd === "string" && iso(value.windowEnd) && new Date(value.windowStart).getTime() <= new Date(value.windowEnd).getTime() &&
@@ -47,9 +52,16 @@ function summaryFields(value: unknown): boolean {
 }
 
 export function isValidReportArea(value: unknown): value is ReportArea {
-  return summaryFields(value) && record(value) && typeof value.id === "string" && value.id.length > 0 &&
-    typeof value.name === "string" && value.name.length > 0 && point(value.location) && value.radiusM === 150 &&
-    value.sourceType === "COMMUNITY" && count(value.totalReportCount);
+  if (!summaryFields(value) || !record(value) || typeof value.id !== "string" || value.id.length === 0 || typeof value.name !== "string" || value.name.length === 0 ||
+    !point(value.location) || value.sourceType !== "COMMUNITY" || !count(value.totalReportCount)) return false;
+  if (value.areaType === "ROAD_SEGMENT") {
+    return value.radiusM === 0 && lineString(value.geometry) && typeof value.roadSegmentId === "string" && value.roadSegmentId.length > 0 &&
+      typeof value.segmentVersion === "number" && Number.isInteger(value.segmentVersion) && value.segmentVersion >= 1 && typeof value.segmentActive === "boolean" &&
+      typeof value.startLabel === "string" && typeof value.endLabel === "string";
+  }
+  return (value.areaType === undefined || value.areaType === "LEGACY_RADIUS") && value.radiusM === 150 && (value.geometry === undefined || value.geometry === null) &&
+    (value.roadSegmentId === undefined || value.roadSegmentId === null) && (value.segmentVersion === undefined || value.segmentVersion === 0) &&
+    (value.startLabel === undefined || value.startLabel === "") && (value.endLabel === undefined || value.endLabel === "");
 }
 
 export function isValidReportAreaTimelineWindow(value: unknown): value is ReportAreaTimelineWindow {

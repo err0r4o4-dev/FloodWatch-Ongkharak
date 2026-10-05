@@ -62,11 +62,35 @@ type Location struct {
 	Coordinates []float64 `json:"coordinates"`
 }
 
+type LineGeometry struct {
+	Type        string      `json:"type"`
+	Coordinates [][]float64 `json:"coordinates"`
+}
+
+type Segment struct {
+	ID         string
+	Name       string
+	StartLabel string
+	EndLabel   string
+	Version    int
+	Active     bool
+	Geometry   LineGeometry
+	Longitude  float64
+	Latitude   float64
+}
+
 type Area struct {
 	ID                string        `json:"id"`
 	Name              string        `json:"name"`
 	Location          Location      `json:"location"`
 	RadiusM           int           `json:"radiusM"`
+	AreaType          string        `json:"areaType"`
+	RoadSegmentID     *string       `json:"roadSegmentId"`
+	SegmentVersion    int           `json:"segmentVersion"`
+	SegmentActive     bool          `json:"segmentActive"`
+	StartLabel        string        `json:"startLabel"`
+	EndLabel          string        `json:"endLabel"`
+	Geometry          *LineGeometry `json:"geometry"`
 	SourceType        string        `json:"sourceType"`
 	DepthBand         DepthBand     `json:"depthBand"`
 	PreviousDepthBand DepthBand     `json:"previousDepthBand"`
@@ -111,20 +135,21 @@ type ListFilter struct {
 }
 
 type SourceReport struct {
-	ID           string
-	UserID       string
-	Type         string
-	Description  string
-	LocationName string
-	Longitude    float64
-	Latitude     float64
-	DepthM       *float64
-	ObservedAt   *time.Time
-	WaterTrend   Trend
-	MediaHashes  []string
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
-	Published    bool
+	ID            string
+	RoadSegmentID string
+	UserID        string
+	Type          string
+	Description   string
+	LocationName  string
+	Longitude     float64
+	Latitude      float64
+	DepthM        *float64
+	ObservedAt    *time.Time
+	WaterTrend    Trend
+	MediaHashes   []string
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
+	Published     bool
 }
 
 type Anchor struct {

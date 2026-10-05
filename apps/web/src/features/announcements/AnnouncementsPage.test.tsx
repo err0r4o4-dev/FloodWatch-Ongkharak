@@ -2,16 +2,22 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AnnouncementsPage } from "./AnnouncementsPage";
 import { listPublicAlerts } from "./api";
+import { manualAnnouncementApi } from "../manual-announcements/api";
 
 vi.mock("./api", () => ({ listPublicAlerts: vi.fn() }));
+vi.mock("../manual-announcements/api", () => ({ manualAnnouncementApi: { listPublic: vi.fn() } }));
 
-beforeEach(() => vi.mocked(listPublicAlerts).mockReset());
+beforeEach(() => {
+  vi.mocked(listPublicAlerts).mockReset();
+  vi.mocked(manualAnnouncementApi.listPublic).mockResolvedValue({ items: [], total: 0, limit: 20, offset: 0 });
+});
 
 describe("public alerts", () => {
   it("shows an honest empty state rather than implying safety", async () => {
     vi.mocked(listPublicAlerts).mockResolvedValue([]);
     render(<AnnouncementsPage />);
     expect(await screen.findByText("ยังไม่มีประกาศที่เผยแพร่")).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "ประกาศจากผู้ดูแล" })).toBeInTheDocument();
     expect(screen.getByText(/ไม่ได้หมายความว่าพื้นที่ปลอดภัย/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "ทั้งหมด (0)" })).toBeInTheDocument();
     expect(screen.getByRole("complementary", { name: "สรุปประกาศ" })).toHaveTextContent("ยังไม่มีข้อมูลสรุป");

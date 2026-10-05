@@ -37,6 +37,7 @@ type Dependencies struct {
 	FloodService              *flood.Service
 	ReportService             *report.Service
 	ReportAreaService         handler.ReportAreaService
+	RoadSegmentService        handler.RoadSegmentService
 	AlertService              *alert.Service
 	AdminService              handler.AdminService
 	AIService                 handler.AIService
@@ -45,11 +46,15 @@ type Dependencies struct {
 	WeatherService            handler.WeatherService
 	ExternalDataService       handler.ExternalDataService
 	AnnouncementService       handler.AnnouncementService
+	ManualAnnouncementService handler.ManualAnnouncementService
 	RedisClient               redis.UniversalClient
 	CookieOptions             handler.CookieOptions
 }
 
 func New(dependencies Dependencies) http.Handler {
+	if dependencies.Logger == nil {
+		dependencies.Logger = slog.Default()
+	}
 	router := chi.NewRouter()
 	router.Use(chimiddleware.RequestID)
 	router.Use(chimiddleware.Recoverer)
@@ -64,6 +69,20 @@ func New(dependencies Dependencies) http.Handler {
 		api.With(weatherLimiter.Limit("weather-read", 60, time.Minute)).Get("/weather/ongkharak", handler.NewWeatherHandler(dependencies.WeatherService).ServeHTTP)
 		api.With(weatherLimiter.Limit("external-data-read", 60, time.Minute)).Get("/external-data/ongkharak", handler.NewExternalDataHandler(dependencies.ExternalDataService).ServeHTTP)
 		api.With(weatherLimiter.Limit("official-announcement-read", 60, time.Minute)).Get("/official-announcements", handler.NewAnnouncementHandler(dependencies.AnnouncementService).List)
+		if dependencies.ManualAnnouncementService != nil {
+			manualHandler := handler.NewManualAnnouncementHandler(dependencies.ManualAnnouncementService, dependencies.AdminService)
+			manualLimiter := middleware.NewRateLimiter()
+			api.With(manualLimiter.Limit("manual-announcement-read", 60, time.Minute)).Get("/manual-announcements", manualHandler.ListPublic)
+			if dependencies.AuthService != nil && dependencies.AdminService != nil {
+				adminOnly := []func(http.Handler) http.Handler{middleware.RequireAuthentication(dependencies.AuthService), middleware.RequireRole(auth.RoleAdmin)}
+				api.With(append(append([]func(http.Handler) http.Handler{}, adminOnly...), manualLimiter.LimitAuthenticated("manual-announcement-admin-read", 60, time.Minute))...).Get("/admin/manual-announcements", manualHandler.ListAdmin)
+				api.With(append(append([]func(http.Handler) http.Handler{}, adminOnly...), manualLimiter.LimitAuthenticated("manual-announcement-admin-read", 60, time.Minute))...).Get("/admin/manual-announcements/{id}", manualHandler.Get)
+				api.With(append(append([]func(http.Handler) http.Handler{}, adminOnly...), manualLimiter.LimitAuthenticated("manual-announcement-write", 30, time.Hour))...).Post("/admin/manual-announcements", manualHandler.Create)
+				api.With(append(append([]func(http.Handler) http.Handler{}, adminOnly...), manualLimiter.LimitAuthenticated("manual-announcement-write", 30, time.Hour))...).Put("/admin/manual-announcements/{id}", manualHandler.Update)
+				api.With(append(append([]func(http.Handler) http.Handler{}, adminOnly...), manualLimiter.LimitAuthenticated("manual-announcement-write", 30, time.Hour))...).Post("/admin/manual-announcements/{id}/publish", manualHandler.Publish)
+				api.With(append(append([]func(http.Handler) http.Handler{}, adminOnly...), manualLimiter.LimitAuthenticated("manual-announcement-write", 30, time.Hour))...).Post("/admin/manual-announcements/{id}/withdraw", manualHandler.Withdraw)
+			}
+		}
 		var googleService handler.GoogleAuthentication
 		if dependencies.GoogleService != nil {
 			googleService = dependencies.GoogleService
@@ -134,6 +153,16 @@ func New(dependencies Dependencies) http.Handler {
 				api.With(admin...).Post("/data-sources", floodHandler.CreateSource)
 				api.With(admin...).Post("/risk-areas", floodHandler.CreateRiskArea)
 				api.With(admin...).Post("/road-conditions", floodHandler.CreateRoadCondition)
+			}
+		}
+		if dependencies.RoadSegmentService != nil {
+			segmentHandler := handler.NewRoadSegmentHandler(dependencies.RoadSegmentService, dependencies.CookieOptions.AllowedOrigins)
+			segmentLimiter := middleware.NewRateLimiter()
+			api.With(segmentLimiter.Limit("road-segment-read", 120, time.Minute)).Get("/road-segments", segmentHandler.List)
+			api.With(segmentLimiter.Limit("road-segment-read", 120, time.Minute)).Get("/road-segments/candidates", segmentHandler.Candidates)
+			if dependencies.AuthService != nil {
+				adminOnly := []func(http.Handler) http.Handler{middleware.RequireAuthentication(dependencies.AuthService), middleware.RequireRole(auth.RoleAdmin)}
+				api.With(append(adminOnly, segmentLimiter.LimitAuthenticated("road-segment-create", 30, time.Hour))...).Post("/road-segments", segmentHandler.Create)
 			}
 		}
 		if dependencies.ReportAreaService != nil {

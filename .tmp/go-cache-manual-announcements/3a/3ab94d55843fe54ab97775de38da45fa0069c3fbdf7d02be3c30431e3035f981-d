@@ -1,0 +1,6 @@
+./model.go
+./scope.go
+./service.go
+./scope_test.go
+./service_test.go
+./tmd_poll_test.go

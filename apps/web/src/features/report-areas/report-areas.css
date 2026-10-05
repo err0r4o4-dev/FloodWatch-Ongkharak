@@ -1,6 +1,8 @@
 .report-area-summary { display: grid; gap: var(--space-3); }
 .report-area-summary--compact { gap: var(--space-2); }
 .report-area-summary__heading { margin: 0; color: var(--color-ink); font-size: .9rem; }
+.report-area-summary__segment { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: baseline; color: var(--color-ink); }
+.report-area-summary__segment span { color: var(--color-ink-muted); font-size: .78rem; }
 .report-area-depth-badge { display: inline-flex; min-height: 1.75rem; align-items: center; padding: var(--space-1) var(--space-2); border: var(--border-width) solid transparent; border-radius: 999px; color: var(--color-ink); font-size: .72rem; font-weight: 750; }
 .report-area-depth-badge--very_high { background: var(--color-area-very-high); }
 .report-area-depth-badge--high { background: var(--color-area-high); }

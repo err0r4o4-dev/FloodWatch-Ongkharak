@@ -49,6 +49,61 @@
   border-radius: var(--radius-md);
 }
 
+.report-segment-picker {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-4);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.report-segment-picker legend {
+  padding-inline: var(--space-1);
+  font-weight: 800;
+}
+
+.report-segment-option {
+  display: flex !important;
+  align-items: flex-start;
+  gap: var(--space-2);
+  min-height: var(--touch-target);
+  padding: var(--space-2);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-ink) !important;
+  background: var(--color-surface);
+  cursor: pointer;
+}
+
+.report-segment-option input {
+  width: auto !important;
+  min-height: 1.25rem !important;
+  margin-top: .2rem;
+  accent-color: var(--color-primary-strong);
+}
+
+.report-segment-option span {
+  display: grid;
+  gap: .15rem;
+}
+
+.report-segment-option small {
+  color: var(--color-ink-muted);
+  font-size: .75rem;
+  font-weight: 400;
+}
+
+.report-segment-retired {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-left: 3px solid var(--color-status-warning);
+  background: var(--color-canvas-soft);
+}
+
+.report-segment-retired p { margin: 0; color: var(--color-ink-muted); font-size: .8125rem; }
+
 .report-depth-picker legend {
   padding-inline: var(--space-1);
   font-weight: 800;

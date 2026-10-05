@@ -19,6 +19,7 @@ import (
 	"github.com/floodwatch-ongkharak/backend/internal/postgres/notificationrepo"
 	"github.com/floodwatch-ongkharak/backend/internal/report"
 	"github.com/floodwatch-ongkharak/backend/internal/reportarea"
+	"github.com/floodwatch-ongkharak/backend/internal/roadsegment"
 	"github.com/go-chi/chi/v5"
 	"github.com/redis/go-redis/v9"
 
@@ -38,7 +39,7 @@ func TestFeatureRoutesHaveOpenAPIContracts(t *testing.T) {
 	}
 	redisClient := redis.NewClient(&redis.Options{Addr: "127.0.0.1:1"})
 	defer redisClient.Close()
-	handler := New(Dependencies{Logger: slog.Default(), AuthService: &auth.Service{}, FloodService: &flood.Service{}, ReportService: &report.Service{}, ReportAreaService: &reportarea.Service{}, AlertService: &alert.Service{}, AdminService: admin.NewService(nil), AIService: ai.NewEvidenceService(nil), NotificationService: notification.NewService(slog.Default(), nil, "", "", ""), PublicNotificationService: notificationrepo.NewPublicRepository(nil), RedisClient: redisClient})
+	handler := New(Dependencies{Logger: slog.Default(), AuthService: &auth.Service{}, FloodService: &flood.Service{}, ReportService: &report.Service{}, ReportAreaService: &reportarea.Service{}, RoadSegmentService: &roadsegment.Service{}, AlertService: &alert.Service{}, AdminService: admin.NewService(nil), AIService: ai.NewEvidenceService(nil), NotificationService: notification.NewService(slog.Default(), nil, "", "", ""), PublicNotificationService: notificationrepo.NewPublicRepository(nil), RedisClient: redisClient})
 	err = chi.Walk(handler.(chi.Routes), func(method, route string, handler http.Handler, middleware ...func(http.Handler) http.Handler) error {
 		if _, ok := specification.Paths[route][strings.ToLower(method)]; !ok {
 			t.Errorf("%s %s has no OpenAPI operation", method, route)

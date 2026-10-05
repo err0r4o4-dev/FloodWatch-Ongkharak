@@ -28,9 +28,10 @@ const (
 const defaultDisplayName = "Guest"
 
 type Service struct {
-	repository Repository
-	storage    MediaStorage
-	now        func() time.Time
+	repository           Repository
+	storage              MediaStorage
+	roadSegmentValidator RoadSegmentValidator
+	now                  func() time.Time
 }
 
 func NewService(repository Repository, storage MediaStorage) (*Service, error) {
@@ -40,9 +41,17 @@ func NewService(repository Repository, storage MediaStorage) (*Service, error) {
 	return &Service{repository: repository, storage: storage, now: func() time.Time { return time.Now().UTC() }}, nil
 }
 
+func (service *Service) SetRoadSegmentValidator(validator RoadSegmentValidator) {
+	service.roadSegmentValidator = validator
+}
+
 func (service *Service) Create(ctx context.Context, userID string, input Input) (Report, error) {
 	if !validID(userID) || !normalizeInput(&input) || !validObservationTime(input.ObservedAt, service.now()) {
 		return Report{}, ErrInvalid
+	}
+	assignment, err := service.createRoadSegmentAssignment(ctx, input)
+	if err != nil {
+		return Report{}, err
 	}
 	now := service.now()
 	created, err := service.repository.Create(ctx, Report{
@@ -50,6 +59,7 @@ func (service *Service) Create(ctx context.Context, userID string, input Input) 
 		DisplayName:          defaultDisplayName,
 		EstimatedWaterDepthM: input.EstimatedWaterDepthM, Status: StatusPending, VerificationStatus: StatusPending,
 		ObservedAt: input.ObservedAt, WaterTrend: trendOrUnknown(input.WaterTrend),
+		RoadSegmentID: assignment.ID, RoadSegmentAssignmentMethod: assignment.Method, RoadSegmentAssignmentPending: assignment.Pending,
 		SourceType: SourceCommunity, CreatedAt: now, UpdatedAt: now,
 	})
 	if err != nil {
@@ -61,6 +71,10 @@ func (service *Service) Create(ctx context.Context, userID string, input Input) 
 func (service *Service) CreateGuest(ctx context.Context, userID string, input GuestInput) (GuestCreation, error) {
 	if (userID != "" && !validID(userID)) || !normalizeGuestInput(&input) || !validObservationTime(input.ObservedAt, service.now()) {
 		return GuestCreation{}, ErrInvalid
+	}
+	assignment, err := service.createRoadSegmentAssignment(ctx, input.Input)
+	if err != nil {
+		return GuestCreation{}, err
 	}
 	guestRepository, ok := service.repository.(GuestRepository)
 	if !ok {
@@ -76,6 +90,7 @@ func (service *Service) CreateGuest(ctx context.Context, userID string, input Gu
 		ID: uuid.NewString(), UserID: userID, DisplayName: input.DisplayName, Type: input.Type, Description: input.Description, Location: input.Location, LocationName: optionalString(input.LocationName), LocationNote: optionalString(input.LocationNote),
 		EstimatedWaterDepthM: input.EstimatedWaterDepthM, Status: StatusPending, VerificationStatus: StatusPending,
 		ObservedAt: input.ObservedAt, WaterTrend: trendOrUnknown(input.WaterTrend),
+		RoadSegmentID: assignment.ID, RoadSegmentAssignmentMethod: assignment.Method, RoadSegmentAssignmentPending: assignment.Pending,
 		SourceType: SourceCommunity, CreatedAt: now, UpdatedAt: now,
 	}, tokenHash, expiresAt)
 	if err != nil {
@@ -140,7 +155,19 @@ func (service *Service) Update(ctx context.Context, id, userID string, input Inp
 	if item.Status != StatusPending {
 		return Report{}, ErrConflict
 	}
-	updated, err := service.repository.UpdatePending(ctx, id, input)
+	assignment, err := service.updateRoadSegmentAssignment(ctx, item, input)
+	if err != nil {
+		return Report{}, err
+	}
+	var updated Report
+	if assignmentRepository, ok := service.repository.(AssignmentRepository); ok {
+		updated, err = assignmentRepository.UpdatePendingWithAssignment(ctx, id, input, assignment)
+	} else {
+		if input.RoadSegmentID != nil || !sameLocation(item.Location, input.Location) || item.RoadSegmentID != nil || item.RoadSegmentAssignmentPending {
+			return Report{}, ErrInvalid
+		}
+		updated, err = service.repository.UpdatePending(ctx, id, input)
+	}
 	if err != nil {
 		return Report{}, fmt.Errorf("update report: %w", err)
 	}
@@ -271,9 +298,51 @@ func (service *Service) OpenMedia(ctx context.Context, reportID, mediaID string,
 
 func normalizeInput(input *Input) bool {
 	input.Description = strings.TrimSpace(input.Description)
+	roadSegmentValid := true
+	if input.RoadSegmentID != nil {
+		normalized := strings.TrimSpace(*input.RoadSegmentID)
+		input.RoadSegmentID = &normalized
+		roadSegmentValid = normalized == "" || validID(normalized)
+	}
 	locationNameValid := normalizeOptionalString(&input.LocationName, maxLocationNameRunes)
 	locationNoteValid := normalizeOptionalString(&input.LocationNote, maxLocationNoteRunes)
-	return validType(input.Type) && input.Description != "" && utf8.RuneCountInString(input.Description) <= maxDescriptionRunes && locationNameValid && locationNoteValid && validLocation(input.Location) && validWaterTrend(input.WaterTrend) && (input.EstimatedWaterDepthM == nil || validDepth(*input.EstimatedWaterDepthM))
+	return validType(input.Type) && input.Description != "" && utf8.RuneCountInString(input.Description) <= maxDescriptionRunes && locationNameValid && locationNoteValid && validLocation(input.Location) && validWaterTrend(input.WaterTrend) && roadSegmentValid && (input.EstimatedWaterDepthM == nil || validDepth(*input.EstimatedWaterDepthM))
+}
+
+func (service *Service) createRoadSegmentAssignment(ctx context.Context, input Input) (RoadSegmentAssignment, error) {
+	if input.RoadSegmentID == nil || *input.RoadSegmentID == "" {
+		return RoadSegmentAssignment{Method: AssignmentUnassigned}, nil
+	}
+	if service.roadSegmentValidator == nil || service.roadSegmentValidator.ValidateRoadSegmentAssignment(ctx, *input.RoadSegmentID, input.Location.Coordinates[0], input.Location.Coordinates[1]) != nil {
+		return RoadSegmentAssignment{}, ErrInvalid
+	}
+	segmentID := *input.RoadSegmentID
+	return RoadSegmentAssignment{ID: &segmentID, Method: AssignmentUserConfirmed}, nil
+}
+
+func (service *Service) updateRoadSegmentAssignment(ctx context.Context, item Report, input Input) (RoadSegmentAssignment, error) {
+	if input.RoadSegmentID != nil {
+		if *input.RoadSegmentID == "" {
+			return RoadSegmentAssignment{Method: AssignmentUnassigned}, nil
+		}
+		if service.roadSegmentValidator == nil || service.roadSegmentValidator.ValidateRoadSegmentAssignment(ctx, *input.RoadSegmentID, input.Location.Coordinates[0], input.Location.Coordinates[1]) != nil {
+			return RoadSegmentAssignment{}, ErrInvalid
+		}
+		segmentID := *input.RoadSegmentID
+		return RoadSegmentAssignment{ID: &segmentID, Method: AssignmentUserConfirmed}, nil
+	}
+	if !sameLocation(item.Location, input.Location) {
+		return RoadSegmentAssignment{Method: AssignmentUnassigned}, nil
+	}
+	method := item.RoadSegmentAssignmentMethod
+	if method == "" {
+		method = AssignmentUnassigned
+	}
+	return RoadSegmentAssignment{ID: item.RoadSegmentID, Method: method, Pending: item.RoadSegmentAssignmentPending}, nil
+}
+
+func sameLocation(left, right Location) bool {
+	return len(left.Coordinates) == 2 && len(right.Coordinates) == 2 && left.Coordinates[0] == right.Coordinates[0] && left.Coordinates[1] == right.Coordinates[1]
 }
 
 func validObservationTime(observedAt *time.Time, now time.Time) bool {

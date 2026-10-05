@@ -1,0 +1,5 @@
+./admin_test.go
+./ai_test.go
+./manual_announcement_test.go
+./notification_test.go
+./road_segment_test.go

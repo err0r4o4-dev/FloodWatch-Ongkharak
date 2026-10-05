@@ -1,5 +1,51 @@
 # Database migrations
 
+## Current segment rollout
+
+Migrations 25 and 26 add administrator-defined road segments, report assignment
+metadata, and road-segment-derived public report areas. Apply migrations 24–26
+before deploying matching API and worker binaries. Migration 27 adds auditable
+OpenStreetMap network import provenance and nullable provenance links on roads.
+It creates no road or flood seed data; its down migration refuses populated
+import provenance. Apply it before using `cmd/import-road-segments`.
+
+On 2026-10-05, isolated PostgreSQL checks and migration preservation checks passed
+before the backed-up local development database advanced to version 27. The local
+stack now contains 2,098 real OSM roads and 4,514 immutable segments within limited
+coverage, while retaining all 8 original community reports. This is local rollout
+evidence, not authorization or verification for a production deployment. See
+`docs/architecture/road-segments.md` for the retained snapshot, exclusions, backup,
+operating commands, and verification boundaries.
+
+Migration 25 creates `road_segments` and nullable report assignment columns, then
+marks only existing reports `road_segment_assignment_pending=true`. It creates no
+segment seed data. The worker may set `LEGACY_MATCH` only for a unique active
+segment within 30 metres; zero or multiple matches remain unresolved. It never
+guesses the nearest segment, and it does not change report coordinates,
+`observed_at`, or `updated_at`. New reports omitted from assignment remain
+`UNASSIGNED` and are not worker-mapped automatically.
+
+Migration 26 adds segment metadata to `report_areas` while retaining legacy-radius
+rows, memberships, and timelines privately. The public API exposes only
+`ROAD_SEGMENT` areas, including empty active segments with UNKNOWN summaries;
+legacy-radius summaries are not public. Down 26 removes only derived segment
+summaries and leaves original reports unchanged. Before down 26, pause matching
+binaries/workers and report-area refreshes, stop writes as required, and inspect
+pending work. Before down 25, inspect the populated immutable segment history and
+require an explicit migration guard; the current SQL must not be treated as safe
+for populated rollback until that guard is verified.
+
+Road-segment onboarding starts empty. Administrators or a validated real-data
+import create immutable versions with
+LineString geometry no longer than 1000 metres along an existing road and within a
+15-metre corridor. No segment definition changes official road status or creates
+official flood evidence. Missing segments, missing reports, stale data, and
+unresolved assignment are UNKNOWN, never SAFE.
+
+See `docs/architecture/road-segments.md` and
+`docs/architecture/report-areas.md` for the public contract, rolling-window
+semantics, assignment rules, and verification boundaries.
+
 Migrations 22 and 23 add explicit report observation time/reporter trend, private media byte digests, and derived community report areas with a durable refresh revision and timeline. Apply migrations 1–23 before deploying the matching API and worker. Existing observation times remain unknown rather than being backfilled from submission time. Migration 23 queues initial processing and adds identifier-only `report-area.updated` events; old dispatchers do not understand these. Before rollback, stop area refreshes and report writes and drain pending area events with a compatible dispatcher. Down 23 refuses to discard unpublished area events and removes only derived areas; down 22 permanently removes saved observation metadata/digests. See `docs/architecture/report-areas.md`; verification must use an isolated synthetic database, never a production rollback.
 
 Migration 21 adds append-only report moderation history, its public-read index, and identifier-only `report.updated` outbox signals. Deploy matching API/worker and frontend only after migrations 1–21. Pending reports become public under the new read policy; review any sensitive historical pending submissions before deployment. New removal/restoration requires a reason and current revision; restore revokes the old guest upload capability. For rollback, stop all report writes and drain unpublished `report.updated` events with a compatible dispatcher before downgrading binaries; then run down while writes remain stopped. Old binaries reject that event type and otherwise block the outbox. Down refuses when unpublished new events remain, deletes moderation history but preserves report rows/media/current status, and requires an approved backup for populated deployments. See `docs/architecture/community-reports.md`.

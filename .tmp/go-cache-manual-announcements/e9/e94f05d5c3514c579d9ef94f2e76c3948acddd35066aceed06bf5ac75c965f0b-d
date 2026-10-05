@@ -1,0 +1,6 @@
+./aggregate.go
+./model.go
+./segments.go
+./service.go
+./aggregation_test.go
+./segments_test.go

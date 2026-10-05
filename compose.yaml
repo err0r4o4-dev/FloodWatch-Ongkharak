@@ -103,6 +103,18 @@ services:
       postgres:
         condition: service_healthy
 
+  road-import:
+    profiles: ["tools"]
+    build:
+      context: apps/backend
+      target: road-import
+    environment: *backend-environment
+    volumes:
+      - ./data/road-network:/app/data/road-network:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   go-test:
     profiles: ["tools"]
     build:

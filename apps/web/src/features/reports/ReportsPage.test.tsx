@@ -249,10 +249,12 @@ describe("CreateReportPage guest workflow", () => {
       login: vi.fn(),
       register: vi.fn()
     };
-    const fetchMock = vi.fn()
-      .mockResolvedValueOnce(response({ report: { ...verifiedReport, status: "PENDING", verificationStatus: "PENDING" }, uploadToken: "upload-capability" }))
-      .mockResolvedValueOnce(response({ media: { id: "media-1", url: "/api/v1/reports/report-1/media/media-1" } }))
-      .mockResolvedValueOnce(response({ items: [{ ...verifiedReport, status: "PENDING", verificationStatus: "PENDING" }], limit: 20, offset: 0 }));
+    const fetchMock = vi.fn((url: string) => {
+      if (url.includes("/road-segments/candidates")) return Promise.resolve(response({ items: [], assignmentStatus: "UNASSIGNED", matchingDistanceM: 30 }));
+      if (url.endsWith("/media")) return Promise.resolve(response({ media: { id: "media-1", url: "/api/v1/reports/report-1/media/media-1" } }));
+      if (url === "/api/v1/reports") return Promise.resolve(response({ report: { ...verifiedReport, status: "PENDING", verificationStatus: "PENDING" }, uploadToken: "upload-capability" }));
+      return Promise.resolve(response({ items: [{ ...verifiedReport, status: "PENDING", verificationStatus: "PENDING" }], limit: 20, offset: 0 }));
+    });
     vi.stubGlobal("fetch", fetchMock);
 
     render(<MemoryRouter><AuthProvider api={api}><CreateReportPage /></AuthProvider></MemoryRouter>);

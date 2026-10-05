@@ -13,6 +13,9 @@ RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/worker ./cmd/worke
 FROM build AS bootstrap-build
 RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/bootstrap-admin ./cmd/bootstrap-admin
 
+FROM build AS road-import-build
+RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/import-road-segments ./cmd/import-road-segments
+
 FROM alpine:3.21 AS api
 WORKDIR /app
 COPY --from=api-build /out/api /app/api
@@ -32,3 +35,9 @@ WORKDIR /app
 COPY --from=bootstrap-build /out/bootstrap-admin /app/bootstrap-admin
 USER 65532:65532
 ENTRYPOINT ["/app/bootstrap-admin"]
+
+FROM alpine:3.21 AS road-import
+WORKDIR /app
+COPY --from=road-import-build /out/import-road-segments /app/import-road-segments
+USER 65532:65532
+ENTRYPOINT ["/app/import-road-segments"]

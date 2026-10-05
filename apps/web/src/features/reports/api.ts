@@ -26,7 +26,9 @@ function validReport(value: unknown): value is CommunityReport {
     !["PENDING", "VERIFIED", "REJECTED"].includes(String(value.verificationStatus)) || value.verificationStatus !== value.status ||
     value.sourceType !== "COMMUNITY" || (value.publicationStatus !== undefined && value.publicationStatus !== derivePublicationStatus(value.status as ReportStatus)) ||
     typeof value.createdAt !== "string" || typeof value.updatedAt !== "string" ||
-    !Array.isArray(value.media)) return false;
+    !Array.isArray(value.media) ||
+    (value.roadSegmentId !== undefined && value.roadSegmentId !== null && typeof value.roadSegmentId !== "string") ||
+    (value.roadSegmentAssignmentMethod !== undefined && !["UNASSIGNED", "USER_CONFIRMED", "LEGACY_MATCH"].includes(String(value.roadSegmentAssignmentMethod)))) return false;
 
   return (value.estimatedWaterDepthM === null || typeof value.estimatedWaterDepthM === "number" && Number.isFinite(value.estimatedWaterDepthM) && value.estimatedWaterDepthM >= 0 && value.estimatedWaterDepthM <= 100) &&
     (value.verifiedAt === null || typeof value.verifiedAt === "string") &&

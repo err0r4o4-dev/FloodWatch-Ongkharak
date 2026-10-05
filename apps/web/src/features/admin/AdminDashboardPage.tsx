@@ -205,6 +205,14 @@ export function AdminDashboardPage() {
 
       <h2 style={{ fontSize: '1.25rem', marginBottom: '1.5rem', fontWeight: 700 }}>{t("dashboard.modules.title")}</h2>
       <div className="admin-dashboard-grid">
+        <NavLink to="/admin/announcements" className="admin-module-card">
+          <div className="admin-module-card__icon"><BellIcon /></div>
+          <div className="admin-module-card__content">
+            <h2>{t("dashboard.cards.announcements.title")}</h2>
+            <p>{t("dashboard.cards.announcements.description")}</p>
+            <span className="admin-module-card__action">{t("dashboard.cards.announcements.action")} &rarr;</span>
+          </div>
+        </NavLink>
         <NavLink to="/admin/users" className="admin-module-card">
           <div className="admin-module-card__icon"><UsersIcon /></div>
           <div className="admin-module-card__content">
@@ -256,6 +264,15 @@ export function AdminDashboardPage() {
             <h2>{t("dashboard.cards.alertRules.title")}</h2>
             <p>{t("dashboard.cards.alertRules.description")}</p>
             <span className="admin-module-card__action">{t("dashboard.cards.alertRules.action")} &rarr;</span>
+          </div>
+        </NavLink>
+
+        <NavLink to="/admin/road-segments" className="admin-module-card">
+          <div className="admin-module-card__icon"><ActivityIcon /></div>
+          <div className="admin-module-card__content">
+            <h2>{t("dashboard.cards.roadSegments.title")}</h2>
+            <p>{t("dashboard.cards.roadSegments.description")}</p>
+            <span className="admin-module-card__action">{t("dashboard.cards.roadSegments.action")} &rarr;</span>
           </div>
         </NavLink>
 

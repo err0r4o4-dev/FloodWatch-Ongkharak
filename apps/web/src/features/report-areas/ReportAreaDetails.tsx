@@ -11,6 +11,7 @@ import { useReportAreaUpdatedRevision } from "./realtime";
 import { ReportAreaDepthBadge, ReportAreaSummary } from "./ReportAreaSummary";
 import { displayReportAreaTrend, maskReportArea } from "./presentation";
 import { ReportCard } from "../reports/ReportCard";
+import { isRoadSegmentReportArea } from "./types";
 import type { ReportArea } from "./types";
 
 const reportEvents = ["report.verified", "report.updated"] as const;
@@ -18,6 +19,7 @@ const reportEvents = ["report.verified", "report.updated"] as const;
 function updateReportHref(area: ReportArea): string {
   const query = new URLSearchParams({ areaId: area.id, lng: String(area.location.coordinates[0]), lat: String(area.location.coordinates[1]) });
   if (area.name) query.set("locationName", area.name);
+  if (isRoadSegmentReportArea(area)) query.set("roadSegmentId", area.roadSegmentId);
   return `/reports/new?${query.toString()}`;
 }
 
@@ -35,7 +37,7 @@ export function ReportAreaDetailsContent({ area }: { area: ReportArea }) {
     <ReportAreaSummary area={currentArea} />
     <Link className="report-area-detail__update" to={updateReportHref(currentArea)}>{t("area.update")}</Link>
     <section aria-labelledby="report-area-timeline-title" className="report-area-detail__section">
-      <h4 id="report-area-timeline-title">{t("area.timeline")}</h4>
+      <h4 id="report-area-timeline-title">{currentArea.areaType === "ROAD_SEGMENT" ? t("area.roadTimeline") : t("area.timeline")}</h4>
       {detail.state === "loading" && <p role="status">{t("area.timelineLoading")}</p>}
       {detail.state === "error" && <div role="alert"><p>{t("area.timelineError")}</p><button type="button" className="action-button" onClick={() => setRetry((current) => current + 1)}>{t("mapStatus.retry")}</button></div>}
       {detail.state === "ready" && <>

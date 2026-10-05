@@ -506,6 +506,8 @@ type reportResponse struct {
 	CreatedAt            time.Time                `json:"createdAt"`
 	UpdatedAt            time.Time                `json:"updatedAt"`
 	VerifiedAt           *time.Time               `json:"verifiedAt"`
+	RoadSegmentID        *string                  `json:"roadSegmentId"`
+	RoadSegmentAssignmentMethod report.RoadSegmentAssignmentMethod `json:"roadSegmentAssignmentMethod"`
 	Media                []mediaResponse          `json:"media"`
 }
 
@@ -541,10 +543,14 @@ func reportPayload(item report.Report, private bool) any {
 	if strings.TrimSpace(displayName) == "" {
 		displayName = "Guest"
 	}
+	assignmentMethod := item.RoadSegmentAssignmentMethod
+	if assignmentMethod == "" {
+		assignmentMethod = report.AssignmentUnassigned
+	}
 	payload := reportResponse{
 		ID: item.ID, DisplayName: displayName, Type: item.Type, Description: item.Description, Location: item.Location, LocationName: item.LocationName, LocationNote: item.LocationNote, EstimatedWaterDepthM: item.EstimatedWaterDepthM, ObservedAt: item.ObservedAt, WaterTrend: item.WaterTrend,
 		Status: item.Status, PublicationStatus: item.PublicationStatus(), VerificationStatus: item.VerificationStatus, SourceType: item.SourceType, CreatedAt: item.CreatedAt, UpdatedAt: item.UpdatedAt,
-		VerifiedAt: item.VerifiedAt, Media: make([]mediaResponse, 0, len(item.Media)),
+		VerifiedAt: item.VerifiedAt, RoadSegmentID: item.RoadSegmentID, RoadSegmentAssignmentMethod: assignmentMethod, Media: make([]mediaResponse, 0, len(item.Media)),
 	}
 	for _, media := range item.Media {
 		payload.Media = append(payload.Media, mediaPayload(media))

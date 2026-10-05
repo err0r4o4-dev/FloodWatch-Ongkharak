@@ -11,6 +11,7 @@ export function MapLegend({ visible }: { visible: LayerVisibility }) {
     {visible.risk && <span><i className="map-layer-symbol map-layer-symbol--risk" aria-hidden="true">⚠</i> {t("layer.risk")}</span>}
     {visible.flood && <span><i className="map-layer-symbol map-layer-symbol--flood" aria-hidden="true">△</i> {t("layer.flood")}</span>}
     {visible.reports && <span><i className="map-layer-symbol map-layer-symbol--reports" aria-hidden="true">●</i> {t("layer.reports")}</span>}
+    {visible.reports && <span><i className="map-layer-symbol map-layer-symbol--reports" aria-hidden="true">╌</i> {t("legend.roadSegments")}</span>}
     {visible.roads && <span><i className="map-layer-symbol map-layer-symbol--roads" aria-hidden="true">━</i> {t("legend.roads")}</span>}
     {visible.reports && <span className="map-legend__area-group" aria-label={t("legend.areaDepth")}>
       <i className="map-legend__depth-dot map-legend__depth-dot--very-high" aria-hidden="true" /> {t("legend.depthVeryHigh")}

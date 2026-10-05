@@ -3,8 +3,10 @@ package reportarearepo
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"reflect"
 	"sort"
 	"time"
 
@@ -32,10 +34,10 @@ type persistedArea struct {
 func New(pool *pgxpool.Pool) *Repository { return &Repository{pool: pool} }
 
 func (repository *Repository) List(ctx context.Context, filter reportarea.ListFilter) ([]reportarea.Area, error) {
-	query := areaSelect + ` WHERE a.total_report_count > 0`
+	query := areaSelect + ` WHERE a.area_type='ROAD_SEGMENT' AND EXISTS (SELECT 1 FROM road_segments segment WHERE segment.id=a.road_segment_id AND segment.active)`
 	arguments := []any{}
 	if filter.BBox != nil {
-		query += ` AND a.anchor && ST_MakeEnvelope($1,$2,$3,$4,4326)::geography`
+		query += ` AND ST_Intersects(a.geometry, ST_MakeEnvelope($1,$2,$3,$4,4326))`
 		arguments = append(arguments, filter.BBox.MinLng, filter.BBox.MinLat, filter.BBox.MaxLng, filter.BBox.MaxLat)
 	}
 	query += ` ORDER BY a.computed_at DESC, a.id LIMIT $` + fmt.Sprint(len(arguments)+1) + ` OFFSET $` + fmt.Sprint(len(arguments)+2)
@@ -65,7 +67,7 @@ func (repository *Repository) Get(ctx context.Context, id string) (reportarea.De
 		return reportarea.Detail{}, fmt.Errorf("begin report area read: %w", err)
 	}
 	defer transaction.Rollback(ctx)
-	item, state, err := scanArea(transaction.QueryRow(ctx, areaSelect+` WHERE a.id=$1 AND a.total_report_count > 0`, id))
+	item, state, err := scanArea(transaction.QueryRow(ctx, areaSelect+` WHERE a.id=$1 AND a.area_type='ROAD_SEGMENT'`, id))
 	if errors.Is(err, pgx.ErrNoRows) {
 		return reportarea.Detail{}, reportarea.ErrNotFound
 	}
@@ -93,7 +95,7 @@ func (repository *Repository) ListReportIDs(ctx context.Context, areaID string, 
 	defer transaction.Rollback(ctx)
 	var exists bool
 	var dirty bool
-	if err := transaction.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM report_areas WHERE id=$1 AND total_report_count > 0), dirty_revision <> processed_revision FROM report_area_refresh_state WHERE id=TRUE`, areaID).Scan(&exists, &dirty); err != nil {
+	if err := transaction.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM report_areas WHERE id=$1 AND area_type='ROAD_SEGMENT'), dirty_revision <> processed_revision FROM report_area_refresh_state WHERE id=TRUE`, areaID).Scan(&exists, &dirty); err != nil {
 		return nil, fmt.Errorf("check report area: %w", err)
 	}
 	if !exists {
@@ -166,7 +168,7 @@ func (repository *Repository) refreshOnce(ctx context.Context, now time.Time, pe
 	}
 	if pendingOnly && dirtyRevision == processedRevision {
 		var expired bool
-		if err := transaction.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM report_areas WHERE computed_at < $1 - interval '1 minute' OR window_end < $1 - interval '1 minute')`, now).Scan(&expired); err != nil {
+		if err := transaction.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM report_areas WHERE area_type='ROAD_SEGMENT' AND (computed_at < $1::timestamptz - interval '1 minute' OR window_end < $1::timestamptz - interval '1 minute'))`, now).Scan(&expired); err != nil {
 			return false, false, fmt.Errorf("check report area expiry: %w", err)
 		}
 		if !expired {
@@ -193,11 +195,17 @@ func (repository *Repository) refreshLocked(ctx context.Context, transaction pgx
 	if err != nil {
 		return err
 	}
+	if err := backfillLegacyAssignments(ctx, transaction, lockedReportIDs); err != nil {
+		return err
+	}
+	if err := transaction.QueryRow(ctx, `SELECT dirty_revision FROM report_area_refresh_state WHERE id=TRUE`).Scan(&revision); err != nil {
+		return fmt.Errorf("read post-assignment report area revision: %w", err)
+	}
 	reports, err := loadSourceReports(ctx, transaction, lockedReportIDs)
 	if err != nil {
 		return err
 	}
-	anchors, err := loadAnchors(ctx, transaction)
+	segments, err := loadSegments(ctx, transaction)
 	if err != nil {
 		return err
 	}
@@ -205,11 +213,11 @@ func (repository *Repository) refreshLocked(ctx context.Context, transaction pgx
 	if err != nil {
 		return err
 	}
-	plan := reportarea.BuildRefresh(anchors, reports, now)
-	if _, err := transaction.Exec(ctx, `DELETE FROM report_area_members`); err != nil {
+	plan := reportarea.BuildSegmentRefresh(segments, reports, now)
+	if _, err := transaction.Exec(ctx, `DELETE FROM report_area_members WHERE area_id IN (SELECT id FROM report_areas WHERE area_type='ROAD_SEGMENT')`); err != nil {
 		return fmt.Errorf("reset report area members: %w", err)
 	}
-	if _, err := transaction.Exec(ctx, `DELETE FROM report_area_timeline`); err != nil {
+	if _, err := transaction.Exec(ctx, `DELETE FROM report_area_timeline WHERE area_id IN (SELECT id FROM report_areas WHERE area_type='ROAD_SEGMENT')`); err != nil {
 		return fmt.Errorf("reset report area timeline: %w", err)
 	}
 	for _, item := range plan.Areas {
@@ -221,12 +229,9 @@ func (repository *Repository) refreshLocked(ctx context.Context, transaction pgx
 				return fmt.Errorf("insert report area member: %w", err)
 			}
 		}
-		for _, window := range item.Timeline {
-			if _, err := transaction.Exec(ctx, `INSERT INTO report_area_timeline (area_id, window_start, window_end, computed_at, depth_band, previous_depth_band, trend, reported_trend, freshness, summary_reason, latest_observed_at, report_count, sample_count, evidence_ids)
-				VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`, item.Area.ID, window.Start, window.End, window.ComputedAt, window.DepthBand, window.PreviousDepthBand, window.Trend, window.ReportedTrend, window.Freshness, window.SummaryReason, window.LatestObservedAt, window.ReportCount, window.SampleCount, window.EvidenceIDs); err != nil {
-				return fmt.Errorf("insert report area timeline: %w", err)
-			}
-		}
+	}
+	if err := persistTimelines(ctx, transaction, plan); err != nil {
+		return err
 	}
 	updated, err := transaction.Exec(ctx, `UPDATE report_area_refresh_state SET processed_revision=$1, updated_at=$2 WHERE id=TRUE AND dirty_revision=$1`, revision, now)
 	if err != nil {
@@ -268,7 +273,7 @@ func loadSourceReports(ctx context.Context, transaction pgx.Tx, reportIDs []stri
 	rows, err := transaction.Query(ctx, `SELECT r.id::text, COALESCE(r.user_id::text,''), r.type, r.description, r.location_name,
 		ST_X(r.location), ST_Y(r.location), r.estimated_water_depth_m::double precision, r.observed_at, r.water_trend,
 		r.created_at, r.updated_at, r.status IN ('PENDING','VERIFIED'),
-		COALESCE(array_agg(m.content_sha256) FILTER (WHERE m.content_sha256 IS NOT NULL), ARRAY[]::text[])
+		COALESCE(array_agg(m.content_sha256) FILTER (WHERE m.content_sha256 IS NOT NULL), ARRAY[]::text[]), COALESCE(r.road_segment_id::text,'')
 		FROM community_reports r LEFT JOIN community_report_media m ON m.report_id=r.id
 		WHERE r.id = ANY($1::uuid[])
 		GROUP BY r.id, r.user_id, r.type, r.description, r.location_name, r.location, r.estimated_water_depth_m, r.observed_at, r.water_trend, r.created_at, r.updated_at, r.status
@@ -282,7 +287,7 @@ func loadSourceReports(ctx context.Context, transaction pgx.Tx, reportIDs []stri
 		var item reportarea.SourceReport
 		var observedAt sql.NullTime
 		var mediaHashes []string
-		if err := rows.Scan(&item.ID, &item.UserID, &item.Type, &item.Description, &item.LocationName, &item.Longitude, &item.Latitude, &item.DepthM, &observedAt, &item.WaterTrend, &item.CreatedAt, &item.UpdatedAt, &item.Published, &mediaHashes); err != nil {
+		if err := rows.Scan(&item.ID, &item.UserID, &item.Type, &item.Description, &item.LocationName, &item.Longitude, &item.Latitude, &item.DepthM, &observedAt, &item.WaterTrend, &item.CreatedAt, &item.UpdatedAt, &item.Published, &mediaHashes, &item.RoadSegmentID); err != nil {
 			return nil, fmt.Errorf("scan report area source report: %w", err)
 		}
 		if observedAt.Valid {
@@ -300,7 +305,7 @@ func loadSourceReports(ctx context.Context, transaction pgx.Tx, reportIDs []stri
 
 func loadPersistedAreas(ctx context.Context, transaction pgx.Tx) (map[string]persistedArea, error) {
 	areas := make(map[string]persistedArea)
-	rows, err := transaction.Query(ctx, `SELECT id::text, name, ST_X(anchor::geometry), ST_Y(anchor::geometry), radius_m, source_type, depth_band, previous_depth_band, trend, reported_trend, freshness, summary_reason, latest_observed_at, computed_at, window_start, window_end, report_count, sample_count, total_report_count, report_ids::text[] FROM report_areas`)
+	rows, err := transaction.Query(ctx, `SELECT id::text, name, ST_X(anchor::geometry), ST_Y(anchor::geometry), radius_m, source_type, depth_band, previous_depth_band, trend, reported_trend, freshness, summary_reason, latest_observed_at, computed_at, window_start, window_end, report_count, sample_count, total_report_count, report_ids::text[], area_type, road_segment_id::text, segment_version, segment_active, start_label, end_label, ST_AsGeoJSON(geometry)::json FROM report_areas`)
 	if err != nil {
 		return nil, fmt.Errorf("load persisted report areas: %w", err)
 	}
@@ -308,12 +313,17 @@ func loadPersistedAreas(ctx context.Context, transaction pgx.Tx) (map[string]per
 		var item reportarea.Area
 		var longitude, latitude float64
 		var reportIDs []string
-		if err := rows.Scan(&item.ID, &item.Name, &longitude, &latitude, &item.RadiusM, &item.SourceType, &item.DepthBand, &item.PreviousDepthBand, &item.Trend, &item.ReportedTrend, &item.Freshness, &item.SummaryReason, &item.LatestObservedAt, &item.ComputedAt, &item.WindowStart, &item.WindowEnd, &item.ReportCount, &item.SampleCount, &item.TotalReportCount, &reportIDs); err != nil {
+		var geometry []byte
+		if err := rows.Scan(&item.ID, &item.Name, &longitude, &latitude, &item.RadiusM, &item.SourceType, &item.DepthBand, &item.PreviousDepthBand, &item.Trend, &item.ReportedTrend, &item.Freshness, &item.SummaryReason, &item.LatestObservedAt, &item.ComputedAt, &item.WindowStart, &item.WindowEnd, &item.ReportCount, &item.SampleCount, &item.TotalReportCount, &reportIDs, &item.AreaType, &item.RoadSegmentID, &item.SegmentVersion, &item.SegmentActive, &item.StartLabel, &item.EndLabel, &geometry); err != nil {
 			rows.Close()
 			return nil, fmt.Errorf("scan persisted report area: %w", err)
 		}
 		item.Location = reportarea.Location{Type: "Point", Coordinates: []float64{longitude, latitude}}
 		item.ReportIDs = reportIDs
+		if err := decodeAreaGeometry(&item, geometry); err != nil {
+			rows.Close()
+			return nil, err
+		}
 		areas[item.ID] = persistedArea{area: item, timeline: []reportarea.TimelineWindow{}, memberIDs: []string{}}
 	}
 	if err := rows.Err(); err != nil {
@@ -378,7 +388,7 @@ func changedPublicAreaIDs(previous map[string]persistedArea, plan reportarea.Ref
 		}
 	}
 	for id, before := range previous {
-		if before.area.TotalReportCount > 0 {
+		if before.area.AreaType != "LEGACY_RADIUS" && (before.area.TotalReportCount > 0 || before.area.SegmentActive) {
 			if _, ok := seen[id]; !ok {
 				changed[id] = struct{}{}
 			}
@@ -393,8 +403,8 @@ func changedPublicAreaIDs(previous map[string]persistedArea, plan reportarea.Ref
 }
 
 func publicAreaChanged(existed bool, before persistedArea, after reportarea.RefreshArea) bool {
-	beforePublic := existed && before.area.TotalReportCount > 0
-	afterPublic := after.Area.TotalReportCount > 0
+	beforePublic := existed && (before.area.TotalReportCount > 0 || before.area.SegmentActive)
+	afterPublic := after.Area.TotalReportCount > 0 || after.Area.SegmentActive
 	if beforePublic != afterPublic {
 		return true
 	}
@@ -408,6 +418,9 @@ func publicAreaChanged(existed bool, before persistedArea, after reportarea.Refr
 }
 
 func sameAreaSummary(left, right reportarea.Area) bool {
+	if left.AreaType != right.AreaType || !reflect.DeepEqual(left.RoadSegmentID, right.RoadSegmentID) || left.SegmentVersion != right.SegmentVersion || left.SegmentActive != right.SegmentActive || left.StartLabel != right.StartLabel || left.EndLabel != right.EndLabel || !reflect.DeepEqual(left.Geometry, right.Geometry) {
+		return false
+	}
 	return left.ID == right.ID && left.Name == right.Name && left.RadiusM == right.RadiusM && left.SourceType == right.SourceType && left.DepthBand == right.DepthBand && left.PreviousDepthBand == right.PreviousDepthBand && left.Trend == right.Trend && left.ReportedTrend == right.ReportedTrend && left.Freshness == right.Freshness && left.SummaryReason == right.SummaryReason && sameTimePointer(left.LatestObservedAt, right.LatestObservedAt) && left.ReportCount == right.ReportCount && left.SampleCount == right.SampleCount && left.TotalReportCount == right.TotalReportCount && sameFloatSlice(left.Location.Coordinates, right.Location.Coordinates) && sameStringSlice(left.ReportIDs, right.ReportIDs)
 }
 
@@ -476,16 +489,20 @@ func loadAnchors(ctx context.Context, transaction pgx.Tx) ([]reportarea.Anchor, 
 }
 
 func upsertArea(ctx context.Context, transaction pgx.Tx, item reportarea.Area) error {
-	_, err := transaction.Exec(ctx, `INSERT INTO report_areas (id, name, anchor, radius_m, source_type, depth_band, previous_depth_band, trend, reported_trend, freshness, summary_reason, latest_observed_at, computed_at, window_start, window_end, report_count, sample_count, total_report_count, report_ids)
-		VALUES ($1,$2,ST_SetSRID(ST_MakePoint($3,$4),4326)::geography,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
-		ON CONFLICT (id) DO UPDATE SET name=EXCLUDED.name, anchor=EXCLUDED.anchor, radius_m=EXCLUDED.radius_m, source_type=EXCLUDED.source_type, depth_band=EXCLUDED.depth_band, previous_depth_band=EXCLUDED.previous_depth_band, trend=EXCLUDED.trend, reported_trend=EXCLUDED.reported_trend, freshness=EXCLUDED.freshness, summary_reason=EXCLUDED.summary_reason, latest_observed_at=EXCLUDED.latest_observed_at, computed_at=EXCLUDED.computed_at, window_start=EXCLUDED.window_start, window_end=EXCLUDED.window_end, report_count=EXCLUDED.report_count, sample_count=EXCLUDED.sample_count, total_report_count=EXCLUDED.total_report_count, report_ids=EXCLUDED.report_ids, revision=report_areas.revision+1`, item.ID, item.Name, item.Location.Coordinates[0], item.Location.Coordinates[1], item.RadiusM, item.SourceType, item.DepthBand, item.PreviousDepthBand, item.Trend, item.ReportedTrend, item.Freshness, item.SummaryReason, item.LatestObservedAt, item.ComputedAt, item.WindowStart, item.WindowEnd, item.ReportCount, item.SampleCount, item.TotalReportCount, item.ReportIDs)
+	geometry, err := json.Marshal(item.Geometry)
+	if err != nil {
+		return fmt.Errorf("encode report area geometry: %w", err)
+	}
+	_, err = transaction.Exec(ctx, `INSERT INTO report_areas (id, name, anchor, radius_m, source_type, depth_band, previous_depth_band, trend, reported_trend, freshness, summary_reason, latest_observed_at, computed_at, window_start, window_end, report_count, sample_count, total_report_count, report_ids, area_type, road_segment_id, segment_version, segment_active, start_label, end_label, geometry)
+		VALUES ($1,$2,ST_SetSRID(ST_MakePoint($3,$4),4326)::geography,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,ST_SetSRID(ST_GeomFromGeoJSON($27::text),4326))
+		ON CONFLICT (id) DO UPDATE SET name=EXCLUDED.name, anchor=EXCLUDED.anchor, radius_m=EXCLUDED.radius_m, source_type=EXCLUDED.source_type, depth_band=EXCLUDED.depth_band, previous_depth_band=EXCLUDED.previous_depth_band, trend=EXCLUDED.trend, reported_trend=EXCLUDED.reported_trend, freshness=EXCLUDED.freshness, summary_reason=EXCLUDED.summary_reason, latest_observed_at=EXCLUDED.latest_observed_at, computed_at=EXCLUDED.computed_at, window_start=EXCLUDED.window_start, window_end=EXCLUDED.window_end, report_count=EXCLUDED.report_count, sample_count=EXCLUDED.sample_count, total_report_count=EXCLUDED.total_report_count, report_ids=EXCLUDED.report_ids, segment_active=EXCLUDED.segment_active, revision=report_areas.revision+1`, item.ID, item.Name, item.Location.Coordinates[0], item.Location.Coordinates[1], item.RadiusM, item.SourceType, item.DepthBand, item.PreviousDepthBand, item.Trend, item.ReportedTrend, item.Freshness, item.SummaryReason, item.LatestObservedAt, item.ComputedAt, item.WindowStart, item.WindowEnd, item.ReportCount, item.SampleCount, item.TotalReportCount, item.ReportIDs, item.AreaType, item.RoadSegmentID, item.SegmentVersion, item.SegmentActive, item.StartLabel, item.EndLabel, string(geometry))
 	if err != nil {
 		return fmt.Errorf("upsert report area: %w", err)
 	}
 	return nil
 }
 
-const areaSelect = `SELECT a.id::text, CASE WHEN mask.invalidated THEN 'Community report area' ELSE a.name END, ST_X(a.anchor::geometry), ST_Y(a.anchor::geometry), a.radius_m, a.source_type,
+const areaSelect = `SELECT a.id::text, CASE WHEN mask.invalidated AND a.area_type='LEGACY_RADIUS' THEN 'Community report area' ELSE a.name END, ST_X(a.anchor::geometry), ST_Y(a.anchor::geometry), a.radius_m, a.source_type,
 	CASE WHEN mask.invalidated THEN 'UNKNOWN' ELSE a.depth_band END,
 	CASE WHEN mask.invalidated THEN 'UNKNOWN' ELSE a.previous_depth_band END,
 	CASE WHEN mask.invalidated THEN 'UNKNOWN' ELSE a.trend END,
@@ -499,7 +516,10 @@ const areaSelect = `SELECT a.id::text, CASE WHEN mask.invalidated THEN 'Communit
 	CASE WHEN mask.invalidated THEN 0 ELSE a.total_report_count END,
 	CASE WHEN mask.invalidated THEN ARRAY[]::text[] ELSE a.report_ids::text[] END,
 	mask.invalidated,
-	flags.dirty
+	flags.dirty,
+	a.area_type, a.road_segment_id::text, a.segment_version,
+	COALESCE((SELECT segment.active FROM road_segments segment WHERE segment.id=a.road_segment_id), FALSE),
+	a.start_label, a.end_label, ST_AsGeoJSON(a.geometry)::json
 	FROM report_areas a CROSS JOIN report_area_refresh_state s
 	CROSS JOIN LATERAL (SELECT clock_timestamp() AS observed_now) clock
 	CROSS JOIN LATERAL (SELECT s.dirty_revision <> s.processed_revision AS dirty,
@@ -517,17 +537,23 @@ func scanArea(row interface{ Scan(...any) error }) (reportarea.Area, areaReadSta
 	var state areaReadState
 	var longitude, latitude float64
 	var reportIDs []string
-	err := row.Scan(&item.ID, &item.Name, &longitude, &latitude, &item.RadiusM, &item.SourceType, &item.DepthBand, &item.PreviousDepthBand, &item.Trend, &item.ReportedTrend, &item.Freshness, &item.SummaryReason, &item.LatestObservedAt, &item.ComputedAt, &item.WindowStart, &item.WindowEnd, &item.ReportCount, &item.SampleCount, &item.TotalReportCount, &reportIDs, &state.Invalidated, &state.Dirty)
+	var geometry []byte
+	err := row.Scan(&item.ID, &item.Name, &longitude, &latitude, &item.RadiusM, &item.SourceType, &item.DepthBand, &item.PreviousDepthBand, &item.Trend, &item.ReportedTrend, &item.Freshness, &item.SummaryReason, &item.LatestObservedAt, &item.ComputedAt, &item.WindowStart, &item.WindowEnd, &item.ReportCount, &item.SampleCount, &item.TotalReportCount, &reportIDs, &state.Invalidated, &state.Dirty, &item.AreaType, &item.RoadSegmentID, &item.SegmentVersion, &item.SegmentActive, &item.StartLabel, &item.EndLabel, &geometry)
 	item.Location = reportarea.Location{Type: "Point", Coordinates: []float64{longitude, latitude}}
 	item.ReportIDs = reportIDs
 	if err != nil {
+		return reportarea.Area{}, areaReadState{}, err
+	}
+	if err := decodeAreaGeometry(&item, geometry); err != nil {
 		return reportarea.Area{}, areaReadState{}, err
 	}
 	return item, state, nil
 }
 
 func maskArea(item reportarea.Area) reportarea.Area {
-	item.Name = "Community report area"
+	if item.AreaType != "ROAD_SEGMENT" {
+		item.Name = "Community report area"
+	}
 	item.DepthBand = reportarea.DepthBandUnknown
 	item.PreviousDepthBand = reportarea.DepthBandUnknown
 	item.Trend = reportarea.TrendUnknown

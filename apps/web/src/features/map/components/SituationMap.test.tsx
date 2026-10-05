@@ -5,7 +5,8 @@ import { SituationMap } from "./SituationMap";
 import type { LayerItems, LayerVisibility } from "../types";
 import { mapSettings, resetMapSession, setMapViewport } from "../../../shared/map/mapSession";
 
-const { map, mapEvents, containers } = vi.hoisted(() => ({
+const { map, mapEvents, containers, popupPositions } = vi.hoisted(() => ({
+  popupPositions: [] as Array<[number, number]>,
   containers: [] as Record<string, unknown>[],
   mapEvents: [] as Array<Record<string, () => void>>,
   map: {
@@ -21,7 +22,7 @@ vi.mock("react-leaflet", () => ({
   TileLayer: () => null,
   ScaleControl: () => null,
   Circle: () => null,
-  Popup: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+  Popup: ({ children, position }: { children: ReactNode; position: [number, number] }) => { popupPositions.push(position); return <div>{children}</div>; },
   Tooltip: ({ children }: { children: ReactNode }) => <span>{children}</span>,
   Marker: ({ title, eventHandlers }: { title: string; eventHandlers: { click: () => void; keydown?: (event: { originalEvent: KeyboardEvent }) => void } }) => <button type="button" onClick={eventHandlers.click} onKeyDown={(event) => eventHandlers.keydown?.({ originalEvent: event.nativeEvent })}>{title}</button>,
   CircleMarker: () => null,
@@ -36,7 +37,7 @@ const items: LayerItems = {
 };
 const points = { origin: { longitude: "", latitude: "" }, destination: { longitude: "", latitude: "" } };
 
-afterEach(() => { act(() => resetMapSession()); vi.unstubAllGlobals(); mapEvents.length = 0; containers.length = 0; vi.clearAllMocks(); });
+afterEach(() => { act(() => resetMapSession()); vi.unstubAllGlobals(); mapEvents.length = 0; containers.length = 0; popupPositions.length = 0; vi.clearAllMocks(); });
 
 function prepare() {
   vi.stubGlobal("ResizeObserver", class { observe() {} disconnect() {} });
@@ -47,6 +48,25 @@ function prepare() {
 }
 
 describe("SituationMap popup flow", () => {
+  it("opens side-panel details directly without a marker popup when requested", () => {
+    const { props, onSelect } = prepare();
+    render(<SituationMap {...props} openDetailsOnSelect />);
+    fireEvent.click(screen.getByRole("button", { name: "สถานีทดสอบ" }));
+    expect(onSelect).toHaveBeenCalledWith({ layer: "water", feature: items.water[0] });
+    expect(screen.queryByRole("region", { name: "ข้อมูลสรุปบนแผนที่" })).not.toBeInTheDocument();
+  });
+  it("keeps the popup anchor stable during viewport and data updates", async () => {
+    const { props } = prepare();
+    const view = render(<SituationMap {...props} />);
+    fireEvent.click(screen.getByRole("button", { name: "สถานีทดสอบ" }));
+    await screen.findByText(/ยังไม่มีค่าที่สังเกตได้/);
+    const anchor = popupPositions.at(-1);
+    act(() => setMapViewport({ center: [14.2, 101.2], zoom: 12 }));
+    view.rerender(<SituationMap {...props} items={{ ...items, water: [...items.water] }} />);
+    expect(popupPositions.at(-1)).toBe(anchor);
+    expect(screen.getByRole("region", { name: "ข้อมูลสรุปบนแผนที่" })).toBeInTheDocument();
+  });
+
   it("restores a shared camera on the full map without applying it to previews", () => {
     const { props } = prepare();
     setMapViewport({ center: [14.6, 101.6], zoom: 18 });

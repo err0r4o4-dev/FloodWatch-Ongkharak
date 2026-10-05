@@ -1,0 +1,20 @@
+.road-segment-definition__grid { display: grid; min-width: 0; gap: var(--space-6); }
+.road-segment-definition__grid > * { min-width: 0; }
+.road-segment-definition__grid h2 { margin-top: 0; }
+.admin-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); }
+.road-segment-definition__grid table { width: 100%; border-collapse: collapse; }
+.road-segment-definition__history { display: block; margin-top: .25rem; color: var(--color-ink-muted); font-weight: 400; }
+.road-segment-definition__road-picker { display: grid; gap: var(--space-2); }
+.road-segment-definition__road-meta { display: block; margin-top: .25rem; color: var(--color-ink-muted); font-weight: 400; }
+.road-segment-definition__source { display: grid; gap: var(--space-2); }
+.road-segment-definition__source p { margin: 0; }
+.road-segment-definition__replacement { display: grid; gap: var(--space-2); padding: var(--space-3); border-left: 3px solid var(--color-status-info); background: var(--color-canvas-soft); }
+.road-segment-definition__replacement p { margin: 0; }
+.error-text { color: var(--color-danger-ink); }
+.small { font-size: .875rem; }
+.road-segment-definition__grid th, .road-segment-definition__grid td { padding: var(--space-3); border-bottom: var(--border-width) solid var(--color-border); text-align: left; }
+@media (max-width: 40rem) {
+  .admin-form-grid { grid-template-columns: 1fr; }
+  .road-segment-definition__grid th, .road-segment-definition__grid td { padding: var(--space-2); }
+  .road-segment-definition__grid table { min-width: 42rem; }
+}

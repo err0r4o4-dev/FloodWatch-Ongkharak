@@ -1,0 +1,2 @@
+./minio.go
+./minio_integration_test.go

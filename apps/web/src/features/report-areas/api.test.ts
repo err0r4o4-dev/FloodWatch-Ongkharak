@@ -22,6 +22,19 @@ const area = {
   totalReportCount: 5,
   reportIds: ["report-1", "report-2"]
 };
+const segmentArea = {
+  ...area,
+  id: "segment-1",
+  name: "ถนนทดสอบ",
+  radiusM: 0,
+  areaType: "ROAD_SEGMENT",
+  geometry: { type: "LineString", coordinates: [[101.01, 14.09], [101.02, 14.1]] },
+  roadSegmentId: "segment-1",
+  segmentVersion: 2,
+  segmentActive: true,
+  startLabel: "สะพาน",
+  endLabel: "ตลาด"
+};
 
 const timeline = [
   { ...area, name: undefined, location: undefined, radiusM: undefined, sourceType: undefined, totalReportCount: undefined },
@@ -50,6 +63,16 @@ describe("report areas API boundary", () => {
     expect(url.searchParams.get("bbox")).toBe("100.9,14,101.2,14.3");
     expect(url.searchParams.get("limit")).toBe("100");
     expect(url.searchParams.get("offset")).toBe("0");
+  });
+
+  it("accepts active road-segment summaries with a LineString and zero radius", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ items: [segmentArea], limit: 100, offset: 0 }) }));
+    await expect(fetchReportAreas({ west: 100.9, south: 14, east: 101.2, north: 14.3 }, new AbortController().signal)).resolves.toMatchObject({ items: [segmentArea] });
+  });
+
+  it("rejects a road-segment area that falls back to a radius", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ items: [{ ...segmentArea, geometry: null }], limit: 100, offset: 0 }) }));
+    await expect(fetchReportAreas({ west: 100.9, south: 14, east: 101.2, north: 14.3 }, new AbortController().signal)).rejects.toThrow("report area");
   });
 
   it("rejects malformed area evidence instead of drawing an unsafe feature", async () => {

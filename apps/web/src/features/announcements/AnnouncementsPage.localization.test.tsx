@@ -3,12 +3,15 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { LanguageProvider, LanguageSwitcher } from "../../i18n";
 import { AnnouncementsPage } from "./AnnouncementsPage";
 import { listPublicAlerts } from "./api";
+import { manualAnnouncementApi } from "../manual-announcements/api";
 
 vi.mock("./api", () => ({ listPublicAlerts: vi.fn() }));
+vi.mock("../manual-announcements/api", () => ({ manualAnnouncementApi: { listPublic: vi.fn() } }));
 
 describe("announcements localization", () => {
   beforeEach(() => {
     localStorage.setItem("floodwatch.locale", "th");
+    vi.mocked(manualAnnouncementApi.listPublic).mockResolvedValue({ items: [], total: 0, limit: 20, offset: 0 });
     vi.mocked(listPublicAlerts).mockResolvedValue([{
       id: "alert-1", ruleId: "rule-1", severity: "WARNING", title: "ประกาศจากแหล่งข้อมูล", message: "ข้อความประกาศต้นฉบับ",
       sourceType: "OFFICIAL", resourceType: "road", resourceId: "road-1", triggeredAt: "2026-10-02T08:00:00Z", createdAt: "2026-10-02T08:01:00Z"

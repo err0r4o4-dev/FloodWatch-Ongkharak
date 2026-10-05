@@ -43,6 +43,13 @@ func TestReportAreaHTTPShowsFallingDepthAndRemovesModeratedLineage(t *testing.T)
 	now := time.Now().UTC().Truncate(time.Microsecond)
 	reportIDs := []string{}
 	areaID := ""
+	roadID, segmentID := uuid.NewString(), uuid.NewString()
+	if _, err := pool.Exec(ctx, `INSERT INTO roads (id,code,name,geometry) VALUES ($1::uuid,$1::text,'Synthetic road',ST_GeomFromText('MULTILINESTRING((101.32 14.045,101.322 14.045))',4326))`, roadID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pool.Exec(ctx, `INSERT INTO road_segments (id,road_id,name,start_label,end_label,geometry,version,active) SELECT $1,id,'Synthetic report area','Synthetic start','Synthetic end',ST_GeometryN(geometry,1),1,TRUE FROM roads WHERE id=$2`, segmentID, roadID); err != nil {
+		t.Fatal(err)
+	}
 	adminID := uuid.NewString()
 	if _, err := pool.Exec(ctx, `INSERT INTO users (id,email,password_hash,role) VALUES ($1,$2,'synthetic-test-only','ADMIN')`, adminID, "synthetic-area-"+adminID+"@example.test"); err != nil {
 		t.Fatal(err)
@@ -58,6 +65,8 @@ func TestReportAreaHTTPShowsFallingDepthAndRemovesModeratedLineage(t *testing.T)
 		}
 		_, _ = pool.Exec(context.Background(), `DELETE FROM audit_logs WHERE actor_id=$1`, adminID)
 		_, _ = pool.Exec(context.Background(), `DELETE FROM users WHERE id=$1`, adminID)
+		_, _ = pool.Exec(context.Background(), `DELETE FROM road_segments WHERE id=$1`, segmentID)
+		_, _ = pool.Exec(context.Background(), `DELETE FROM roads WHERE id=$1`, roadID)
 	})
 	for index, depth := range []float64{0.8, 0.7, 0.2, 0.25} {
 		observed := now.Add(-90 * time.Minute)
@@ -70,6 +79,9 @@ func TestReportAreaHTTPShowsFallingDepthAndRemovesModeratedLineage(t *testing.T)
 			t.Fatal(err)
 		}
 		reportIDs = append(reportIDs, created.Report.ID)
+		if _, err := pool.Exec(ctx, `UPDATE community_reports SET road_segment_id=$2,road_segment_assignment_method='USER_CONFIRMED',road_segment_assignment_pending=FALSE WHERE id=$1`, created.Report.ID, segmentID); err != nil {
+			t.Fatal(err)
+		}
 	}
 	if err := areas.Refresh(ctx, now); err != nil {
 		t.Fatal(err)

@@ -6,6 +6,8 @@ import { notifyError, notifySuccess, notifyWarning } from "../../shared/alerts";
 import { ApiError, reportsApi } from "./api";
 import { ReportLocationPicker } from "./ReportLocationPicker";
 import { useGuestIdentity } from "../guest/identity";
+import { roadSegmentsApi } from "../road-segments/api";
+import type { RoadSegmentCandidate } from "../road-segments/types";
 import type { CommunityReport, ReportInput, ReportLocation, ReportType, WaterTrend } from "./types";
 
 type UploadState = { name: string; state: "uploading" | "complete" | "failed" };
@@ -18,6 +20,7 @@ const supportedMediaTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
 const depthPresets = ["", "0", "0.1", "0.3", "0.5", "1"];
 
 type ObservationChoice = "now" | "custom" | "unknown";
+type CandidateState = "idle" | "loading" | "ready" | "error";
 
 function observationChoice(report: CommunityReport | null): ObservationChoice {
   return report ? report.observedAt ? "custom" : "unknown" : "now";
@@ -47,10 +50,11 @@ function inputFromReport(report: CommunityReport | null): ReportInput {
   } : { type: "FLOOD", description: "", locationName: "", locationNote: "", location: { type: "Point", coordinates: [0, 0] } };
 }
 
-export function ReportForm({ editing, initialLocation = null, initialLocationName = "", onComplete, onCancel }: {
+export function ReportForm({ editing, initialLocation = null, initialLocationName = "", initialRoadSegmentId = "", onComplete, onCancel }: {
   editing: CommunityReport | null;
   initialLocation?: ReportLocation | null;
   initialLocationName?: string;
+  initialRoadSegmentId?: string;
   onComplete: (preserveEditing?: boolean) => void;
   onCancel: () => void;
 }) {
@@ -61,6 +65,10 @@ export function ReportForm({ editing, initialLocation = null, initialLocationNam
   const [submitted, setSubmitted] = useState(false);
   const [input, setInput] = useState(() => ({ ...inputFromReport(editing), ...(!editing && initialLocationName ? { locationName: initialLocationName } : {}) }));
   const [location, setLocation] = useState<ReportLocation | null>(editing?.location ?? initialLocation);
+  const [roadSegmentId, setRoadSegmentId] = useState(editing?.roadSegmentId ?? "");
+  const [candidates, setCandidates] = useState<RoadSegmentCandidate[]>([]);
+  const [candidateState, setCandidateState] = useState<CandidateState>("idle");
+  const initialSegmentId = useRef<string | null>(editing?.roadSegmentId ?? null);
   const [observedChoice, setObservedChoice] = useState<ObservationChoice>(() => observationChoice(editing));
   const [observedTime, setObservedTime] = useState(() => localObservationTime(editing?.observedAt));
   const [waterTrend, setWaterTrend] = useState<WaterTrend>(editing?.waterTrend ?? "UNKNOWN");
@@ -80,6 +88,10 @@ export function ReportForm({ editing, initialLocation = null, initialLocationNam
   useEffect(() => {
     setInput({ ...inputFromReport(editing), ...(!editing && initialLocationName ? { locationName: initialLocationName } : {}) });
     setLocation(editing?.location ?? initialLocation);
+    setRoadSegmentId(editing?.roadSegmentId ?? "");
+    initialSegmentId.current = editing?.roadSegmentId ?? null;
+    setCandidates([]);
+    setCandidateState("idle");
     setObservedChoice(observationChoice(editing));
     setObservedTime(localObservationTime(editing?.observedAt));
     setWaterTrend(editing?.waterTrend ?? "UNKNOWN");
@@ -93,6 +105,37 @@ export function ReportForm({ editing, initialLocation = null, initialLocationNam
     setError(null);
     setLocationResetKey((key) => key + 1);
   }, [editing, initialLocation, initialLocationName]);
+
+  useEffect(() => {
+    if (!location) {
+      setCandidates([]);
+      setCandidateState("idle");
+      return;
+    }
+    const controller = new AbortController();
+    setCandidates([]);
+    setCandidateState("loading");
+    void roadSegmentsApi.candidates(location.coordinates[0], location.coordinates[1], controller.signal)
+      .then((result) => {
+        if (controller.signal.aborted) return;
+        setCandidates(result.items);
+        setCandidateState("ready");
+        if (initialSegmentId.current && result.items.some((candidate) => candidate.id === initialSegmentId.current)) return;
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setCandidateState("error");
+      });
+    return () => controller.abort();
+  }, [location?.coordinates[0], location?.coordinates[1]]);
+
+  const selectLocation = (next: ReportLocation | null) => {
+    const changed = location?.coordinates[0] !== next?.coordinates[0] || location?.coordinates[1] !== next?.coordinates[1];
+    if (changed) {
+      setRoadSegmentId("");
+      initialSegmentId.current = null;
+    }
+    setLocation(next);
+  };
 
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -122,7 +165,7 @@ export function ReportForm({ editing, initialLocation = null, initialLocationNam
       let reportId = retryReportId;
       let capability = uploadToken;
       if (!reportId && location) {
-        const payload: ReportInput = { type: input.type, description, location, locationName, locationNote, waterTrend, ...(observedDate ? { observedAt: editing?.observedAt && observedTime === localObservationTime(editing.observedAt) && observedChoice === "custom" ? editing.observedAt : observedDate.toISOString() } : {}), ...(!editing ? { displayName: submittedName } : {}), ...(depth === undefined ? {} : { estimatedWaterDepthM: depth }) };
+        const payload: ReportInput = { type: input.type, description, location, locationName, locationNote, ...(editing?.roadSegmentId === roadSegmentId && editing.location.coordinates[0] === location.coordinates[0] && editing.location.coordinates[1] === location.coordinates[1] ? {} : { roadSegmentId }), waterTrend, ...(observedDate ? { observedAt: editing?.observedAt && observedTime === localObservationTime(editing.observedAt) && observedChoice === "custom" ? editing.observedAt : observedDate.toISOString() } : {}), ...(!editing ? { displayName: submittedName } : {}), ...(depth === undefined ? {} : { estimatedWaterDepthM: depth }) };
         const report = editing ? await reportsApi.update(editing.id, payload) : await reportsApi.create(payload);
         reportId = report.id;
         if (!editing) {
@@ -160,6 +203,8 @@ export function ReportForm({ editing, initialLocation = null, initialLocationNam
         if (!editing) {
           setInput(inputFromReport(null));
           setLocation(null);
+          setRoadSegmentId("");
+          initialSegmentId.current = null;
           setWaterDepth("");
           setDepthChoice("");
           setCustomDepthCm("");
@@ -191,7 +236,18 @@ export function ReportForm({ editing, initialLocation = null, initialLocationNam
       <label>{t("form.type")}<select value={input.type} onChange={(event) => setInput((current) => ({ ...current, type: event.target.value as ReportType }))}>
         <option value="FLOOD">{t("type.flood")}</option><option value="ROAD">{t("type.road")}</option><option value="OTHER">{t("type.other")}</option>
       </select></label>
-      <ReportLocationPicker location={location} onChange={setLocation} resetKey={locationResetKey} />
+      <ReportLocationPicker location={location} onChange={selectLocation} resetKey={locationResetKey} />
+      <fieldset className="report-segment-picker" aria-describedby="report-segment-hint">
+        <legend>{t("form.roadSegment")}</legend>
+        <p id="report-segment-hint" className="report-field-hint">{t("form.roadSegmentHint")}</p>
+        {candidateState === "loading" && <p role="status">{t("form.roadSegmentLoading")}</p>}
+        {candidateState === "error" && <p role="alert" className="form-error">{t("form.roadSegmentError")}</p>}
+        {candidateState === "ready" && candidates.length === 0 && <p className="report-field-hint">{t("form.roadSegmentNone")}</p>}
+        <label className="report-segment-option"><input type="radio" name="report-road-segment" value="" checked={roadSegmentId === ""} onChange={() => { setRoadSegmentId(""); initialSegmentId.current = null; }} /><span>{t("form.roadSegmentUnassigned")}</span></label>
+        {candidates.map((candidate) => <label className="report-segment-option" key={candidate.id}><input type="radio" name="report-road-segment" value={candidate.id} checked={roadSegmentId === candidate.id} onChange={() => { setRoadSegmentId(candidate.id); initialSegmentId.current = null; }} /><span><strong>{candidate.name}</strong> · {candidate.startLabel}–{candidate.endLabel}<small>{t("form.roadSegmentDistance", { meters: Math.round(candidate.distanceM) })}</small></span></label>)}
+        {roadSegmentId && !candidates.some((candidate) => candidate.id === roadSegmentId) && <div className="report-segment-retired" role="status"><p>{t("form.roadSegmentNotListed")}</p><button type="button" className="action-button" onClick={() => { setRoadSegmentId(""); initialSegmentId.current = null; }}>{t("form.roadSegmentClear")}</button></div>}
+        {initialRoadSegmentId && !roadSegmentId && <p className="report-field-hint">{t("form.roadSegmentSuggested")}</p>}
+      </fieldset>
       <div className="report-place-fields">
         <label>{t("form.locationName")}<input required={!editing} value={input.locationName ?? ""} maxLength={400} placeholder={t("form.locationNamePlaceholder")} aria-describedby="report-place-hint" onChange={(event) => setInput((current) => ({ ...current, locationName: event.target.value }))} /></label>
         <label>{t("form.locationNote")}<input value={input.locationNote ?? ""} maxLength={1000} placeholder={t("form.locationNotePlaceholder")} onChange={(event) => setInput((current) => ({ ...current, locationNote: event.target.value }))} /></label>
@@ -255,6 +311,8 @@ export function ReportForm({ editing, initialLocation = null, initialLocationNam
         else {
           setInput(inputFromReport(null));
           setLocation(null);
+          setRoadSegmentId("");
+          initialSegmentId.current = null;
           setWaterDepth("");
           setDepthChoice("");
           setCustomDepthCm("");

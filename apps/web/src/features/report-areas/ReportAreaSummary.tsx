@@ -3,6 +3,7 @@ import { formatNumber, useTranslation } from "../../i18n";
 import th from "../../i18n/locales/th/map";
 import en from "../../i18n/locales/en/map";
 import { areaTrendSymbol, areaTrendTone, displayDepthBand, displayReportAreaTrend, effectiveReportAreaFreshness } from "./presentation";
+import { isRoadSegmentReportArea } from "./types";
 import type { ReportArea, ReportAreaDepthBand } from "./types";
 import "./report-areas.css";
 
@@ -28,6 +29,7 @@ export function ReportAreaSummary({ area, compact = false }: { area: ReportArea;
   const reportedTrend = displayReportAreaTrend(area.reportedTrend, area.freshness, area.latestObservedAt);
   return <div className={`report-area-summary${compact ? " report-area-summary--compact" : ""}`}>
     <h4 className="report-area-summary__heading">{t("area.communityDerived")}</h4>
+    {isRoadSegmentReportArea(area) && <div className="report-area-summary__segment"><strong>{area.startLabel}–{area.endLabel}</strong><span>{t("area.segmentVersion", { version: area.segmentVersion ?? 0 })}</span></div>}
     <div className="badge-row"><ReportAreaDepthBadge depthBand={area.depthBand} freshness={freshness} latestObservedAt={area.latestObservedAt} /><FreshnessBadge freshness={freshness} /><SourceBadge type="COMMUNITY" /></div>
     <dl className="report-area-summary__metrics">
       <div><dt>{t("area.currentDepthRange")}</dt><dd>{t(depthRangeKeys[depthBand])}</dd></div>
@@ -41,6 +43,8 @@ export function ReportAreaSummary({ area, compact = false }: { area: ReportArea;
     <p className="report-area-summary__window"><strong>{t("area.window")}</strong> <DataTimestamp value={area.windowStart} /> → <DataTimestamp value={area.windowEnd} /></p>
     <p className="report-area-summary__window"><DataTimestamp label={t("area.latestObserved")} value={area.latestObservedAt} /> · {t("area.computedAt")} <DataTimestamp value={area.computedAt} /></p>
     {depthBand === "UNKNOWN" && <p className="uncertainty">{t("area.unknownWarning")}</p>}
+    {isRoadSegmentReportArea(area) && <p className="section-caption">{t("area.segmentCoverageNotice")}</p>}
+    {area.areaType === "ROAD_SEGMENT" && area.segmentActive === false && <p className="uncertainty">{t("area.segmentArchived")}</p>}
     <p className="section-caption">{t("legend.areaTrend")}</p>
   </div>;
 }

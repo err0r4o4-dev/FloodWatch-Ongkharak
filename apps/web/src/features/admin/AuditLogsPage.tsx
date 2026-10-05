@@ -66,6 +66,10 @@ export function AuditLogsPage() {
       "alert_rule.deleted": "audit.action.alertRuleDeleted",
       "setting.updated": "audit.action.settingUpdated",
       "report.reviewed": "audit.action.reportReviewed",
+      "manual_announcement.created": "audit.action.announcementCreated",
+      "manual_announcement.updated": "audit.action.announcementUpdated",
+      "manual_announcement.published": "audit.action.announcementPublished",
+      "manual_announcement.withdrawn": "audit.action.announcementWithdrawn",
       "auth.login_success": "audit.action.loginSuccess",
       "auth.login_failed": "audit.action.loginFailed",
       "auth.logout": "audit.action.logout",
@@ -79,6 +83,7 @@ export function AuditLogsPage() {
       ALERT_RULE: "audit.target.alertRule",
       DATA_SOURCE: "audit.target.dataSource",
       COMMUNITY_REPORT: "audit.target.communityReport",
+      MANUAL_ANNOUNCEMENT: "audit.target.manualAnnouncement",
       SYSTEM_SETTING: "audit.target.systemSetting",
       AUTH_SESSION: "audit.target.authSession",
     };
@@ -139,6 +144,10 @@ export function AuditLogsPage() {
               <option value="user.enabled">{getActionLabel("user.enabled")}</option>
               <option value="user.role_changed">{getActionLabel("user.role_changed")}</option>
               <option value="setting.updated">{getActionLabel("setting.updated")}</option>
+              <option value="manual_announcement.created">{getActionLabel("manual_announcement.created")}</option>
+              <option value="manual_announcement.updated">{getActionLabel("manual_announcement.updated")}</option>
+              <option value="manual_announcement.published">{getActionLabel("manual_announcement.published")}</option>
+              <option value="manual_announcement.withdrawn">{getActionLabel("manual_announcement.withdrawn")}</option>
               <option value="auth.login_success">{getActionLabel("auth.login_success")}</option>
               <option value="auth.logout">{getActionLabel("auth.logout")}</option>
             </select>
@@ -158,6 +167,7 @@ export function AuditLogsPage() {
               <option value="SYSTEM_SETTING">{getTargetTypeLabel("SYSTEM_SETTING")}</option>
               <option value="ALERT_RULE">{getTargetTypeLabel("ALERT_RULE")}</option>
               <option value="COMMUNITY_REPORT">{getTargetTypeLabel("COMMUNITY_REPORT")}</option>
+              <option value="MANUAL_ANNOUNCEMENT">{getTargetTypeLabel("MANUAL_ANNOUNCEMENT")}</option>
               <option value="AUTH_SESSION">{getTargetTypeLabel("AUTH_SESSION")}</option>
             </select>
           </div>

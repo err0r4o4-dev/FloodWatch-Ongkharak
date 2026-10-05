@@ -1,20 +1,25 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ReportForm } from "./ReportForm";
 import { notifyError, notifySuccess, notifyWarning } from "../../shared/alerts";
 
 vi.mock("../../shared/alerts", () => ({ notifyError: vi.fn(), notifySuccess: vi.fn(), notifyWarning: vi.fn() }));
 
 const reportsApi = vi.hoisted(() => ({ create: vi.fn(), update: vi.fn(), uploadMedia: vi.fn() }));
+const roadSegmentsApi = vi.hoisted(() => ({ candidates: vi.fn() }));
 
 vi.mock("./api", () => ({
   ApiError: class ApiError extends Error {},
   reportsApi
 }));
 
+vi.mock("../road-segments/api", () => ({ roadSegmentsApi }));
+
 vi.mock("./ReportLocationPicker", () => ({
-  ReportLocationPicker: ({ onChange }: { onChange: (location: typeof pendingReport.location) => void }) =>
+  ReportLocationPicker: ({ onChange }: { onChange: (location: typeof pendingReport.location) => void }) => <>
     <button type="button" onClick={() => onChange(pendingReport.location)}>เลือกพิกัด</button>
+    <button type="button" onClick={() => onChange({ type: "Point", coordinates: [101.2, 14.3] })}>เลือกพิกัดใหม่</button>
+  </>
 }));
 
 const pendingReport = {
@@ -25,7 +30,67 @@ const pendingReport = {
 };
 
 describe("ReportForm uploads", () => {
-  beforeEach(() => { vi.clearAllMocks(); });
+  beforeEach(() => { vi.clearAllMocks(); roadSegmentsApi.candidates.mockResolvedValue({ items: [], assignmentStatus: "UNASSIGNED", matchingDistanceM: 30 }); });
+  afterEach(() => cleanup());
+
+  it("requires explicit confirmation for a single road-segment candidate", async () => {
+    const candidate = { id: "segment-1", roadId: "road-1", name: "ถนนทดสอบ", startLabel: "สะพาน", endLabel: "ตลาด", geometry: { type: "LineString", coordinates: [[101, 14], [101.1, 14.1]] }, location: { type: "Point", coordinates: [101.05, 14.05] }, version: 1, supersedesId: null, active: true, createdAt: "2026-10-02T00:00:00Z", distanceM: 4 };
+    roadSegmentsApi.candidates.mockResolvedValue({ items: [candidate], assignmentStatus: "SINGLE_CANDIDATE", matchingDistanceM: 30 });
+    reportsApi.create.mockResolvedValue({ ...pendingReport, uploadToken: "token" });
+    render(<ReportForm editing={null} onComplete={vi.fn()} onCancel={vi.fn()} />);
+    fireEvent.change(screen.getByLabelText("ชื่อสถานที่ / ชื่อซอย *"), { target: { value: "อาคารทดสอบ" } });
+    fireEvent.change(screen.getByLabelText("รายละเอียด"), { target: { value: "น้ำขัง" } });
+    fireEvent.click(screen.getByRole("button", { name: "เลือกพิกัด" }));
+    expect(await screen.findByRole("radio", { name: /ถนนทดสอบ/ })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: /ถนนทดสอบ/ })).not.toBeChecked();
+    expect(reportsApi.create).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("radio", { name: /ถนนทดสอบ/ }));
+    fireEvent.click(screen.getByRole("button", { name: "ส่งรายงาน" }));
+    await waitFor(() => expect(reportsApi.create).toHaveBeenLastCalledWith(expect.objectContaining({ roadSegmentId: "segment-1" })));
+  });
+
+  it("clears stale segment selection when coordinates move and ignores the old response", async () => {
+    let resolveFirst!: (value: unknown) => void;
+    let resolveSecond!: (value: unknown) => void;
+    roadSegmentsApi.candidates
+      .mockImplementationOnce(() => new Promise((resolve) => { resolveFirst = resolve; }))
+      .mockImplementationOnce(() => new Promise((resolve) => { resolveSecond = resolve; }));
+    render(<ReportForm editing={null} onComplete={vi.fn()} onCancel={vi.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: "เลือกพิกัด" }));
+    await waitFor(() => expect(roadSegmentsApi.candidates).toHaveBeenCalledWith(101.1, 14.2, expect.any(AbortSignal)));
+    resolveFirst({ items: [], assignmentStatus: "UNASSIGNED", matchingDistanceM: 30 });
+    fireEvent.click(screen.getByRole("button", { name: "เลือกพิกัดใหม่" }));
+    await waitFor(() => expect(roadSegmentsApi.candidates).toHaveBeenLastCalledWith(101.2, 14.3, expect.any(AbortSignal)));
+    resolveSecond({ items: [], assignmentStatus: "UNASSIGNED", matchingDistanceM: 30 });
+    await waitFor(() => expect(screen.getByText("ยังไม่ระบุช่วงถนน")).toBeInTheDocument());
+    expect(screen.queryByText(/ถนนทดสอบ/)).not.toBeInTheDocument();
+  });
+
+  it("shows multiple roads without selecting one and permits an explicit unassigned save", async () => {
+    const makeCandidate = (id: string, name: string) => ({ id, roadId: id, name, startLabel: "ต้นทาง", endLabel: "ปลายทาง", geometry: { type: "LineString", coordinates: [[101, 14], [101.1, 14.1]] }, location: { type: "Point", coordinates: [101.05, 14.05] }, version: 1, supersedesId: null, active: true, createdAt: "2026-10-02T00:00:00Z", distanceM: 8 });
+    roadSegmentsApi.candidates.mockResolvedValue({ items: [makeCandidate("segment-1", "ถนนหนึ่ง"), makeCandidate("segment-2", "ถนนสอง")], assignmentStatus: "AMBIGUOUS", matchingDistanceM: 30 });
+    reportsApi.create.mockResolvedValue({ ...pendingReport, uploadToken: "token" });
+    render(<ReportForm editing={null} onComplete={vi.fn()} onCancel={vi.fn()} />);
+    fireEvent.change(screen.getByLabelText("ชื่อสถานที่ / ชื่อซอย *"), { target: { value: "อาคารทดสอบ" } });
+    fireEvent.change(screen.getByLabelText("รายละเอียด"), { target: { value: "น้ำขัง" } });
+    fireEvent.click(screen.getByRole("button", { name: "เลือกพิกัด" }));
+    expect(await screen.findByRole("radio", { name: /ถนนหนึ่ง/ })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: /ยังไม่ระบุช่วงถนน/ })).toBeChecked();
+    fireEvent.click(screen.getByRole("button", { name: "ส่งรายงาน" }));
+    await waitFor(() => expect(reportsApi.create).toHaveBeenCalledWith(expect.objectContaining({ roadSegmentId: "" })));
+  });
+
+  it("reports candidate failure while still saving explicitly unassigned", async () => {
+    roadSegmentsApi.candidates.mockRejectedValue(new Error("offline"));
+    reportsApi.create.mockResolvedValue({ ...pendingReport, uploadToken: "token" });
+    render(<ReportForm editing={null} onComplete={vi.fn()} onCancel={vi.fn()} />);
+    fireEvent.change(screen.getByLabelText("ชื่อสถานที่ / ชื่อซอย *"), { target: { value: "อาคารทดสอบ" } });
+    fireEvent.change(screen.getByLabelText("รายละเอียด"), { target: { value: "น้ำขัง" } });
+    fireEvent.click(screen.getByRole("button", { name: "เลือกพิกัด" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("ไม่สามารถโหลดช่วงถนนได้");
+    fireEvent.click(screen.getByRole("button", { name: "ส่งรายงาน" }));
+    await waitFor(() => expect(reportsApi.create).toHaveBeenCalledWith(expect.objectContaining({ roadSegmentId: "" })));
+  });
   it("submits an observation time and a falling trend without inventing a depth", async () => {
     reportsApi.create.mockReset().mockResolvedValue({ ...pendingReport, uploadToken: "private-upload-capability" });
     render(<ReportForm editing={null} onComplete={vi.fn()} onCancel={vi.fn()} />);
@@ -204,6 +269,6 @@ describe("ReportForm uploads", () => {
     expect(reportsApi.create).toHaveBeenCalledTimes(1);
     expect(reportsApi.create).toHaveBeenCalledWith(expect.objectContaining({ displayName: "ชุมชนทดสอบ" }));
     finish({ ...pendingReport, uploadToken: "private-upload-capability" });
-    expect(await screen.findByRole("status")).toHaveTextContent("รายงานเผยแพร่แล้วในฐานะข้อมูล COMMUNITY");
+    expect(await screen.findByText("รายงานเผยแพร่แล้วในฐานะข้อมูล COMMUNITY และรอการตรวจสอบข้อเท็จจริง การเผยแพร่ไม่ได้หมายถึงยืนยันแล้วหรือปลอดภัย")).toBeInTheDocument();
   });
 });

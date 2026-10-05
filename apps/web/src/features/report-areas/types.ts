@@ -5,6 +5,7 @@ export type ReportAreaTrend = "UNKNOWN" | "RISING" | "STABLE" | "FALLING";
 export type ReportAreaFreshness = "FRESH" | "STALE" | "UNKNOWN";
 export type ReportAreaSummaryReason = "SUMMARIZED" | "PROVISIONAL" | "NO_RECENT_REPORTS" | "INSUFFICIENT_MEASUREMENTS" | "CONFLICTING_REPORTS" | "UPDATING";
 export type ReportAreaPoint = { type: "Point"; coordinates: [longitude: number, latitude: number] };
+export type ReportAreaLineString = { type: "LineString"; coordinates: [longitude: number, latitude: number][] };
 
 export type ReportArea = {
   id: string;
@@ -26,7 +27,18 @@ export type ReportArea = {
   sampleCount: number;
   totalReportCount: number;
   reportIds: string[];
+  areaType?: "ROAD_SEGMENT" | "LEGACY_RADIUS";
+  geometry?: ReportAreaLineString | null;
+  roadSegmentId?: string | null;
+  segmentVersion?: number;
+  segmentActive?: boolean;
+  startLabel?: string;
+  endLabel?: string;
 };
+
+export function isRoadSegmentReportArea(area: ReportArea): area is ReportArea & { areaType: "ROAD_SEGMENT"; geometry: ReportAreaLineString; roadSegmentId: string } {
+  return area.areaType === "ROAD_SEGMENT" && area.geometry?.type === "LineString" && typeof area.roadSegmentId === "string";
+}
 
 export type ReportAreaTimelineWindow = {
   windowStart: string;

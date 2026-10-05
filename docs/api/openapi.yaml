@@ -115,6 +115,131 @@ paths:
           content:
             application/json:
               schema: {$ref: '#/components/schemas/ErrorResponse'}
+  /api/v1/manual-announcements:
+    get:
+      tags: [Alerts]
+      operationId: listManualAnnouncements
+      summary: List published, expired, and withdrawn manual admin announcements
+      description: Manual announcements are COMMUNITY evidence recorded by an ADMIN; they are never OFFICIAL. Drafts are private. Expired and withdrawn records remain visible as archives, and withdrawn records always have UNKNOWN effective status.
+      security: []
+      parameters:
+        - name: limit
+          in: query
+          schema: {type: integer, minimum: 1, maximum: 50, default: 20}
+        - name: offset
+          in: query
+          schema: {type: integer, minimum: 0, maximum: 10000, default: 0}
+      responses:
+        '200':
+          description: Public manual announcement archive; responses are no-store.
+          headers:
+            Cache-Control:
+              schema: {type: string, const: no-store}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ManualAnnouncementList'}
+        '400':
+          description: Invalid or repeated pagination parameter.
+          content: {application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}}
+        '429':
+          description: Public read rate limit exceeded.
+          content: {application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}}
+        '503':
+          description: Manual announcement storage unavailable.
+          content: {application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}}
+  /api/v1/admin/manual-announcements:
+    get:
+      tags: [Admin, Alerts]
+      operationId: listAdminManualAnnouncements
+      summary: List manual announcements for ADMIN management
+      security: [{bearerAuth: []}]
+      parameters:
+        - name: status
+          in: query
+          schema: {type: string, enum: [ALL, DRAFT, PUBLISHED, EXPIRED, WITHDRAWN], default: ALL}
+        - name: limit
+          in: query
+          schema: {type: integer, minimum: 1, maximum: 50, default: 20}
+        - name: offset
+          in: query
+          schema: {type: integer, minimum: 0, maximum: 10000, default: 0}
+      responses:
+        '200':
+          description: ADMIN-only manual announcement list; responses are no-store.
+          headers:
+            Cache-Control:
+              schema: {type: string, const: no-store}
+          content: {application/json: {schema: {$ref: '#/components/schemas/ManualAnnouncementList'}}}
+        default: {$ref: '#/components/responses/DomainError'}
+    post:
+      tags: [Admin, Alerts]
+      operationId: createManualAnnouncement
+      summary: Create a manual announcement draft (ADMIN only)
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: '#/components/schemas/ManualAnnouncementInput'}}}
+      responses:
+        '201':
+          description: Created draft with revision 1.
+          content: {application/json: {schema: {$ref: '#/components/schemas/ManualAnnouncementResponse'}}}
+        default: {$ref: '#/components/responses/DomainError'}
+  /api/v1/admin/manual-announcements/{id}:
+    get:
+      tags: [Admin, Alerts]
+      operationId: getAdminManualAnnouncement
+      summary: Get a manual announcement and immutable revision history (ADMIN only)
+      security: [{bearerAuth: []}]
+      parameters: [{ $ref: '#/components/parameters/ResourceID' }]
+      responses:
+        '200':
+          description: Announcement detail with revision snapshots; actor identity is not included.
+          content: {application/json: {schema: {$ref: '#/components/schemas/ManualAnnouncementDetail'}}}
+        default: {$ref: '#/components/responses/DomainError'}
+    put:
+      tags: [Admin, Alerts]
+      operationId: updateManualAnnouncement
+      summary: Update a manual announcement using optimistic concurrency (ADMIN only)
+      security: [{bearerAuth: []}]
+      parameters: [{ $ref: '#/components/parameters/ResourceID' }]
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: '#/components/schemas/ManualAnnouncementUpdateInput'}}}
+      responses:
+        '200':
+          description: Updated announcement and incremented immutable revision.
+          content: {application/json: {schema: {$ref: '#/components/schemas/ManualAnnouncementResponse'}}}
+        default: {$ref: '#/components/responses/DomainError'}
+  /api/v1/admin/manual-announcements/{id}/publish:
+    post:
+      tags: [Admin, Alerts]
+      operationId: publishManualAnnouncement
+      summary: Publish a validated draft (ADMIN only)
+      security: [{bearerAuth: []}]
+      parameters: [{ $ref: '#/components/parameters/ResourceID' }]
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: '#/components/schemas/ManualAnnouncementRevisionInput'}}}
+      responses:
+        '200':
+          description: Published announcement and immutable revision.
+          content: {application/json: {schema: {$ref: '#/components/schemas/ManualAnnouncementResponse'}}}
+        default: {$ref: '#/components/responses/DomainError'}
+  /api/v1/admin/manual-announcements/{id}/withdraw:
+    post:
+      tags: [Admin, Alerts]
+      operationId: withdrawManualAnnouncement
+      summary: Withdraw a published manual announcement (ADMIN only)
+      security: [{bearerAuth: []}]
+      parameters: [{ $ref: '#/components/parameters/ResourceID' }]
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: '#/components/schemas/ManualAnnouncementWithdrawInput'}}}
+      responses:
+        '200':
+          description: Withdrawn announcement with UNKNOWN effective status and immutable revision.
+          content: {application/json: {schema: {$ref: '#/components/schemas/ManualAnnouncementResponse'}}}
+        default: {$ref: '#/components/responses/DomainError'}
   /api/v1/external-data/ongkharak:
     get:
       tags:
@@ -817,7 +942,7 @@ paths:
   /api/v1/report-areas:
     get:
       tags: [Reports]
-      summary: List community report areas with recent depth and trend summaries
+      summary: List active road-segment report areas with recent depth and trend summaries
       operationId: listReportAreas
       security: []
       parameters:
@@ -826,20 +951,20 @@ paths:
         - { $ref: '#/components/parameters/BBox' }
       responses:
         '200':
-          description: Server-wide area summaries independent of viewport report pagination. Unknown or stale evidence never implies safety.
+          description: Server-wide active road-segment summaries independent of viewport report pagination. Empty segments are included with UNKNOWN summaries; bbox intersects the segment geometry, not only its midpoint. Legacy radius summaries remain private and are not returned. Unknown or stale evidence never implies safety.
           content: { application/json: { schema: { $ref: '#/components/schemas/ReportAreaList' } } }
         default: { $ref: '#/components/responses/DomainError' }
   /api/v1/report-areas/{id}:
     get:
       tags: [Reports]
-      summary: Get a community area summary and hourly evidence timeline
+      summary: Get a road-segment summary and hourly evidence timeline
       operationId: getReportArea
       security: []
       parameters:
         - { $ref: '#/components/parameters/ResourceID' }
       responses:
         '200':
-          description: Community-derived summary and timeline; gaps and conflicting evidence remain UNKNOWN.
+          description: Community-derived summary for an active or archived road-segment version. The timeline is recomputed from published reports assigned to this exact segment version; versions are never merged. Gaps and conflicting evidence remain UNKNOWN.
           content: { application/json: { schema: { $ref: '#/components/schemas/ReportAreaDetail' } } }
         default: { $ref: '#/components/responses/DomainError' }
   /api/v1/report-areas/{id}/reports:
@@ -854,8 +979,58 @@ paths:
         - { $ref: '#/components/parameters/Offset' }
       responses:
         '200':
-          description: Bounded original public evidence, excluding removed reports and private ownership or moderation fields.
+          description: Bounded original public evidence for this segment version, excluding removed reports and private ownership or moderation fields. Original reports remain accessible and are not replaced by the derived summary.
           content: { application/json: { schema: { $ref: '#/components/schemas/ReportList' } } }
+        default: { $ref: '#/components/responses/DomainError' }
+  /api/v1/road-segments:
+    get:
+      tags: [Roads]
+      summary: List bounded active road segments
+      operationId: listRoadSegments
+      security: []
+      description: Returns active administrator-defined LineString segments only. Optional bbox filtering intersects the stored geometry, not its midpoint. No segment records are seeded; an empty result means no configured coverage, not safe road conditions.
+      parameters:
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/Offset' }
+        - { $ref: '#/components/parameters/BBox' }
+      responses:
+        '200':
+          description: Bounded active road-segment page.
+          content: { application/json: { schema: { $ref: '#/components/schemas/RoadSegmentList' } } }
+        default: { $ref: '#/components/responses/DomainError' }
+    post:
+      tags: [Admin, Roads]
+      summary: Create an immutable road-segment version (ADMIN only)
+      operationId: createRoadSegment
+      security: [{ bearerAuth: [] }]
+      description: ADMIN-only write subject to the existing browser origin/CSRF restrictions. A replacement supplies supersedesId, receives a new segment ID, increments the version on the same road, and archives the superseded version. Geometry must be a LineString no longer than 1000 metres along the referenced road and remain within its 15 metre corridor.
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/RoadSegmentInput' } } }
+      responses:
+        '201':
+          description: Created active road-segment version.
+          content: { application/json: { schema: { $ref: '#/components/schemas/RoadSegmentResponse' } } }
+        default: { $ref: '#/components/responses/DomainError' }
+  /api/v1/road-segments/candidates:
+    get:
+      tags: [Roads]
+      summary: Find road-segment assignment candidates near a report point
+      operationId: listRoadSegmentCandidates
+      security: []
+      parameters:
+        - name: longitude
+          in: query
+          required: true
+          schema: { type: number, minimum: -180, maximum: 180 }
+        - name: latitude
+          in: query
+          required: true
+          schema: { type: number, minimum: -90, maximum: 90 }
+      responses:
+        '200':
+          description: Active segments within the fixed 30 metre matching distance. Multiple candidates are AMBIGUOUS; no candidate is UNASSIGNED. Candidate distanceM is measured from the point to the segment geometry.
+          content: { application/json: { schema: { $ref: '#/components/schemas/RoadSegmentCandidateResponse' } } }
         default: { $ref: '#/components/responses/DomainError' }
   /api/v1/reports:
     get:
@@ -1432,6 +1607,7 @@ paths:
         in: query
         schema:
           type: string
+          enum: [USER, ALERT_RULE, DATA_SOURCE, COMMUNITY_REPORT, SYSTEM_SETTING, AUTH_SESSION, MANUAL_ANNOUNCEMENT]
       - name: targetId
         in: query
         schema:
@@ -1440,6 +1616,7 @@ paths:
         in: query
         schema:
           type: string
+          enum: [user.created, user.disabled, user.enabled, user.role_changed, user.password_changed, alert_rule.created, alert_rule.updated, alert_rule.deleted, setting.updated, report.reviewed, manual_announcement.created, manual_announcement.updated, manual_announcement.published, manual_announcement.withdrawn, auth.login_success, auth.login_failed, auth.logout]
       - name: startTime
         in: query
         schema:
@@ -2400,6 +2577,133 @@ components:
           - string
           - 'null'
           format: date-time
+    ManualAnnouncementList:
+      type: object
+      additionalProperties: false
+      required: [items, total, limit, offset]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/ManualAnnouncement'}
+        total: {type: integer, minimum: 0}
+        limit: {type: integer, minimum: 1, maximum: 50}
+        offset: {type: integer, minimum: 0, maximum: 10000}
+    ManualAnnouncementResponse:
+      type: object
+      additionalProperties: false
+      required: [announcement]
+      properties:
+        announcement: {$ref: '#/components/schemas/ManualAnnouncement'}
+    ManualAnnouncementDetail:
+      type: object
+      additionalProperties: false
+      required: [announcement, history]
+      properties:
+        announcement: {$ref: '#/components/schemas/ManualAnnouncement'}
+        history:
+          type: array
+          items: {$ref: '#/components/schemas/ManualAnnouncementRevision'}
+    ManualAnnouncementReferenceInput:
+      type: object
+      additionalProperties: false
+      properties:
+        name: {type: string, maxLength: 200}
+        url: {type: string, format: uri, maxLength: 2048, description: 'HTTP(S) public-link URL without credentials, local/private hosts, or bracketed IPv6.'}
+        observedAt: {type: [string, 'null'], format: date-time}
+    ManualAnnouncementInput:
+      type: object
+      additionalProperties: false
+      properties:
+        title: {type: string, maxLength: 200}
+        summary: {type: string, maxLength: 1000}
+        body: {type: string, maxLength: 10000}
+        advice: {type: string, maxLength: 2000}
+        area: {type: string, maxLength: 200}
+        severity: {type: string, enum: [INFO, WATCH, WARNING, CRITICAL]}
+        observedAt: {type: [string, 'null'], format: date-time}
+        expiresAt: {type: [string, 'null'], format: date-time}
+        references:
+          type: array
+          maxItems: 10
+          items: {$ref: '#/components/schemas/ManualAnnouncementReferenceInput'}
+    ManualAnnouncementUpdateInput:
+      type: object
+      additionalProperties: false
+      required: [expectedRevision]
+      properties:
+        title: {type: string, maxLength: 200}
+        summary: {type: string, maxLength: 1000}
+        body: {type: string, maxLength: 10000}
+        advice: {type: string, maxLength: 2000}
+        area: {type: string, maxLength: 200}
+        severity: {type: string, enum: [INFO, WATCH, WARNING, CRITICAL]}
+        observedAt: {type: [string, 'null'], format: date-time}
+        expiresAt: {type: [string, 'null'], format: date-time}
+        references:
+          type: array
+          maxItems: 10
+          items: {$ref: '#/components/schemas/ManualAnnouncementReferenceInput'}
+        expectedRevision: {type: integer, minimum: 1}
+    ManualAnnouncementRevisionInput:
+      type: object
+      additionalProperties: false
+      required: [expectedRevision]
+      properties:
+        expectedRevision: {type: integer, minimum: 1}
+    ManualAnnouncementWithdrawInput:
+      type: object
+      additionalProperties: false
+      required: [expectedRevision, reason]
+      properties:
+        expectedRevision: {type: integer, minimum: 1}
+        reason: {type: string, minLength: 1, maxLength: 500}
+    ManualAnnouncement:
+      type: object
+      additionalProperties: false
+      required: [id, title, summary, body, advice, area, severity, sourceType, publisherType, referenceKind, observedAt, expiresAt, references, status, effectiveStatus, createdAt, updatedAt, publishedAt, withdrawnAt, withdrawalReason, revision]
+      properties:
+        id: {type: string, format: uuid}
+        title: {type: string, maxLength: 200}
+        summary: {type: string, maxLength: 1000}
+        body: {type: string, maxLength: 10000}
+        advice: {type: string, maxLength: 2000}
+        area: {type: string, maxLength: 200}
+        severity: {type: string, enum: [INFO, WATCH, WARNING, CRITICAL]}
+        sourceType: {type: string, const: COMMUNITY}
+        publisherType: {type: string, const: ADMIN}
+        referenceKind: {type: string, const: MEDIA}
+        observedAt: {type: [string, 'null'], format: date-time}
+        expiresAt: {type: [string, 'null'], format: date-time}
+        references:
+          type: array
+          maxItems: 10
+          items: {$ref: '#/components/schemas/ManualAnnouncementReference'}
+        status: {type: string, enum: [DRAFT, PUBLISHED, EXPIRED, WITHDRAWN]}
+        effectiveStatus: {type: string, enum: [INFO, WATCH, WARNING, CRITICAL, UNKNOWN]}
+        createdAt: {type: string, format: date-time}
+        updatedAt: {type: string, format: date-time}
+        publishedAt: {type: [string, 'null'], format: date-time}
+        withdrawnAt: {type: [string, 'null'], format: date-time}
+        withdrawalReason: {type: string, maxLength: 500}
+        revision: {type: integer, minimum: 1}
+    ManualAnnouncementReference:
+      type: object
+      additionalProperties: false
+      required: [name, url, observedAt]
+      properties:
+        name: {type: string, maxLength: 200}
+        url: {type: string, format: uri, maxLength: 2048}
+        observedAt: {type: [string, 'null'], format: date-time}
+    ManualAnnouncementRevision:
+      type: object
+      additionalProperties: false
+      required: [revision, action, recordedAt, reason, announcement]
+      properties:
+        revision: {type: integer, minimum: 1}
+        action: {type: string, enum: [CREATED, UPDATED, PUBLISHED, WITHDRAWN]}
+        recordedAt: {type: string, format: date-time}
+        reason: {type: string, maxLength: 500}
+        announcement: {$ref: '#/components/schemas/ManualAnnouncement'}
     AlertRuleList:
       type: object
       required:
@@ -2457,6 +2761,7 @@ components:
           format: uuid
         action:
           type: string
+          enum: [user.created, user.disabled, user.enabled, user.role_changed, user.password_changed, alert_rule.created, alert_rule.updated, alert_rule.deleted, setting.updated, report.reviewed, manual_announcement.created, manual_announcement.updated, manual_announcement.published, manual_announcement.withdrawn, auth.login_success, auth.login_failed, auth.logout]
         actorId:
           type:
           - string
@@ -2472,6 +2777,7 @@ components:
           - SYSTEM
         targetType:
           type: string
+          enum: [USER, ALERT_RULE, DATA_SOURCE, COMMUNITY_REPORT, SYSTEM_SETTING, AUTH_SESSION, MANUAL_ANNOUNCEMENT]
         targetId:
           type: string
         metadata:
@@ -2877,7 +3183,7 @@ components:
       type: object
       additionalProperties: false
       required: [type, description, location]
-      description: Client cannot assign owner, status, reviewer, provenance, or media metadata.
+      description: Client cannot assign owner, status, reviewer, provenance, or media metadata. roadSegmentId is optional; submit a UUID to confirm a candidate, submit an empty string to clear it, omit it to preserve an existing assignment only when coordinates are unchanged, and leave it omitted on new reports to remain UNASSIGNED.
       properties:
         type: { $ref: '#/components/schemas/ReportType' }
         description: { type: string, minLength: 1, maxLength: 2000 }
@@ -2887,6 +3193,11 @@ components:
         estimatedWaterDepthM: { type: [number, 'null'], minimum: 0, maximum: 100 }
         observedAt: { type: [string, 'null'], format: date-time, description: 'Optional user-supplied observation time, year 2000 or later and at most 30 seconds ahead of server time. Omitted legacy values remain unknown; omitted updates retain the existing value.' }
         waterTrend: { $ref: '#/components/schemas/ReportWaterTrend' }
+        roadSegmentId:
+          oneOf:
+            - { type: string, format: uuid }
+            - { type: string, const: '' }
+          description: Optional confirmed active road-segment UUID; empty string explicitly clears the assignment. A coordinate change resets the assignment when this field is omitted.
     GuestReportInput:
       type: object
       additionalProperties: false
@@ -2901,6 +3212,11 @@ components:
         estimatedWaterDepthM: { type: [number, 'null'], minimum: 0, maximum: 100 }
         observedAt: { type: [string, 'null'], format: date-time, description: 'Optional user-supplied observation time, distinct from submission time. Unknown times are excluded from current depth summaries.' }
         waterTrend: { $ref: '#/components/schemas/ReportWaterTrend' }
+        roadSegmentId:
+          oneOf:
+            - { type: string, format: uuid }
+            - { type: string, const: '' }
+          description: Optional confirmed active road-segment UUID; empty string explicitly clears the assignment. New reports omit this field and remain UNASSIGNED.
     GuestReportResponse:
       type: object
       additionalProperties: false
@@ -2931,8 +3247,8 @@ components:
     Report:
       type: object
       additionalProperties: false
-      required: [id, type, description, location, estimatedWaterDepthM, status, publicationStatus, verificationStatus, sourceType, createdAt, updatedAt, verifiedAt, media]
-      description: COMMUNITY evidence publishes automatically while PENDING. Verification is separate from publication and does not make it OFFICIAL or prove safety. createdAt is submission time rather than a measured observation timestamp. ADMIN detail/actions include reviewHistory; public and owner responses omit history.
+      required: [id, type, description, location, estimatedWaterDepthM, observedAt, waterTrend, status, publicationStatus, verificationStatus, sourceType, createdAt, updatedAt, verifiedAt, roadSegmentId, roadSegmentAssignmentMethod, media]
+      description: COMMUNITY evidence publishes automatically while PENDING. Verification is separate from publication and does not make it OFFICIAL or prove safety. createdAt is submission time rather than a measured observation timestamp. Public reports expose roadSegmentId and its assignment method; ADMIN detail/actions additionally include reviewHistory.
       properties:
         id: { type: string, format: uuid }
         userId: { type: string, format: uuid, description: 'Only exposed for legacy owners in owner and ADMIN responses.' }
@@ -2952,6 +3268,8 @@ components:
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
         verifiedAt: { type: [string, 'null'], format: date-time }
+        roadSegmentId: { type: [string, 'null'], format: uuid, description: Confirmed active or historical segment assignment; null means no assignment. }
+        roadSegmentAssignmentMethod: { type: string, enum: [UNASSIGNED, USER_CONFIRMED, LEGACY_MATCH] }
         verifiedBy: { type: [string, 'null'], format: uuid, description: 'Owner/ADMIN only; omitted in public responses.' }
         reviewedAt: { type: [string, 'null'], format: date-time, description: 'Owner/ADMIN only; time of verification or rejection.' }
         reviewedBy: { type: [string, 'null'], format: uuid, description: 'Owner/ADMIN only; reviewer of verification or rejection.' }
@@ -2968,6 +3286,7 @@ components:
       description: 'Community depth bands in metres: LOW [0,0.1), MODERATE [0.1,0.3), HIGH [0.3,0.5], VERY_HIGH greater than 0.5. Not a road-safety classification.'
     ReportAreaWindow:
       type: object
+      description: One rolling 60-minute summary window. Current values are compared with the immediately preceding non-overlapping 60-minute window; the 24-window timeline retains these semantics and explicit UNKNOWN gaps.
       required: [depthBand, previousDepthBand, trend, reportedTrend, freshness, summaryReason, latestObservedAt, computedAt, windowStart, windowEnd, reportCount, sampleCount, reportIds]
       properties:
         depthBand: { $ref: '#/components/schemas/ReportDepthBand' }
@@ -2987,16 +3306,24 @@ components:
       allOf:
         - { $ref: '#/components/schemas/ReportAreaWindow' }
         - type: object
-          required: [id, name, location, radiusM, sourceType, totalReportCount]
+          required: [id, name, location, radiusM, areaType, geometry, roadSegmentId, segmentVersion, segmentActive, startLabel, endLabel, sourceType, totalReportCount]
           properties:
             id: { type: string, format: uuid }
-            name: { type: string, maxLength: 200, description: User-supplied area label, not a geocoded or official locality. }
+            name: { type: string, maxLength: 200, description: Configured road-segment name, not an official locality or road-safety status. }
             location: { $ref: '#/components/schemas/PointGeometry' }
-            radiusM: { type: number, const: 150, description: Initial bounded grouping radius in metres; not a GPS accuracy or hydrological boundary. }
+            radiusM: { type: number, const: 0, deprecated: true, description: Deprecated compatibility field; public road-segment areas always use zero radius. }
+            areaType: { type: string, const: ROAD_SEGMENT }
+            geometry: { $ref: '#/components/schemas/LineStringGeometry' }
+            roadSegmentId: { type: string, format: uuid, description: Immutable segment ID; equal to the report-area id. }
+            segmentVersion: { type: integer, minimum: 1 }
+            segmentActive: { type: boolean, description: False when this detail represents an archived segment version. }
+            startLabel: { type: string }
+            endLabel: { type: string }
             sourceType: { type: string, const: COMMUNITY }
-            totalReportCount: { type: integer, minimum: 0 }
+            totalReportCount: { type: integer, minimum: 0, description: Published reports assigned to this exact segment version, including zero. }
     ReportAreaList:
       type: object
+      description: Public list of active road-segment summaries. Empty segments are retained with UNKNOWN evidence; legacy-radius rows are private and omitted. bbox intersects LineString geometry.
       required: [items, limit, offset]
       properties:
         items: { type: array, items: { $ref: '#/components/schemas/ReportArea' } }
@@ -3004,6 +3331,7 @@ components:
         offset: { type: integer, minimum: 0, maximum: 100000 }
     ReportAreaDetail:
       type: object
+      description: Segment detail may refer to an archived version. Its timeline is recomputed only from published reports assigned to that version; no cross-version merge is performed.
       required: [area, timeline]
       properties:
         area: { $ref: '#/components/schemas/ReportArea' }
@@ -3040,6 +3368,65 @@ components:
       required: [media]
       properties:
         media: { $ref: '#/components/schemas/ReportMedia' }
+    RoadSegmentInput:
+      type: object
+      additionalProperties: false
+      required: [roadId, name, startLabel, endLabel, geometry]
+      properties:
+        roadId: { type: string, format: uuid }
+        name: { type: string, minLength: 1, maxLength: 200 }
+        startLabel: { type: string, minLength: 1, maxLength: 200 }
+        endLabel: { type: string, minLength: 1, maxLength: 200 }
+        geometry: { $ref: '#/components/schemas/LineStringGeometry' }
+        supersedesId: { type: string, format: uuid, description: Optional active segment ID on the same road. Creates a new immutable version and archives the superseded ID. }
+    RoadSegment:
+      type: object
+      additionalProperties: false
+      required: [id, roadId, name, startLabel, endLabel, geometry, location, version, supersedesId, active, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        roadId: { type: string, format: uuid }
+        name: { type: string, maxLength: 200 }
+        startLabel: { type: string, maxLength: 200 }
+        endLabel: { type: string, maxLength: 200 }
+        geometry: { $ref: '#/components/schemas/LineStringGeometry' }
+        location: { $ref: '#/components/schemas/PointGeometry' }
+        version: { type: integer, minimum: 1 }
+        supersedesId: { type: [string, 'null'], format: uuid }
+        active: { type: boolean }
+        createdAt: { type: string, format: date-time }
+    RoadSegmentCandidate:
+      allOf:
+        - { $ref: '#/components/schemas/RoadSegment' }
+        - type: object
+          required: [distanceM]
+          properties:
+            distanceM: { type: number, minimum: 0, description: Distance from the requested point to the segment geometry in metres. }
+    RoadSegmentList:
+      type: object
+      additionalProperties: false
+      required: [items, limit, offset]
+      properties:
+        items: { type: array, items: { $ref: '#/components/schemas/RoadSegment' } }
+        limit: { type: integer, minimum: 1, maximum: 100 }
+        offset: { type: integer, minimum: 0, maximum: 100000 }
+    RoadSegmentAssignmentStatus:
+      type: string
+      enum: [UNASSIGNED, SINGLE_CANDIDATE, AMBIGUOUS]
+    RoadSegmentCandidateResponse:
+      type: object
+      additionalProperties: false
+      required: [items, assignmentStatus, matchingDistanceM]
+      properties:
+        items: { type: array, items: { $ref: '#/components/schemas/RoadSegmentCandidate' } }
+        assignmentStatus: { $ref: '#/components/schemas/RoadSegmentAssignmentStatus' }
+        matchingDistanceM: { type: number, const: 30 }
+    RoadSegmentResponse:
+      type: object
+      additionalProperties: false
+      required: [segment]
+      properties:
+        segment: { $ref: '#/components/schemas/RoadSegment' }
     SourceType:
       type: string
       enum: [OFFICIAL, COMMUNITY, AI]
@@ -3099,6 +3486,16 @@ components:
       properties:
         type: { type: string, const: Point }
         coordinates: { $ref: '#/components/schemas/Position' }
+    LineStringGeometry:
+      type: object
+      additionalProperties: false
+      required: [type, coordinates]
+      properties:
+        type: { type: string, const: LineString }
+        coordinates:
+          type: array
+          minItems: 2
+          items: { $ref: '#/components/schemas/Position' }
     FloodGeometry:
       oneOf:
         - { $ref: '#/components/schemas/PointGeometry' }

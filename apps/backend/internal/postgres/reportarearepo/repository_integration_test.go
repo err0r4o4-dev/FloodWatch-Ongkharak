@@ -36,6 +36,7 @@ func TestRepositoryRefreshPersistsPublicAreaAndIdentifierOnlyEvent(t *testing.T)
 		VALUES ($1,$2,'Guest','FLOOD','integration report','Integration point','',ST_SetSRID(ST_MakePoint(101,14),4326),0.2,$3,'RISING','PENDING','COMMUNITY',$4,$4)`, reportID, ownerID, now.Add(-10*time.Minute), now.Add(-2*time.Hour)); err != nil {
 		t.Fatal(err)
 	}
+	assignSegmentForReport(t, pool, reportID, 101, 14)
 	t.Cleanup(func() {
 		_, _ = pool.Exec(context.Background(), `DELETE FROM event_outbox WHERE resource_type='REPORT_AREA' AND source_type='COMMUNITY'`)
 		_, _ = pool.Exec(context.Background(), `DELETE FROM report_areas WHERE id IN (SELECT area_id FROM report_area_members WHERE report_id=$1)`, reportID)
@@ -143,8 +144,11 @@ func TestRepositoryRefreshPersistsPublicAreaAndIdentifierOnlyEvent(t *testing.T)
 	if _, err := repository.ProcessPending(ctx, now.Add(time.Minute)); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := repository.Get(ctx, areaID); err == nil {
-		t.Fatal("removed report area remained publicly listed after refresh")
+	if empty, err := repository.Get(ctx, areaID); err != nil || empty.Area.DepthBand != reportarea.DepthBandUnknown || empty.Area.TotalReportCount != 0 || len(empty.Area.ReportIDs) != 0 {
+		t.Fatalf("empty fixed segment exposed removed evidence or implied safety: %+v, %v", empty, err)
+	}
+	if originals, err := repository.ListReportIDs(ctx, areaID, report.Page{Limit: 20}); err != nil || len(originals) != 0 {
+		t.Fatalf("removed report remained in fixed segment originals: %v, %v", originals, err)
 	}
 }
 
@@ -237,6 +241,7 @@ func TestRefreshDoesNotDeadlockWithReportModerationOrMediaUpload(t *testing.T) {
 				VALUES ($1,$2,'Guest','FLOOD','lock-order test','Lock-order point','',ST_SetSRID(ST_MakePoint(110,20),4326),0.2,$3,'STABLE','PENDING','COMMUNITY',$4,$4)`, reportID, ownerID, now.Add(-5*time.Minute), now); err != nil {
 				t.Fatal(err)
 			}
+			assignSegmentForReport(t, pool, reportID, 110, 20)
 			t.Cleanup(func() {
 				if areaID != "" {
 					_, _ = pool.Exec(context.Background(), `DELETE FROM event_outbox WHERE resource_type='REPORT_AREA' AND source_type='COMMUNITY' AND resource_id=$1`, areaID)

@@ -15,11 +15,13 @@ import { CreateReportPage } from "../features/reports/CreateReportPage";
 import { AdminReviewPanel } from "../features/reports/AdminReviewPanel";
 import { NotificationsPage } from "../features/notifications/NotificationsPage";
 import { AdminDashboardPage } from "../features/admin/AdminDashboardPage";
+import { AdminAnnouncementsPage } from "../features/admin-announcements/AdminAnnouncementsPage";
 import { UsersPage } from "../features/admin/UsersPage";
 import { UserDetailPage } from "../features/admin/UserDetailPage";
 import { SettingsPage } from "../features/admin/SettingsPage";
 import { AuditLogsPage } from "../features/admin/AuditLogsPage";
 import { AIEvidenceReview } from "../features/admin/AIEvidenceReview";
+import { RoadSegmentDefinitionsPage } from "../features/admin/RoadSegmentDefinitionsPage";
 import { RequireAdmin, safeAdminReturnTo } from "../features/admin/RequireAdmin";
 import { AppShell } from "./AppShell";
 
@@ -66,12 +68,14 @@ export function AppRoutes() {
     <Route path="/system-status" element={<HealthPage />} />
     <Route path="/admin/*" element={<RequireAdmin><Routes>
       <Route index element={<AdminDashboardPage />} />
+      <Route path="announcements" element={<AdminAnnouncementsPage />} />
       <Route path="users" element={<UsersPage />} />
       <Route path="users/:id" element={<UserDetailPage />} />
       <Route path="reports" element={<AdminReportsPage />} />
       <Route path="settings" element={<SettingsPage />} />
       <Route path="audit-logs" element={<AuditLogsPage />} />
       <Route path="ai-evidence" element={<AIEvidenceReview />} />
+      <Route path="road-segments" element={<RoadSegmentDefinitionsPage />} />
       <Route path="*" element={<Navigate to="/admin" replace />} />
     </Routes></RequireAdmin>} />
     <Route path="*" element={<Navigate to="/" replace />} />

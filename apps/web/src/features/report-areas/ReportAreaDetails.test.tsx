@@ -18,6 +18,36 @@ const report = { id: "report-1", type: "FLOOD" as const, description: "น้ำ
 afterEach(() => { detailMock.mockReset(); reportsMock.mockReset(); vi.useRealTimers(); });
 
 describe("report area details", () => {
+  it("shows segment identity and archived history while prefilling the explicit segment", async () => {
+    const segmentArea = {
+      ...area,
+      id: "segment-area-1",
+      name: "ถนนทดสอบ",
+      radiusM: 0,
+      areaType: "ROAD_SEGMENT" as const,
+      geometry: { type: "LineString" as const, coordinates: [[101.01, 14.09], [101.02, 14.1]] as [number, number][] },
+      roadSegmentId: "segment-1",
+      segmentVersion: 3,
+      segmentActive: false,
+      startLabel: "สะพาน",
+      endLabel: "ตลาด"
+    };
+    detailMock.mockResolvedValue({ area: segmentArea, timeline: [] });
+    reportsMock.mockResolvedValue({ items: [], limit: 20, offset: 0, hasMore: false });
+    render(<MemoryRouter><ReportAreaDetailsContent area={segmentArea} /></MemoryRouter>);
+
+    expect(await screen.findByText("สะพาน–ตลาด")).toBeInTheDocument();
+    expect(screen.getByText("รุ่นช่วงถนน 3")).toBeInTheDocument();
+    expect(screen.getByText(/ถูกเก็บถาวรแล้ว/)).toBeInTheDocument();
+    expect(screen.getByText(/ไม่ได้หมายความว่าน้ำท่วมหรือสภาพเดียวกันตลอดทั้งช่วงถนน/)).toBeInTheDocument();
+    const update = screen.getByRole("link", { name: "แจ้งข้อมูลล่าสุดของพื้นที่นี้" });
+    const url = new URL(update.getAttribute("href") ?? "", "http://localhost");
+    expect(url.searchParams.get("roadSegmentId")).toBe("segment-1");
+    expect(url.searchParams.get("lng")).toBe("101.02");
+    expect(url.searchParams.get("lat")).toBe("14.1");
+    expect(screen.getByRole("heading", { name: "ประวัติสถานการณ์น้ำในช่วงถนนนี้" })).toBeInTheDocument();
+  });
+
   it("separates derived timeline summaries from original source reports and preserves update coordinates", async () => {
     detailMock.mockResolvedValue({ area, timeline: [window, { ...window, windowStart: "2026-10-01T05:00:00Z", windowEnd: "2026-10-01T06:00:00Z" }] });
     reportsMock.mockResolvedValue({ items: [report], limit: 20, offset: 0, hasMore: false });

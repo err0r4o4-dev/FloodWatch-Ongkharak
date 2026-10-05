@@ -1,0 +1,7 @@
+./repository.go
+./segments.go
+./migration_integration_test.go
+./repository_integration_test.go
+./repository_test.go
+./segments_integration_test.go
+./segments_test.go

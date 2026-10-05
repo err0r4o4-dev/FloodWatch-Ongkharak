@@ -26,6 +26,7 @@ import (
 	"github.com/floodwatch-ongkharak/backend/internal/http/router"
 	"github.com/floodwatch-ongkharak/backend/internal/infrastructure/healthcheck"
 	"github.com/floodwatch-ongkharak/backend/internal/mailer"
+	"github.com/floodwatch-ongkharak/backend/internal/manualannouncement"
 	"github.com/floodwatch-ongkharak/backend/internal/notification"
 	"github.com/floodwatch-ongkharak/backend/internal/objectstore"
 	"github.com/floodwatch-ongkharak/backend/internal/postgres/adminrepo"
@@ -34,13 +35,16 @@ import (
 	"github.com/floodwatch-ongkharak/backend/internal/postgres/authrepo"
 	"github.com/floodwatch-ongkharak/backend/internal/postgres/externaldatarepo"
 	"github.com/floodwatch-ongkharak/backend/internal/postgres/floodrepo"
+	"github.com/floodwatch-ongkharak/backend/internal/postgres/manualannouncementrepo"
 	"github.com/floodwatch-ongkharak/backend/internal/postgres/notificationrepo"
 	"github.com/floodwatch-ongkharak/backend/internal/postgres/outbox"
 	"github.com/floodwatch-ongkharak/backend/internal/postgres/reportarearepo"
 	"github.com/floodwatch-ongkharak/backend/internal/postgres/reportrepo"
+	"github.com/floodwatch-ongkharak/backend/internal/postgres/roadsegmentrepo"
 	"github.com/floodwatch-ongkharak/backend/internal/realtime"
 	"github.com/floodwatch-ongkharak/backend/internal/report"
 	"github.com/floodwatch-ongkharak/backend/internal/reportarea"
+	"github.com/floodwatch-ongkharak/backend/internal/roadsegment"
 	"github.com/floodwatch-ongkharak/backend/internal/weather"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
@@ -104,10 +108,15 @@ func run() error {
 	if err := mediaStorage.EnsureBucket(storageContext); err != nil {
 		return fmt.Errorf("initialize report media bucket: %w", err)
 	}
+	roadSegmentService, err := roadsegment.NewService(roadsegmentrepo.New(postgresPool))
+	if err != nil {
+		return fmt.Errorf("configure road segment service: %w", err)
+	}
 	reportService, err := report.NewService(reportrepo.New(postgresPool), mediaStorage)
 	if err != nil {
 		return fmt.Errorf("configure report service: %w", err)
 	}
+	reportService.SetRoadSegmentValidator(roadSegmentService)
 	reportAreaService, err := reportarea.NewService(reportarearepo.New(postgresPool))
 	if err != nil {
 		return fmt.Errorf("configure report area service: %w", err)
@@ -118,6 +127,7 @@ func run() error {
 	}
 	notificationService := notification.NewService(logger, notificationrepo.New(postgresPool), configuration.VAPIDPublicKey, configuration.VAPIDPrivateKey, configuration.VAPIDSubscriber)
 	adminService := admin.NewService(adminrepo.New(postgresPool))
+	manualAnnouncementService := manualannouncement.NewService(manualannouncementrepo.New(postgresPool))
 	aiService := ai.NewEvidenceService(airepo.New(postgresPool))
 	redisOptions, err := redis.ParseURL(configuration.RedisURL)
 	if err != nil {
@@ -179,8 +189,10 @@ func run() error {
 			WeatherService:            weatherService,
 			ExternalDataService:       externalService,
 			AnnouncementService:       announcementService,
+			ManualAnnouncementService: manualAnnouncementService,
 			ReportService:             reportService,
 			ReportAreaService:         reportAreaService,
+			RoadSegmentService:        roadSegmentService,
 			AlertService:              alertService,
 			AdminService:              adminService,
 			AIService:                 aiService,

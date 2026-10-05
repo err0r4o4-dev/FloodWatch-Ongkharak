@@ -33,6 +33,8 @@ export type CommunityReport = {
   locationName?: string;
   locationNote?: string;
   location: ReportLocation;
+  roadSegmentId?: string | null;
+  roadSegmentAssignmentMethod?: "UNASSIGNED" | "USER_CONFIRMED" | "LEGACY_MATCH";
   estimatedWaterDepthM: number | null;
   observedAt?: string | null;
   waterTrend?: WaterTrend;
@@ -58,6 +60,7 @@ export type ReportInput = Pick<CommunityReport, "type" | "description" | "locati
   estimatedWaterDepthM?: number;
   observedAt?: string;
   waterTrend?: WaterTrend;
+  roadSegmentId?: string;
 };
 
 export function derivePublicationStatus(status: ReportStatus): PublicationStatus {

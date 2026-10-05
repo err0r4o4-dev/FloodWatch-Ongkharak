@@ -1,0 +1,14 @@
+# test log
+getenv GOTMPDIR
+stat C:\Users\Taitunnn\AppData\Local\Temp\TestResolveArtifactPathUsesAbsoluteFallback4832174\001\apps\backend\go.mod
+stat C:\Users\Taitunnn\AppData\Local\Temp\TestResolveArtifactPathUsesAbsoluteFallback4832174\apps\backend\go.mod
+stat C:\Users\Taitunnn\AppData\Local\Temp\apps\backend\go.mod
+stat C:\Users\Taitunnn\AppData\Local\apps\backend\go.mod
+stat C:\Users\Taitunnn\AppData\apps\backend\go.mod
+stat C:\Users\Taitunnn\apps\backend\go.mod
+stat C:\Users\apps\backend\go.mod
+stat C:\apps\backend\go.mod
+open C:\Users\Taitunnn\AppData\Local\Temp
+getenv GOTMPDIR
+stat C:\Users\Taitunnn\AppData\Local\Temp\TestPreflightManifestPathRejectsUnwritableTarget1621105119\001\manifest-directory
+open C:\Users\Taitunnn\AppData\Local\Temp

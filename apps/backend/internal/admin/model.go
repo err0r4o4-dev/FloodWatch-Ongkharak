@@ -19,19 +19,23 @@ var (
 type AuditAction string
 
 const (
-	ActionUserCreated         AuditAction = "user.created"
-	ActionUserDisabled        AuditAction = "user.disabled"
-	ActionUserEnabled         AuditAction = "user.enabled"
-	ActionUserRoleChanged     AuditAction = "user.role_changed"
-	ActionUserPasswordChanged AuditAction = "user.password_changed"
-	ActionAlertRuleCreated    AuditAction = "alert_rule.created"
-	ActionAlertRuleUpdated    AuditAction = "alert_rule.updated"
-	ActionAlertRuleDeleted    AuditAction = "alert_rule.deleted"
-	ActionSettingUpdated      AuditAction = "setting.updated"
-	ActionReportReviewed      AuditAction = "report.reviewed"
-	ActionLoginSuccess        AuditAction = "auth.login_success"
-	ActionLoginFailed         AuditAction = "auth.login_failed"
-	ActionLogout              AuditAction = "auth.logout"
+	ActionUserCreated                 AuditAction = "user.created"
+	ActionUserDisabled                AuditAction = "user.disabled"
+	ActionUserEnabled                 AuditAction = "user.enabled"
+	ActionUserRoleChanged             AuditAction = "user.role_changed"
+	ActionUserPasswordChanged         AuditAction = "user.password_changed"
+	ActionAlertRuleCreated            AuditAction = "alert_rule.created"
+	ActionAlertRuleUpdated            AuditAction = "alert_rule.updated"
+	ActionAlertRuleDeleted            AuditAction = "alert_rule.deleted"
+	ActionSettingUpdated              AuditAction = "setting.updated"
+	ActionReportReviewed              AuditAction = "report.reviewed"
+	ActionManualAnnouncementCreated   AuditAction = "manual_announcement.created"
+	ActionManualAnnouncementUpdated   AuditAction = "manual_announcement.updated"
+	ActionManualAnnouncementPublished AuditAction = "manual_announcement.published"
+	ActionManualAnnouncementWithdrawn AuditAction = "manual_announcement.withdrawn"
+	ActionLoginSuccess                AuditAction = "auth.login_success"
+	ActionLoginFailed                 AuditAction = "auth.login_failed"
+	ActionLogout                      AuditAction = "auth.logout"
 )
 
 // ActorRole represents the role of the actor performing an action
@@ -47,12 +51,13 @@ const (
 type TargetType string
 
 const (
-	TargetUser            TargetType = "USER"
-	TargetAlertRule       TargetType = "ALERT_RULE"
-	TargetDataSource      TargetType = "DATA_SOURCE"
-	TargetCommunityReport TargetType = "COMMUNITY_REPORT"
-	TargetSystemSetting   TargetType = "SYSTEM_SETTING"
-	TargetAuthSession     TargetType = "AUTH_SESSION"
+	TargetUser               TargetType = "USER"
+	TargetAlertRule          TargetType = "ALERT_RULE"
+	TargetDataSource         TargetType = "DATA_SOURCE"
+	TargetCommunityReport    TargetType = "COMMUNITY_REPORT"
+	TargetSystemSetting      TargetType = "SYSTEM_SETTING"
+	TargetAuthSession        TargetType = "AUTH_SESSION"
+	TargetManualAnnouncement TargetType = "MANUAL_ANNOUNCEMENT"
 )
 
 // AuditLog represents an audit trail entry

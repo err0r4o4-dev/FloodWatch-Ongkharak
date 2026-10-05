@@ -19,7 +19,8 @@ export function CreateReportPage() {
     if (!Number.isFinite(longitude) || !Number.isFinite(latitude) || Math.abs(longitude) > 180 || Math.abs(latitude) > 90) return null;
     const location: ReportLocation = { type: "Point", coordinates: [longitude, latitude] };
     const name = Array.from(searchParams.get("locationName")?.trim() ?? "").slice(0, 200).join("");
-    return { location, name };
+    const roadSegmentId = searchParams.get("roadSegmentId")?.trim() ?? "";
+    return { location, name, roadSegmentId };
   }, [searchParams]);
   return <section className="feature-page create-report-page">
     <header className="page-header">
@@ -29,6 +30,6 @@ export function CreateReportPage() {
       <p>{t("createPage.description")}</p>
     </header>
     {prefill && <p className="report-field-hint">{t("createPage.areaUpdateHint")}</p>}
-    <ReportForm editing={null} initialLocation={prefill?.location} initialLocationName={prefill?.name} onComplete={() => undefined} onCancel={() => undefined} />
+    <ReportForm editing={null} initialLocation={prefill?.location} initialLocationName={prefill?.name} initialRoadSegmentId={prefill?.roadSegmentId} onComplete={() => undefined} onCancel={() => undefined} />
   </section>;
 }

@@ -1,0 +1,4 @@
+./aggregate.go
+./model.go
+./segments.go
+./service.go
