@@ -507,8 +507,8 @@ function AnnouncementEditor({
     references: form.references.map((reference) => ({ ...reference, observedAt: reference.observedAt ? `${reference.observedAt}:00+07:00` : null })),
   } as ManualAnnouncement;
   const labelForIssue = (issue: string) => ({
-    title: t("validationTitle"), summary: t("validationSummary"), body: t("validationBody"), area: t("validationArea"),
-    observedAt: t("validationObservedAt"), expiresAt: t("validationExpiresAt"), references: t("validationReferences"),
+    title: t("validationTitle"), summary: t("validationSummary"),
+    observedAt: t("validationObservedAt"), references: t("validationReferences"),
   }[issue] ?? t("invalidRequest"));
 
   return <div className="admin-announcements-editor__inner">

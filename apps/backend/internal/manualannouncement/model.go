@@ -374,11 +374,11 @@ func validateInput(input Input, now time.Time, published bool) error {
 		return err
 	}
 	if published {
-		if strings.TrimSpace(input.Title) == "" || strings.TrimSpace(input.Summary) == "" || strings.TrimSpace(input.Body) == "" || strings.TrimSpace(input.Area) == "" || observedAt == nil || expiresAt == nil || observedAt.After(now) || !expiresAt.After(now) || len(references) == 0 {
+		if strings.TrimSpace(input.Title) == "" || strings.TrimSpace(input.Summary) == "" || observedAt == nil || observedAt.After(now) || (expiresAt != nil && !expiresAt.After(now)) || len(references) == 0 {
 			return ErrInvalid
 		}
 		for _, reference := range references {
-			if strings.TrimSpace(reference.Name) == "" || !validPublicURL(reference.URL) || reference.ObservedAt == nil || reference.ObservedAt.After(now) || !reference.ObservedAt.Before(*expiresAt) {
+			if strings.TrimSpace(reference.Name) == "" || !validPublicURL(reference.URL) || reference.ObservedAt == nil || reference.ObservedAt.After(now) || (expiresAt != nil && !reference.ObservedAt.Before(*expiresAt)) {
 				return ErrInvalid
 			}
 		}

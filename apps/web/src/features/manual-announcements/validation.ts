@@ -17,16 +17,19 @@ export function isPublicReferenceUrl(value: string): boolean {
 export type PublicationIssue = "title" | "summary" | "body" | "area" | "observedAt" | "expiresAt" | "references";
 export function publicationIssues(input: AnnouncementInput, now = Date.now()): PublicationIssue[] {
   const issues: PublicationIssue[] = [];
-  for (const [field, maximum] of [["title", 200], ["summary", 1000], ["body", 10000], ["area", 200]] as const) {
+  for (const [field, maximum] of [["title", 200], ["summary", 1000]] as const) {
     if (!input[field].trim() || Array.from(input[field].trim()).length > maximum) issues.push(field);
+  }
+  for (const [field, maximum] of [["body", 10000], ["area", 200]] as const) {
+    if (Array.from(input[field].trim()).length > maximum) issues.push(field as PublicationIssue);
   }
   const observed = input.observedAt ? Date.parse(input.observedAt) : NaN;
   const expires = input.expiresAt ? Date.parse(input.expiresAt) : NaN;
   if (!Number.isFinite(observed) || observed > now) issues.push("observedAt");
-  if (!Number.isFinite(expires) || expires <= now || expires <= observed) issues.push("expiresAt");
+  if (input.expiresAt && (!Number.isFinite(expires) || expires <= now || expires <= observed)) issues.push("expiresAt");
   if (input.references.length < 1 || input.references.length > 10 || input.references.some((reference) => {
     const referenceTime = reference.observedAt ? Date.parse(reference.observedAt) : NaN;
-    return !reference.name.trim() || Array.from(reference.name.trim()).length > 200 || !isPublicReferenceUrl(reference.url) || !Number.isFinite(referenceTime) || referenceTime > now || referenceTime >= expires;
+    return !reference.name.trim() || Array.from(reference.name.trim()).length > 200 || !isPublicReferenceUrl(reference.url) || !Number.isFinite(referenceTime) || referenceTime > now || (input.expiresAt && referenceTime >= expires);
   })) issues.push("references");
   return issues;
 }
