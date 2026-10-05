@@ -15,7 +15,7 @@ const th = {
   "layer.water": "สถานีวัดน้ำ",
   "layer.risk": "พื้นที่เสี่ยง",
   "layer.roads": "สภาพถนน",
-  "layer.reports": "พื้นที่รายงานชุมชน",
+  "layer.reports": "รายงานชุมชน (รวมหมุด)",
   "layerControl.summary": "ชั้นข้อมูล",
   "layerControl.legend": "ชั้นข้อมูลที่แสดง",
   "legend.label": "คำอธิบายสัญลักษณ์",
@@ -92,7 +92,7 @@ const th = {
   "details.close": "ปิดข้อมูลตำแหน่ง",
   "details.source": "แหล่งข้อมูล: {source}",
   "details.communitySource": "รายงานจากชุมชน",
-  "details.communityAreaSource": "สรุปพื้นที่จากรายงานชุมชน",
+  "details.communityAreaSource": "รายงานจากประชาชนในบริเวณนี้",
   "details.unknownSource": "ไม่ระบุ",
   "details.noDescription": "ไม่มีคำอธิบายเพิ่มเติม",
   "details.verification": "การตรวจสอบ: {status} · ความเชื่อมั่น: {confidence}",
@@ -120,7 +120,7 @@ const th = {
   "popup.label": "ข้อมูลสรุปบนแผนที่",
   "popup.close": "ปิด popup",
   "popup.communitySource": "รายงานจากชุมชน",
-  "popup.communityAreaSource": "สรุปพื้นที่จากรายงานชุมชน",
+  "popup.communityAreaSource": "รายงานจากประชาชนในบริเวณนี้",
   "popup.unknownSource": "ไม่ระบุแหล่งข้อมูล",
   "popup.reportDepth": "ระดับน้ำโดยประมาณ {value} ม.",
   "popup.unknownWarning": "ข้อมูลไม่เพียงพอ ไม่สามารถสรุปว่าปลอดภัยหรือผ่านได้",
@@ -190,7 +190,12 @@ const th = {
   "map.location": "ตำแหน่งปัจจุบัน",
   "map.locationError": "ไม่สามารถดึงตำแหน่งปัจจุบันได้",
   "details.communityArea": "พื้นที่รายงานชุมชน",
-  "legend.compact": "คำอธิบายสีพื้นที่"
+  "cluster.count": "{count} รายงานในบริเวณนี้",
+  "cluster.label": "{name} · {count} รายงาน",
+  "cluster.name": "กลุ่มรายงานชุมชน",
+  "cluster.note": "รวมหมุดตามตำแหน่งในระยะ 150 เมตร จำนวนแสดงเฉพาะรายงานที่โหลดได้ ไม่ใช่การยืนยันว่าปลอดภัย",
+  "cluster.originals": "รายงานในกลุ่มนี้",
+  "legend.compact": "คำอธิบายแผนที่"
 } as const;
 
 export default th;

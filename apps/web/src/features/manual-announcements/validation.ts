@@ -14,14 +14,11 @@ export function isPublicReferenceUrl(value: string): boolean {
   } catch { return false; }
 }
 
-export type PublicationIssue = "title" | "summary" | "body" | "area" | "observedAt" | "expiresAt" | "references";
+export type PublicationIssue = "title" | "summary" | "observedAt" | "expiresAt" | "references";
 export function publicationIssues(input: AnnouncementInput, now = Date.now()): PublicationIssue[] {
   const issues: PublicationIssue[] = [];
   for (const [field, maximum] of [["title", 200], ["summary", 1000]] as const) {
     if (!input[field].trim() || Array.from(input[field].trim()).length > maximum) issues.push(field);
-  }
-  for (const [field, maximum] of [["body", 10000], ["area", 200]] as const) {
-    if (Array.from(input[field].trim()).length > maximum) issues.push(field as PublicationIssue);
   }
   const observed = input.observedAt ? Date.parse(input.observedAt) : NaN;
   const expires = input.expiresAt ? Date.parse(input.expiresAt) : NaN;

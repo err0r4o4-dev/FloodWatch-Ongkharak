@@ -67,12 +67,12 @@ function formToInput(form: FormState): AnnouncementInput {
   return {
     title: form.title,
     summary: form.summary,
-    body: form.body,
+    body: "",
     advice: form.advice,
-    area: form.area,
+    area: "",
     severity: form.severity,
     observedAt: form.observedAt ? fromBangkokDateTime(form.observedAt) : null,
-    expiresAt: form.expiresAt ? fromBangkokDateTime(form.expiresAt) : null,
+    expiresAt: null,
     references: form.references
       .filter((reference) => reference.name || reference.url || reference.observedAt)
       .map((reference) => ({
@@ -399,7 +399,7 @@ export function AdminAnnouncementsPage() {
             <span className="admin-announcement-status">{statusLabel(announcement.status, t)}</span>
             <h2>{announcement.title || t("formTitleCreate")}</h2>
             <p>{announcement.summary || "—"}</p>
-            <span>{severityLabel(announcement.severity, t)} · {announcement.area || "—"}</span>
+            <span>{severityLabel(announcement.severity, t)}</span>
           </div>
           <button type="button" className="action-button" disabled={mutationPending} onClick={() => openExisting(announcement)} aria-label={t("edit", { title: announcement.title || t("formTitleCreate") })}>{announcement.status === "WITHDRAWN" ? t("readOnly") : t("edit", { title: announcement.title || t("formTitleCreate") })}</button>
         </article>
@@ -502,8 +502,10 @@ function AnnouncementEditor({
       revision: 1,
     }),
     ...form,
+    body: "",
+    area: "",
     observedAt: form.observedAt ? `${form.observedAt}:00+07:00` : null,
-    expiresAt: form.expiresAt ? `${form.expiresAt}:00+07:00` : null,
+    expiresAt: null,
     references: form.references.map((reference) => ({ ...reference, observedAt: reference.observedAt ? `${reference.observedAt}:00+07:00` : null })),
   } as ManualAnnouncement;
   const labelForIssue = (issue: string) => ({
@@ -533,15 +535,11 @@ function AnnouncementEditor({
         <legend className="sr-only">{t("formTitleEdit")}</legend>
         <label>{t("titleLabel")}<input aria-label={t("titleLabel")} value={form.title} onChange={(event) => onChange("title", event.target.value)} /></label>
         <label>{t("summaryLabel")}<textarea aria-label={t("summaryLabel")} value={form.summary} onChange={(event) => onChange("summary", event.target.value)} /></label>
-        <label>{t("bodyLabel")}<textarea aria-label={t("bodyLabel")} value={form.body} onChange={(event) => onChange("body", event.target.value)} /></label>
-        <label>{t("adviceLabel")}<textarea aria-label={t("adviceLabel")} value={form.advice} onChange={(event) => onChange("advice", event.target.value)} /></label>
-        <label>{t("areaLabel")}<input aria-label={t("areaLabel")} value={form.area} onChange={(event) => onChange("area", event.target.value)} /></label>
         <label>{t("severityLabel")}<select aria-label={t("severityLabel")} value={form.severity} onChange={(event) => onChange("severity", event.target.value as Severity)}>
           {severityValues.map((severity) => <option key={severity} value={severity}>{severityLabel(severity, t)}</option>)}
         </select></label>
         <div className="admin-announcement-form__date-grid">
           <label>{t("observedAtLabel")}<input type="datetime-local" aria-label={t("observedAtLabel")} value={form.observedAt} onChange={(event) => onChange("observedAt", event.target.value)} /><small>{t("bangkokTimeHint")}</small></label>
-          <label>{t("expiresAtLabel")}<input type="datetime-local" aria-label={t("expiresAtLabel")} value={form.expiresAt} onChange={(event) => onChange("expiresAt", event.target.value)} /><small>{t("bangkokTimeHint")}</small></label>
         </div>
         <fieldset className="admin-announcement-references">
           <legend>{t("referencesLegend")}</legend>
@@ -598,7 +596,7 @@ function History({ history, locale, t }: { history: AnnouncementHistory[]; local
         <div className="admin-announcement-history__snapshot">
           <strong>{entry.announcement.title || t("formTitleCreate")}</strong>
           <p>{entry.announcement.summary || "—"}</p>
-          <p>{entry.announcement.area || "—"} · {severityLabel(entry.announcement.severity, t)}</p>
+          <p>{severityLabel(entry.announcement.severity, t)}</p>
           <time dateTime={entry.recordedAt}>{formatDate(entry.recordedAt, locale)}</time>
           <p>{entry.reason ? t("historyReason", { reason: entry.reason }) : t("noReason")}</p>
         </div>

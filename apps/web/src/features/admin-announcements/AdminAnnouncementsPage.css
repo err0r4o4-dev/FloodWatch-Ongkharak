@@ -87,7 +87,7 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .admin-announcement-form textarea,
 .admin-announcement-confirmation textarea { min-height: 7rem; resize: vertical; }
 .admin-announcement-form small { color: var(--color-ink-muted); font-size: .78rem; font-weight: 400; }
-.admin-announcement-form__date-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); }
+.admin-announcement-form__date-grid { display: grid; grid-template-columns: 1fr; gap: var(--space-3); }
 .admin-announcement-references { display: grid; gap: var(--space-3); margin: 0; padding: var(--space-3); border: var(--border-width) solid var(--color-border); border-radius: var(--radius-md); }
 .admin-announcement-references legend { padding-inline: var(--space-1); font-weight: 800; }
 .admin-announcement-reference { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) auto; align-items: end; gap: var(--space-2); padding-bottom: var(--space-3); border-bottom: var(--border-width) solid var(--color-border); }

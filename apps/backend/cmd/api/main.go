@@ -27,6 +27,7 @@ import (
 	"github.com/floodwatch-ongkharak/backend/internal/infrastructure/healthcheck"
 	"github.com/floodwatch-ongkharak/backend/internal/mailer"
 	"github.com/floodwatch-ongkharak/backend/internal/manualannouncement"
+	"github.com/floodwatch-ongkharak/backend/internal/newsannouncement"
 	"github.com/floodwatch-ongkharak/backend/internal/notification"
 	"github.com/floodwatch-ongkharak/backend/internal/objectstore"
 	"github.com/floodwatch-ongkharak/backend/internal/postgres/adminrepo"
@@ -177,6 +178,8 @@ func run() error {
 	}
 	_, announcementsEnabled := externalProviders["TMD_CAP"]
 	announcementService := announcement.NewService(externaldatarepo.New(postgresPool), announcementsEnabled)
+	_, newsEnabled := externalProviders["FM91_NEWS"]
+	newsService := newsannouncement.NewService(externaldatarepo.New(postgresPool), newsEnabled)
 	server := &http.Server{
 		Addr: fmt.Sprintf(":%d", configuration.APIPort),
 		Handler: router.New(router.Dependencies{
@@ -189,6 +192,7 @@ func run() error {
 			WeatherService:            weatherService,
 			ExternalDataService:       externalService,
 			AnnouncementService:       announcementService,
+			NewsAnnouncementService:   newsService,
 			ManualAnnouncementService: manualAnnouncementService,
 			ReportService:             reportService,
 			ReportAreaService:         reportAreaService,

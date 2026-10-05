@@ -11,3 +11,10 @@ func TestRegistryDoesNotAcceptUnknownSources(t *testing.T) {
 		t.Fatal("default registry must be empty")
 	}
 }
+
+func TestRegistrySupportsOptInFM91(t *testing.T) {
+	registered, err := New([]string{"FM91_NEWS"})
+	if err != nil || registered["FM91_NEWS"] == nil || len(registered) != 1 {
+		t.Fatalf("FM91 registry=%v err=%v", registered, err)
+	}
+}

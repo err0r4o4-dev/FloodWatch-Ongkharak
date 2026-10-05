@@ -72,6 +72,48 @@ tags:
   - name: Flood Domain
     description: Flood events and assessed risk areas.
 paths:
+  /api/v1/news-announcements:
+    get:
+      tags: [Alerts]
+      operationId: listNewsAnnouncements
+      summary: Automatically published FM91 media news
+      description: |
+        Public retained media-news read model, separate from official CAP warnings
+        and application rule alerts. Matching articles publish automatically without
+        admin approval. This request never fetches FM91 or sends Push/email.
+        Articles are grouped by source/article identity with immutable revisions.
+        Missing publication time or unavailable sources produce UNKNOWN freshness;
+        articles older than 24 hours are STALE. Missing location coordinates remain
+        null; reported water depths are quoted text, never station measurements.
+        Disabled ingestion returns NOT_CONFIGURED and no items. An empty list is
+        not an all-clear. SQL pagination reads only the selected current articles;
+        immutable history size does not impose a global read cutoff. Responses are no-store.
+      security: []
+      parameters:
+        - name: limit
+          in: query
+          schema: {type: integer, minimum: 1, maximum: 50, default: 20}
+        - name: offset
+          in: query
+          schema: {type: integer, minimum: 0, maximum: 10000, default: 0}
+      responses:
+        '200':
+          description: Automatically published media-news snapshot, not a safety certification
+          headers:
+            Cache-Control:
+              schema: {type: string, const: no-store}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/NewsAnnouncementList'}
+        '400':
+          description: Invalid or repeated pagination parameter
+          content: {application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}}
+        '429':
+          description: Public read rate limit exceeded (60 requests per minute)
+          content: {application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}}
+        '503':
+          description: Retained news unavailable; current conditions are unknown
+          content: {application/json: {schema: {$ref: '#/components/schemas/ErrorResponse'}}}
   /api/v1/official-announcements:
     get:
       tags: [Alerts]
@@ -2016,6 +2058,60 @@ components:
       schema:
         type: string
   schemas:
+    NewsAnnouncementList:
+      type: object
+      additionalProperties: false
+      required: [retrievedAt, source, items, limit, offset, total]
+      properties:
+        retrievedAt: {type: string, format: date-time}
+        source: {$ref: '#/components/schemas/NewsAnnouncementSource'}
+        items: {type: array, maxItems: 50, items: {$ref: '#/components/schemas/NewsAnnouncement'}}
+        limit: {type: integer, minimum: 1, maximum: 50}
+        offset: {type: integer, minimum: 0, maximum: 10000}
+        total: {type: integer, minimum: 0}
+    NewsAnnouncementSource:
+      type: object
+      additionalProperties: false
+      required: [code, name, sourceType, url, enabled, status, freshness, lastSuccessAt, errorCode]
+      properties:
+        code: {type: string, const: FM91_NEWS}
+        name: {type: string, const: FM91}
+        sourceType: {type: string, const: MEDIA}
+        url: {type: string, format: uri, const: 'https://fm91bkk.com/news'}
+        enabled: {type: boolean}
+        status: {type: string, enum: [NOT_CONFIGURED, AVAILABLE, DEGRADED, UNAVAILABLE]}
+        freshness: {type: string, enum: [UNKNOWN, STALE, FRESH]}
+        lastSuccessAt: {type: [string, 'null'], format: date-time}
+        errorCode: {type: [string, 'null'], maxLength: 64}
+    NewsAnnouncement:
+      type: object
+      additionalProperties: false
+      required: [id, articleId, title, description, url, category, publishedAt, observedAt, retrievedAt, updatedAt, historyTotal, provenance, status, freshness, reason, imageURLs, locations, roads, eventTimes, waterLevels, travelAdvice, matchedKeywords, latitude, longitude]
+      properties:
+        id: {type: string, format: uuid, description: Stable UUID derived from source and article identity}
+        articleId: {type: string, pattern: '^[1-9][0-9]{0,18}$'}
+        title: {type: string, maxLength: 2000}
+        description: {type: string, maxLength: 30000, description: Plain original provider text; not app-verified}
+        url: {type: string, format: uri, pattern: '^https://fm91bkk\.com/newsarticle/[1-9][0-9]{0,18}$'}
+        category: {type: string, maxLength: 200}
+        publishedAt: {type: [string, 'null'], format: date-time, description: Source publication time, not observation time}
+        observedAt: {type: [string, 'null'], format: date-time, description: Only an explicitly dated source event; absent or ambiguous remains null}
+        retrievedAt: {type: string, format: date-time, description: Latest successful retrieval of selected content}
+        updatedAt: {type: string, format: date-time, description: Latest committed content transition; unchanged repeated polls do not change it}
+        historyTotal: {type: integer, minimum: 1}
+        provenance: {type: string, const: MEDIA}
+        status: {type: string, const: PUBLISHED}
+        freshness: {type: string, enum: [UNKNOWN, STALE, FRESH]}
+        reason: {type: [string, 'null']}
+        imageURLs: {type: array, maxItems: 20, items: {type: string, format: uri}}
+        locations: {type: array, maxItems: 50, items: {type: string, maxLength: 2000}}
+        roads: {type: array, maxItems: 50, items: {type: string, maxLength: 2000}}
+        eventTimes: {type: array, maxItems: 50, items: {type: string, maxLength: 2000}}
+        waterLevels: {type: array, maxItems: 50, items: {type: string, maxLength: 2000}, description: Literal reported water-depth text with source units, not normalized readings}
+        travelAdvice: {type: array, maxItems: 50, items: {type: string, maxLength: 2000}}
+        matchedKeywords: {type: array, maxItems: 50, items: {type: string, maxLength: 2000}}
+        latitude: {type: [number, 'null'], minimum: -90, maximum: 90}
+        longitude: {type: [number, 'null'], minimum: -180, maximum: 180}
     OfficialAnnouncementList:
       type: object
       required: [retrievedAt, source, items, limit, offset, total]
@@ -3030,6 +3126,7 @@ components:
           - COMMUNITY
           - AI
           - MODEL
+          - MEDIA
         resourceType:
           type: string
           enum:
@@ -3054,7 +3151,7 @@ components:
       - if:
           properties:
             sourceType:
-              const: MODEL
+              enum: [MODEL, MEDIA]
         then:
           properties:
             eventType:
@@ -3072,6 +3169,7 @@ components:
               enum:
               - OFFICIAL
               - MODEL
+              - MEDIA
             resourceType:
               const: EXTERNAL_DATA
     Alert:

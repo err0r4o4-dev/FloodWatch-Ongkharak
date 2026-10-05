@@ -1,5 +1,5 @@
 import type { Freshness, SourceRef, VerificationStatus } from "../../shared/types/flood";
-import type { ReportArea } from "../report-areas/types";
+import type { CommunityReport } from "../reports/types";
 
 export type Position = [longitude: number, latitude: number];
 export type PointGeometry = { type: "Point"; coordinates: Position };
@@ -35,7 +35,9 @@ export type RoadCondition = {
 export type RoadFeature = {
   id: string; name: string; geometry: MultiLineGeometry; currentCondition: RoadCondition;
 };
-export type CommunityReportFeature = ReportArea;
+export type CommunityReportFeature = {
+  id: string; name: string; location: PointGeometry; sourceType: "COMMUNITY"; reports: CommunityReport[];
+};
 export type WaterReading = {
   source: SourceRef; observedAt: string; freshness: Freshness;
   verificationStatus: VerificationStatus; confidence: number | null;
@@ -55,5 +57,5 @@ export type MapSelectHandler = (selection: MapSelection, position?: Position) =>
 
 export const layerKeys: LayerKey[] = ["flood", "water", "risk", "roads", "reports"];
 export const layerLabels: Record<LayerKey, string> = {
-  flood: "เหตุการณ์น้ำ", water: "สถานีวัดน้ำ", risk: "พื้นที่เสี่ยง", roads: "สภาพถนน", reports: "พื้นที่รายงานชุมชน"
+  flood: "เหตุการณ์น้ำ", water: "สถานีวัดน้ำ", risk: "พื้นที่เสี่ยง", roads: "สภาพถนน", reports: "รายงานชุมชน (รวมหมุด)"
 };

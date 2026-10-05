@@ -386,6 +386,13 @@ func TestRollbackDisablesWaterRulesAndRetiresExplicitDatumEvents(t *testing.T) {
 	if err := tx.QueryRow(ctx, `SELECT count(*) FROM event_outbox WHERE event_type='water_level.updated' AND payload->>'evidenceId'=$1 AND evaluated_at IS NULL`, readingID).Scan(&pendingBefore); err != nil || pendingBefore != 1 {
 		t.Fatalf("pending explicit-datum event before rollback=%d err=%v", pendingBefore, err)
 	}
+	newsDownSQL, err := os.ReadFile("../../../migrations/000028_fm91_news.down.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := tx.Exec(ctx, string(newsDownSQL)); err != nil {
+		t.Fatal(err)
+	}
 	downSQL, err := os.ReadFile("../../../migrations/000020_external_evidence.down.sql")
 	if err != nil {
 		t.Fatal(err)
@@ -418,6 +425,13 @@ func TestRollbackDisablesWaterRulesAndRetiresExplicitDatumEvents(t *testing.T) {
 		t.Fatal(err)
 	}
 	if _, err := tx.Exec(ctx, string(upSQL)); err != nil {
+		t.Fatal(err)
+	}
+	newsUpSQL, err := os.ReadFile("../../../migrations/000028_fm91_news.up.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := tx.Exec(ctx, string(newsUpSQL)); err != nil {
 		t.Fatal(err)
 	}
 	assertPreserved()

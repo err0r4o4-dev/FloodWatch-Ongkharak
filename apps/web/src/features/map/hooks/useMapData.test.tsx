@@ -5,6 +5,7 @@ import { MapSidePanel } from "../components/MapSidePanel";
 import { RiskDirectory } from "../components/RiskDirectory";
 import { useMapData } from "./useMapData";
 import type { LayerItems, LayerKey, LayerVisibility, MapBounds } from "../types";
+import type { CommunityReport } from "../../reports/types";
 
 const fetchMapLayerMock = vi.hoisted(() => vi.fn());
 vi.mock("../api", () => ({ fetchMapLayer: fetchMapLayerMock }));
@@ -191,13 +192,18 @@ describe("useMapData", () => {
     expect(screen.getByText(/ข้อมูลก่อนหน้า/)).toBeInTheDocument();
   });
 
-  it("shows effective area depth and trend in the keyboard list", () => {
-    const area = { id: "area-list", name: "พื้นที่รายการ", location: { type: "Point" as const, coordinates: [101.02, 14.1] as [number, number] }, radiusM: 150, sourceType: "COMMUNITY" as const, depthBand: "HIGH" as const, previousDepthBand: "MODERATE" as const, trend: "FALLING" as const, reportedTrend: "RISING" as const, freshness: "FRESH" as const, summaryReason: "SUMMARIZED" as const, latestObservedAt: new Date().toISOString(), computedAt: new Date().toISOString(), windowStart: new Date(Date.now() - 3_600_000).toISOString(), windowEnd: new Date().toISOString(), reportCount: 2, sampleCount: 2, totalReportCount: 2, reportIds: ["report-list"] };
-    render(<MapSidePanel mode="SITUATION" items={{ flood: [], water: [], risk: [], roads: [], reports: [area] }} visible={allVisible} loading={false} failed={false} failedLayers={[]} previousLayers={[]} truncated={[]} onRetry={vi.fn()} selection={null} onSelect={vi.fn()} onClose={vi.fn()} points={{ origin: { longitude: "", latitude: "" }, destination: { longitude: "", latitude: "" } }} onPointChange={vi.fn()} picking={null} onPickingChange={vi.fn()} />);
+  it("shows the loaded report count in the keyboard list", () => {
+    const report: CommunityReport = {
+      id: "report-list", type: "FLOOD", description: "รายงานในรายการ", locationName: "พื้นที่รายการ", location: { type: "Point", coordinates: [101.02, 14.1] },
+      estimatedWaterDepthM: 0.3, observedAt: new Date().toISOString(), waterTrend: "RISING", status: "VERIFIED", verificationStatus: "VERIFIED", publicationStatus: "PUBLISHED",
+      sourceType: "COMMUNITY", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), verifiedAt: new Date().toISOString(), media: []
+    };
+    const cluster = { id: "report-group:report-list", name: "พื้นที่รายการ", location: report.location, sourceType: "COMMUNITY" as const, reports: [report] };
+    render(<MapSidePanel mode="SITUATION" items={{ flood: [], water: [], risk: [], roads: [], reports: [cluster] }} visible={allVisible} loading={false} failed={false} failedLayers={[]} previousLayers={[]} truncated={[]} onRetry={vi.fn()} selection={null} onSelect={vi.fn()} onClose={vi.fn()} points={{ origin: { longitude: "", latitude: "" }, destination: { longitude: "", latitude: "" } }} onPointChange={vi.fn()} picking={null} onPickingChange={vi.fn()} />);
     const item = screen.getByRole("button", { name: /พื้นที่รายการ/ });
-    expect(item).toHaveTextContent("30–50 ซม.");
-    expect(item).toHaveTextContent("ลดลง");
-    expect(item.querySelector(".badge--status-info")).toBeNull();
+    expect(item).toHaveTextContent("1 รายงานในบริเวณนี้");
+    expect(item).not.toHaveTextContent("30–50 ซม.");
+    expect(item).not.toHaveTextContent("ลดลง");
   });
 
   it("keeps risk filters usable when risk results are available during another layer update", () => {

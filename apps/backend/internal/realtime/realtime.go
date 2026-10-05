@@ -43,6 +43,7 @@ const (
 	SourceCommunity SourceType = "COMMUNITY"
 	SourceAI        SourceType = "AI"
 	SourceModel     SourceType = "MODEL"
+	SourceMedia     SourceType = "MEDIA"
 )
 
 type ResourceType string
@@ -73,11 +74,11 @@ func (event Event) Validate() error {
 	if _, err := uuid.Parse(event.EventID); err != nil || event.OccurredAt.IsZero() || event.PublishedAt.IsZero() {
 		return ErrInvalidEvent
 	}
-	modelEvidence := event.EventType == EventExternalDataUpdated && event.ResourceType == ResourceExternalData && event.SourceType == SourceModel
+	modelEvidence := event.EventType == EventExternalDataUpdated && event.ResourceType == ResourceExternalData && (event.SourceType == SourceModel || event.SourceType == SourceMedia)
 	if !validPublicPair(event.EventType, event.ResourceType) || (!publicSourceType(event.SourceType) && !modelEvidence) {
 		return ErrInvalidEvent
 	}
-	if event.EventType == EventExternalDataUpdated && event.SourceType != SourceOfficial && event.SourceType != SourceModel {
+	if event.EventType == EventExternalDataUpdated && event.SourceType != SourceOfficial && event.SourceType != SourceModel && event.SourceType != SourceMedia {
 		return ErrInvalidEvent
 	}
 	if (event.EventType == EventReportVerified || event.EventType == EventReportUpdated || event.EventType == EventReportAreaUpdated) && event.SourceType != SourceCommunity {

@@ -4,6 +4,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { OverviewPage } from "./OverviewPage";
 import { AppShell } from "../../app/AppShell";
 
+vi.mock("../news-announcements/FM91NewsPanel", () => ({ FM91NewsPanel: () => <section aria-label="ข่าว FM91" /> }));
+
 function render(ui: Parameters<typeof renderUI>[0]) {
   return renderUI(<MemoryRouter initialEntries={["/overview"]}>{ui}</MemoryRouter>);
 }
@@ -99,12 +101,11 @@ describe("OverviewPage", () => {
     expect(screen.queryByRole("region", { name: "เหตุการณ์น้ำที่รายงาน" })).not.toBeInTheDocument();
     expect(screen.getByRole("region", { name: "ระดับน้ำ (จุดสำคัญ)" })).toHaveTextContent("ยังไม่มีสถานีในรายการที่เรียกดู");
     expect(screen.getByRole("region", { name: "ประกาศล่าสุด" })).toHaveTextContent("ยังไม่มีประกาศที่เผยแพร่");
+    expect(screen.getByRole("region", { name: "ข่าว FM91" })).toBeInTheDocument();
     expect(request.mock.calls.map(([url]) => url).filter((url) => !["/api/v1/weather/ongkharak", "/api/v1/external-data/ongkharak"].includes(url))).toEqual([
-      "/api/v1/official-announcements?limit=20&offset=0",
       "/api/v1/flood-events?limit=20", "/api/v1/risk-areas?limit=20", "/api/v1/roads?limit=20", "/api/v1/water-stations?limit=5",
       "/api/v1/alerts?limit=20&offset=0", "/api/v1/reports?limit=20&offset=0"
     ]);
-    expect(request.mock.calls.filter(([url]) => url === "/api/v1/official-announcements?limit=20&offset=0")).toHaveLength(1);
     expect(request.mock.calls.filter(([url]) => url === "/api/v1/external-data/ongkharak")).toHaveLength(1);
   });
 

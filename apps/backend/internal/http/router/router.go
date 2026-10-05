@@ -46,6 +46,7 @@ type Dependencies struct {
 	WeatherService            handler.WeatherService
 	ExternalDataService       handler.ExternalDataService
 	AnnouncementService       handler.AnnouncementService
+	NewsAnnouncementService   handler.NewsAnnouncementService
 	ManualAnnouncementService handler.ManualAnnouncementService
 	RedisClient               redis.UniversalClient
 	CookieOptions             handler.CookieOptions
@@ -69,6 +70,7 @@ func New(dependencies Dependencies) http.Handler {
 		api.With(weatherLimiter.Limit("weather-read", 60, time.Minute)).Get("/weather/ongkharak", handler.NewWeatherHandler(dependencies.WeatherService).ServeHTTP)
 		api.With(weatherLimiter.Limit("external-data-read", 60, time.Minute)).Get("/external-data/ongkharak", handler.NewExternalDataHandler(dependencies.ExternalDataService).ServeHTTP)
 		api.With(weatherLimiter.Limit("official-announcement-read", 60, time.Minute)).Get("/official-announcements", handler.NewAnnouncementHandler(dependencies.AnnouncementService).List)
+		api.With(weatherLimiter.Limit("news-announcement-read", 60, time.Minute)).Get("/news-announcements", handler.NewNewsAnnouncementHandler(dependencies.NewsAnnouncementService).List)
 		if dependencies.ManualAnnouncementService != nil {
 			manualHandler := handler.NewManualAnnouncementHandler(dependencies.ManualAnnouncementService, dependencies.AdminService)
 			manualLimiter := middleware.NewRateLimiter()

@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/floodwatch-ongkharak/backend/internal/externaldata"
+	"github.com/floodwatch-ongkharak/backend/internal/externaldata/fm91"
 	"github.com/floodwatch-ongkharak/backend/internal/externaldata/hii"
 	"github.com/floodwatch-ongkharak/backend/internal/externaldata/openmeteo"
 	"github.com/floodwatch-ongkharak/backend/internal/externaldata/thaiwater"
@@ -39,6 +40,8 @@ func New(codes []string) (map[string]externaldata.Provider, error) {
 			provider, err = hii.New()
 		case "TMD_CAP":
 			provider, err = tmd.New()
+		case "FM91_NEWS":
+			provider, err = fm91.New()
 		default:
 			return nil, errors.New("unregistered external provider")
 		}

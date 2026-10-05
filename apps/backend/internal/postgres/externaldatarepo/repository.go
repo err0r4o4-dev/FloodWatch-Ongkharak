@@ -188,6 +188,11 @@ func (store *Store) Complete(ctx context.Context, runID, code string, batch exte
 			return fmt.Errorf("persist external data record: %w", err)
 		}
 		recordIDs = append(recordIDs, id)
+		if record.Kind == externaldata.NewsReport {
+			if err := projectNewsArticle(ctx, tx, code, id, record.Record, batch.RetrievedAt.UTC()); err != nil {
+				return err
+			}
+		}
 		if _, err := tx.Exec(ctx, `
 			INSERT INTO external_data_batch_records (batch_id, record_id)
 			VALUES ($1,$2) ON CONFLICT DO NOTHING`, batchID, id); err != nil {
@@ -417,7 +422,7 @@ func validateBatch(batch externaldata.Batch, references []externaldata.RawRefere
 	records := make([]validatedRecord, 0, len(batch.Records))
 	hashes := make([]string, 0, len(batch.Records))
 	for _, record := range batch.Records {
-		if !validRecord(record) {
+		if !validRecord(record) || record.Kind == externaldata.NewsReport && !externaldata.ValidNewsRecord(record, batch.RetrievedAt) {
 			return nil, nil, errInvalidInput
 		}
 		payload, err := json.Marshal(record)
@@ -437,7 +442,7 @@ func validateBatch(batch externaldata.Batch, references []externaldata.RawRefere
 }
 
 func validRecord(record externaldata.Record) bool {
-	if strings.TrimSpace(record.Key) == "" || len(record.Key) > 512 || !validKind(record.Kind) || (record.Provenance != "MODEL" && record.Provenance != "OFFICIAL") {
+	if strings.TrimSpace(record.Key) == "" || len(record.Key) > 512 || !validKind(record.Kind) || (record.Provenance != "MODEL" && record.Provenance != "OFFICIAL" && record.Provenance != "MEDIA") || (record.Kind == externaldata.NewsReport) != (record.Provenance == "MEDIA") {
 		return false
 	}
 	if record.ValidFrom != nil && record.ValidTo != nil && record.ValidTo.Before(*record.ValidFrom) {
@@ -495,7 +500,7 @@ func ensureCanonicalSourceEnabled(ctx context.Context, tx pgx.Tx, code string) e
 }
 
 func validKind(kind string) bool {
-	return kind == externaldata.Observation || kind == externaldata.Forecast || kind == externaldata.OfficialAlert
+	return kind == externaldata.Observation || kind == externaldata.Forecast || kind == externaldata.OfficialAlert || kind == externaldata.NewsReport
 }
 
 func insertRecord(ctx context.Context, tx pgx.Tx, code string, record validatedRecord, contentHash string) (string, error) {
@@ -554,7 +559,10 @@ func updateSourceSuccess(ctx context.Context, tx pgx.Tx, code string, healthID u
 }
 
 func enqueueUpdated(ctx context.Context, tx pgx.Tx, healthID uuid.UUID, code, provenance string, occurredAt time.Time) error {
-	if provenance != "MODEL" && provenance != "OFFICIAL" {
+	if code == "FM91_NEWS" {
+		provenance = "MEDIA"
+	}
+	if provenance != "MODEL" && provenance != "OFFICIAL" && provenance != "MEDIA" {
 		provenance = "OFFICIAL"
 	}
 	if _, err := tx.Exec(ctx, `

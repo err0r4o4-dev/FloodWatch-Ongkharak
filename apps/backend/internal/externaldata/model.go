@@ -13,7 +13,21 @@ const (
 	Observation   = "OBSERVATION"
 	Forecast      = "FORECAST"
 	OfficialAlert = "OFFICIAL_ALERT"
+	NewsReport    = "NEWS_REPORT"
 )
+
+type NewsArticle struct {
+	ArticleID       string   `json:"articleId"`
+	URL             string   `json:"url"`
+	Category        string   `json:"category"`
+	ImageURLs       []string `json:"imageURLs"`
+	Locations       []string `json:"locations"`
+	Roads           []string `json:"roads"`
+	EventTimes      []string `json:"eventTimes"`
+	WaterLevels     []string `json:"waterLevels"`
+	TravelAdvice    []string `json:"travelAdvice"`
+	MatchedKeywords []string `json:"matchedKeywords"`
+}
 
 type Station struct {
 	Code       string  `json:"code"`
@@ -27,6 +41,7 @@ type Station struct {
 }
 
 type Record struct {
+	News                *NewsArticle    `json:"news,omitempty"`
 	Key                 string          `json:"key"`
 	Kind                string          `json:"kind"`
 	Provenance          string          `json:"provenance"`

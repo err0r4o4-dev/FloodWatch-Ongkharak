@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 import { SituationMap } from "./SituationMap";
 import type { LayerItems, LayerVisibility } from "../types";
+import type { CommunityReport } from "../../../features/reports/types";
 import { mapSettings, resetMapSession, setMapViewport } from "../../../shared/map/mapSession";
 
 const { map, mapEvents, containers, popupPositions } = vi.hoisted(() => ({
@@ -36,6 +37,12 @@ const items: LayerItems = {
   flood: [], risk: [], roads: [], reports: [], water: [{ id: "station-1", name: "สถานีทดสอบ", active: true, source: { id: "source", code: "test", name: "แหล่งทดสอบ", sourceType: "OFFICIAL" }, location: { type: "Point", coordinates: [101, 14.1] } }]
 };
 const points = { origin: { longitude: "", latitude: "" }, destination: { longitude: "", latitude: "" } };
+
+const clusterReport: CommunityReport = {
+  id: "report-map-1", type: "FLOOD", description: "รายงานน้ำท่วม", locationName: "พื้นที่แผนที่ทดสอบ", location: { type: "Point", coordinates: [101.02, 14.1] },
+  estimatedWaterDepthM: 0.2, observedAt: "2026-10-02T01:00:00Z", waterTrend: "RISING", status: "VERIFIED", verificationStatus: "VERIFIED", publicationStatus: "PUBLISHED",
+  sourceType: "COMMUNITY", createdAt: "2026-10-02T01:00:00Z", updatedAt: "2026-10-02T01:00:00Z", verifiedAt: "2026-10-02T01:00:00Z", media: []
+};
 
 afterEach(() => { act(() => resetMapSession()); vi.unstubAllGlobals(); mapEvents.length = 0; containers.length = 0; popupPositions.length = 0; vi.clearAllMocks(); });
 
@@ -131,16 +138,17 @@ describe("SituationMap popup flow", () => {
     expect(screen.queryByRole("region", { name: "ข้อมูลสรุปบนแผนที่" })).not.toBeInTheDocument();
   });
 
-  it("opens an aggregated community area with the keyboard and preserves the single area selection", () => {
-    const area = { id: "area-1", name: "พื้นที่ชุมชนทดสอบ", location: { type: "Point" as const, coordinates: [101.02, 14.1] as [number, number] }, radiusM: 150, sourceType: "COMMUNITY" as const, depthBand: "MODERATE" as const, previousDepthBand: "LOW" as const, trend: "FALLING" as const, reportedTrend: "RISING" as const, freshness: "FRESH" as const, summaryReason: "SUMMARIZED" as const, latestObservedAt: "2026-10-02T01:00:00Z", computedAt: "2026-10-02T02:00:00Z", windowStart: "2026-10-01T02:00:00Z", windowEnd: "2026-10-02T02:00:00Z", reportCount: 3, sampleCount: 2, totalReportCount: 4, reportIds: ["report-1"] };
+  it("opens a grouped community report marker with the keyboard", () => {
+    const cluster = { id: "report-group:report-map-1", name: "", location: clusterReport.location, sourceType: "COMMUNITY" as const, reports: [clusterReport] };
     const { props, onSelect } = prepare();
-    render(<SituationMap {...props} items={{ ...items, reports: [area] }} />);
-    const marker = screen.getByRole("button", { name: /พื้นที่ชุมชนทดสอบ/ });
+    render(<SituationMap {...props} items={{ ...items, reports: [cluster] }} />);
+    const marker = screen.getByRole("button", { name: /กลุ่มรายงานชุมชน · 1 รายงาน/ });
     fireEvent.keyDown(marker, { key: "Enter" });
-    expect(screen.getByRole("region", { name: "ข้อมูลสรุปบนแผนที่" })).toHaveTextContent("พื้นที่ชุมชนทดสอบ");
-    expect(screen.getByText("แนวโน้มคำนวณ")).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "ข้อมูลสรุปบนแผนที่" })).toHaveTextContent("กลุ่มรายงานชุมชน");
+    expect(screen.getByText("1 รายงานในบริเวณนี้")).toBeInTheDocument();
+    expect(screen.queryByText("แนวโน้มคำนวณ")).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "ดูรายละเอียด" }));
-    expect(onSelect).toHaveBeenCalledWith({ layer: "reports", feature: area });
+    expect(onSelect).toHaveBeenCalledWith({ layer: "reports", feature: cluster });
   });
 
   it("dismisses the popup when moving or hiding its layer", async () => {

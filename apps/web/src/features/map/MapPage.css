@@ -47,16 +47,22 @@
 .map-page .leaflet-control-scale { margin-bottom: calc(var(--space-12) * 2 + var(--space-3)); }
 .map-page .shared-map-error { top: auto; bottom: calc(var(--space-12) * 3); }
 .map-page__legend { flex: none; min-width: 0; }
+.map-page__news { flex: none; min-width: 0; }
 .map-legend { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); }
 .map-legend > span { display: inline-flex; align-items: center; gap: var(--space-1); }
-.map-legend__area-group { flex-wrap: wrap; }
-.map-legend__depth-dot { display: inline-block; width: .7rem; height: .7rem; margin-left: var(--space-2); border-radius: 50%; }
-.map-legend__depth-dot--very-high { background: var(--color-area-very-high); }
-.map-legend__depth-dot--high { background: var(--color-area-high); }
-.map-legend__depth-dot--moderate { background: var(--color-area-moderate); }
-.map-legend__depth-dot--low { background: var(--color-area-low); }
-.map-legend__depth-dot--unknown { background: var(--color-area-unknown); }
-.map-legend__trend-note { color: var(--color-ink-muted); }
+.map-legend__cluster-note { color: var(--color-ink-muted); }
+.map-page .map-marker--cluster { display: grid; width: var(--touch-target); height: var(--touch-target); place-items: center; border: calc(var(--border-width) * 2) solid var(--color-surface); border-radius: 50%; background: var(--color-status-unknown); color: var(--color-ink); box-shadow: var(--shadow-surface); font-size: .8rem; }
+.map-page .map-marker__cluster-count { display: grid; min-width: 1.35rem; min-height: 1.35rem; place-items: center; padding: 0 var(--space-1); border-radius: 999px; background: var(--color-surface); font-weight: 800; }
+.map-page .report-cluster-details { display: grid; gap: var(--space-4); }
+.map-page .report-cluster-summary { display: grid; gap: var(--space-1); }
+.map-page .report-cluster-summary p { margin: 0; }
+.map-page .report-cluster-summary__count { color: var(--color-ink); font-weight: 750; }
+.map-page .report-cluster-summary__note { color: var(--color-ink-muted); font-size: .78rem; }
+.map-page .report-cluster-details__section { display: grid; gap: var(--space-3); padding-top: var(--space-4); border-top: var(--border-width) solid var(--color-border); }
+.map-page .report-cluster-details__section h4 { margin: 0; font-size: .95rem; }
+.map-page .report-cluster-details__originals { display: grid; gap: var(--space-3); margin: 0; padding: 0; list-style: none; }
+.map-page .report-cluster-details__originals .report-card { padding: var(--space-3); }
+.map-page .map-feature-list__cluster-meta { display: grid; justify-items: end; color: var(--color-ink-muted); font-size: .72rem; text-align: right; }
 .map-legend__compact { display: none; }
 .map-page .map-legend { padding: var(--space-2) var(--space-3); border: var(--border-width) solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-glass-fallback); box-shadow: var(--shadow-surface); color: var(--color-ink); font-size: .7rem; }
 .map-page .map-legend > .sr-only { display: block; }

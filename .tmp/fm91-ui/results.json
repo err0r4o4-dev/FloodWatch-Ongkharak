@@ -1,0 +1,82 @@
+{
+  "checks": [
+    {
+      "pathname": "announcements",
+      "width": 1440,
+      "mode": "fresh",
+      "horizontalOverflow": false,
+      "rendered": true
+    },
+    {
+      "pathname": "announcements",
+      "width": 390,
+      "mode": "fresh",
+      "horizontalOverflow": false,
+      "rendered": true
+    },
+    {
+      "pathname": "announcements",
+      "width": 320,
+      "mode": "fresh",
+      "horizontalOverflow": false,
+      "rendered": true
+    },
+    {
+      "pathname": "overview",
+      "width": 1440,
+      "mode": "fresh",
+      "horizontalOverflow": false,
+      "rendered": true
+    },
+    {
+      "pathname": "overview",
+      "width": 390,
+      "mode": "fresh",
+      "horizontalOverflow": false,
+      "rendered": true
+    },
+    {
+      "pathname": "map",
+      "width": 1440,
+      "mode": "fresh",
+      "horizontalOverflow": false,
+      "rendered": true
+    },
+    {
+      "pathname": "map",
+      "width": 390,
+      "mode": "fresh",
+      "horizontalOverflow": false,
+      "rendered": true
+    },
+    {
+      "pathname": "announcements",
+      "width": 390,
+      "mode": "stale",
+      "horizontalOverflow": false,
+      "rendered": true
+    },
+    {
+      "pathname": "announcements",
+      "width": 390,
+      "mode": "error",
+      "horizontalOverflow": false,
+      "rendered": true
+    },
+    {
+      "pathname": "announcements",
+      "width": 390,
+      "mode": "empty",
+      "horizontalOverflow": false,
+      "rendered": true
+    },
+    {
+      "pathname": "announcements",
+      "width": 390,
+      "mode": "loading",
+      "horizontalOverflow": false,
+      "rendered": true
+    }
+  ],
+  "exceptions": []
+}

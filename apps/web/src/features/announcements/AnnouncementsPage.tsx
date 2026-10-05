@@ -7,6 +7,7 @@ import { DataTimestamp, FreshnessBadge, OriginalContentNote, SourceBadge, Status
 import { useRealtimeRevision } from "../realtime/RealtimeProvider";
 import { OfficialAnnouncementsPanel } from "../official-announcements/OfficialAnnouncementsPanel";
 import { ManualAnnouncementsPanel } from "../manual-announcements/ManualAnnouncementsPanel";
+import { FM91NewsPanel } from "../news-announcements/FM91NewsPanel";
 import { listPublicAlerts } from "./api";
 import type { PublicAlert } from "./api";
 import "./AnnouncementsPage.css";
@@ -63,6 +64,7 @@ export function AnnouncementsPage() {
       <PageHeroArt kind="announcement" />
     </header>
     <OfficialAnnouncementsPanel />
+    <FM91NewsPanel />
     <ManualAnnouncementsPanel />
     <div className="announcements-page__layout">
         <div className="announcements-page__main">

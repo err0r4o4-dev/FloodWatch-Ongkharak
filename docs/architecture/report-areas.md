@@ -2,6 +2,8 @@
 
 ## Public boundary
 
+The situation map's community pins now use original `/reports` grouped geographically, not this endpoint. These backend road-segment summaries remain a separate resource and are not a count of citizen reports. See `community-reports.md` for the current map-pin flow.
+
 Public report areas are currently road-segment summaries only. Each public area has
 `areaType=ROAD_SEGMENT`, `radiusM=0` (deprecated compatibility), a WGS84
 `LineString` geometry, `roadSegmentId` equal to the area ID, `segmentVersion >= 1`,

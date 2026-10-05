@@ -9,12 +9,12 @@ import { MapDataStatus } from "./components/MapDataStatus";
 import { SituationMap } from "./components/SituationMap";
 import { useMapData } from "./hooks/useMapData";
 import { useRealtimeRevision } from "../realtime/RealtimeProvider";
-import { useReportAreaUpdatedRevision } from "../report-areas/realtime";
 import { useTranslation } from "../../i18n";
 import th from "../../i18n/locales/th/map";
 import en from "../../i18n/locales/en/map";
 import { layerKeys } from "./types";
 import { validBounds } from "./utils";
+import { FM91NewsPanel } from "../news-announcements/FM91NewsPanel";
 import type { LayerKey, LayerVisibility, MapBounds, MapMode, MapSelection, Position } from "./types";
 import type { Picking, RoutePoint, RoutePoints } from "./components/RoutePanel";
 import "./MapPage.css";
@@ -55,10 +55,18 @@ export function MapPage() {
   const boundsRef = useRef<MapBounds | null>(null);
   const [retry, setRetry] = useState(0);
   const realtimeRevision = useRealtimeRevision(mapEvents);
-  const reportAreaRevision = useReportAreaUpdatedRevision();
   const [points, setPoints] = useState<RoutePoints>({ origin: emptyPoint, destination: emptyPoint });
   const [picking, setPicking] = useState<Picking>(null);
-  const data = useMapData(bounds, visible, retry + realtimeRevision + reportAreaRevision);
+  const data = useMapData(bounds, visible, retry + realtimeRevision);
+  useEffect(() => {
+    if (data.previousLayers.includes("reports")) return;
+    setSelection((current) => {
+      if (current?.layer !== "reports") return current;
+      const feature = data.items.reports.find((group) => group.id === current.feature.id);
+      if (!feature) return null;
+      return feature === current.feature ? current : { layer: "reports", feature };
+    });
+  }, [data.items.reports, data.previousLayers]);
   const enabled = layerKeys.filter((key) => visible[key]);
   const allFailed = !data.loading && enabled.length > 0 && data.failed.length === enabled.length;
   const panelOpen = riskOpen || selection !== null || mode === "ROUTE";
@@ -128,6 +136,7 @@ export function MapPage() {
     </div>
     <div className="map-page__legend"><MapLegend visible={visible} /></div>
     <MapDataStatus items={data.items} visible={visible} loading={data.loading} failed={allFailed} failedLayers={data.failed} previousLayers={data.previousLayers} truncated={data.truncated} onRetry={() => setRetry((previous) => previous + 1)} />
+    <div className="map-page__news"><FM91NewsPanel variant="compact" /></div>
     {initialRiskId && !data.loading && !data.items.risk.some((item) => item.id === initialRiskId) && <p className="map-page__caution" role="status">{t("caution.selectionMissing")}</p>}
     <p className="map-page__caution">{t("caution.evidence")}</p>
   </section>;

@@ -5,8 +5,6 @@ import { RoutePanel } from "./RoutePanel";
 import { RiskDirectory } from "./RiskDirectory";
 import type { Picking, RoutePoint, RoutePoints } from "./RoutePanel";
 import { effectiveFloodSeverity, effectiveRiskLevel, effectiveRoadStatus } from "../utils";
-import { ReportAreaDepthBadge } from "../../../features/report-areas/ReportAreaSummary";
-import { areaTrendSymbol, displayReportAreaTrend, effectiveReportAreaFreshness } from "../../../features/report-areas/presentation";
 import { layerKeys } from "../types";
 import type { LayerItems, LayerKey, LayerVisibility, MapMode, MapSelection } from "../types";
 import { useTranslation } from "../../../i18n";
@@ -61,11 +59,9 @@ export function MapSidePanel({ mode, items, visible, loading, failed, failedLaye
       {loading && <p role="status">{t(showingPrevious ? "mapStatus.previous" : selections.length ? "mapStatus.updating" : "panel.loading")}</p>}
       {loading && selections.length > 0 && <p role="status">{t("mapStatus.progress", { count: selections.length })}</p>}
       {failed ? <div role="alert"><p>{t("panel.error")}</p><button type="button" className="action-button" onClick={onRetry}>{t("mapStatus.retry")}</button></div> : selections.length ? <ul className="map-feature-list">{selections.map((item) => {
-        const name = item.layer === "flood" ? item.feature.title : item.feature.name;
+        const name = item.layer === "flood" ? item.feature.title : item.layer === "reports" ? item.feature.name || t("cluster.name") : item.feature.name;
         const status = item.layer === "roads" ? effectiveRoadStatus(item.feature.currentCondition) : item.layer === "flood" ? effectiveFloodSeverity(item.feature) : item.layer === "risk" ? effectiveRiskLevel(item.feature) : "UNKNOWN";
-        const areaFreshness = item.layer === "reports" ? effectiveReportAreaFreshness(item.feature.freshness, item.feature.latestObservedAt) : null;
-        const areaTrend = item.layer === "reports" ? displayReportAreaTrend(item.feature.trend, item.feature.freshness, item.feature.latestObservedAt) : null;
-        return <li key={`${item.layer}-${item.feature.id}`}><button type="button" onClick={() => onSelect(item)}><span>{name}<small>{t(`layer.${item.layer}`)}</small></span>{item.layer === "reports" ? <span className="map-feature-list__area-meta"><ReportAreaDepthBadge depthBand={item.feature.depthBand} freshness={areaFreshness ?? "UNKNOWN"} latestObservedAt={item.feature.latestObservedAt} /><small><span aria-hidden="true">{areaTrendSymbol(areaTrend ?? "UNKNOWN")} </span>{t(`area.trend.${areaTrend ?? "UNKNOWN"}`)}</small></span> : <StatusBadge status={status} />}</button></li>;
+        return <li key={`${item.layer}-${item.feature.id}`}><button type="button" onClick={() => onSelect(item)}><span>{name}<small>{t(`layer.${item.layer}`)}</small></span>{item.layer === "reports" ? <span className="map-feature-list__cluster-meta"><strong>{t("cluster.count", { count: item.feature.reports.length })}</strong></span> : <StatusBadge status={status} />}</button></li>;
       })}</ul> : loading ? null : <EmptyState title={t("panel.emptyTitle")}>{t("panel.emptyBody")}</EmptyState>}
       <p className="map-layer-summary">{layerKeys.filter((key) => visible[key]).map((key) => t("panel.layerSummary", { label: t(`layer.${key}`), count: items[key].length })).join(" · ") || t("allLayersOff")}</p>
     </section>}

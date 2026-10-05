@@ -1,10 +1,11 @@
 import { apiConfig } from "../../shared/config/api";
 import type { LayerItems, LayerKey, MapBounds, WaterReading } from "./types";
 import { validBounds, validGeometry } from "./utils";
-import { fetchReportAreas, isValidReportArea } from "../report-areas/api";
+import { reportsApi } from "../reports/api";
+import { groupCommunityReports } from "./report-clusters";
 
 const paths: Record<LayerKey, string> = {
-  flood: "/flood-events", water: "/water-stations", risk: "/risk-areas", roads: "/roads", reports: "/report-areas"
+  flood: "/flood-events", water: "/water-stations", risk: "/risk-areas", roads: "/roads", reports: "/reports"
 };
 const pageLimit = 100;
 const freshnessValues = ["FRESH", "STALE", "EXPIRED", "UNKNOWN"];
@@ -23,9 +24,9 @@ function confidence(value: unknown): boolean {
   return value === null || (typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 1);
 }
 
-function validItem(key: LayerKey, value: unknown): boolean {
+function validItem(key: Exclude<LayerKey, "reports">, value: unknown): boolean {
   if (!record(value) || typeof value.id !== "string") return false;
-  const geometry = key === "water" || key === "reports" ? value.location : value.geometry;
+  const geometry = key === "water" ? value.location : value.geometry;
   if (!validGeometry(geometry)) return false;
   if (key === "water") return geometry.type === "Point" && typeof value.name === "string" && source(value.source);
   if (key === "flood") return ["Point", "Polygon", "MultiPolygon"].includes(geometry.type) &&
@@ -34,7 +35,6 @@ function validItem(key: LayerKey, value: unknown): boolean {
     typeof value.verificationStatus === "string" && confidence(value.confidence);
   if (key === "risk") return geometry.type === "MultiPolygon" && typeof value.name === "string" && source(value.source) &&
     typeof value.effectiveRiskLevel === "string" && freshnessValues.includes(String(value.freshness));
-  if (key === "reports") return isValidReportArea(value);
   if (geometry.type !== "MultiLineString" || typeof value.name !== "string" || !record(value.currentCondition)) return false;
   const condition = value.currentCondition;
   return roadValues.includes(String(condition.status)) && freshnessValues.includes(String(condition.freshness)) &&
@@ -62,8 +62,8 @@ async function readPage<T>(url: string, signal: AbortSignal): Promise<{ items: T
 
 export async function fetchMapLayer<Key extends LayerKey>(key: Key, bounds: MapBounds, signal: AbortSignal): Promise<{ items: LayerItems[Key]; hasMore: boolean }> {
   if (key === "reports") {
-    const page = await fetchReportAreas(bounds, signal);
-    return { items: page.items as LayerItems[Key], hasMore: page.hasMore };
+    const page = await reportsApi.listPublic({ bbox: formatBbox(bounds), signal, limit: pageLimit });
+    return { items: groupCommunityReports(page.items) as LayerItems[Key], hasMore: page.items.length >= page.limit };
   }
   const query = new URLSearchParams({ bbox: formatBbox(bounds), limit: String(pageLimit), offset: "0" });
   const page = await readPage<LayerItems[Key][number]>(`${apiConfig.baseUrl}${paths[key]}?${query}`, signal);

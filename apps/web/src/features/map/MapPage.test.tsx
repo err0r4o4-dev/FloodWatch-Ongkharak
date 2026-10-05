@@ -5,6 +5,11 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { MapPage } from "./MapPage";
 import type { LayerItems, MapSelection } from "./types";
 
+const realtime = vi.hoisted(() => ({ revision: 0 }));
+vi.mock("../realtime/RealtimeProvider", () => ({ useRealtimeRevision: () => realtime.revision }));
+
+vi.mock("../news-announcements/FM91NewsPanel", () => ({ FM91NewsPanel: () => <section aria-label="ข่าว FM91 ในหน้าแผนที่" /> }));
+
 function render(view: ReactElement) {
   return renderView(<MemoryRouter>{view}</MemoryRouter>);
 }
@@ -14,7 +19,7 @@ vi.mock("./components/SituationMap", async () => {
   return { SituationMap: ({ onBoundsChange, onSelect, items, openDetailsOnSelect }: { onBoundsChange: (bounds: { west: number; south: number; east: number; north: number }) => void; onSelect: (selection: MapSelection) => void; items: LayerItems; openDetailsOnSelect?: boolean }) => {
     const bounds = { west: 100.9, south: 14, east: 101.2, north: 14.3 };
     React.useEffect(() => { onBoundsChange(bounds); }, [onBoundsChange]);
-    return <div data-direct-details={openDetailsOnSelect} aria-label="แผนที่สถานการณ์แบบโต้ตอบ"><button type="button" aria-label="เผยแพร่ขอบเขตเดิมอีกครั้ง" onClick={() => onBoundsChange(bounds)}>เผยแพร่ขอบเขตเดิมอีกครั้ง</button>{items.roads.map((feature) => <button key={feature.id} onClick={() => onSelect({ layer: "roads", feature })}>{feature.name}</button>)}{items.water.map((feature) => <button key={feature.id} onClick={() => onSelect({ layer: "water", feature })}>{feature.name}</button>)}{items.flood.map((feature) => <button key={feature.id} onClick={() => onSelect({ layer: "flood", feature })}>{feature.title}</button>)}</div>;
+    return <div data-direct-details={openDetailsOnSelect} aria-label="แผนที่สถานการณ์แบบโต้ตอบ"><button type="button" aria-label="เผยแพร่ขอบเขตเดิมอีกครั้ง" onClick={() => onBoundsChange(bounds)}>เผยแพร่ขอบเขตเดิมอีกครั้ง</button>{items.roads.map((feature) => <button key={feature.id} onClick={() => onSelect({ layer: "roads", feature })}>{feature.name}</button>)}{items.water.map((feature) => <button key={feature.id} onClick={() => onSelect({ layer: "water", feature })}>{feature.name}</button>)}{items.flood.map((feature) => <button key={feature.id} onClick={() => onSelect({ layer: "flood", feature })}>{feature.title}</button>)}{items.reports.map((feature) => <button key={feature.id} onClick={() => onSelect({ layer: "reports", feature })}>{feature.name}</button>)}</div>;
   } };
 });
 
@@ -32,9 +37,36 @@ function mockApi(collections: Record<string, unknown[]> = {}, failed: string[] =
   return request;
 }
 
-afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); });
+afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); realtime.revision = 0; });
 
 describe("MapPage", () => {
+  it("groups eight nearby originals and refreshes selected details after publication changes", async () => {
+    const originals = Array.from({ length: 8 }, (_, index) => ({
+      id: `report-${index}`, type: "FLOOD", description: `Synthetic report-${index}`, locationName: "จุดรายงานทดสอบ",
+      location: { type: "Point", coordinates: [101 + index * 0.0001, 14.1] }, estimatedWaterDepthM: null,
+      status: "PENDING", verificationStatus: "PENDING", sourceType: "COMMUNITY",
+      createdAt: "2026-10-05T00:00:00Z", updatedAt: "2026-10-05T00:00:00Z", verifiedAt: null, media: []
+    }));
+    const collections: Record<string, unknown[]> = { "/api/v1/reports": originals };
+    const request = mockApi(collections);
+    const view = render(<MapPage />);
+    fireEvent.click(await screen.findByRole("button", { name: "จุดรายงานทดสอบ" }));
+    expect(screen.getByText("8 รายงานในบริเวณนี้")).toBeInTheDocument();
+    expect(screen.getByText("Synthetic report-7")).toBeInTheDocument();
+    expect(screen.queryByText("ประวัติสถานการณ์น้ำในช่วงถนนนี้")).not.toBeInTheDocument();
+    expect(request.mock.calls.some(([url]) => url.includes("/report-areas"))).toBe(false);
+    collections["/api/v1/reports"] = originals.slice(0, 7);
+    realtime.revision += 1;
+    view.rerender(<MemoryRouter><MapPage /></MemoryRouter>);
+    await waitFor(() => expect(screen.queryByText("Synthetic report-7")).not.toBeInTheDocument());
+    expect(screen.getByText("7 รายงานในบริเวณนี้")).toBeInTheDocument();
+    collections["/api/v1/reports"] = [];
+    realtime.revision += 1;
+    view.rerender(<MemoryRouter><MapPage /></MemoryRouter>);
+    await waitFor(() => expect(screen.queryByRole("region", { name: "ข้อมูลตำแหน่งที่เลือก" })).not.toBeInTheDocument());
+    expect(screen.queryByRole("button", { name: "จุดรายงานทดสอบ" })).not.toBeInTheDocument();
+  });
+
   it("opens the risk directory, filters stale evidence as UNKNOWN, and restores focus", async () => {
     const risk = { id: "risk-fresh", name: "พื้นที่เสี่ยงทดสอบ", description: "หลักฐานทดสอบ", source, riskLevel: "HIGH", effectiveRiskLevel: "HIGH", freshness: "FRESH", validFrom: null, validTo: null, geometry: { type: "MultiPolygon", coordinates: [[[[101, 14], [101.1, 14], [101.1, 14.1], [101, 14]]]] } };
     mockApi({ "/api/v1/risk-areas": [risk, { ...risk, id: "risk-stale", name: "พื้นที่ข้อมูลเก่า", freshness: "STALE" }] });
@@ -51,6 +83,13 @@ describe("MapPage", () => {
     fireEvent.keyDown(screen.getByRole("button", { name: /พื้นที่ข้อมูลเก่า/ }), { key: "Escape" });
     expect(trigger).toHaveFocus();
     expect(trigger).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("shows the FM91 news panel without adding news coordinates to the map", async () => {
+    mockApi();
+    render(<MapPage />);
+    expect(await screen.findByRole("region", { name: "ข่าว FM91 ในหน้าแผนที่" })).toBeInTheDocument();
+    expect(screen.queryByTestId("fm91-news-map-marker")).not.toBeInTheDocument();
   });
 
   it("keeps risk failures distinct from empty data and offers retry", async () => {

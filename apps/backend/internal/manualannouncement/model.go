@@ -276,6 +276,9 @@ func (service *Service) Publish(ctx context.Context, id string, expectedRevision
 		return Announcement{}, ErrConflict
 	}
 	now := service.now()
+	current.Body = ""
+	current.Area = ""
+	current.ExpiresAt = nil
 	if err := validateAnnouncement(current, now, true); err != nil {
 		return Announcement{}, err
 	}
@@ -332,13 +335,13 @@ func validateActor(actor Actor) error {
 }
 
 func announcementFromInput(input Input, now time.Time) (Announcement, error) {
-	observedAt, expiresAt, references, err := parseInput(input)
+	observedAt, _, references, err := parseInput(input)
 	if err != nil {
 		return Announcement{}, err
 	}
 	return Announcement{
-		Title: strings.TrimSpace(input.Title), Summary: strings.TrimSpace(input.Summary), Body: strings.TrimSpace(input.Body), Advice: strings.TrimSpace(input.Advice), Area: strings.TrimSpace(input.Area), Severity: strings.TrimSpace(input.Severity),
-		SourceType: "COMMUNITY", PublisherType: "ADMIN", ReferenceKind: "MEDIA", ObservedAt: observedAt, ExpiresAt: expiresAt, References: references, CreatedAt: now, UpdatedAt: now,
+		Title: strings.TrimSpace(input.Title), Summary: strings.TrimSpace(input.Summary), Body: "", Advice: strings.TrimSpace(input.Advice), Area: "", Severity: strings.TrimSpace(input.Severity),
+		SourceType: "COMMUNITY", PublisherType: "ADMIN", ReferenceKind: "MEDIA", ObservedAt: observedAt, ExpiresAt: nil, References: references, CreatedAt: now, UpdatedAt: now,
 	}, nil
 }
 
@@ -444,7 +447,7 @@ func derive(item Announcement, now time.Time) Announcement {
 		item.Status = StatusExpired
 		return item
 	}
-	if stored == StatusPublished && item.ObservedAt != nil && item.ExpiresAt != nil && item.ExpiresAt.After(now) && !item.ObservedAt.After(now) && referencesObserved(item.References, now) {
+	if stored == StatusPublished && item.ObservedAt != nil && (item.ExpiresAt == nil || item.ExpiresAt.After(now)) && !item.ObservedAt.After(now) && referencesObserved(item.References, now) {
 		item.EffectiveStatus = item.Severity
 	}
 	return item

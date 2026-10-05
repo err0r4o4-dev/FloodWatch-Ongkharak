@@ -16,6 +16,7 @@ func TestExternalDataConfiguration(t *testing.T) {
 		valid            bool
 	}{
 		{"official", "THAIWATER_WATER, TMD_CAP", "", true},
+		{"media", "FM91_NEWS", "", true},
 		{"unknown", "DDPM", "", false},
 		{"duplicate", "TMD_CAP,TMD_CAP", "", false},
 		{"license missing", "OPENMETEO_ECMWF", "", false},

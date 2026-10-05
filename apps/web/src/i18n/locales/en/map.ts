@@ -17,7 +17,7 @@ const en: Record<keyof typeof th, string> = {
   "layer.water": "Water stations",
   "layer.risk": "Risk areas",
   "layer.roads": "Road conditions",
-  "layer.reports": "Community report areas",
+  "layer.reports": "Community reports (grouped pins)",
   "layerControl.summary": "Data layers",
   "layerControl.legend": "Displayed data layers",
   "legend.label": "Map legend",
@@ -94,7 +94,7 @@ const en: Record<keyof typeof th, string> = {
   "details.close": "Close location information",
   "details.source": "Source: {source}",
   "details.communitySource": "Community report",
-  "details.communityAreaSource": "Area summary from community reports",
+  "details.communityAreaSource": "Original community reports in this area",
   "details.unknownSource": "Not specified",
   "details.noDescription": "No additional description",
   "details.verification": "Verification: {status} · Confidence: {confidence}",
@@ -122,7 +122,7 @@ const en: Record<keyof typeof th, string> = {
   "popup.label": "Map summary",
   "popup.close": "Close popup",
   "popup.communitySource": "Community report",
-  "popup.communityAreaSource": "Area summary from community reports",
+  "popup.communityAreaSource": "Original community reports in this area",
   "popup.unknownSource": "Source not specified",
   "popup.reportDepth": "Estimated water depth {value} m",
   "popup.unknownWarning": "There is not enough evidence to conclude that this is safe or passable.",
@@ -192,7 +192,12 @@ const en: Record<keyof typeof th, string> = {
   "map.location": "My location",
   "map.locationError": "Could not retrieve current location",
   "details.communityArea": "Community report area",
-  "legend.compact": "Area color legend"
+  "cluster.count": "{count} reports in this area",
+  "cluster.label": "{name} · {count} reports",
+  "cluster.name": "Community report group",
+  "cluster.note": "Pins group locations within 150 metres. Counts include loaded reports only, not a safety assessment.",
+  "cluster.originals": "Reports in this group",
+  "legend.compact": "Map legend"
 };
 
 export default en;

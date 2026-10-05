@@ -1,5 +1,4 @@
 import type { FloodFeature, LayerItems, MapBounds, MapGeometry, MapSelection, Position, RiskFeature, RoadCondition, RoadStatus } from "./types";
-import { isRoadSegmentReportArea } from "../report-areas/types";
 
 function validPosition(value: unknown): value is Position {
   return Array.isArray(value) && value.length === 2 &&
@@ -80,5 +79,5 @@ export function geometryBounds(geometry: MapGeometry): MapBounds {
 }
 
 export function selectionGeometry(selection: MapSelection): MapGeometry {
-  return selection.layer === "water" ? selection.feature.location : selection.layer === "reports" ? isRoadSegmentReportArea(selection.feature) ? selection.feature.geometry : selection.feature.location : selection.feature.geometry;
+  return selection.layer === "water" || selection.layer === "reports" ? selection.feature.location : selection.feature.geometry;
 }

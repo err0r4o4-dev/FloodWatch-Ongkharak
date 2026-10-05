@@ -2,14 +2,22 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { FeaturePopup } from "./FeaturePopup";
 import type { MapSelection } from "../types";
+import type { CommunityReport } from "../../../features/reports/types";
 
 const source = { id: "source", code: "test", name: "แหล่งทดสอบ", sourceType: "OFFICIAL" as const };
 const station: MapSelection = { layer: "water", feature: { id: "station", name: "สถานีทดสอบ", source, active: true, location: { type: "Point", coordinates: [101, 14.1] } } };
-const area: MapSelection = { layer: "reports", feature: {
-  id: "area-1", name: "พื้นที่ชุมชนทดสอบ", location: { type: "Point", coordinates: [101.02, 14.1] }, radiusM: 150,
-  sourceType: "COMMUNITY", depthBand: "MODERATE", previousDepthBand: "LOW", trend: "FALLING", reportedTrend: "RISING",
-  freshness: "FRESH", summaryReason: "SUMMARIZED", latestObservedAt: "2026-10-02T01:00:00Z", computedAt: "2026-10-02T02:00:00Z",
-  windowStart: "2026-10-01T02:00:00Z", windowEnd: "2026-10-02T02:00:00Z", reportCount: 3, sampleCount: 2, totalReportCount: 4, reportIds: ["report-1"]
+
+function report(id: string, observedAt: string, description: string): CommunityReport {
+  return {
+    id, type: "FLOOD", description, locationName: "พื้นที่ชุมชนทดสอบ", locationNote: "ใกล้ตลาด", location: { type: "Point", coordinates: [101.02, 14.1] },
+    estimatedWaterDepthM: 0.2, observedAt, waterTrend: "RISING", status: "VERIFIED", verificationStatus: "VERIFIED", publicationStatus: "PUBLISHED",
+    sourceType: "COMMUNITY", createdAt: observedAt, updatedAt: observedAt, verifiedAt: observedAt, media: []
+  };
+}
+
+const cluster: MapSelection = { layer: "reports", feature: {
+  id: "report-group:report-1", name: "", location: { type: "Point", coordinates: [101.02, 14.1] }, sourceType: "COMMUNITY",
+  reports: [report("report-1", "2026-10-02T01:00:00Z", "รายงานแรก"), report("report-2", "2026-10-02T02:00:00Z", "รายงานล่าสุด")]
 } };
 
 afterEach(() => vi.unstubAllGlobals());
@@ -37,23 +45,18 @@ describe("FeaturePopup", () => {
     expect(onClose).toHaveBeenCalled();
   });
 
-  it("groups one stable area pin without marking the calculated summary as original content", () => {
+  it("shows a grouped report count and note without area safety summaries", () => {
     const onClose = vi.fn();
     const onDetails = vi.fn();
-    const currentArea = { ...area.feature, latestObservedAt: new Date().toISOString(), computedAt: new Date().toISOString() };
-    render(<FeaturePopup selection={{ layer: "reports", feature: currentArea }} onDetails={onDetails} onClose={onClose} />);
-    expect(screen.getByRole("region", { name: "ข้อมูลสรุปบนแผนที่" })).toHaveTextContent("พื้นที่ชุมชนทดสอบ");
-    expect(screen.getByText("ช่วงระดับน้ำปัจจุบัน")).toBeInTheDocument();
-    expect(screen.getAllByText("10–น้อยกว่า 30 ซม.").length).toBeGreaterThan(0);
-    expect(screen.getByText("ช่วงระดับน้ำก่อนหน้า")).toBeInTheDocument();
-    expect(screen.getByText("น้อยกว่า 10 ซม.")).toBeInTheDocument();
-    expect(screen.getByText("สรุปจากรายงานชุมชน")).toBeInTheDocument();
-    expect(screen.queryByText("ปานกลาง")).not.toBeInTheDocument();
-    expect(screen.getByText("แนวโน้มคำนวณ")).toBeInTheDocument();
-    expect(screen.queryByText("เนื้อหาต้นฉบับ")).not.toBeInTheDocument();
+    render(<FeaturePopup selection={cluster} onDetails={onDetails} onClose={onClose} />);
+    expect(screen.getByRole("region", { name: "ข้อมูลสรุปบนแผนที่" })).toHaveTextContent("กลุ่มรายงานชุมชน");
+    expect(screen.getByText("2 รายงานในบริเวณนี้")).toBeInTheDocument();
+    expect(screen.getByText(/รวมหมุดตามตำแหน่งในระยะ 150 เมตร/)).toBeInTheDocument();
+    expect(screen.queryByText("ช่วงระดับน้ำปัจจุบัน")).not.toBeInTheDocument();
+    expect(screen.queryByText("แนวโน้มคำนวณ")).not.toBeInTheDocument();
     fireEvent.keyDown(screen.getByRole("region", { name: "ข้อมูลสรุปบนแผนที่" }), { key: "Escape" });
     expect(onClose).toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "ดูรายละเอียด" }));
-    expect(onDetails).toHaveBeenCalledWith({ layer: "reports", feature: currentArea });
+    expect(onDetails).toHaveBeenCalledWith(cluster);
   });
 });

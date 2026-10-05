@@ -6,6 +6,7 @@ import { manualAnnouncementApi } from "../manual-announcements/api";
 
 vi.mock("./api", () => ({ listPublicAlerts: vi.fn() }));
 vi.mock("../manual-announcements/api", () => ({ manualAnnouncementApi: { listPublic: vi.fn() } }));
+vi.mock("../news-announcements/FM91NewsPanel", () => ({ FM91NewsPanel: () => <section aria-label="ข่าว FM91" /> }));
 
 beforeEach(() => {
   vi.mocked(listPublicAlerts).mockReset();
@@ -21,6 +22,7 @@ describe("public alerts", () => {
     expect(screen.getByText(/ไม่ได้หมายความว่าพื้นที่ปลอดภัย/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "ทั้งหมด (0)" })).toBeInTheDocument();
     expect(screen.getByRole("complementary", { name: "สรุปประกาศ" })).toHaveTextContent("ยังไม่มีข้อมูลสรุป");
+    expect(screen.getByRole("region", { name: "ข่าว FM91" })).toBeInTheDocument();
   });
 
   it("renders severity, provenance and trigger time from the canonical API", async () => {

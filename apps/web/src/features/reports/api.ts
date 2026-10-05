@@ -75,8 +75,9 @@ function reportPath(id: string): string {
 }
 
 export const reportsApi = {
-  async listPublic({ bbox, signal }: { bbox?: string; signal?: AbortSignal } = {}) {
-    const query = new URLSearchParams({ limit: "20", offset: "0" });
+  async listPublic({ bbox, signal, limit = 20, offset = 0 }: { bbox?: string; signal?: AbortSignal; limit?: number; offset?: number } = {}) {
+    if (!Number.isInteger(limit) || limit < 1 || limit > 100 || !Number.isInteger(offset) || offset < 0) throw new Error("Invalid report pagination");
+    const query = new URLSearchParams({ limit: String(limit), offset: String(offset) });
     if (bbox) query.set("bbox", bbox);
     const result = await apiClient.request<unknown>(`/reports?${query}`, { signal }, { authenticate: false, retryUnauthorized: false });
     return page(result);

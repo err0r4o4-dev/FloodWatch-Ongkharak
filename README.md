@@ -72,6 +72,12 @@ The web dev server is also bound to localhost port 5173 and the API to localhost
 
 ## Ingestion worker
 
+FM91 media news uses the same opt-in worker with a separate public read model and
+automatically publishes matching articles without admin review. Apply migration 28
+and add `FM91_NEWS` to both API and worker provider allowlists. News appears in
+Announcements, Overview and Map, remains MEDIA rather than OFFICIAL, and never
+creates an inferred map pin or station reading. See `docs/architecture/fm91-news.md`.
+
 External official/model evidence uses a separate opt-in flow: registered provider adapters → private raw archive → transactional evidence/health → public snapshot and SSE → bilingual overview panel. Providers remain disabled until `EXTERNAL_DATA_PROVIDERS` is explicitly configured in both API and worker. Apply migration 20 first; free Open-Meteo providers also require an eligibility acknowledgment. See `docs/architecture/external-data.md` for real GET checks, configuration, datum/freshness safeguards and limitations. The legacy synthetic fixture flow below remains separate.
 
 The worker polls only source codes with server-registered adapters; no real provider is registered by default. To exercise the synthetic fixture in development, configure `INGESTION_FIXTURE_URL` as the origin of a controlled HTTP test server and `INGESTION_FIXTURE_SOURCE_CODE` as an exact `SYNTH_*` source code, then create an enabled `COMMUNITY` data source with that code. The server must serve `/observations` using the documented `SYNTHETIC_TEST_ONLY` fixture contract; never point this at a live provider. Production rejects fixture configuration. The worker does not seed sources or observations, and public API readiness does not depend on external provider availability. See `docs/architecture/ingestion.md` for run status, polling, retry, provenance, and cleanup boundaries.

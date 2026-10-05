@@ -34,7 +34,6 @@ export function AnnouncementCard({ announcement, preview = false }: { announceme
     {!preview && !current && <div className="manual-announcement__notice"><p>{t(withdrawn ? "withdrawn" : expired ? "expired" : "unknown")}</p><p>{t("previousSeverity", { severity: t(announcement.severity) })}</p></div>}
     {withdrawn && <div><strong>{t("reason")}</strong><p className="manual-announcement__text">{announcement.withdrawalReason}</p><DataTimestamp label={t("withdrawnAt")} value={announcement.withdrawnAt} /></div>}
     {(current || preview) && <p className="manual-announcement__text">{announcement.summary}</p>}
-    <p><strong>{t("area")}: </strong>{announcement.area || "—"}</p>
     <div className="manual-announcement__times">
       <DataTimestamp label={t("observedAt")} value={announcement.observedAt} />
       <DataTimestamp label={t("expiresAt")} value={announcement.expiresAt} />
@@ -44,8 +43,6 @@ export function AnnouncementCard({ announcement, preview = false }: { announceme
       <summary>{t(current || preview ? "details" : "archiveDetails")}</summary>
       <p className="section-caption">{t("original")}</p>
       {!current && !preview && <p className="manual-announcement__text">{announcement.summary}</p>}
-      <p className="manual-announcement__text">{announcement.body}</p>
-      {announcement.advice && <div><strong>{t("advice")}</strong><p className="manual-announcement__text">{announcement.advice}</p></div>}
       <h4>{t("references")}</h4>
       <ul className="manual-announcement__references">{announcement.references.map((reference, index) => <li key={index}>
         {isPublicReferenceUrl(reference.url) ? <a href={reference.url} target="_blank" rel="noopener noreferrer">{reference.name || reference.url}</a> : <span>{reference.name || "—"}</span>}

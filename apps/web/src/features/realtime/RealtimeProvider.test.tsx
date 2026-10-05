@@ -76,6 +76,17 @@ describe("public realtime subscription", () => {
     expect(screen.getByText("external revision 1")).toBeInTheDocument();
     expect(screen.getByText("revision 0")).toBeInTheDocument();
   });
+  it("accepts media provenance only for external-data invalidation", () => {
+    vi.stubGlobal("EventSource", FakeEventSource);
+    render(<RealtimeProvider><ExternalConsumer /><Consumer /></RealtimeProvider>);
+    const connection = FakeEventSource.connections[0];
+    act(() => connection.send("external_data.updated", { eventType: "external_data.updated", eventId: "media-1", resourceId: "source-1", resourceType: "EXTERNAL_DATA", payloadVersion: 1, sourceType: "MEDIA", payload: { sourceCode: "FM91_NEWS" } }));
+    expect(screen.getByText("external revision 1")).toBeInTheDocument();
+    act(() => connection.send("external_data.updated", { eventType: "external_data.updated", eventId: "media-2", resourceId: "station-1", resourceType: "WATER_STATION", payloadVersion: 1, sourceType: "MEDIA" }));
+    act(() => connection.send("report.verified", { eventType: "report.verified", eventId: "media-3", resourceId: "report-1", resourceType: "COMMUNITY_REPORT", payloadVersion: 1, sourceType: "MEDIA" }));
+    expect(screen.getByText("external revision 1")).toBeInTheDocument();
+    expect(screen.getByText("revision 0")).toBeInTheDocument();
+  });
   it("connects once, ignores malformed/duplicate events, and refetches by revision", () => {
     vi.stubGlobal("EventSource", FakeEventSource);
     const view = render(<RealtimeProvider><Consumer /></RealtimeProvider>);

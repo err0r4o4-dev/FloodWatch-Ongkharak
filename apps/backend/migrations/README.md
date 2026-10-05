@@ -1,5 +1,14 @@
 # Database migrations
 
+Migration 28 adds `NEWS_REPORT` / `MEDIA` evidence for opt-in, automatically published
+FM91 news. Apply it before the matching API/worker and configure `FM91_NEWS` in both
+provider allowlists. It reuses immutable external evidence tables and adds an indexed
+current-news projection for SQL pagination and stable revision clocks; it does not seed
+news, source coordinates, station readings or alert rules. Down is data-lossy for
+media news only: stop FM91 writers, back up retained evidence, then downgrade matching
+binaries and migration together. Private archive objects remain. See
+`docs/architecture/fm91-news.md` for bounds, freshness and rollout details.
+
 ## Current segment rollout
 
 Migrations 25 and 26 add administrator-defined road segments, report assignment

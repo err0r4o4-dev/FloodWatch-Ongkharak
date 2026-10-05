@@ -51,6 +51,30 @@ describe("reportsApi", () => {
     await expect(reportsApi.listPublic()).resolves.toEqual({ items: [{ ...publicReport, publicationStatus: "PUBLISHED" }], limit: 20, offset: 0 });
   });
 
+  it("supports bounded public map pagination and forwards cancellation without bearer authentication", async () => {
+    const request = vi.fn().mockResolvedValue(response({ items: [publicReport], limit: 100, offset: 20 }));
+    vi.stubGlobal("fetch", request);
+    const controller = new AbortController();
+    await reportsApi.listPublic({ bbox: "100,14,102,15", limit: 100, offset: 20, signal: controller.signal });
+    const url = new URL(request.mock.calls[0][0], "http://localhost");
+    expect(url.pathname).toBe("/api/v1/reports");
+    expect(url.searchParams.get("limit")).toBe("100");
+    expect(url.searchParams.get("offset")).toBe("20");
+    expect(url.searchParams.get("bbox")).toBe("100,14,102,15");
+    const options = request.mock.calls[0][1] as RequestInit;
+    expect(options.signal).toBe(controller.signal);
+    expect(new Headers(options.headers).has("Authorization")).toBe(false);
+  });
+
+  it("rejects unbounded or invalid public pagination before making a request", async () => {
+    const request = vi.fn();
+    vi.stubGlobal("fetch", request);
+    for (const input of [{ limit: 0 }, { limit: 101 }, { limit: 1.5 }, { offset: -1 }, { offset: 1.5 }]) {
+      await expect(reportsApi.listPublic(input)).rejects.toThrow("Invalid report pagination");
+    }
+    expect(request).not.toHaveBeenCalled();
+  });
+
   it("derives removed publication state for legacy rejected responses", async () => {
     const rejected = { ...publicReport, status: "REJECTED", verificationStatus: "REJECTED", verifiedAt: null };
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response({ items: [rejected], limit: 20, offset: 0 })));

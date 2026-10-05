@@ -13,6 +13,7 @@ import th from "../../i18n/locales/th/overview";
 import en from "../../i18n/locales/en/overview";
 import { loadCollection, type Collections, type CollectionKey, type WaterStation } from "./api";
 import { ExternalDataPanel } from "../external-data/ExternalDataPanel";
+import { FM91NewsPanel } from "../news-announcements/FM91NewsPanel";
 import "./OverviewPage.css";
 
 const overviewEvents = ["water_level.updated", "flood_event.created", "flood_event.updated", "road.status.changed", "alert.created", "report.verified", "report.updated"] as const;
@@ -178,6 +179,7 @@ export function OverviewPage() {
         {reports.length ? <ul className="overview-report-list">{reports.map((report) => <li key={report.id}><article><div className="overview-report-thumbnail">{report.media[0] ? <ReportMediaImage media={report.media[0]} /> : <span>{t("report.noImage")}</span>}</div><div className="overview-report-copy"><Link className="overview-report-link" to={`/reports?report=${encodeURIComponent(report.id)}`}><div><h3>{t(reportLabelKeys[report.type])}</h3><p>{report.description}</p></div></Link><div className="badge-row"><SourceBadge type="COMMUNITY" /><span className="badge">{t(report.status === "VERIFIED" ? "report.verified" : "report.unreviewed")}</span></div><small><DataTimestamp value={report.createdAt} label={t("label.reportSubmitted")} /></small></div></article></li>)}</ul> : <PanelState result={result} feed="reports" empty={t("panel.noReport")} />}
         <p className="overview-footer-note">{t("report.footer")}</p>
       </OverviewPanel>
+      <FM91NewsPanel variant="compact" />
     </aside></div>
     <p className="overview-footer-note">{t("footer")}</p>
   </div>;

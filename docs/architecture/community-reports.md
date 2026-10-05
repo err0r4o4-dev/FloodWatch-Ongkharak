@@ -1,6 +1,16 @@
 # Community reports (Phase 6)
 
-Community map aggregation now has a separate area-summary boundary. See `report-areas.md` for observed-time input, recent water-depth bands, adjacent-window trends, retained originals, and migration 22/23 deployment order. The summary does not change publication, moderation, ownership, official provenance, or road safety.
+The situation map groups original published reports geographically, independently of road segments. The separate backend area-summary boundary remains available; see `report-areas.md` for observed-time input, recent water-depth bands, adjacent-window trends, retained originals, and migration 22/23 deployment order. Neither marker grouping nor area summaries change publication, moderation, ownership, official provenance, or road safety.
+
+## Geographic map pins
+
+The public map's community layer reads `GET /api/v1/reports` with the current WGS84 bbox and a bounded page of 100 original reports. It does not request `/report-areas` or generate markers from imported road geometry. No published reports means no community pins; it does not mean the area is safe.
+
+Display-only groups use a 150-metre great-circle distance from an original report anchor. Unique published report IDs are sorted deterministically before assignment, and an anchor never moves as more members are added. Matching the anchor rather than chaining neighbouring reports prevents a cluster spreading down a long road. The pin stays at the actual anchor coordinates; the original coordinates, ownership, timestamps, verification and media remain unchanged. Road assignments do not participate in grouping.
+
+Each pin shows the number of loaded originals in its group. Selecting it lists those originals with their own provenance, review state and timestamps. Groups do not calculate water-depth bands, trend, freshness or passability. Counts are limited to the loaded viewport/page, and a full 100-report page retains the map's truncation warning even if those reports become a single pin. Canonical REST refreshes after report change events replace the selected group's content, or close it when that group disappears or its data is unavailable, rather than retaining removed reports indefinitely. No schema migration or new dependency is required.
+
+## Publication and reporting
 
 The approved October 4, 2026 Guest flow adds anonymous creation with a submitted display-name snapshot and a 15-minute report-scoped upload capability. The display name does not prove identity or ownership. The subsequently approved post-moderation flow publishes valid submissions automatically and lets ADMIN review or remove them afterward. Historical account-owned records and their protected interfaces below remain compatible. Migration 18 is documented in `guest-public-flow.md`; post-moderation requires migration 21.
 

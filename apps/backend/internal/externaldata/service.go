@@ -25,6 +25,7 @@ func Definitions() []Definition {
 		{Code: "GLOFAS", Name: "GloFAS via Open-Meteo", Kind: Forecast, Provenance: "MODEL", URL: "https://open-meteo.com", Interval: 6 * time.Hour, MaxAge: 36 * time.Hour},
 		{Code: "HII_WRF", Name: "HII WRF-ROMS", Kind: Forecast, Provenance: "MODEL", URL: "https://www.thaiwater.net/forecast/wrfroms", Interval: 6 * time.Hour, MaxAge: 36 * time.Hour},
 		{Code: "TMD_CAP", Name: "TMD official warnings", Kind: OfficialAlert, Provenance: "OFFICIAL", URL: "https://www.tmd.go.th/api/xml/CAP", Interval: 10 * time.Minute, MaxAge: 30 * time.Minute},
+		{Code: "FM91_NEWS", Name: "FM91", Kind: NewsReport, Provenance: "MEDIA", URL: "https://fm91bkk.com/news", Interval: 5 * time.Minute, MaxAge: 15 * time.Minute},
 	}
 }
 
@@ -164,7 +165,11 @@ func (service *Service) execute(ctx context.Context, definition Definition, prov
 }
 
 func validateBatch(definition Definition, batch Batch, now time.Time) error {
-	if batch.RetrievedAt.IsZero() || batch.RetrievedAt.After(now.Add(time.Minute)) || now.Sub(batch.RetrievedAt) > 5*time.Minute || len(batch.Records) > 20000 || len(batch.Raw) == 0 || len(batch.Raw) > 16 {
+	maxRaw := 16
+	if definition.Code == "FM91_NEWS" {
+		maxRaw = 64
+	}
+	if batch.RetrievedAt.IsZero() || batch.RetrievedAt.After(now.Add(time.Minute)) || now.Sub(batch.RetrievedAt) > 5*time.Minute || len(batch.Records) > 20000 || len(batch.Raw) == 0 || len(batch.Raw) > maxRaw {
 		return errors.New("invalid batch bounds")
 	}
 	total := 0
@@ -180,6 +185,9 @@ func validateBatch(definition Definition, batch Batch, now time.Time) error {
 			return errors.New("invalid record identity")
 		}
 		keys[record.Key] = true
+		if record.Kind == NewsReport && !ValidNewsRecord(record, batch.RetrievedAt) {
+			return errors.New("invalid news evidence")
+		}
 		if record.Value != nil && (math.IsNaN(*record.Value) || math.IsInf(*record.Value, 0)) {
 			return errors.New("invalid measurement")
 		}
@@ -244,6 +252,8 @@ func trustedURL(code, raw string) bool {
 		return parsed.Host == "live1.hii.or.th" && strings.HasPrefix(parsed.Path, "/product/latest/wrfroms/tiff/")
 	case "TMD_CAP":
 		return parsed.Host == "www.tmd.go.th" && (parsed.Path == "/api/xml/CAP" || strings.HasPrefix(parsed.Path, "/uploads/CAP/"))
+	case "FM91_NEWS":
+		return parsed.Host == "fm91bkk.com" && parsed.RawQuery == "" && (parsed.Path == "/news" || strings.HasPrefix(parsed.Path, "/newsarticle/") && ValidNewsURL(raw, strings.TrimPrefix(parsed.Path, "/newsarticle/")))
 	default:
 		return false
 	}
@@ -253,6 +263,9 @@ func (service *Service) Snapshot(ctx context.Context) (Snapshot, error) {
 	now := service.now()
 	snapshot := Snapshot{RetrievedAt: now, Sources: make([]SourceSnapshot, 0, 10)}
 	for _, definition := range Definitions() {
+		if definition.Kind == NewsReport {
+			continue
+		}
 		_, enabled := service.providers[definition.Code]
 		source := SourceSnapshot{Definition: definition, Enabled: enabled, Status: "NOT_CONFIGURED", Freshness: "UNKNOWN", Records: []Record{}}
 		if enabled {

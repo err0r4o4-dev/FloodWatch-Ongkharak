@@ -7,12 +7,11 @@ const station = {
   id: "station-1", name: "สถานีทดสอบ", source, active: true,
   location: { type: "Point", coordinates: [101.02, 14.1] }
 };
-const reportArea = {
-  id: "area-1", name: "พื้นที่รายงานทดสอบ", location: { type: "Point", coordinates: [101.02, 14.1] }, radiusM: 150,
-  sourceType: "COMMUNITY", depthBand: "MODERATE", previousDepthBand: "LOW", trend: "RISING", reportedTrend: "UNKNOWN",
-  freshness: "FRESH", summaryReason: "SUMMARIZED", latestObservedAt: "2026-10-02T01:00:00Z",
-  computedAt: "2026-10-02T02:00:00Z", windowStart: "2026-10-01T02:00:00Z", windowEnd: "2026-10-02T02:00:00Z",
-  reportCount: 4, sampleCount: 3, totalReportCount: 5, reportIds: ["report-1"]
+const publicReport = {
+  id: "report-1", type: "FLOOD", description: "Synthetic report", locationName: "พื้นที่รายงานทดสอบ",
+  location: { type: "Point", coordinates: [101.02, 14.1] }, sourceType: "COMMUNITY",
+  estimatedWaterDepthM: null, status: "PENDING", verificationStatus: "PENDING", publicationStatus: "PUBLISHED",
+  createdAt: "2026-10-05T00:00:00Z", updatedAt: "2026-10-05T00:00:00Z", verifiedAt: null, media: []
 };
 
 afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); });
@@ -33,15 +32,38 @@ describe("map API boundary", () => {
     expect(url.searchParams.get("offset")).toBe("0");
   });
 
-  it("requests aggregated COMMUNITY report areas within the viewport", async () => {
-    const request = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({ items: [reportArea], limit: 100, offset: 0 }) });
+  it("requests original COMMUNITY reports within the viewport and groups nearby positions", async () => {
+    const request = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({ items: [publicReport, { ...publicReport, id: "report-2" }], limit: 100, offset: 0 }) });
     vi.stubGlobal("fetch", request);
-
-    await expect(fetchMapLayer("reports", { west: 100.9, south: 14, east: 101.2, north: 14.3 }, new AbortController().signal)).resolves.toEqual({ items: [reportArea], hasMore: false });
+    const page = await fetchMapLayer("reports", { west: 100.9, south: 14, east: 101.2, north: 14.3 }, new AbortController().signal);
+    expect(page.items).toHaveLength(1);
+    expect(page.items[0].reports).toHaveLength(2);
+    expect(page.hasMore).toBe(false);
     const url = new URL(request.mock.calls[0][0], "http://localhost");
-    expect(url.pathname).toBe("/api/v1/report-areas");
+    expect(url.pathname).toBe("/api/v1/reports");
     expect(url.searchParams.get("bbox")).toBe("100.9,14,101.2,14.3");
     expect(url.searchParams.get("limit")).toBe("100");
+  });
+
+  it("does not create community pins for an empty original-report response", async () => {
+    const request = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({ items: [], limit: 100, offset: 0 }) });
+    vi.stubGlobal("fetch", request);
+    await expect(fetchMapLayer("reports", { west: 100, south: 14, east: 102, north: 15 }, new AbortController().signal)).resolves.toEqual({ items: [], hasMore: false });
+    expect(request).toHaveBeenCalledTimes(1);
+  });
+
+  it("marks a full report page as truncated even when it becomes just one grouped pin", async () => {
+    const reports = Array.from({ length: 100 }, (_, index) => ({ ...publicReport, id: `report-${index}` }));
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({ items: reports, limit: 100, offset: 0 }) }));
+    const page = await fetchMapLayer("reports", { west: 100, south: 14, east: 102, north: 15 }, new AbortController().signal);
+    expect(page.items).toHaveLength(1);
+    expect(page.items[0].reports).toHaveLength(100);
+    expect(page.hasMore).toBe(true);
+  });
+
+  it("rejects malformed original reports rather than hiding bad evidence", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({ items: [{ ...publicReport, location: { type: "Point", coordinates: [201, 14] } }], limit: 100, offset: 0 }) }));
+    await expect(fetchMapLayer("reports", { west: 100, south: 14, east: 102, north: 15 }, new AbortController().signal)).rejects.toThrow("Invalid reports API response");
   });
 
   it("rejects malformed geometry instead of drawing misleading features", async () => {
